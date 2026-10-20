@@ -22,6 +22,12 @@ export const routes: Routes = [
           import('./features/content-workspace/item-editor/item-editor').then((m) => m.ItemEditor),
         title: 'Chỉnh sửa nội dung · Boilerate',
       },
+      {
+        path: 'controls',
+        loadComponent: () =>
+          import('./features/control-gallery/control-gallery').then((m) => m.ControlGallery),
+        title: 'Bộ giao diện · Boilerate',
+      },
       { path: '', pathMatch: 'full', redirectTo: 'collections/products' },
     ],
   },
