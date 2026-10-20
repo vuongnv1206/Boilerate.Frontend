@@ -415,35 +415,6 @@
     border-bottom: 0;
   }
 }
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 65px 10px;
-  white-space: normal;
-  h2 {
-    margin: 16px 0 0;
-    font-size: 15px;
-    font-weight: 500;
-  }
-  p {
-    color: var(--text-3);
-    margin: 8px 0 20px;
-    font-size: 11px;
-    text-align: center;
-  }
-}
-.empty-icon {
-  width: 52px;
-  height: 52px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text-3);
-  display: grid;
-  place-content: center;
-}
 .columns-popover {
   padding: 2px;
   width: 200px;

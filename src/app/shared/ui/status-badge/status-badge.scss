@@ -1,0 +1,31 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: var(--surface-2);
+}
+:host::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+:host([data-tone='success']) {
+  color: var(--success);
+  background: var(--success-soft);
+}
+:host([data-tone='warning']) {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+:host([data-tone='muted']) {
+  color: var(--text-3);
+}

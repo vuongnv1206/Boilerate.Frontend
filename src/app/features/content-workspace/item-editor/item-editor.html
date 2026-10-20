@@ -57,7 +57,7 @@
         } @else if (record.status === 'archived') {
           <button class="ui-button primary" (click)="restoreDraft()">Khôi phục bản nháp</button>
         } @else {
-          <span class="status-badge published">Đã xuất bản</span>
+          <ui-status-badge tone="success">Đã xuất bản</ui-status-badge>
         }
       </div>
     </header>
@@ -114,11 +114,11 @@
                     maxlength="180"
                     [attr.aria-invalid]="invalid('name')"
                     aria-describedby="name-help"
-                  /><span id="name-help" [class]="invalid('name') ? 'field-error' : 'field-help'">{{
+                  /><ui-field-message id="name-help" [tone]="invalid('name') ? 'error' : 'help'">{{
                     invalid('name')
                       ? 'Tên cần có ký tự ngoài khoảng trắng, tối đa 180 ký tự.'
                       : 'Đặt tên ngắn gọn, dễ nhận biết trong danh sách.'
-                  }}</span>
+                  }}</ui-field-message>
                 </div>
                 <div class="field">
                   <label class="field-label" for="item-slug"
@@ -135,11 +135,11 @@
                       aria-describedby="slug-help"
                     />
                   </div>
-                  <span id="slug-help" [class]="invalid('slug') ? 'field-error' : 'field-help'">{{
+                  <ui-field-message id="slug-help" [tone]="invalid('slug') ? 'error' : 'help'">{{
                     invalid('slug')
                       ? 'Dùng chữ thường không dấu, số và dấu gạch ngang.'
                       : 'Đường dẫn thân thiện, không có khoảng trắng.'
-                  }}</span>
+                  }}</ui-field-message>
                 </div>
                 <div class="field">
                   <label class="field-label" for="item-description">Mô tả</label
@@ -152,8 +152,8 @@
                     placeholder="Kể một chút về nội dung này..."
                     aria-describedby="description-help"
                   ></textarea
-                  ><span class="field-help" id="description-help"
-                    >Mô tả ngắn gọn về chất liệu, thiết kế và những điểm đặc biệt.</span
+                  ><ui-field-message id="description-help"
+                    >Mô tả ngắn gọn về chất liệu, thiết kế và những điểm đặc biệt.</ui-field-message
                   >
                 </div>
                 @if (definition().key === 'products') {
@@ -164,7 +164,9 @@
                       [options]="categories"
                       formControlName="category"
                       appendTo="body"
-                    /><span class="field-help">Giúp khách hàng tìm thấy những món đồ phù hợp.</span>
+                    /><ui-field-message
+                      >Giúp khách hàng tìm thấy những món đồ phù hợp.</ui-field-message
+                    >
                   </div>
                 }
               </section>
@@ -192,7 +194,9 @@
                         [invalid]="invalid('price')"
                       />
                       @if (invalid('price')) {
-                        <span class="field-error">Giá bán phải lớn hơn hoặc bằng 0.</span>
+                        <ui-field-message tone="error"
+                          >Giá bán phải lớn hơn hoặc bằng 0.</ui-field-message
+                        >
                       }
                     </div>
                     <div class="field">
@@ -214,7 +218,9 @@
                       [min]="0"
                       [maxFractionDigits]="0"
                       [invalid]="invalid('stock')"
-                    /><span class="field-help">Giá trị minh họa, chưa kết nối hệ thống kho.</span>
+                    /><ui-field-message
+                      >Giá trị minh họa, chưa kết nối hệ thống kho.</ui-field-message
+                    >
                   </div>
                 </section>
               }
@@ -265,8 +271,8 @@
                     formControlName="seoTitle"
                     maxlength="70"
                     placeholder="Tiêu đề hiển thị trên kết quả tìm kiếm"
-                  /><span class="field-help"
-                    >{{ form.controls.seoTitle.value.length }}/70 ký tự</span
+                  /><ui-field-message
+                    >{{ form.controls.seoTitle.value.length }}/70 ký tự</ui-field-message
                   >
                 </div>
                 <div class="field">
@@ -279,8 +285,8 @@
                     maxlength="160"
                     placeholder="Mô tả ngắn về nội dung"
                   ></textarea
-                  ><span class="field-help"
-                    >{{ form.controls.seoDescription.value.length }}/160 ký tự</span
+                  ><ui-field-message
+                    >{{ form.controls.seoDescription.value.length }}/160 ký tự</ui-field-message
                   >
                 </div>
                 <div class="search-preview">
@@ -355,7 +361,16 @@
           </div>
           <section class="inspector-section">
             <h2>Trạng thái</h2>
-            <span [class]="'status-badge ' + record.status">{{ statusLabels[record.status] }}</span>
+            <ui-status-badge
+              [tone]="
+                record.status === 'published'
+                  ? 'success'
+                  : record.status === 'draft'
+                    ? 'warning'
+                    : 'muted'
+              "
+              >{{ statusLabels[record.status] }}</ui-status-badge
+            >
             <p>
               {{
                 record.status === 'draft'
@@ -407,12 +422,14 @@
     </div>
   </section>
 } @else {
-  <div class="missing-state">
-    <ui-icon name="file" [size]="28" />
-    <h1>Không tìm thấy nội dung</h1>
-    <p>Nội dung này không có trong phiên bản mẫu hiện tại.</p>
+  <ui-content-state
+    layout="page"
+    icon="file"
+    title="Không tìm thấy nội dung"
+    message="Nội dung này không có trong phiên bản mẫu hiện tại."
+  >
     <a class="ui-button" routerLink="/admin/collections/products">Quay về danh sách</a>
-  </div>
+  </ui-content-state>
 }
 <p-dialog
   header="Xuất bản nội dung mẫu?"

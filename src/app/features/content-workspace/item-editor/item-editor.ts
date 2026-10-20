@@ -23,6 +23,9 @@ import { TextareaModule } from 'primeng/textarea';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { ContentState } from '../../../shared/ui/content-state/content-state';
+import { FieldMessage } from '../../../shared/ui/field-message/field-message';
+import { StatusBadge } from '../../../shared/ui/status-badge/status-badge';
 import { focusWhenVisible } from '../../../shared/ui/focus-when-visible';
 import {
   collectionDefinition,
@@ -45,6 +48,9 @@ const trimmedRequired: ValidatorFn = (control) =>
     ReactiveFormsModule,
     RouterLink,
     Icon,
+    ContentState,
+    FieldMessage,
+    StatusBadge,
     DialogModule,
     InputNumberModule,
     InputTextModule,

@@ -164,9 +164,16 @@
             </td>
             @if (visibleColumns().has('status')) {
               <td class="status-cell">
-                <span class="status-badge" [class]="'status-badge ' + item.status">{{
-                  statusLabels[item.status]
-                }}</span>
+                <ui-status-badge
+                  [tone]="
+                    item.status === 'published'
+                      ? 'success'
+                      : item.status === 'draft'
+                        ? 'warning'
+                        : 'muted'
+                  "
+                  >{{ statusLabels[item.status] }}</ui-status-badge
+                >
               </td>
             }
             @if (visibleColumns().has('category') && definition().key === 'products') {
@@ -198,12 +205,12 @@
         } @empty {
           <tr class="empty-row">
             <td [attr.colspan]="8">
-              <div class="empty-state">
-                <span class="empty-icon"><ui-icon name="search" [size]="24" /></span>
-                <h2>Không tìm thấy nội dung</h2>
-                <p>Thử từ khóa khác hoặc xóa bộ lọc để xem tất cả nội dung.</p>
+              <ui-content-state
+                title="Không tìm thấy nội dung"
+                message="Thử từ khóa khác hoặc xóa bộ lọc để xem tất cả nội dung."
+              >
                 <button class="ui-button" (click)="resetFilters()">Xóa bộ lọc</button>
-              </div>
+              </ui-content-state>
             </td>
           </tr>
         }

@@ -14,7 +14,7 @@
       Các control có thể tương tác. Chuyển giao diện ở thanh trên để kiểm tra cùng một trạng thái ở
       chế độ sáng và tối.
     </p>
-    <span class="status-badge">Bản xem thử</span>
+    <ui-status-badge>Bản xem thử</ui-status-badge>
   </div>
 
   <p-tabs value="controls" class="gallery-tabs">
@@ -107,8 +107,8 @@
                 (ngModelChange)="collectionName.set($event)"
                 aria-describedby="gallery-name-help"
               />
-              <span class="field-help" id="gallery-name-help"
-                >Tên hiển thị trong danh sách nội dung.</span
+              <ui-field-message id="gallery-name-help"
+                >Tên hiển thị trong danh sách nội dung.</ui-field-message
               >
             </div>
             <div class="field">
@@ -122,8 +122,8 @@
                 readonly
                 aria-describedby="gallery-readonly-help"
               />
-              <span class="field-help" id="gallery-readonly-help"
-                >Có thể chọn và sao chép giá trị.</span
+              <ui-field-message id="gallery-readonly-help"
+                >Có thể chọn và sao chép giá trị.</ui-field-message
               >
             </div>
             <div class="field">
@@ -142,13 +142,13 @@
                 required
               />
               @if (titleInvalid()) {
-                <span class="field-error" id="gallery-title-feedback"
+                <ui-field-message tone="error" id="gallery-title-feedback"
                   ><ui-icon name="info" [size]="12" /> Vui lòng nhập tiêu đề trước khi tiếp
-                  tục.</span
+                  tục.</ui-field-message
                 >
               } @else {
-                <span class="field-help" id="gallery-title-feedback"
-                  >Tiêu đề hợp lệ. Trạng thái lỗi đã được gỡ bỏ.</span
+                <ui-field-message id="gallery-title-feedback"
+                  >Tiêu đề hợp lệ. Trạng thái lỗi đã được gỡ bỏ.</ui-field-message
                 >
               }
             </div>
@@ -157,7 +157,7 @@
                 >Mã nội bộ <span class="state-label">Vô hiệu hóa</span></label
               >
               <input pInputText id="gallery-disabled" value="COLLECTION-001" disabled />
-              <span class="field-help">Được cấp tự động trong bản xem thử.</span>
+              <ui-field-message>Được cấp tự động trong bản xem thử.</ui-field-message>
             </div>
             <div class="field field-wide">
               <label class="field-label" for="gallery-description">Mô tả ngắn</label>
@@ -170,8 +170,8 @@
                 (ngModelChange)="description.set($event)"
                 aria-describedby="gallery-description-help"
               ></textarea>
-              <span class="field-help" id="gallery-description-help"
-                >Thử một câu tiếng Việt dài để kiểm tra xuống dòng và dấu câu.</span
+              <ui-field-message id="gallery-description-help"
+                >Thử một câu tiếng Việt dài để kiểm tra xuống dòng và dấu câu.</ui-field-message
               >
             </div>
           </div>
@@ -332,10 +332,9 @@
                   <td class="record-name">{{ record.name }}</td>
                   <td>{{ record.category }}</td>
                   <td>
-                    <span
-                      class="status-badge"
-                      [class.published]="record.status === 'Đã xuất bản'"
-                      >{{ record.status }}</span
+                    <ui-status-badge
+                      [tone]="record.status === 'Đã xuất bản' ? 'success' : 'neutral'"
+                      >{{ record.status }}</ui-status-badge
                     >
                   </td>
                 </tr>
@@ -470,6 +469,65 @@
               Thử thông báo <ui-icon name="arrow-right" [size]="14" />
             </button>
           </div>
+        </section>
+
+        <section class="specimen-section" aria-labelledby="content-state-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">03</span>
+              <h2 id="content-state-heading">Trạng thái nội dung</h2>
+            </div>
+            <p>Giữ rõ ngữ cảnh khi dữ liệu chưa sẵn sàng.</p>
+          </div>
+          <div class="control-line" aria-label="Chọn trạng thái xem thử">
+            <button
+              class="ui-button"
+              type="button"
+              [attr.aria-pressed]="statePreview() === 'empty'"
+              (click)="statePreview.set('empty')"
+            >
+              Trống
+            </button>
+            <button
+              class="ui-button"
+              type="button"
+              [attr.aria-pressed]="statePreview() === 'loading'"
+              (click)="statePreview.set('loading')"
+            >
+              Đang tải
+            </button>
+            <button
+              class="ui-button"
+              type="button"
+              [attr.aria-pressed]="statePreview() === 'error'"
+              (click)="statePreview.set('error')"
+            >
+              Có lỗi
+            </button>
+          </div>
+          <ui-content-state
+            [kind]="statePreview()"
+            [title]="
+              statePreview() === 'loading'
+                ? 'Đang tải nội dung minh họa'
+                : statePreview() === 'error'
+                  ? 'Chưa thể tải nội dung'
+                  : 'Chưa có nội dung'
+            "
+            [message]="
+              statePreview() === 'error'
+                ? 'Thử lại để quay về trạng thái trống của bản xem thử.'
+                : statePreview() === 'loading'
+                  ? 'Đây là trạng thái minh họa, không gửi yêu cầu lên máy chủ.'
+                  : 'Nội dung mới sẽ xuất hiện tại đây.'
+            "
+          >
+            @if (statePreview() === 'error') {
+              <button class="ui-button" type="button" (click)="statePreview.set('empty')">
+                Thử lại
+              </button>
+            }
+          </ui-content-state>
         </section>
 
         <section class="motion-note">

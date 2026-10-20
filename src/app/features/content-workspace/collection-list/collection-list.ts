@@ -9,6 +9,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 import { Icon } from '../../../shared/ui/icon/icon';
+import { ContentState } from '../../../shared/ui/content-state/content-state';
+import { StatusBadge } from '../../../shared/ui/status-badge/status-badge';
 import {
   collectionDefinition,
   CollectionKey,
@@ -27,6 +29,8 @@ import { DemoContentStore } from '../demo-content-store';
     FormsModule,
     RouterLink,
     Icon,
+    ContentState,
+    StatusBadge,
     CheckboxModule,
     DialogModule,
     InputTextModule,

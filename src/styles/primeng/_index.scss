@@ -1,4 +1,5 @@
-// Supported preset tokens own colors; these application-level styles own compact density.
+// Preset tokens own colors and supported component sizing. Keep only density,
+// structural separators and accessibility exceptions without matching tokens here.
 .p-component,
 .p-inputtext,
 .p-textarea,
@@ -39,22 +40,11 @@
 .p-multiselect-label {
   padding: 6px 9px;
 }
-.p-select-dropdown,
-.p-multiselect-dropdown {
-  width: 28px;
-}
 .p-select-dropdown svg,
 .p-multiselect-dropdown svg {
   width: 12px;
   height: 12px;
 }
-.p-select-option,
-.p-multiselect-option {
-  font-size: 13px;
-  padding: 7px 9px;
-}
-.p-select-overlay,
-.p-multiselect-overlay,
 .p-datepicker-panel {
   border: 1px solid var(--border-strong);
   background: var(--surface-0);
@@ -77,19 +67,6 @@
   font-size: 12px;
   padding: 4px 8px;
   min-height: 26px;
-}
-.p-checkbox {
-  width: 15px;
-  height: 15px;
-}
-.p-checkbox-box {
-  width: 15px;
-  height: 15px;
-  border-radius: 3px;
-}
-.p-checkbox-icon {
-  width: 10px;
-  height: 10px;
 }
 .p-toggleswitch {
   width: 30px;
@@ -161,29 +138,6 @@
   height: 28px;
   border-radius: var(--radius);
   font-size: 12px;
-}
-.p-tablist-tab-list {
-  background: transparent;
-  border-color: var(--border);
-}
-.p-tab {
-  padding: 12px 16px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-2);
-  background: transparent;
-}
-.p-tab-active {
-  color: var(--text-1);
-}
-.p-tablist-active-bar {
-  background: var(--accent);
-  height: 2px;
-}
-.p-tabpanels {
-  background: transparent;
-  padding: 20px 0 0;
-  color: var(--text-1);
 }
 .p-dialog {
   background: var(--surface-0);

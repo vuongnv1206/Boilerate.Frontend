@@ -1,0 +1,16 @@
+<span class="state-icon" aria-hidden="true">
+  @if (kind() === 'loading') {
+    <span class="state-spinner"></span>
+  } @else {
+    <ui-icon [name]="resolvedIcon()" [size]="layout() === 'page' ? 28 : 24" />
+  }
+</span>
+@if (layout() === 'page') {
+  <h1>{{ title() }}</h1>
+} @else {
+  <h2>{{ title() }}</h2>
+}
+@if (message()) {
+  <p>{{ message() }}</p>
+}
+<ng-content />

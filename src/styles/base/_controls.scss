@@ -1,0 +1,113 @@
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--control-height);
+  padding: 5px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-0);
+  color: var(--text-1);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+}
+.ui-button:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--field-border);
+}
+.ui-button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+.ui-button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.ui-button.quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-2);
+}
+.ui-button.quiet:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+.ui-button.danger {
+  color: var(--danger);
+  border-color: var(--border-strong);
+}
+.ui-button.small {
+  min-height: 26px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+.ui-button:disabled {
+  opacity: 0.5;
+}
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-2);
+}
+.icon-button:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+.icon-button:disabled {
+  opacity: 0.45;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-1);
+  font-weight: 500;
+}
+.field-help {
+  color: var(--text-3);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0;
+}
+.field-error {
+  color: var(--danger);
+  font-size: 11px;
+  margin: 0;
+}
+@media (max-width: 680px) {
+  .ui-button {
+    min-height: 36px;
+  }
+  .icon-button {
+    min-width: 34px;
+    min-height: 34px;
+  }
+  input,
+  textarea,
+  select,
+  .p-inputtext,
+  .p-textarea {
+    font-size: 16px;
+  }
+}

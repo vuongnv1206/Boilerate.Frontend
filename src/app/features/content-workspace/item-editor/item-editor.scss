@@ -490,25 +490,6 @@
     margin: 7px 0 0;
   }
 }
-.missing-state {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  h1 {
-    font-size: 19px;
-    margin: 0;
-  }
-  p {
-    color: var(--text-3);
-    font-size: 12px;
-  }
-  .ui-button {
-    text-decoration: none;
-  }
-}
 .dialog-description {
   font-size: 12px;
   line-height: 1.8;

@@ -27,6 +27,9 @@ import { ToastModule } from 'primeng/toast';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 import { Icon } from '../../shared/ui/icon/icon';
+import { ContentState, ContentStateKind } from '../../shared/ui/content-state/content-state';
+import { FieldMessage } from '../../shared/ui/field-message/field-message';
+import { StatusBadge } from '../../shared/ui/status-badge/status-badge';
 import { focusWhenVisible } from '../../shared/ui/focus-when-visible';
 
 interface PreviewRecord {
@@ -56,6 +59,9 @@ interface PreviewRecord {
     ToggleSwitchModule,
     TooltipModule,
     Icon,
+    ContentState,
+    FieldMessage,
+    StatusBadge,
   ],
   providers: [MessageService],
   templateUrl: './control-gallery.html',
@@ -73,6 +79,7 @@ export class ControlGallery {
   readonly drawerVisible = signal(false);
   readonly saving = signal(false);
   readonly saveStatus = signal('Chưa có thay đổi');
+  readonly statePreview = signal<ContentStateKind>('empty');
   readonly collectionName = signal('Bộ sưu tập mùa thu');
   readonly title = signal('');
   readonly titleInvalid = computed(() => this.title().trim().length === 0);
