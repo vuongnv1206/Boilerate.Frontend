@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.angular/
+out-tsc/
+coverage/
+artifacts/
+*.log
+.env*
+!.env.example
+.DS_Store
+/public/runtime-config.js
