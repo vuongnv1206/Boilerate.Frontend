@@ -4,9 +4,8 @@ export interface LoginRequest {
 }
 
 export interface TokenResponse {
+  readonly userId: string;
   readonly token: string;
-  readonly refreshToken: string;
-  readonly refreshTokenExpiryTime: string;
   readonly sessionId: string;
   readonly accessTokenExpiresAt: string;
 }

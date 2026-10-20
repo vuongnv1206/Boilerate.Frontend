@@ -6,7 +6,7 @@
 
 Triển khai nền giao diện theo 5 step đã duyệt: tham chiếu và quy chuẩn → workspace → theme/control → list/editor demo → motion và kiểm chứng. [Hồ sơ và tiến độ chính thức](../Boilerate/docs/frontend/features/admin-ui-foundation.md).
 
-Mốc mới đã được người dùng duyệt ngày 20/10: collections gọi API thật trên SQL Server local, có đăng nhập và lưu dữ liệu sau khi nhận phản hồi server. Mỗi phần có màn danh sách và màn thêm/sửa `-io`. Gallery vẫn dùng dữ liệu minh họa để thử control. Theme và panel là tùy chọn trình duyệt; phiên đăng nhập chỉ giữ trong bộ nhớ tab.
+Mốc mới đã được người dùng duyệt ngày 20/10: collections gọi API thật trên SQL Server local, có đăng nhập và lưu dữ liệu sau khi nhận phản hồi server. Mỗi phần có màn danh sách và màn thêm/sửa `-io`. Gallery vẫn dùng dữ liệu minh họa để thử control. Theme và panel là tùy chọn trình duyệt. Theo yêu cầu ngày 21/10, phiên được khôi phục khi reload bằng cookie HttpOnly; access token giữ trong bộ nhớ.
 
 ## Nguyên tắc sản phẩm
 

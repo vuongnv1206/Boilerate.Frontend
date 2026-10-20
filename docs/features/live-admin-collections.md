@@ -12,6 +12,6 @@ Không tạo `.scss`/`.spec.ts` mặc định cho mỗi component. Bố cục li
 
 Thứ tự: seed/BE local → phiên đăng nhập + API config/proxy → từng feature typed DTO/service/store/form → thay route/navigation cũ và bỏ code demo không dùng → web unit/build/browser + live SQL Server roundtrip. Root giữ routes/providers/boundaries/global styles để tránh sửa chồng. Mobile hoãn; localhost:4200 giữ nguyên.
 
-Session local browser giữ access/refresh trong memory, không nhúng password vào FE hoặc runtime public config. API permissions lấy từ BE; interceptor chỉ gắn bearer vào API base, refresh có serialize, retry tối đa một lần nếu refresh thành công; không retry mutation sau lỗi mạng/409. Catalog dùng items/total/pageNumber/pageSize khác Identity pagination.
+Phiên local đã được nâng ở [mốc giữ phiên ngày 21/10](persistent-session.md): refresh cookie HttpOnly, access token trong bộ nhớ, reload khôi phục và tải quyền lại. Không nhúng password vào FE hoặc runtime public config. Interceptor chỉ gắn bearer vào API base, refresh có serialize, retry tối đa một lần nếu refresh thành công và vẫn cùng userId; không retry mutation sau lỗi mạng/409. Catalog dùng items/total/pageNumber/pageSize khác Identity pagination.
 
 Điều kiện hoàn tất: đăng nhập bằng BE thật, list/detail/edit phản ánh dữ liệu SQL Server, seed chạy lại ổn định, route/folder tương ứng, các kiểm tra web đạt. UI giữ Webflow/tokens/normal motion. Phần nào chưa đủ API không giả là đã lưu thành công.

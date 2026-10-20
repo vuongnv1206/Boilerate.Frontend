@@ -1,4 +1,4 @@
-import { expect, test, ready, finishSignIn, FIRST_PRODUCT_ID } from './helpers/catalog-api';
+import { expect, test, ready, FIRST_PRODUCT_ID } from './helpers/catalog-api';
 
 test('list: API search, selection, pagination and theme', async ({ page, catalog }, testInfo) => {
   const apiRequests: string[] = [];
@@ -52,7 +52,7 @@ test('layout: resize or mobile modal, theme persistence and normal motion', asyn
     await page.keyboard.press('End');
     await expect(separator).toHaveAttribute('aria-valuenow', '320');
     await page.reload();
-    await finishSignIn(page);
+    await expect(page.locator('.workspace')).toBeVisible();
     await expect(separator).toHaveAttribute('aria-valuenow', '320');
     await page.getByRole('button', { name: 'Thu gọn bảng điều hướng', exact: true }).click();
     await expect(page.locator('.workspace')).toHaveClass(/sidebar-collapsed/);
@@ -61,7 +61,7 @@ test('layout: resize or mobile modal, theme persistence and normal motion', asyn
   const next = testInfo.project.name.endsWith('dark') ? 'light' : 'dark';
   await page.getByTestId(`theme-${next}`).click();
   await page.reload();
-  await finishSignIn(page);
+  await expect(page.locator('.workspace')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', next);
   const motion = await page.evaluate(() => ({
     reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -97,7 +97,7 @@ test('editor: validation, dirty guard, API save and conflict', async ({ page, ca
   await name.blur();
   await expect(page).toHaveScreenshot('editor.png');
   await page.reload();
-  await finishSignIn(page);
+  await expect(page.locator('.workspace')).toBeVisible();
   await expect(name).toHaveValue(`${original} — chỉnh sửa kiểm thử`);
   catalog.rejectNextProductSave();
   await name.fill('Bản đang sửa được giữ khi có lỗi');

@@ -11,11 +11,10 @@ import { authInterceptor } from './auth.interceptor';
 import { TokenResponse } from './auth.models';
 
 const tokens: TokenResponse = {
+  userId: 'first-user',
   token: 'first-access',
-  refreshToken: 'first-refresh',
   sessionId: 'session-id',
   accessTokenExpiresAt: '2026-10-20T12:15:00Z',
-  refreshTokenExpiryTime: '2026-11-20T12:00:00Z',
 };
 
 describe('AuthSession and API authentication', () => {
@@ -45,8 +44,10 @@ describe('AuthSession and API authentication', () => {
 
   function signIn(): void {
     session.signIn({ email: 'admin@example.test', password: 'test password' }).subscribe();
-    const login = requests.expectOne('/api/tokens/get');
+    const login = requests.expectOne('/api/tokens/session');
     expect(login.request.headers.has('Authorization')).toBe(false);
+    expect(login.request.headers.get('X-Requested-With')).toBe('XMLHttpRequest');
+    expect(login.request.withCredentials).toBe(true);
     login.flush(tokens);
     const permissions = requests.expectOne('/api/personal/permissions');
     expect(permissions.request.headers.get('Authorization')).toBe('Bearer first-access');
@@ -60,6 +61,94 @@ describe('AuthSession and API authentication', () => {
     expect(session.hasPermission('Permissions.Product.Create')).toBe(false);
   });
 
+  it('restores once for concurrent guards and waits for fresh permissions', () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    session.restore().subscribe(first);
+    session.restore().subscribe(second);
+    const refresh = requests.expectOne('/api/tokens/session/refresh');
+    expect(refresh.request.body).toBeNull();
+    expect(refresh.request.withCredentials).toBe(true);
+    expect(refresh.request.headers.get('X-Requested-With')).toBe('XMLHttpRequest');
+    refresh.flush(tokens);
+    expect(session.signedIn()).toBe(false);
+    expect(first).not.toHaveBeenCalled();
+    requests.expectOne('/api/personal/permissions').flush(['Permissions.Product.View']);
+    expect(first).toHaveBeenCalledWith(true);
+    expect(second).toHaveBeenCalledWith(true);
+    expect(session.signedIn()).toBe(true);
+    session.restore().subscribe();
+    requests.expectNone('/api/tokens/session/refresh');
+  });
+
+  it('handles a missing or revoked cookie without restoring a protected session', () => {
+    const restored = vi.fn();
+    session.restore().subscribe(restored);
+    requests
+      .expectOne('/api/tokens/session/refresh')
+      .flush({}, { status: 401, statusText: 'Unauthorized' });
+    expect(restored).toHaveBeenCalledWith(false);
+    expect(session.signedIn()).toBe(false);
+    expect(session.accessToken()).toBeNull();
+    expect(session.restoreError()).toBe('');
+    requests.expectNone('/api/personal/permissions');
+  });
+
+  it('reports restore outages and can retry instead of treating the cookie as revoked', () => {
+    session.restore().subscribe();
+    requests
+      .expectOne('/api/tokens/session/refresh')
+      .flush({}, { status: 503, statusText: 'Unavailable' });
+    expect(session.restoreError()).not.toBe('');
+    session.restore().subscribe();
+    requests.expectOne('/api/tokens/session/refresh').flush(tokens);
+    requests.expectOne('/api/personal/permissions').flush([]);
+    expect(session.signedIn()).toBe(true);
+    expect(session.restoreError()).toBe('');
+  });
+
+  it('revokes by cookie without relying on an access token and lets failed logout be retried', () => {
+    session.signOut().subscribe();
+    const logout = requests.expectOne('/api/tokens/session');
+    expect(logout.request.method).toBe('DELETE');
+    expect(logout.request.headers.has('Authorization')).toBe(false);
+    expect(logout.request.headers.get('X-Requested-With')).toBe('XMLHttpRequest');
+    logout.flush({}, { status: 503, statusText: 'Unavailable' });
+    expect(session.logoutFailed()).toBe(true);
+    expect(session.restoreError()).toContain('đăng xuất');
+    session.signOut().subscribe();
+    requests.expectOne('/api/tokens/session').flush(null);
+    expect(session.logoutFailed()).toBe(false);
+    expect(session.restoreError()).toBe('');
+  });
+
+  it.each(['refresh', 'permissions'])(
+    'keeps restore retry available after a %s outage following a 401',
+    (stage) => {
+      session.restore().subscribe();
+      requests.expectOne('/api/tokens/session/refresh').flush(tokens);
+      requests
+        .expectOne('/api/personal/permissions')
+        .flush({}, { status: 401, statusText: 'Unauthorized' });
+      const refresh = requests.expectOne('/api/tokens/session/refresh');
+      if (stage === 'refresh') {
+        refresh.flush({}, { status: 503, statusText: 'Unavailable' });
+      } else {
+        refresh.flush({ ...tokens, token: 'next-access' });
+        requests
+          .expectOne('/api/personal/permissions')
+          .flush({}, { status: 503, statusText: 'Unavailable' });
+      }
+      expect(session.signedIn()).toBe(false);
+      expect(session.restoreError()).not.toBe('');
+      expect(TestBed.inject(Router).navigate).not.toHaveBeenCalled();
+      session.restore().subscribe();
+      requests.expectOne('/api/tokens/session/refresh').flush(tokens);
+      requests.expectOne('/api/personal/permissions').flush([]);
+      expect(session.signedIn()).toBe(true);
+    },
+  );
+
   it('sends one refresh for concurrent 401 responses, then retries with the new token', () => {
     signIn();
     const first = vi.fn();
@@ -68,10 +157,10 @@ describe('AuthSession and API authentication', () => {
     http.get('/api/product-types').subscribe(second);
     requests.expectOne('/api/categories').flush({}, { status: 401, statusText: 'Unauthorized' });
     requests.expectOne('/api/product-types').flush({}, { status: 401, statusText: 'Unauthorized' });
-    const refresh = requests.expectOne('/api/tokens/refresh');
-    expect(refresh.request.body).toEqual({ refreshToken: 'first-refresh' });
+    const refresh = requests.expectOne('/api/tokens/session/refresh');
+    expect(refresh.request.body).toBeNull();
     expect(refresh.request.headers.has('Authorization')).toBe(false);
-    refresh.flush({ ...tokens, token: 'next-access', refreshToken: 'next-refresh' });
+    refresh.flush({ ...tokens, token: 'next-access' });
     for (const url of ['/api/categories', '/api/product-types']) {
       const retry = requests.expectOne(url);
       expect(retry.request.headers.get('Authorization')).toBe('Bearer next-access');
@@ -103,9 +192,9 @@ describe('AuthSession and API authentication', () => {
     signIn();
     const error = vi.fn();
     session.refresh().subscribe({ error });
-    const refresh = requests.expectOne('/api/tokens/refresh');
+    const refresh = requests.expectOne('/api/tokens/session/refresh');
     session.signOut().subscribe();
-    requests.expectOne('/api/tokens/sessions/session-id').flush(null);
+    requests.expectOne('/api/tokens/session').flush(null);
     refresh.flush({ ...tokens, token: 'late-token' });
     expect(session.signedIn()).toBe(false);
     expect(session.permissions()).toEqual([]);
@@ -117,12 +206,12 @@ describe('AuthSession and API authentication', () => {
     const forbidden = vi.fn();
     http.post('/api/products', {}).subscribe({ error: forbidden });
     requests.expectOne('/api/products').flush({}, { status: 403, statusText: 'Forbidden' });
-    requests.expectNone('/api/tokens/refresh');
+    requests.expectNone('/api/tokens/session/refresh');
     expect(session.signedIn()).toBe(true);
     http.get('/api/categories').subscribe({ error: () => undefined });
     requests.expectOne('/api/categories').flush({}, { status: 401, statusText: 'Unauthorized' });
     requests
-      .expectOne('/api/tokens/refresh')
+      .expectOne('/api/tokens/session/refresh')
       .flush({}, { status: 401, statusText: 'Unauthorized' });
     expect(session.signedIn()).toBe(false);
     expect(forbidden).toHaveBeenCalledOnce();
@@ -135,23 +224,42 @@ describe('AuthSession and API authentication', () => {
     const oldWrite = requests.expectOne('/api/products');
     session.clear();
     session.signIn({ email: 'second@example.test', password: 'test password' }).subscribe();
-    requests
-      .expectOne('/api/tokens/get')
-      .flush({ ...tokens, token: 'second-user', sessionId: 'second-session' });
+    requests.expectOne('/api/tokens/session').flush({
+      ...tokens,
+      userId: 'second-user',
+      token: 'second-user',
+      sessionId: 'second-session',
+    });
     requests.expectOne('/api/personal/permissions').flush(['Permissions.Product.View']);
     oldWrite.flush({}, { status: 401, statusText: 'Unauthorized' });
     requests.expectNone('/api/products');
-    requests.expectNone('/api/tokens/refresh');
+    requests.expectNone('/api/tokens/session/refresh');
     expect(session.accessToken()).toBe('second-user');
     expect(session.signedIn()).toBe(true);
     expect(error).toHaveBeenCalledOnce();
+  });
+
+  it('does not replay a write if another tab changed the cookie account before its message arrives', () => {
+    signIn();
+    const error = vi.fn();
+    http.post('/api/products', { name: 'First user change' }).subscribe({ error });
+    requests.expectOne('/api/products').flush({}, { status: 401, statusText: 'Unauthorized' });
+    requests
+      .expectOne('/api/tokens/session/refresh')
+      .flush({ ...tokens, userId: 'second-user', token: 'other-access' });
+    requests.expectNone('/api/products');
+    expect(session.accessToken()).toBeNull();
+    expect(session.permissions()).toEqual([]);
+    expect(session.restoreError()).toContain('Tài khoản');
+    expect(error).toHaveBeenCalledOnce();
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledOnce();
   });
 
   it('clears an incomplete login when permission loading is cancelled', () => {
     const login = session
       .signIn({ email: 'admin@example.test', password: 'test password' })
       .subscribe();
-    requests.expectOne('/api/tokens/get').flush(tokens);
+    requests.expectOne('/api/tokens/session').flush(tokens);
     const permissions = requests.expectOne('/api/personal/permissions');
     expect(session.signedIn()).toBe(false);
     login.unsubscribe();

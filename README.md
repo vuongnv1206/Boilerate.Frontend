@@ -6,7 +6,7 @@ Repo FE riêng, private: [Boilerate.Frontend](https://github.com/vuongnv1206/Boi
 
 Source theo [quy tắc code](docs/coding-rules.md): mỗi phần chỉ có màn danh sách và màn `-io`. Constants/enums/models/services/stores nằm ngang cấp `features`, import qua alias. Form, toolbar, bảng và inspector nhỏ nằm ngay trong màn. [SCSS chung](docs/scss-rules.md) giữ bố cục nhất quán; không tự tạo SCSS/spec cho mỗi component.
 
-Ưu tiên **web desktop/tablet**, mobile tối ưu sau. [Kết quả kiểm tra mới](docs/verification/2026-10-20-live-collections.md) ghi source và phạm vi đã chạy. Dev server giữ ở [http://localhost:4200](http://localhost:4200); cổng 4300 chỉ dùng tạm cho QA production.
+Ưu tiên **web desktop/tablet**, mobile tối ưu sau. [Kết quả collections](docs/verification/2026-10-20-live-collections.md) và [giữ phiên khi reload](docs/verification/2026-10-21-persistent-session.md) ghi source và phạm vi đã chạy. Dev server giữ ở [http://localhost:4200](http://localhost:4200); cổng 4300 chỉ dùng tạm cho QA production.
 
 ## Chạy local
 
@@ -18,7 +18,9 @@ cd D:\MyCode\BoilerateWorkspace\Frontend
 .\run.ps1 start
 ```
 
-Dev server: [http://localhost:4200/admin](http://localhost:4200/admin). Chạy BE tại `http://localhost:5000`; `proxy.conf.json` chuyển `/api/**` sang BE. Đăng nhập bằng tài khoản quản trị đã bootstrap và cấp quyền trong BE. Token chỉ giữ trong bộ nhớ tab, vì vậy reload cần đăng nhập lại. Nội dung đã lưu nằm trong database; theme/panel giữ tùy chọn trình duyệt.
+Dev server: [http://localhost:4200/admin](http://localhost:4200/admin). Chạy BE tại `http://localhost:5000`; `proxy.conf.json` chuyển `/api/**` sang BE. Đăng nhập bằng tài khoản quản trị đã bootstrap và cấp quyền trong BE. Reload giữ phiên và URL hiện tại: guard khôi phục qua cookie HttpOnly rồi tải quyền. Access token chỉ ở bộ nhớ, không đưa token vào localStorage/sessionStorage. Đăng xuất thu hồi phiên và báo các tab khác. Nội dung đã lưu nằm trong database; theme/panel giữ tùy chọn trình duyệt.
+
+[Browser session](docs/features/persistent-session.md) dùng cùng origin `/api`; Production cần HTTPS và proxy FE/API cùng origin. Cookie SameSite Strict có hạn theo BE. Nếu phiên hết hạn hoặc bị thu hồi, ứng dụng yêu cầu đăng nhập lại; nếu lỗi mạng tạm thời, có thể bấm thử lại để tiếp tục phiên. Không cần thêm key hoặc biến runtime cho phần giữ phiên.
 
 Trong workspace local này, SQL Server dùng database riêng `BoilerateDevelopment`. Cấu hình và tài khoản local ở `../Boilerate/artifacts/local-admin.secrets.json` bị ignore; không đưa file đó vào Git. [Hướng dẫn seed JSON](../Boilerate/docs/backend/history/2026-10-20-development-seeding.md) ghi cách thêm dữ liệu và chạy lại mà không ghi đè dữ liệu đã sửa.
 

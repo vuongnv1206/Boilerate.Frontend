@@ -39,12 +39,23 @@
     @if (store.error()) {
       <p class="login-error" role="alert">{{ store.error() }}</p>
     }
+    @if (store.logoutFailed()) {
+      <p-button
+        type="button"
+        label="Thử đăng xuất lại"
+        [disabled]="store.saving()"
+        (onClick)="store.retrySignOut()"
+      />
+    }
+    @if (store.canRestore()) {
+      <p-button type="button" label="Thử lại" [disabled]="store.saving()" (onClick)="restore()" />
+    }
     <p-button
       type="submit"
       label="Đăng nhập"
       [loading]="store.saving()"
       [disabled]="store.saving()"
     />
-    <p class="session-note">Phiên đăng nhập chỉ giữ trong bộ nhớ của tab này.</p>
+    <p class="session-note">Anh có thể tiếp tục làm việc sau khi tải lại trang.</p>
   </form>
 </main>

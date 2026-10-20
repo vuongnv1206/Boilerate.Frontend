@@ -22,7 +22,7 @@ Current user priority (2026-10-20): web first. Required browser verification and
 - Use semantic theme and motion tokens; avoid per-screen hard-coded colors. Overlay controls must inherit the root theme even when appended to `body`.
 - Every input has a visible label and associated error/help text. Every icon-only action has an accessible name. Keep visible keyboard focus and coherent tab order.
 - Handle long Vietnamese text, keyboard-only interaction, empty results and small viewports. Honor reduced motion. Do not add decorative page-load choreography.
-- Collections now use real Catalog APIs and memory-only authentication, approved by the user on 2026-10-20. Gallery is still a control preview. Respect actual API contracts and errors; never imply a write succeeded before its response. Keep credentials out of frontend source and public runtime config.
+- Collections use real Catalog APIs. Browser authentication restores through an HttpOnly refresh cookie; access tokens and permissions stay in memory. Await restore in the admin guard; never persist tokens in JS storage. Gallery is still a control preview. Respect actual API contracts and errors; never imply a write succeeded before its response. Keep credentials out of frontend source and public runtime config.
 
 ## Verification and documentation
 

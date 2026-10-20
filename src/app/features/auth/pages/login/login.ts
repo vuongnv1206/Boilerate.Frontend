@@ -19,4 +19,8 @@ export class Login {
   signIn(): void {
     this.store.signIn(this.route.snapshot.queryParamMap.get('returnUrl'));
   }
+
+  restore(): void {
+    this.store.restore(this.route.snapshot.queryParamMap.get('returnUrl'));
+  }
 }

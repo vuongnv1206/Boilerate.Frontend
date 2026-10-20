@@ -1,4 +1,4 @@
-import { expect, test, ready, finishSignIn } from './helpers/catalog-api';
+import { expect, test, ready } from './helpers/catalog-api';
 
 test('product: create, publish and reopen through the API', async ({ page, catalog }) => {
   await ready(page);
@@ -16,7 +16,7 @@ test('product: create, publish and reopen through the API', async ({ page, catal
   expect(saved?.status).toBe(2);
   expect(saved?.variants[0]?.price).toBe(250000);
   await page.reload();
-  await finishSignIn(page);
+  await expect(page.locator('.workspace')).toBeVisible();
   await expect(page.locator('#product-name')).toHaveValue('Sản phẩm kiểm thử');
   await expect(page.getByRole('button', { name: 'Về bản nháp', exact: true })).toBeVisible();
 });

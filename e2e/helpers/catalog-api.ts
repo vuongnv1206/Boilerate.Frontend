@@ -1,4 +1,4 @@
-import { expect, test as base, type Page, type Route } from '@playwright/test';
+import { expect, test as base, type BrowserContext, type Page, type Route } from '@playwright/test';
 
 interface Category {
   id: string;
@@ -82,6 +82,7 @@ export interface ApiRequest {
   path: string;
   body: Record<string, unknown> | null;
   authorization: string | undefined;
+  requestedWith: string | undefined;
 }
 
 export interface CatalogApi {
@@ -91,6 +92,7 @@ export interface CatalogApi {
   categories: Category[];
   productTypes: ProductType[];
   rejectNextProductSave(): void;
+  revokeSession(): void;
 }
 
 export const FIRST_PRODUCT_ID = '30000000-0000-0000-0000-000000000001';
@@ -138,9 +140,12 @@ function slug(name: string): string {
     .replace(/^-|-$/gu, '');
 }
 
-async function installCatalogApi(page: Page): Promise<CatalogApi> {
+async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
   let version = 1;
   let rejectSave = false;
+  let sessionActive = false;
+  let refreshVersion = 0;
+  let refreshCookie = '';
   const categories = categoryNames.map((name, index): Category => ({
     id: id(2, index),
     version: `category-${index}-v1`,
@@ -208,6 +213,9 @@ async function installCatalogApi(page: Page): Promise<CatalogApi> {
     rejectNextProductSave: () => {
       rejectSave = true;
     },
+    revokeSession: () => {
+      sessionActive = false;
+    },
   };
   const permissions = [
     'Product.View',
@@ -224,7 +232,22 @@ async function installCatalogApi(page: Page): Promise<CatalogApi> {
     'Price.Update',
     'Inventory.View',
   ].map((permission) => `Permissions.${permission}`);
-  const reply = (route: Route, json: unknown, status = 200) => route.fulfill({ status, json });
+  const reply = (route: Route, json: unknown, status = 200, headers?: Record<string, string>) =>
+    route.fulfill({ status, json, headers });
+  const cookie = (value: string, maxAge: number) =>
+    `boilerate.refresh=${value}; Path=/api/tokens/session; HttpOnly; SameSite=Strict; Max-Age=${maxAge}`;
+  const sessionResponse = () => ({
+    userId: id(8, 0),
+    token: 'browser-test-access-token',
+    sessionId: id(9, 0),
+    accessTokenExpiresAt: '2099-01-01T00:00:00Z',
+  });
+  const refreshSession = (route: Route) => {
+    refreshCookie = `browser-test-refresh-${++refreshVersion}`;
+    return reply(route, sessionResponse(), 200, {
+      'set-cookie': cookie(refreshCookie, 30 * 24 * 60 * 60),
+    });
+  };
   const conflict = (route: Route) =>
     reply(
       route,
@@ -248,31 +271,52 @@ async function installCatalogApi(page: Page): Promise<CatalogApi> {
     }));
 
   // Every API request is intercepted here. Browser regression never writes to a real database.
-  await page.route(/\/api\//u, async (route) => {
+  await context.route(/\/api\//u, async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\//u, '');
     const method = request.method();
     const authorization = request.headers()['authorization'];
+    const requestedWith = request.headers()['x-requested-with'];
     const body = request.postData() ? (request.postDataJSON() as Record<string, unknown>) : null;
     api.requests.push({
       method,
       path,
       body: path.startsWith('tokens/') ? null : body,
       authorization,
+      requestedWith,
     });
 
-    if (path === 'tokens/get' && method === 'POST')
-      return reply(route, {
-        token: 'browser-test-access-token',
-        refreshToken: 'browser-test-refresh-token',
-        sessionId: id(9, 0),
-        accessTokenExpiresAt: '2099-01-01T00:00:00Z',
-        refreshTokenExpiryTime: '2099-02-01T00:00:00Z',
-      });
-    if (authorization !== 'Bearer browser-test-access-token')
+    if (path === 'tokens/session' || path === 'tokens/session/refresh') {
+      if (requestedWith !== 'XMLHttpRequest') {
+        api.unexpectedRequests.push(`${method} ${path}: missing request header`);
+        return reply(route, { status: 403, title: 'Forbidden' }, 403);
+      }
+      if (path === 'tokens/session' && method === 'POST') {
+        sessionActive = true;
+        return refreshSession(route);
+      }
+      if (path === 'tokens/session' && method === 'DELETE') {
+        sessionActive = false;
+        refreshCookie = '';
+        return reply(route, null, 200, { 'set-cookie': cookie('', 0) });
+      }
+      if (path === 'tokens/session/refresh' && method === 'POST') {
+        const requestCookie = request.headers()['cookie'] ?? '';
+        if (
+          !sessionActive ||
+          !refreshCookie ||
+          !requestCookie.split('; ').includes(`boilerate.refresh=${refreshCookie}`)
+        ) {
+          return reply(route, { status: 401, title: 'Unauthorized' }, 401, {
+            'set-cookie': cookie('', 0),
+          });
+        }
+        return refreshSession(route);
+      }
+    }
+    if (!sessionActive || authorization !== 'Bearer browser-test-access-token')
       return reply(route, { status: 401, title: 'Unauthorized' }, 401);
     if (path === 'personal/permissions' && method === 'GET') return reply(route, permissions);
-    if (path.startsWith('tokens/sessions/') && method === 'DELETE') return reply(route, null);
     if (path === 'products/search' && method === 'POST') {
       const pageNumber = Number(body?.['pageNumber'] ?? 1);
       const pageSize = Number(body?.['pageSize'] ?? 10);
@@ -405,8 +449,8 @@ async function installCatalogApi(page: Page): Promise<CatalogApi> {
 
 export const test = base.extend<{ catalog: CatalogApi }>({
   catalog: [
-    async ({ page }, use) => {
-      const api = await installCatalogApi(page);
+    async ({ context }, use) => {
+      const api = await installCatalogApi(context);
       await use(api);
       expect(api.unexpectedRequests).toEqual([]);
     },

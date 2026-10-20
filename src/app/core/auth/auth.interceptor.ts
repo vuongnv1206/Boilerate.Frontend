@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { RUNTIME_CONFIG } from '../config/runtime-config.token';
 import { isApiRequestUrl } from '../http/api-url';
+import { normalizeApiError } from '../http/normalize-api-error';
 import { SKIP_AUTH } from './auth-context';
 import { AuthSession } from './auth-session';
 
@@ -41,7 +42,10 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
           ? next(request.clone({ setHeaders: { Authorization: `Bearer ${currentToken}` } }))
           : session.refresh().pipe(
               catchError((refreshError: unknown) => {
-                if (session.getVersion() === version) {
+                if (
+                  session.getVersion() === version &&
+                  normalizeApiError(refreshError).status === 401
+                ) {
                   session.clear();
                   void router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
                 }
@@ -55,8 +59,8 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         catchError((retryError: unknown) => {
           if (
             session.getVersion() === version &&
-            (!session.signedIn() ||
-              (retryError instanceof HttpErrorResponse && retryError.status === 401))
+            retryError instanceof HttpErrorResponse &&
+            retryError.status === 401
           ) {
             session.clear();
             void router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
