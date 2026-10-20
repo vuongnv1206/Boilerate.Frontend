@@ -6,7 +6,7 @@
 
 Triển khai nền giao diện theo 5 step đã duyệt: tham chiếu và quy chuẩn → workspace → theme/control → list/editor demo → motion và kiểm chứng. [Hồ sơ và tiến độ chính thức](../Boilerate/docs/frontend/features/admin-ui-foundation.md).
 
-Hai màn mẫu và bộ control dùng dữ liệu minh họa để thống nhất trải nghiệm. Chúng không gọi API, không xác nhận quyền và không tạo sản phẩm thật. Thao tác lưu chỉ ảnh hưởng phiên demo hiện tại; tải lại đưa dữ liệu về fixture ban đầu. Theme, độ rộng và trạng thái panel là tùy chọn trình duyệt có thể lưu.
+Mốc mới đã được người dùng duyệt ngày 20/10: collections gọi API thật trên SQL Server local, có đăng nhập và lưu dữ liệu sau khi nhận phản hồi server. Mỗi phần có màn danh sách và màn thêm/sửa `-io`. Gallery vẫn dùng dữ liệu minh họa để thử control. Theme và panel là tùy chọn trình duyệt; phiên đăng nhập chỉ giữ trong bộ nhớ tab.
 
 ## Nguyên tắc sản phẩm
 
@@ -19,8 +19,8 @@ Hai màn mẫu và bộ control dùng dữ liệu minh họa để thống nhấ
 
 ## Mốc sau
 
-Chỉ lập kế hoạch chi tiết nghiệp vụ, phiên/quyền và API sau khi nền UI được thống nhất. Catalog thật, quản trị nhân viên, vận hành đơn và storefront nằm ngoài mốc UI. Nghiệp vụ chung giữ một nguồn ở [docs/shared](../Boilerate/docs/shared/README.md); hợp đồng request/response ở [docs/backend](../Boilerate/docs/backend/README.md).
+Sau mốc collections local: UI chi tiết theo quyền, quản trị nhân viên, vận hành đơn, storefront và deployment. Mobile tối ưu sau; hiện ưu tiên desktop/tablet. Nghiệp vụ chung giữ một nguồn ở [docs/shared](../Boilerate/docs/shared/README.md), API ở [docs/backend](../Boilerate/docs/backend/README.md).
 
 ## Tiêu chí đánh giá trải nghiệm
 
-Người dùng mở danh sách, tìm/lọc/chọn dòng, mở editor, chỉnh giá trị, nhận phản hồi lưu demo, quay lại và thử bộ control mà không mất phương hướng. Điều hướng và overlay hoạt động bằng bàn phím; chữ tiếng Việt dài, cả hai theme và reduced motion đều có bằng chứng kiểm tra.
+Người dùng đăng nhập, mở danh sách, tìm/lọc/chọn dòng, mở editor, chỉnh giá trị và nhận phản hồi từ API sau khi lưu. Điều hướng và overlay hoạt động bằng bàn phím; kiểm tra chữ tiếng Việt dài, cả hai theme và animation bình thường. Mobile và kiểm tra reduced motion trên hệ điều hành được hoãn theo yêu cầu hiện tại.

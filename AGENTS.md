@@ -2,15 +2,15 @@
 
 This file applies to the independent Frontend repository. Product intent is in [PRODUCT.md](PRODUCT.md); visual decisions and tokens are in [DESIGN.md](DESIGN.md). Read those before changing a screen. Codebase boundaries and workflow are in [docs/architecture.md](docs/architecture.md). Cross-project progress and contracts remain linked from [the sibling project](../Boilerate/docs/frontend/README.md) when working in the shared workspace; it is not required for FE build/CI.
 
-The mandatory implementation/review standard is [Angular coding rules](docs/coding-rules.md). Read it before adding or refactoring a feature. List pages use the feature name; create/edit/detail pages use `-io`. Enum/type declarations, reusable options and business configuration belong in the feature's `enums`, `models` and `constants`, never inside a component. Component imports are explicit template dependencies; do not introduce a global catch-all UI module.
+The mandatory implementation/review standard is [Angular coding rules](docs/coding-rules.md). Current user decision: constants/enums/models/services/stores/forms/guards sit directly in `src/app`, beside `features`, with clear filenames and import aliases. Lists use the feature name; create/edit screens use `-io`. Small toolbars/tables/forms/inspectors stay in the screen. Do not recreate layers or small components under each screen. Follow [shared SCSS rules](docs/scss-rules.md); do not generate component SCSS/spec files by default.
 
 Current user priority (2026-10-20): web first. Required browser verification and CI cover desktop/tablet in both themes. Mobile UI optimization and its known gallery tooltip focus/scroll issue are deferred; retain mobile tests/baselines for explicit follow-up using `test:e2e:mobile` or `test:e2e:all`. The development URL stays `http://localhost:4200`; port 4300 is a temporary production preview for browser tests.
 
 ## Architecture and naming
 
 - Keep standalone Angular components, strict TypeScript and strict templates. Use signals/computed for local derived state and RxJS where asynchronous streams need cancellation or composition. Keep effects for actual side effects.
-- Organize by responsibility: `core/` for application-wide theme/layout state, `layout/admin-shell/` for workspace chrome, `shared/ui/` for reusable presentation, and `features/` for screens and their local state. Do not create empty layers in advance.
-- Use kebab-case files/folders and PascalCase exported types. A component uses a shared basename for `.ts`, `.html`, `.scss`, and `.spec.ts`, for example `product-io`. Avoid a mandatory `Component` suffix. Use `app-` selectors; use `ui-` only for reusable shared controls.
+- Organize by responsibility: `core/` for app infrastructure, `layout/admin-shell/` for workspace chrome, `shared/ui/` for reused presentation, `features/` for screen components/routes, and app-level constants/enums/models/services/stores/forms/guards. Do not add empty layers.
+- Use kebab-case files/folders and PascalCase exported types. A screen normally has `.ts` and `.html`, for example `product-io`. SCSS/spec are optional and require actual need. Avoid a mandatory `Component` suffix. Use `app-` selectors; use `ui-` only for reused shared controls.
 - Scope state to the smallest owning screen. Do not place demo content, feature rules or API calls in shared UI. Do not import a feature's private internals from another feature.
 - Shell consumes the navigation DI contract; only app composition connects it to a feature public entry. Run architecture probes with lint. Shared form helpers accept structural field-error input rather than importing core HTTP models.
 - Use Angular router lazy boundaries for screens. Keep accessible native links for navigation and buttons for actions. Prefer typed inputs/outputs and Angular control flow.
@@ -22,7 +22,7 @@ Current user priority (2026-10-20): web first. Required browser verification and
 - Use semantic theme and motion tokens; avoid per-screen hard-coded colors. Overlay controls must inherit the root theme even when appended to `body`.
 - Every input has a visible label and associated error/help text. Every icon-only action has an accessible name. Keep visible keyboard focus and coherent tab order.
 - Handle long Vietnamese text, keyboard-only interaction, empty results and small viewports. Honor reduced motion. Do not add decorative page-load choreography.
-- Demo state is explicitly labeled. A save message must not imply backend persistence. Only theme/layout preferences are persisted in this UI milestone; do not add authentication or real business writes.
+- Collections now use real Catalog APIs and memory-only authentication, approved by the user on 2026-10-20. Gallery is still a control preview. Respect actual API contracts and errors; never imply a write succeeded before its response. Keep credentials out of frontend source and public runtime config.
 
 ## Verification and documentation
 

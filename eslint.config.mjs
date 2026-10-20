@@ -4,25 +4,9 @@ import angular from 'angular-eslint';
 import boundaries from 'eslint-plugin-boundaries';
 import { fileURLToPath } from 'node:url';
 
-const featureLayers = [
-  'feature-entry',
-  'feature-wiring',
-  'feature-page',
-  'feature-ui',
-  'feature-state',
-  'feature-form',
-  'feature-model',
-  'feature-enum',
-  'feature-constant',
-  'feature-data',
-  'feature-mock',
-  'feature-fixture',
-  'feature-navigation',
-  'feature-guard',
-  'feature-service',
-];
-const inFeature = (...types) => types.map((type) => [type, { feature: '${from.feature}' }]);
-const presentation = ['shared-ui', 'shared-forms'];
+const dataTypes = ['constants', 'enums', 'models'];
+const commonTypes = [...dataTypes, 'forms', 'services', 'stores', 'guards'];
+const sameFeature = ['feature', { feature: '${from.feature}' }];
 
 export default tseslint.config(
   { ignores: ['dist/**', '.angular/**', 'node_modules/**', 'artifacts/**'] },
@@ -40,24 +24,19 @@ export default tseslint.config(
       'boundaries/flag-as-external': { unresolvableAlias: false },
       'boundaries/dependency-nodes': ['import', 'dynamic-import', 'export', 'require'],
       'boundaries/elements': [
-        ...[
-          ['feature-test', 'src/app/features/*/{pages,components}/**/*.spec.ts', 'file'],
-          ['feature-entry', 'src/app/features/*/{index,*.routes}.ts', 'file'],
-          ['feature-wiring', 'src/app/features/*/*.providers.ts', 'file'],
-          ['feature-page', 'src/app/features/*/pages/*', 'folder'],
-          ['feature-ui', 'src/app/features/*/components/*', 'folder'],
-          ['feature-state', 'src/app/features/*/state', 'folder'],
-          ['feature-form', 'src/app/features/*/forms', 'folder'],
-          ['feature-model', 'src/app/features/*/models', 'folder'],
-          ['feature-enum', 'src/app/features/*/enums', 'folder'],
-          ['feature-constant', 'src/app/features/*/constants', 'folder'],
-          ['feature-mock', 'src/app/features/*/data-access/mock-*', 'file'],
-          ['feature-fixture', 'src/app/features/*/data-access/*.fixtures.ts', 'file'],
-          ['feature-data', 'src/app/features/*/data-access', 'folder'],
-          ['feature-navigation', 'src/app/features/*/navigation', 'folder'],
-          ['feature-guard', 'src/app/features/*/guards', 'folder'],
-          ['feature-service', 'src/app/features/*/services', 'folder'],
-        ].map(([type, pattern, mode]) => ({ type, pattern, mode, capture: ['feature'] })),
+        {
+          type: 'test',
+          pattern: 'src/app/{features,stores,services,forms}/**/*.spec.ts',
+          mode: 'file',
+        },
+        {
+          type: 'feature-entry',
+          pattern: 'src/app/features/*/{index,*.routes}.ts',
+          capture: ['feature'],
+          mode: 'file',
+        },
+        { type: 'feature', pattern: 'src/app/features/*', capture: ['feature'] },
+        ...commonTypes.map((type) => ({ type, pattern: `src/app/${type}` })),
         {
           type: 'http-transport',
           pattern: 'src/app/core/http/api-client{,.spec}.ts',
@@ -70,9 +49,7 @@ export default tseslint.config(
         { type: 'composition', pattern: 'src/app/*.ts', mode: 'file' },
         { type: 'bootstrap', pattern: 'src/*.ts', mode: 'file' },
       ],
-      'import/resolver': {
-        typescript: { project: './tsconfig.json', alwaysTryTypes: true },
-      },
+      'import/resolver': { typescript: { project: './tsconfig.json', alwaysTryTypes: true } },
     },
     rules: {
       'boundaries/no-unknown-files': 'error',
@@ -85,117 +62,49 @@ export default tseslint.config(
             { from: 'bootstrap', allow: ['composition', 'core'] },
             {
               from: 'composition',
-              allow: ['core', 'layout', ...presentation, 'composition', 'feature-entry'],
+              allow: ['composition', 'core', 'layout', ...dataTypes, 'feature-entry'],
             },
-            {
-              from: 'core',
-              allow: ['core', 'http-transport'],
-            },
+            { from: 'core', allow: ['core', 'http-transport', ...dataTypes] },
             { from: 'http-transport', allow: ['core', 'http-transport'] },
             {
               from: 'layout',
-              allow: ['layout', 'core', 'shared-ui', 'shared-forms'],
+              allow: ['layout', 'core', 'shared-ui', 'shared-forms', ...dataTypes],
             },
             { from: 'shared-ui', allow: ['shared-ui'] },
             { from: 'shared-forms', allow: ['shared-forms'] },
+            { from: 'feature-entry', allow: [sameFeature, 'core', ...commonTypes] },
             {
-              from: 'feature-entry',
-              allow: ['core', ...inFeature(...featureLayers)],
-            },
-            { from: 'feature-wiring', allow: inFeature(...featureLayers) },
-            {
-              from: 'feature-page',
+              from: 'feature',
               allow: [
+                sameFeature,
                 'core',
-                ...presentation,
-                ...inFeature(
-                  'feature-state',
-                  'feature-ui',
-                  'feature-model',
-                  'feature-enum',
-                  'feature-constant',
-                  'feature-form',
-                  'feature-service',
-                ),
-              ],
-            },
-            {
-              from: 'feature-ui',
-              allow: [
-                ...presentation,
-                ...inFeature(
-                  'feature-ui',
-                  'feature-model',
-                  'feature-form',
-                  'feature-enum',
-                  'feature-constant',
-                ),
-              ],
-            },
-            {
-              from: 'feature-state',
-              allow: [
-                'core',
+                'shared-ui',
                 'shared-forms',
-                ...inFeature(
-                  'feature-state',
-                  'feature-data',
-                  'feature-model',
-                  'feature-enum',
-                  'feature-constant',
-                  'feature-form',
-                  'feature-service',
-                ),
+                ...dataTypes,
+                'forms',
+                'stores',
               ],
             },
             {
-              from: 'feature-form',
-              allow: [
-                'shared-forms',
-                ...inFeature('feature-model', 'feature-enum', 'feature-constant'),
-              ],
+              from: 'stores',
+              allow: ['core', 'shared-forms', 'stores', 'services', 'forms', ...dataTypes],
             },
+            { from: 'services', allow: ['core', 'http-transport', 'services', ...dataTypes] },
+            { from: 'forms', allow: ['forms', 'shared-forms', ...dataTypes] },
+            { from: 'models', allow: ['models', 'enums'] },
+            { from: 'constants', allow: dataTypes },
+            { from: 'enums', allow: ['enums'] },
+            { from: 'guards', allow: ['core', 'guards', ...dataTypes] },
             {
-              from: 'feature-data',
+              from: 'test',
               allow: [
                 'core',
                 'http-transport',
-                ...inFeature('feature-model', 'feature-enum', 'feature-constant'),
+                'shared-ui',
+                'shared-forms',
+                'feature',
+                ...commonTypes,
               ],
-            },
-            {
-              from: 'feature-mock',
-              allow: inFeature(
-                'feature-mock',
-                'feature-data',
-                'feature-model',
-                'feature-fixture',
-                'feature-enum',
-                'feature-constant',
-              ),
-            },
-            {
-              from: 'feature-fixture',
-              allow: inFeature('feature-model', 'feature-enum', 'feature-constant'),
-            },
-            { from: 'feature-model', allow: inFeature('feature-enum', 'feature-constant') },
-            { from: 'feature-enum', allow: [] },
-            { from: 'feature-constant', allow: inFeature('feature-enum', 'feature-model') },
-            {
-              from: 'feature-navigation',
-              allow: [
-                'core',
-                ...inFeature('feature-data', 'feature-model', 'feature-enum', 'feature-constant'),
-              ],
-            },
-            { from: 'feature-guard', allow: inFeature('feature-page') },
-            {
-              from: 'feature-service',
-              allow: inFeature('feature-model', 'feature-enum', 'feature-constant'),
-            },
-            {
-              from: 'feature-test',
-              allow: ['core', ...presentation, ...inFeature(...featureLayers)],
             },
           ],
         },
@@ -206,18 +115,9 @@ export default tseslint.config(
           default: 'allow',
           rules: [
             {
-              from: [
-                'shared-ui',
-                'feature-page',
-                'feature-ui',
-                'feature-state',
-                'feature-form',
-                'feature-model',
-                'feature-navigation',
-              ],
+              from: ['feature', 'stores', 'forms', 'models', 'shared-ui'],
               disallow: [['@angular/common', { path: '/http{,/**}' }]],
-              message:
-                'HTTP belongs to core or feature data-access; views and state use the feature service contract.',
+              message: 'Call the store/service. HTTP belongs to ApiClient and API services.',
             },
           ],
         },
@@ -235,11 +135,7 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      'src/app/features/*/{pages,components}/**/*.ts',
-      'src/app/shared/ui/*/*.ts',
-      'src/app/layout/**/*.ts',
-    ],
+    files: ['src/app/features/**/*.ts', 'src/app/shared/ui/*/*.ts', 'src/app/layout/**/*.ts'],
     ignores: ['**/*.spec.ts', '**/*.model.ts'],
     rules: {
       '@typescript-eslint/member-ordering': [
@@ -248,16 +144,12 @@ export default tseslint.config(
       ],
       'no-restricted-syntax': [
         'error',
-        { selector: 'TSEnumDeclaration', message: 'Declare feature enums in enums/*.enum.ts.' },
-        { selector: 'TSInterfaceDeclaration', message: 'Declare feature interfaces in models/.' },
-        {
-          selector: 'TSTypeAliasDeclaration',
-          message: 'Declare feature types in models/ or enums/.',
-        },
+        { selector: 'TSEnumDeclaration', message: 'Put enums in src/app/enums.' },
+        { selector: 'TSInterfaceDeclaration', message: 'Put interfaces in src/app/models.' },
+        { selector: 'TSTypeAliasDeclaration', message: 'Put types in src/app/models.' },
         {
           selector: 'PropertyDefinition > ArrayExpression > :matches(ObjectExpression, Literal)',
-          message:
-            'Move configurable option/column arrays to the owning constants file; keep component dependencies explicit.',
+          message: 'Put shared options in src/app/constants.',
         },
       ],
     },

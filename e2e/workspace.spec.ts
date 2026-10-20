@@ -1,12 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, ready, finishSignIn, FIRST_PRODUCT_ID } from './helpers/catalog-api';
 
-async function ready(page: Page, path = '/admin/collections/products') {
-  await page.goto(path);
-  await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator('.workspace')).toBeVisible();
-}
-
-test('list: search, selection, pagination and root theme', async ({ page }, testInfo) => {
+test('list: API search, selection, pagination and theme', async ({ page, catalog }, testInfo) => {
   const apiRequests: string[] = [];
   page.on('request', (request) => {
     if (new URL(request.url()).pathname.startsWith('/api/')) apiRequests.push(request.url());
@@ -15,19 +9,24 @@ test('list: search, selection, pagination and root theme', async ({ page }, test
   const expectedTheme = testInfo.project.name.endsWith('dark') ? 'dark' : 'light';
   await expect(page.locator('html')).toHaveAttribute('data-theme', expectedTheme);
   await expect(page.getByRole('heading', { name: 'Sản phẩm', exact: true })).toBeVisible();
-  const search = page.getByRole('searchbox', { name: 'Tìm kiếm nội dung' });
+  const search = page.getByRole('searchbox', { name: 'Tìm sản phẩm' });
   await search.fill('khong-co-noi-dung-nay');
-  await expect(page.getByRole('heading', { name: 'Không tìm thấy nội dung' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Không có sản phẩm' })).toBeVisible();
   await page.getByRole('button', { name: 'Xóa bộ lọc', exact: true }).click();
   await expect(page.locator('.content-table tbody tr')).toHaveCount(10);
   await page.getByRole('button', { name: 'Trang sau', exact: true }).click();
   await expect(page.locator('.content-table tbody tr')).toHaveCount(4);
   await page.getByRole('button', { name: 'Trang trước', exact: true }).click();
-  await page.getByRole('checkbox', { name: 'Chọn tất cả mục trên trang', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Chọn tất cả trên trang', exact: true }).check();
   await expect(page.locator('.selection-toolbar')).toContainText('10');
   await page.getByRole('button', { name: 'Bỏ chọn tất cả', exact: true }).click();
   await expect(page.locator('.selection-toolbar')).toHaveCount(0);
-  expect(apiRequests).toEqual([]);
+  expect(apiRequests.some((url) => url.endsWith('/products/search'))).toBe(true);
+  expect(
+    catalog.requests
+      .filter((request) => request.path === 'products/search')
+      .every((request) => request.authorization === 'Bearer browser-test-access-token'),
+  ).toBe(true);
   await expect(page).toHaveScreenshot('list.png');
 });
 
@@ -53,6 +52,7 @@ test('layout: resize or mobile modal, theme persistence and normal motion', asyn
     await page.keyboard.press('End');
     await expect(separator).toHaveAttribute('aria-valuenow', '320');
     await page.reload();
+    await finishSignIn(page);
     await expect(separator).toHaveAttribute('aria-valuenow', '320');
     await page.getByRole('button', { name: 'Thu gọn bảng điều hướng', exact: true }).click();
     await expect(page.locator('.workspace')).toHaveClass(/sidebar-collapsed/);
@@ -61,6 +61,7 @@ test('layout: resize or mobile modal, theme persistence and normal motion', asyn
   const next = testInfo.project.name.endsWith('dark') ? 'light' : 'dark';
   await page.getByTestId(`theme-${next}`).click();
   await page.reload();
+  await finishSignIn(page);
   await expect(page.locator('html')).toHaveAttribute('data-theme', next);
   const motion = await page.evaluate(() => ({
     reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -74,11 +75,9 @@ test('layout: resize or mobile modal, theme persistence and normal motion', asyn
   expect(motion).toEqual({ reduce: false, duration: 240 });
 });
 
-test('editor: validation, dirty guard, inspector focus and demo save', async ({
-  page,
-}, testInfo) => {
-  await ready(page, '/admin/items/product-1');
-  const name = page.locator('#item-name');
+test('editor: validation, dirty guard, API save and conflict', async ({ page, catalog }) => {
+  await ready(page, `/admin/collections/products/${FIRST_PRODUCT_ID}`);
+  const name = page.locator('#product-name');
   const original = await name.inputValue();
   await name.fill('   ');
   await name.blur();
@@ -93,18 +92,55 @@ test('editor: validation, dirty guard, inspector focus and demo save', async ({
   await guard.getByRole('button', { name: 'Ở lại', exact: true }).click();
   await expect(name).toHaveValue(`${original} — chỉnh sửa kiểm thử`);
   await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
-  await expect(page.locator('.editor-save-status')).toContainText('Đã lưu trong bản mẫu');
-  if (!testInfo.project.name.startsWith('desktop')) {
-    const inspector = page.getByRole('button', { name: 'Mở thông tin nội dung', exact: true });
-    await inspector.click();
-    await expect(page.locator('#item-inspector')).toHaveAttribute('aria-modal', 'true');
-    await page.keyboard.press('Escape');
-    await expect(inspector).toBeFocused();
-  }
+  await expect(page.locator('.editor-notice')).toContainText('Đã lưu sản phẩm.');
+  expect(catalog.products[0]?.name).toBe(`${original} — chỉnh sửa kiểm thử`);
   await name.blur();
   await expect(page).toHaveScreenshot('editor.png');
   await page.reload();
-  await expect(name).toHaveValue(original);
+  await finishSignIn(page);
+  await expect(name).toHaveValue(`${original} — chỉnh sửa kiểm thử`);
+  catalog.rejectNextProductSave();
+  await name.fill('Bản đang sửa được giữ khi có lỗi');
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect(page.locator('.editor-error')).toBeVisible();
+  await expect(name).toHaveValue('Bản đang sửa được giữ khi có lỗi');
+  await expect(page.locator('.editor-save-status')).toContainText('Có thay đổi chưa lưu');
+});
+
+test('categories and product types have separate create and edit screens', async ({
+  page,
+  catalog,
+}) => {
+  await ready(page, '/admin/collections/categories');
+  await page.getByRole('link', { name: 'Thêm danh mục', exact: true }).click();
+  await page.locator('#category-name').fill('Danh mục thử');
+  await page.locator('#category-slug').fill('danh-muc-thu');
+  await page.getByRole('button', { name: 'Lưu danh mục', exact: true }).click();
+  await expect(page).toHaveURL(/\/categories\/[^/]+$/u);
+  await expect(page.locator('.editor-save-status')).toContainText('Đã lưu');
+  expect(catalog.categories.some((item) => item.slug === 'danh-muc-thu')).toBe(true);
+  await page.locator('#category-name').fill('Danh mục đã sửa');
+  await page.getByRole('button', { name: 'Lưu danh mục', exact: true }).click();
+  await expect(page.locator('.editor-save-status')).toContainText('Đã lưu');
+  expect(catalog.categories.find((item) => item.slug === 'danh-muc-thu')?.name).toBe(
+    'Danh mục đã sửa',
+  );
+  await page
+    .locator('.collection-nav')
+    .getByRole('link', { name: 'Loại sản phẩm', exact: true })
+    .click();
+  await page.getByRole('link', { name: 'Thêm loại sản phẩm', exact: true }).click();
+  await page.locator('#product-type-code').fill('BROWSER-TEST');
+  await page.locator('#product-type-name').fill('Loại sản phẩm thử');
+  await page.getByRole('button', { name: 'Lưu loại sản phẩm', exact: true }).click();
+  await expect(page.locator('.editor-save-status')).toContainText('Đã lưu');
+  await expect(page).toHaveURL(/\/product-types\/[^/]+$/u);
+  await page.locator('#product-type-name').fill('Loại đã sửa');
+  await page.getByRole('button', { name: 'Lưu loại sản phẩm', exact: true }).click();
+  await expect(page.locator('.editor-save-status')).toContainText('Đã lưu');
+  expect(catalog.productTypes.find((item) => item.code === 'BROWSER-TEST')?.name).toBe(
+    'Loại đã sửa',
+  );
 });
 
 test('gallery: select, datepicker, dialog, drawer, tooltip and toast', async ({ page }) => {

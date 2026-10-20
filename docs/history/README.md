@@ -12,6 +12,8 @@ Các bản ghi dưới đây thuộc repo FE độc lập. Lịch sử UI trư�
 - [Feature content và quy chuẩn source](2026-10-20-content-architecture.md).
 - [Browser regression sau refactor](2026-10-20-content-verification.md).
 - [Ưu tiên web và hoãn mobile](2026-10-20-web-scope.md).
+- [Phiên API trong bộ nhớ và refresh](2026-10-20-api-session.md).
+- [Collections API và source đơn giản](2026-10-20-live-collections.md).
 - [Kiểm chứng feature content](../verification/2026-10-20-content-architecture.md).
 - [Báo cáo kiểm chứng tích hợp](../verification/2026-10-20-codebase.md).
 

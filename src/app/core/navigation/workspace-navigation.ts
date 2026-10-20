@@ -5,7 +5,7 @@ export interface WorkspaceCollectionLink {
   readonly label: string;
   readonly icon: string;
   readonly path: string;
-  readonly count: number;
+  readonly count?: number;
 }
 
 /** Presentation contract consumed by the shell; feature data stays with its owner. */

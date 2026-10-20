@@ -1,0 +1,190 @@
+<section class="editor-page" aria-labelledby="category-heading">
+  <nav class="editor-breadcrumb" aria-label="Điều hướng danh mục">
+    <a routerLink="/admin/collections/categories"
+      ><ui-icon name="arrow-left" [size]="14" />Danh mục</a
+    ><span>/</span><span>{{ store.record()?.name || 'Danh mục mới' }}</span>
+  </nav>
+  <header class="editor-toolbar">
+    <div>
+      <h1 id="category-heading">{{ store.record()?.name || 'Thêm danh mục' }}</h1>
+      <p class="editor-save-status" aria-live="polite">
+        {{
+          store.saving()
+            ? 'Đang lưu…'
+            : store.saved() || (!!store.record() && !form.dirty)
+              ? 'Đã lưu vào cửa hàng'
+              : 'Thay đổi chỉ được ghi khi bấm Lưu'
+        }}
+      </p>
+    </div>
+    <div class="editor-actions">
+      <a class="ui-button" routerLink="/admin/collections/categories">Quay lại</a
+      ><button
+        class="ui-button primary"
+        (click)="save()"
+        [disabled]="store.loading() || store.saving() || !store.ready()"
+      >
+        {{ store.saving() ? 'Đang lưu…' : 'Lưu danh mục' }}
+      </button>
+    </div>
+  </header>
+  @if (store.error()) {
+    <div class="editor-notice" role="alert">
+      {{ store.error() }}
+      @if (!store.saving()) {
+        <button class="ui-button" (click)="retry()">Tải lại</button>
+      }
+    </div>
+  }
+  @if (store.loading()) {
+    <ui-content-state kind="loading" title="Đang tải danh mục" layout="page" />
+  } @else if (store.ready()) {
+    <div class="editor-body">
+      <main class="editor-main">
+        <form class="editor-form" [formGroup]="form" novalidate>
+          <fieldset class="save-lock" [disabled]="store.saving()">
+            <section class="form-section">
+              <h2>Thông tin danh mục</h2>
+              <p>Quản lý tên, đường dẫn và cấu trúc danh mục của cửa hàng.</p>
+              <div class="field">
+                <label for="category-name">Tên danh mục *</label>
+                <input
+                  pInputText
+                  id="category-name"
+                  formControlName="name"
+                  [maxlength]="limits.name"
+                  [attr.aria-invalid]="invalid('name')"
+                  aria-describedby="category-name-help"
+                />
+                <ui-field-message
+                  id="category-name-help"
+                  [tone]="invalid('name') ? 'error' : 'help'"
+                  >{{
+                    serverError('name') ||
+                      (invalid('name')
+                        ? 'Nhập tên danh mục, tối đa 256 ký tự.'
+                        : 'Tên được hiển thị trong danh sách và trang sản phẩm.')
+                  }}</ui-field-message
+                >
+              </div>
+              <div class="field">
+                <label for="category-slug">Slug *</label>
+                <input
+                  pInputText
+                  id="category-slug"
+                  formControlName="slug"
+                  [maxlength]="limits.slug"
+                  [attr.aria-invalid]="invalid('slug')"
+                  aria-describedby="category-slug-help"
+                />
+                <ui-field-message
+                  id="category-slug-help"
+                  [tone]="invalid('slug') ? 'error' : 'help'"
+                  >{{
+                    serverError('slug') ||
+                      (invalid('slug')
+                        ? 'Dùng chữ không dấu, số và dấu gạch ngang; tối đa 200 ký tự.'
+                        : 'Ví dụ: thoi-trang-nam')
+                  }}</ui-field-message
+                >
+              </div>
+              <div class="field">
+                <label for="category-description">Mô tả</label>
+                <textarea
+                  pTextarea
+                  id="category-description"
+                  formControlName="description"
+                  [maxlength]="limits.description"
+                  [attr.aria-invalid]="invalid('description')"
+                  aria-describedby="category-description-help"
+                ></textarea>
+                <ui-field-message
+                  id="category-description-help"
+                  [tone]="invalid('description') ? 'error' : 'help'"
+                  >{{ serverError('description') || 'Tối đa 4.000 ký tự.' }}</ui-field-message
+                >
+              </div>
+            </section>
+            <section class="form-section">
+              <h2>Cấu trúc và hiển thị</h2>
+              <div class="field-row">
+                <div class="field">
+                  <label for="category-parent">Danh mục cha</label>
+                  <select
+                    id="category-parent"
+                    formControlName="parentId"
+                    [attr.aria-invalid]="invalid('parentId')"
+                    aria-describedby="category-parent-help"
+                  >
+                    <option value="">Không có danh mục cha</option>
+                    @for (parent of store.parentOptions(); track parent.id) {
+                      <option [value]="parent.id">{{ parent.name }}</option>
+                    }
+                  </select>
+                  <ui-field-message
+                    id="category-parent-help"
+                    [tone]="invalid('parentId') ? 'error' : 'help'"
+                    >{{
+                      serverError('parentId') ||
+                        'Danh mục con không thể trở thành danh mục cha của chính nó.'
+                    }}</ui-field-message
+                  >
+                </div>
+                <div class="field">
+                  <label for="category-order">Thứ tự</label>
+                  <input
+                    pInputText
+                    id="category-order"
+                    type="number"
+                    min="0"
+                    step="1"
+                    formControlName="sortOrder"
+                    [attr.aria-invalid]="invalid('sortOrder')"
+                    aria-describedby="category-order-help"
+                  />
+                  <ui-field-message
+                    id="category-order-help"
+                    [tone]="invalid('sortOrder') ? 'error' : 'help'"
+                    >{{ serverError('sortOrder') || 'Số nguyên từ 0 trở lên.' }}</ui-field-message
+                  >
+                </div>
+              </div>
+              <label class="check-field" for="category-active"
+                ><input id="category-active" type="checkbox" formControlName="isActive" />Đang hoạt
+                động</label
+              >
+            </section>
+          </fieldset>
+        </form>
+      </main>
+      <aside class="editor-inspector">
+        <h2>Thông tin bản ghi</h2>
+        <dl>
+          <dt>Trạng thái</dt>
+          <dd>{{ form.controls.isActive.value ? 'Hoạt động' : 'Đã tắt' }}</dd>
+          <dt>ID</dt>
+          <dd>{{ store.record()?.id || 'Chưa tạo' }}</dd>
+        </dl>
+        <p>Danh mục cha và danh mục con được máy chủ kiểm tra để tránh vòng lặp.</p>
+      </aside>
+    </div>
+  }
+</section>
+<p-dialog
+  header="Rời khỏi danh mục?"
+  [visible]="leaveOpen()"
+  (visibleChange)="!$event && resolveLeave(false)"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '430px' }"
+>
+  <p class="collection-dialog-copy">
+    Các thay đổi chưa được lưu. Anh có muốn bỏ thay đổi và rời khỏi màn hình?
+  </p>
+  <ng-template #footer
+    ><button class="ui-button" (click)="resolveLeave(false)">Ở lại</button
+    ><button class="ui-button danger" (click)="resolveLeave(true)">Bỏ thay đổi</button></ng-template
+  >
+</p-dialog>

@@ -44,7 +44,9 @@
       >
         <ui-icon name="help" [size]="19" />
       </button>
-      <div class="avatar" title="Workspace mẫu">B</div>
+      <button class="rail-button" title="Đăng xuất" aria-label="Đăng xuất" (click)="signOut()">
+        <ui-icon name="logout" [size]="18" />
+      </button>
     </div>
   </nav>
 
@@ -62,9 +64,9 @@
       </button>
       <span class="workspace-name">Boilerate</span><ui-icon name="chevron-right" [size]="13" /><span
         class="site-name"
-        >Demo Store</span
+        >Admin Store</span
       >
-      <span class="demo-label">Bản mẫu UI</span>
+      <span class="demo-label">API</span>
     </div>
     <nav class="workspace-modes" aria-label="Chế độ làm việc">
       <a routerLink="/admin/collections/products" [class.active]="!isGallery()">CMS</a>
@@ -125,7 +127,7 @@
     </div>
     <div class="site-context">
       <span class="site-avatar">D</span>
-      <div><strong>Demo Store</strong><span>Không gian làm việc</span></div>
+      <div><strong>Admin Store</strong><span>Không gian làm việc</span></div>
       <span class="online-dot"></span>
     </div>
     <div class="context-scroll">
@@ -133,19 +135,20 @@
         <span>BỘ SƯU TẬP</span
         ><a
           class="icon-button"
-          routerLink="/admin/items/new"
-          [queryParams]="{ collection: 'products' }"
-          title="Tạo nội dung mẫu"
-          aria-label="Tạo nội dung mẫu"
+          routerLink="/admin/collections/products/new"
+          title="Thêm sản phẩm"
+          aria-label="Thêm sản phẩm"
           ><ui-icon name="plus" [size]="14"
         /></a>
       </div>
       <nav class="collection-nav" aria-label="Bộ sưu tập">
         @for (collection of navigation.collections(); track collection.key) {
           <a [routerLink]="collection.path" routerLinkActive="selected"
-            ><ui-icon [name]="collection.icon" [size]="16" /><span>{{ collection.label }}</span
-            ><span class="nav-count">{{ collection.count }}</span></a
-          >
+            ><ui-icon [name]="collection.icon" [size]="16" /><span>{{ collection.label }}</span>
+            @if (collection.count !== undefined) {
+              <span class="nav-count">{{ collection.count }}</span>
+            }
+          </a>
         }
       </nav>
       <div class="nav-divider"></div>
@@ -164,9 +167,7 @@
         <p>Tạo, sắp xếp và chăm chút từng chi tiết của cửa hàng.</p>
       </div>
     </div>
-    <div class="context-footer">
-      <span class="online-dot"></span><span>Dữ liệu minh họa · trong bộ nhớ</span>
-    </div>
+    <div class="context-footer"><span class="online-dot"></span><span>Dữ liệu từ API</span></div>
   </aside>
   <div
     class="panel-resizer"
@@ -192,12 +193,12 @@
     <router-outlet />
   </main>
   <footer class="workspace-status" [attr.inert]="mobileOpen() ? '' : null">
-    <span><span class="status-dot"></span>Workspace sẵn sàng</span><span>Nền giao diện · v0.1</span
-    ><span class="status-shortcut">Nội dung mẫu không được lưu sau khi tải lại trang</span>
+    <span><span class="status-dot"></span>Workspace sẵn sàng</span><span>Boilerate Admin</span
+    ><span class="status-shortcut">Nhấn Lưu để gửi thay đổi lên hệ thống</span>
   </footer>
 </div>
 <p-dialog
-  header="Chào mừng đến Demo Store"
+  header="Boilerate Admin"
   [visible]="helpOpen()"
   (visibleChange)="helpOpen.set($event)"
   (onHide)="restoreHelpFocus()"
@@ -207,10 +208,10 @@
   [resizable]="false"
 >
   <div class="help-content">
-    <p>Đây là bản mẫu giao diện quản trị của Boilerate, lấy cảm hứng từ workspace Webflow CMS.</p>
+    <p>Giao diện quản trị của Boilerate, lấy cảm hứng từ workspace Webflow CMS.</p>
     <p>
-      Bạn có thể tìm kiếm, lọc nội dung, chỉnh sửa bản nháp, đổi theme và điều chỉnh độ rộng thanh
-      điều hướng. Các thay đổi nội dung chỉ nằm trong bộ nhớ và được đặt lại khi tải lại trang.
+      Sản phẩm, danh mục và loại sản phẩm được đọc từ API. Nhấn Lưu để ghi thay đổi. Bộ giao diện
+      vẫn là nơi thử các control. Bạn có thể đổi giao diện sáng tối và độ rộng thanh điều hướng.
     </p>
     <a class="ui-button primary" routerLink="/admin/controls" (click)="helpOpen.set(false)"
       >Khám phá bộ giao diện <ui-icon name="chevron-right" [size]="14"

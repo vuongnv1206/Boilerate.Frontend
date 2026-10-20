@@ -28,6 +28,7 @@ import { WORKSPACE_NAVIGATION } from '../../core/navigation/workspace-navigation
 import { Icon } from '../../shared/ui/icon/icon';
 import { focusWhenVisible } from '../../shared/ui/focus-when-visible';
 import { ADMIN_LAYOUT, ADMIN_THEME_OPTIONS } from './admin-shell.constants';
+import { AuthSession } from '../../core/auth/auth-session';
 
 function preference(key: string, fallback: string): string {
   try {
@@ -47,6 +48,7 @@ export class AdminShell {
   readonly theme = inject(ThemeController);
   readonly navigation = inject(WORKSPACE_NAVIGATION);
   private readonly router = inject(Router);
+  private readonly session = inject(AuthSession);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly panelToggle = viewChild<ElementRef<HTMLButtonElement>>('panelToggle');
@@ -105,6 +107,13 @@ export class AdminShell {
         }
       }
     });
+  }
+
+  async signOut(): Promise<void> {
+    // Let the editor ask about unsaved changes before ending the session.
+    if (await this.router.navigate(['/login'])) {
+      this.session.signOut().subscribe();
+    }
   }
 
   toggleSidebar(): void {

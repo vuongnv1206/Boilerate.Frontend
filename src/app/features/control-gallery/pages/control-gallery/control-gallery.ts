@@ -38,9 +38,9 @@ import {
   GALLERY_PREVIEW_RECORDS,
   GALLERY_SAVE_DELAY_MS,
   GALLERY_TOAST_LIFETIME_MS,
-} from '../../constants/gallery.constants';
-import { GalleryTab } from '../../enums/gallery-tab.enum';
-import { PreviewRecord } from '../../models/preview-record.model';
+} from '@constants/gallery.constants';
+import { GalleryTab } from '@enums/gallery-tab.enum';
+import { PreviewRecord } from '@models/preview-record.model';
 
 @Component({
   selector: 'app-control-gallery',

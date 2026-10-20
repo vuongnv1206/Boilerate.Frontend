@@ -15,7 +15,12 @@ describe('Admin route composition', () => {
       const first = firstAdmin.get(WORKSPACE_NAVIGATION);
       expect(firstAdmin.get(WORKSPACE_NAVIGATION)).toBe(first);
       expect(secondAdmin.get(WORKSPACE_NAVIGATION)).not.toBe(first);
-      expect(first.collections().map((link) => link.count)).toEqual([14, 6, 3]);
+      expect(first.collections().map((link) => link.path)).toEqual([
+        '/admin/collections/products',
+        '/admin/collections/categories',
+        '/admin/collections/product-types',
+      ]);
+      expect(first.collections().every((link) => link.count === undefined)).toBe(true);
       expect(() => parent.get(WORKSPACE_NAVIGATION)).toThrow();
     } finally {
       firstAdmin.destroy();

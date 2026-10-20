@@ -9,7 +9,7 @@
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",
-      "schematics": { "@schematics/angular:component": { "style": "scss" } },
+      "schematics": { "@schematics/angular:component": { "style": "none", "skipTests": true } },
       "architect": {
         "build": {
           "builder": "@angular/build:application",
@@ -36,6 +36,7 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": { "proxyConfig": "proxy.conf.json" },
           "configurations": {
             "production": { "buildTarget": "boilerate-admin:build:production" },
             "development": { "buildTarget": "boilerate-admin:build:development" }

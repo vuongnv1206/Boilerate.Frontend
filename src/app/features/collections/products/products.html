@@ -1,0 +1,197 @@
+<section class="collection-page" aria-labelledby="collection-title">
+  <div class="collection-breadcrumb">
+    <ui-icon name="layers" [size]="13" /><span>Bộ sưu tập</span
+    ><ui-icon name="chevron-right" [size]="12" /><strong>Sản phẩm</strong
+    ><span class="collection-id">CATALOG</span>
+  </div>
+  <header class="collection-heading">
+    <div class="heading-copy">
+      <div class="title-row">
+        <h1 id="collection-title">Sản phẩm</h1>
+        <span class="total-count">{{ store.page().total }}</span>
+      </div>
+      <p>Quản lý nội dung, phân loại và trạng thái sản phẩm.</p>
+    </div>
+    <div class="heading-actions">
+      <a
+        class="ui-button primary"
+        aria-label="Thêm sản phẩm"
+        routerLink="/admin/collections/products/new"
+        ><ui-icon name="plus" [size]="14" /><span>Thêm sản phẩm</span></a
+      >
+    </div>
+  </header>
+  <div class="collection-tabs">
+    <span class="active"
+      >Tất cả sản phẩm <span>{{ store.page().total }}</span></span
+    ><span class="collection-summary">Dữ liệu từ hệ thống</span>
+  </div>
+  <div class="collection-toolbar">
+    <label class="search-field"
+      ><ui-icon name="search" [size]="14" />
+      <input
+        pInputText
+        type="search"
+        aria-label="Tìm sản phẩm"
+        placeholder="Tìm sản phẩm…"
+        [ngModel]="store.query()"
+        (ngModelChange)="store.setQuery($event)"
+      />
+    </label>
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="store.status()"
+      (ngModelChange)="store.setStatus($event)"
+      ariaLabel="Lọc trạng thái sản phẩm"
+      appendTo="body"
+    />
+    <span class="toolbar-hint">Tìm kiếm trên toàn bộ danh sách</span>
+  </div>
+
+  @if (store.selectedIds().size) {
+    <div class="selection-toolbar">
+      <span
+        >Đã chọn <strong>{{ store.selectedIds().size }}</strong> sản phẩm trên trang</span
+      ><button class="icon-button" aria-label="Bỏ chọn tất cả" (click)="store.clearSelection()">
+        <ui-icon name="close" [size]="13" />
+      </button>
+    </div>
+  }
+  @if (store.loading()) {
+    <ui-content-state
+      kind="loading"
+      layout="page"
+      title="Đang tải sản phẩm"
+      message="Vui lòng đợi trong giây lát."
+    />
+  } @else if (store.error()) {
+    <ui-content-state
+      kind="error"
+      layout="page"
+      title="Không thể tải sản phẩm"
+      [message]="store.error()"
+      ><button class="ui-button" (click)="store.load()">Thử lại</button></ui-content-state
+    >
+  } @else {
+    <div class="collection-table">
+      <div class="table-scroll" role="region" aria-label="Danh sách sản phẩm" tabindex="0">
+        <table class="content-table">
+          <thead>
+            <tr>
+              <th class="selection-cell">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn tất cả trên trang"
+                  [checked]="store.allSelected()"
+                  (change)="store.toggleAll()"
+                />
+              </th>
+              <th class="name-cell" scope="col">Tên sản phẩm</th>
+              <th class="status-cell" scope="col">Trạng thái</th>
+              <th scope="col">Giá từ</th>
+              <th scope="col">Khả dụng</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of store.page().items; track item.id) {
+              <tr [class.row-selected]="store.selectedIds().has(item.id)">
+                <td class="selection-cell">
+                  <input
+                    type="checkbox"
+                    [attr.aria-label]="'Chọn ' + item.name"
+                    [checked]="store.selectedIds().has(item.id)"
+                    (change)="store.toggle(item.id)"
+                  />
+                </td>
+                <td class="name-cell">
+                  <div class="item-identity">
+                    <span class="product-symbol"><ui-icon name="box" [size]="17" /></span>
+                    <div>
+                      <a [routerLink]="['/admin/collections/products', item.id]">{{ item.name }}</a
+                      ><span>/{{ item.slug }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <ui-status-badge
+                    [tone]="
+                      item.status === status.Published
+                        ? 'success'
+                        : item.status === status.Archived
+                          ? 'muted'
+                          : 'neutral'
+                    "
+                    >{{ statuses[item.status] }}</ui-status-badge
+                  >
+                </td>
+                <td class="price-cell">
+                  {{
+                    item.fromPrice === null
+                      ? 'Chưa đặt giá'
+                      : (item.fromPrice | currency: 'VND' : 'symbol-narrow' : '1.0-0')
+                  }}
+                </td>
+                <td>
+                  <span class="availability" [class.available]="item.inStock">{{
+                    item.inStock ? 'Có sẵn' : 'Chưa khả dụng'
+                  }}</span>
+                </td>
+              </tr>
+            } @empty {
+              <tr class="empty-row">
+                <td colspan="5">
+                  <ui-content-state
+                    kind="empty"
+                    title="Không có sản phẩm"
+                    message="Thử thay đổi từ khóa hoặc trạng thái."
+                    ><button class="ui-button" (click)="store.resetFilters()">
+                      Xóa bộ lọc
+                    </button></ui-content-state
+                  >
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="pagination">
+        <span
+          >Hiển thị <strong>{{ store.rangeStart() }}–{{ store.rangeEnd() }}</strong> trong
+          {{ store.page().total }} sản phẩm</span
+        >
+        <div class="pagination-right">
+          <label class="page-size"
+            >Mỗi trang
+            <select
+              aria-label="Số sản phẩm mỗi trang"
+              [value]="store.page().pageSize"
+              (change)="changePageSize($event)"
+            >
+              @for (size of pageSizes; track size) {
+                <option [value]="size">{{ size }}</option>
+              }
+            </select></label
+          ><span class="page-divider"></span
+          ><button
+            class="icon-button"
+            aria-label="Trang trước"
+            [disabled]="store.page().pageNumber <= 1"
+            (click)="store.setPage(store.page().pageNumber - 1)"
+          >
+            <ui-icon name="chevron-left" [size]="14" /></button
+          ><span>{{ store.page().pageNumber }} / {{ store.pageCount() }}</span
+          ><button
+            class="icon-button"
+            aria-label="Trang sau"
+            [disabled]="store.page().pageNumber >= store.pageCount()"
+            (click)="store.setPage(store.page().pageNumber + 1)"
+          >
+            <ui-icon name="chevron-right" [size]="14" />
+          </button>
+        </div>
+      </footer>
+    </div>
+  }
+</section>

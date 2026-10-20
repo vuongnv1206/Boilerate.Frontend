@@ -3,6 +3,7 @@
 @use 'styles/primeng';
 @use 'styles/base';
 @use 'styles/base/controls';
+@use 'styles/admin';
 @import '@fontsource-variable/inter/wght.css';
 
 @layer reset, primeng, app;

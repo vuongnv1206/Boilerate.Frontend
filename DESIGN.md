@@ -83,7 +83,7 @@ Control gallery phải cho thử trạng thái thay vì chỉ vẽ ảnh. Giữ 
 
 Danh sách: breadcrumb/tiêu đề, search tiếng Việt, filter trạng thái, chọn dòng, count và pagination. Cột tên có link mở editor; checkbox không vô tình mở dòng. Không có kết quả thì giữ query/filter và cho cách xóa bộ lọc.
 
-Editor: quay lại danh sách, tên bản ghi, save status và action ở toolbar; form nhóm trường rõ; inspector chứa trạng thái, thời gian và metadata demo. Chỉnh dữ liệu và lưu trong memory; UI nói rõ “dữ liệu minh họa” và “lưu trong bản xem thử”. Validation chặn lưu thiếu trường; dirty state không bị mất âm thầm khi chuyển màn. Giữ trạng thái tìm/lọc/phân trang khi quay lại nếu màn hiện tại hỗ trợ.
+Editor: quay lại danh sách, tên bản ghi, save status và action ở toolbar; form nhóm trường rõ; inspector chứa trạng thái và metadata. Collections lưu qua API thật; chỉ báo thành công sau phản hồi server. Validation chặn lưu thiếu trường; dirty state không bị mất âm thầm khi chuyển màn. Giữ trạng thái tìm/lọc/phân trang khi quay lại nếu màn hiện tại hỗ trợ. Gallery tiếp tục là nơi thử control.
 
 Copy dùng tiếng Việt tự nhiên, ngắn gọn; tên nút là động từ gắn đối tượng. Nội dung dài wrap ở form, ellipsis ở cột có cách đọc đầy đủ. Ngày/số tiền theo locale Việt Nam; fixture phải có dấu và tên dài.
 
@@ -101,7 +101,7 @@ Animation bình thường **bật mặc định** theo yêu cầu mới nhất c
 
 ## 8. Review trước khi mở rộng màn
 
-- Soát list, editor và ít nhất một overlay ở Light/Dark cùng viewport desktop 1440×900; thêm mobile khoảng 390×844.
+- Soát list, editor và ít nhất một overlay ở Light/Dark cùng viewport desktop 1440×900 và tablet 1024×768. Mobile hoãn theo yêu cầu hiện tại.
 - Kiểm tra panel resize/collapse/reload, theme reload/system change, search/filter/page/selection, dirty/save demo và validation.
 - Dùng bàn phím mở/đóng overlay và quay lại focus; kiểm tra tiếng Việt dài và normal motion đang bật. Giữ fallback reduced motion trong CSS; không yêu cầu OS-QA ở mốc này theo lựa chọn người dùng.
 - Chụp ảnh bản dựng sau khi tương tác ổn định; soát tỷ lệ, alignment, contrast và các vùng scroll. Ảnh Webflow công khai có thể khác phiên bản/viewport: ghi rõ nguồn và giới hạn so sánh.

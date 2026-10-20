@@ -19,7 +19,14 @@
       "@core/*": ["./src/app/core/*"],
       "@layout/*": ["./src/app/layout/*"],
       "@shared/*": ["./src/app/shared/*"],
-      "@features/*": ["./src/app/features/*"]
+      "@features/*": ["./src/app/features/*"],
+      "@constants/*": ["./src/app/constants/*"],
+      "@enums/*": ["./src/app/enums/*"],
+      "@models/*": ["./src/app/models/*"],
+      "@services/*": ["./src/app/services/*"],
+      "@stores/*": ["./src/app/stores/*"],
+      "@forms/*": ["./src/app/forms/*"],
+      "@guards/*": ["./src/app/guards/*"]
     },
     "lib": ["ES2022", "dom"]
   },

@@ -1,0 +1,535 @@
+// Shared layout for collection screens. PrimeNG owns control appearance.
+.collection-screen {
+  display: block;
+  height: 100%;
+
+  .collection-page,
+  .editor-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  .collection-breadcrumb,
+  .editor-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 40px;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 11px;
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-2);
+    }
+    strong {
+      color: var(--text-2);
+      font-weight: 500;
+    }
+    .collection-id {
+      margin-left: auto;
+      letter-spacing: 0.9px;
+    }
+  }
+  .collection-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 30px 28px 25px;
+  }
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    h1 {
+      margin: 0;
+      font-size: 23px;
+      font-weight: 600;
+      letter-spacing: -0.75px;
+      line-height: 1.25;
+    }
+    > span {
+      color: var(--text-3);
+      font-size: 11px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: var(--radius);
+      padding: 2px 7px;
+    }
+  }
+  .heading-copy > p {
+    margin: 10px 0 0;
+    color: var(--text-3);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .heading-actions,
+  .editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .collection-tabs {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-height: 37px;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    > .active {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      align-self: stretch;
+      border-bottom: 2px solid var(--text-1);
+      font-weight: 500;
+    }
+    .active > span {
+      padding: 1px 4px;
+      border-radius: var(--radius);
+      color: var(--text-3);
+      background: var(--surface-3);
+    }
+  }
+  .collection-summary,
+  .toolbar-hint {
+    margin-left: auto;
+    color: var(--text-3);
+    font-size: 11px;
+  }
+  .collection-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 63px;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .collection-toolbar > label {
+    color: var(--text-3);
+    font-size: 12px;
+  }
+  .collection-toolbar > input {
+    width: min(320px, 100%);
+  }
+  .toolbar-actions {
+    margin-left: auto;
+  }
+  .search-field {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 260px;
+    ui-icon {
+      position: absolute;
+      left: 9px;
+      z-index: 1;
+      color: var(--text-3);
+    }
+    input {
+      width: 100%;
+      padding-left: 30px;
+    }
+  }
+  .selection-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 28px;
+    font-size: 11px;
+    background: var(--accent-soft);
+    border-bottom: 1px solid var(--border);
+    > span {
+      flex: 1;
+      color: var(--text-2);
+    }
+  }
+  .collection-table {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  .table-scroll {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+  .content-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 12px;
+    white-space: nowrap;
+    th {
+      position: sticky;
+      top: 0;
+      height: 34px;
+      background: var(--surface-1);
+      color: var(--text-3);
+      font-size: 11px;
+      font-weight: 500;
+    }
+    th,
+    td {
+      padding: 8px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      height: 62px;
+    }
+    td a {
+      font-weight: 500;
+      &:hover {
+        color: var(--accent);
+      }
+    }
+    td small {
+      display: block;
+      margin-top: 5px;
+      color: var(--text-3);
+      font-weight: 400;
+    }
+    tbody tr {
+      transition: background var(--motion-fast);
+      &:hover {
+        background: var(--surface-2);
+      }
+      &.row-selected {
+        background: var(--accent-soft);
+      }
+    }
+    .selection-cell {
+      width: 43px;
+      min-width: 43px;
+      padding-left: 28px;
+      padding-right: 0;
+    }
+    .name-cell {
+      min-width: 260px;
+      width: 42%;
+    }
+    .status-cell {
+      min-width: 125px;
+    }
+    .empty-row td {
+      border-bottom: 0;
+      white-space: normal;
+    }
+  }
+  .item-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    a {
+      font-size: 13px;
+    }
+    span {
+      font-size: 11px;
+      color: var(--text-3);
+    }
+  }
+  .product-symbol {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+  .price-cell {
+    font-variant-numeric: tabular-nums;
+  }
+  .availability {
+    font-size: 11px;
+    color: var(--text-3);
+    &.available {
+      color: var(--success);
+    }
+  }
+  .pagination,
+  .collection-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 53px;
+    padding: 10px 28px;
+    border-top: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 11px;
+  }
+  .pagination-right,
+  .collection-footer .pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    min-height: 0;
+  }
+  .pagination .icon-button {
+    width: 25px;
+    height: 25px;
+  }
+  .page-size {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .page-divider {
+    height: 15px;
+    width: 1px;
+    background: var(--border);
+  }
+  .collection-notice,
+  .editor-notice,
+  .editor-error {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 22px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-2);
+    > span {
+      flex: 1;
+    }
+  }
+  .error-notice,
+  .editor-error {
+    color: var(--danger);
+  }
+  .editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 80px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    h1 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.4px;
+    }
+    p {
+      margin: 0;
+    }
+  }
+  .editor-title-wrap {
+    min-width: 0;
+    h1 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  .editor-save-status {
+    color: var(--text-3);
+    font-size: 11px;
+  }
+  .editor-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--inspector-width);
+    flex: 1;
+    min-height: 0;
+  }
+  .editor-main {
+    overflow: auto;
+    min-width: 0;
+  }
+  .editor-fields {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .editor-tabs,
+  .inspector-heading {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .editor-tabs > .active {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    border-bottom: 2px solid var(--accent);
+  }
+  .form-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .editor-inspector,
+  .inspector {
+    border-left: 1px solid var(--border);
+    background: var(--surface-1);
+    min-width: 0;
+    overflow: auto;
+  }
+  .editor-inspector {
+    padding: 24px 20px;
+    h2 {
+      margin: 0 0 16px;
+      font-size: 12px;
+    }
+    dl {
+      margin: 0;
+    }
+    dt {
+      color: var(--text-3);
+      margin-top: 16px;
+      font-size: 11px;
+    }
+    dd {
+      margin: 5px 0;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+    p {
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-3);
+    }
+  }
+  .inspector {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+  }
+  .inspector-heading {
+    padding-inline: 18px;
+    flex-shrink: 0;
+  }
+  .inspector-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-top: 20px;
+  }
+  .inspector-section {
+    padding: 0 18px 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    > h2 {
+      font-size: 11px;
+      font-weight: 600;
+      margin: 0 0 13px;
+      color: var(--text-2);
+    }
+    > p {
+      font-size: 11px;
+      line-height: 1.7;
+      color: var(--text-3);
+      margin: 10px 0 0;
+    }
+  }
+  .metadata {
+    dl,
+    dl > div {
+      display: flex;
+      flex-direction: column;
+    }
+    dl {
+      margin: 0;
+      gap: 16px;
+    }
+    dl > div {
+      gap: 6px;
+    }
+    dt {
+      color: var(--text-3);
+      font-size: 11px;
+    }
+    dd {
+      color: var(--text-2);
+      font-size: 11px;
+      margin: 0;
+    }
+    .record-id {
+      font-family: ui-monospace, monospace;
+      overflow-wrap: anywhere;
+    }
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 11px;
+    &:last-child {
+      border-bottom: 0;
+    }
+    strong {
+      font-weight: 500;
+    }
+    strong > span,
+    > span:last-child {
+      color: var(--text-3);
+    }
+  }
+}
+.collection-dialog-copy {
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.8;
+}
+@media (max-width: 1200px) {
+  .collection-screen {
+    .editor-body {
+      grid-template-columns: minmax(0, 1fr) 230px;
+    }
+    .editor-toolbar h1 {
+      font-size: 15px;
+    }
+  }
+}
+@media (max-width: 1100px) {
+  .collection-screen {
+    .collection-heading {
+      padding: 24px 22px;
+    }
+    .collection-breadcrumb,
+    .collection-tabs,
+    .collection-toolbar {
+      padding-inline: 22px;
+    }
+    .collection-summary,
+    .toolbar-hint {
+      display: none;
+    }
+  }
+}
+@media (min-width: 1500px) {
+  .collection-screen {
+    .collection-heading {
+      padding-block: 35px 30px;
+    }
+    .content-table td {
+      height: 68px;
+    }
+  }
+}

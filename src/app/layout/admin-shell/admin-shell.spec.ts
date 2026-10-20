@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { Component, signal } from '@angular/core';
 import { CanDeactivateFn, Router, provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { of } from 'rxjs';
+import { AuthSession } from '../../core/auth/auth-session';
 import { AdminShell } from './admin-shell';
 import {
   WORKSPACE_NAVIGATION,
@@ -52,7 +54,11 @@ describe('Workspace navigation accessibility', () => {
     );
     TestBed.configureTestingModule({
       imports: [AdminShell],
-      providers: [provideRouter([]), { provide: WORKSPACE_NAVIGATION, useValue: { collections } }],
+      providers: [
+        provideRouter([]),
+        { provide: WORKSPACE_NAVIGATION, useValue: { collections } },
+        { provide: AuthSession, useValue: { signOut: () => of(undefined) } },
+      ],
     });
   });
 

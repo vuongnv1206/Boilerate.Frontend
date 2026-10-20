@@ -1,288 +1,138 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 
 const cwd = fileURLToPath(new URL('..', import.meta.url));
 const eslint = new ESLint({ cwd });
+const screen = 'src/app/features/collections/categories/categories.ts';
 const probes = [
   [
-    'core rejects relative feature import',
-    'src/app/core/architecture-probe.ts',
-    "import '../features/content';",
+    'core rejects feature',
+    'src/app/core/probe.ts',
+    "import '@features/collections/collections.routes';",
     false,
   ],
+  ['core rejects store', 'src/app/core/probe.ts', "import '@stores/categories.store';", false],
   [
-    'core rejects alias feature import',
-    'src/app/core/architecture-probe.ts',
-    "import '@features/content';",
-    false,
-  ],
-  [
-    'core rejects layout import',
-    'src/app/core/architecture-probe.ts',
+    'core rejects layout',
+    'src/app/core/probe.ts',
     "import '@layout/admin-shell/admin-shell';",
     false,
   ],
   [
-    'layout rejects feature public entry',
-    'src/app/layout/architecture-probe.ts',
-    "import '@features/content';",
+    'layout rejects feature',
+    'src/app/layout/probe.ts',
+    "import '@features/collections/collections.routes';",
     false,
   ],
   [
-    'shared UI rejects core state',
-    'src/app/shared/ui/architecture-probe.ts',
-    "import '@core/theme/theme-controller';",
-    false,
-  ],
-  [
-    'shared UI rejects HTTP',
-    'src/app/shared/ui/architecture-probe.ts',
-    "import '@angular/common/http';",
-    false,
-  ],
-  [
-    'feature rejects relative cross-feature import',
-    'src/app/features/content/pages/content/architecture-probe.ts',
-    "import '@features/control-gallery/pages/control-gallery/control-gallery';",
-    false,
-  ],
-  [
-    'feature rejects alias cross-feature public entry',
-    'src/app/features/control-gallery/pages/control-gallery/architecture-probe.ts',
-    "import '@features/content';",
-    false,
-  ],
-  [
-    'composition rejects feature private store',
-    'src/app/architecture-probe.ts',
-    "import '@features/content/state/content.store';",
-    false,
-  ],
-  [
-    'composition rejects dynamic private import',
-    'src/app/architecture-probe.ts',
-    "void import('@features/content/pages/content-io/content-io');",
-    false,
-  ],
-  [
-    'composition rejects private barrel export',
-    'src/app/architecture-probe.ts',
-    "export * from '@features/content/models/content-item';",
-    false,
-  ],
-  [
-    'unresolved alias cannot bypass classification',
-    'src/app/core/architecture-probe.ts',
-    "import '@features/missing/unknown';",
-    false,
-  ],
-  [
-    'composition accepts feature public entry',
-    'src/app/architecture-probe.ts',
-    "import '@features/content';",
-    true,
-  ],
-  [
-    'composition accepts lazy feature routes',
-    'src/app/architecture-probe.ts',
-    "void import('@features/control-gallery/control-gallery.routes');",
-    true,
-  ],
-  [
-    'page accepts its state',
-    'src/app/features/content/pages/content/architecture-probe.ts',
-    "import '../../state/content.store';",
-    true,
-  ],
-  [
-    'layout accepts navigation contract',
-    'src/app/layout/architecture-probe.ts',
+    'layout accepts navigation',
+    'src/app/layout/probe.ts',
     "import '@core/navigation/workspace-navigation';",
     true,
   ],
   [
-    'shared UI accepts presentation sibling',
-    'src/app/shared/ui/architecture-probe.ts',
-    "import './icon/icon';",
+    'shared UI rejects state',
+    'src/app/shared/ui/probe.ts',
+    "import '@stores/categories.store';",
+    false,
+  ],
+  ['shared UI rejects HTTP', 'src/app/shared/ui/probe.ts', "import '@angular/common/http';", false],
+  ['shared UI accepts sibling', 'src/app/shared/ui/probe.ts', "import './icon/icon';", true],
+  [
+    'app accepts routes',
+    'src/app/probe.ts',
+    "void import('@features/collections/collections.routes');",
     true,
   ],
   [
-    'page rejects relative mock import',
-    'src/app/features/content/pages/content/architecture-probe.ts',
-    "import '../../data-access/mock-content.service';",
+    'app rejects private screen',
+    'src/app/probe.ts',
+    "void import('@features/collections/categories/categories');",
     false,
   ],
+  ['unknown alias is rejected', 'src/app/core/probe.ts', "import '@models/missing';", false],
   [
-    'page rejects direct data service',
-    'src/app/features/content/pages/content/architecture-probe.ts',
-    "import '@features/content/data-access/content.service';",
-    false,
-  ],
-  [
-    'page rejects HTTP',
-    'src/app/features/content/pages/content/architecture-probe.ts',
-    "import '@angular/common/http';",
-    false,
-  ],
-  [
-    'presentation rejects state',
-    'src/app/features/content/components/content-table/architecture-probe.ts',
-    "import '@features/content/state/content.store';",
-    false,
-  ],
-  [
-    'presentation rejects service',
-    'src/app/features/content/components/content-form/architecture-probe.ts',
-    "import '../../data-access/content.service';",
-    false,
-  ],
-  [
-    'presentation rejects HTTP',
-    'src/app/features/content/components/content-form/architecture-probe.ts',
-    "import '@angular/common/http';",
-    false,
-  ],
-  [
-    'state rejects concrete mock',
-    'src/app/features/content/state/architecture-probe.ts',
-    "import '../data-access/mock-content.service';",
-    false,
-  ],
-  [
-    'state rejects fixture',
-    'src/app/features/content/state/architecture-probe.ts',
-    "import '../data-access/content.fixtures';",
-    false,
-  ],
-  [
-    'state rejects HTTP',
-    'src/app/features/content/state/architecture-probe.ts',
-    "import '@angular/common/http';",
-    false,
-  ],
-  [
-    'model rejects state',
-    'src/app/features/content/models/architecture-probe.ts',
-    "import '../state/content.store';",
-    false,
-  ],
-  [
-    'forms reject state',
-    'src/app/features/content/forms/architecture-probe.ts',
-    "import '../state/content-io.store';",
-    false,
-  ],
-  [
-    'data rejects view',
-    'src/app/features/content/data-access/architecture-probe.ts',
-    "import '../pages/content/content';",
-    false,
-  ],
-  [
-    'navigation rejects fixture',
-    'src/app/features/content/navigation/architecture-probe.ts',
-    "import '../data-access/content.fixtures';",
-    false,
-  ],
-  [
-    'composition rejects concrete feature provider',
-    'src/app/architecture-probe.ts',
-    "import '@features/content/content.providers';",
-    false,
-  ],
-  [
-    'state accepts data contract',
-    'src/app/features/content/state/architecture-probe.ts',
-    "import '../data-access/content.service';",
+    'routes accept API service',
+    'src/app/features/collections/collections.routes.ts',
+    "import '@services/categories.service';",
     true,
   ],
   [
-    'presentation accepts model',
-    'src/app/features/content/components/content-form/architecture-probe.ts',
-    "import '@features/content/models/content-item';",
+    'routes accept lazy screen',
+    'src/app/features/collections/collections.routes.ts',
+    "void import('./categories/categories');",
     true,
   ],
+  ['screen accepts store', screen, "import '@stores/categories.store';", true],
+  ['screen accepts shared constants', screen, "import '@constants/category.constants';", true],
+  ['screen accepts shared model', screen, "import '@models/category.dto';", true],
+  ['screen rejects service', screen, "import '@services/categories.service';", false],
+  ['screen rejects HTTP transport', screen, "import '@core/http/api-client';", false],
+  ['screen rejects raw HTTP', screen, "import '@angular/common/http';", false],
   [
-    'feature wiring accepts mock implementation',
-    'src/app/features/content/content.providers.ts',
-    "import './data-access/mock-content.service';",
-    true,
+    'screen rejects another feature',
+    screen,
+    "import '@features/control-gallery/control-gallery.routes';",
+    false,
   ],
   [
-    'data accepts HTTP base',
-    'src/app/features/content/data-access/architecture-probe.ts',
+    'store accepts service',
+    'src/app/stores/probe.ts',
+    "import '@services/categories.service';",
+    true,
+  ],
+  ['store rejects transport', 'src/app/stores/probe.ts', "import '@core/http/api-client';", false],
+  ['store rejects raw HTTP', 'src/app/stores/probe.ts', "import '@angular/common/http';", false],
+  [
+    'store rejects feature',
+    'src/app/stores/probe.ts',
+    "import '@features/collections/categories/categories';",
+    false,
+  ],
+  [
+    'service accepts transport',
+    'src/app/services/probe.ts',
     "import '@core/http/api-client';",
     true,
   ],
   [
-    'page rejects HTTP transport through core alias',
-    'src/app/features/content/pages/content/architecture-probe.ts',
-    "import '@core/http/api-client';",
+    'service rejects view',
+    'src/app/services/probe.ts',
+    "import '@features/collections/categories/categories';",
     false,
   ],
+  ['model rejects store', 'src/app/models/probe.ts', "import '@stores/categories.store';", false],
+  ['form rejects store', 'src/app/forms/probe.ts', "import '@stores/category-io.store';", false],
+  ['component enum is outside the screen', screen, "export enum Status { Draft = 'draft' }", false],
+  ['component model is outside the screen', screen, 'export interface Item { id: string; }', false],
   [
-    'state rejects HTTP transport through relative import',
-    'src/app/features/content/state/architecture-probe.ts',
-    "import '../../../core/http/api-client';",
-    false,
-  ],
-  [
-    'component rejects inline enum',
-    'src/app/features/content/components/content-toolbar/architecture-probe.ts',
-    "export enum LocalStatus { Draft = 'draft' }",
-    false,
-  ],
-  [
-    'page rejects inline interface',
-    'src/app/features/content/pages/content/architecture-probe.ts',
-    'export interface LocalItem { id: string; }',
-    false,
-  ],
-  [
-    'component rejects inline type alias',
-    'src/app/features/content/components/content-form/architecture-probe.ts',
-    "export type LocalMode = 'edit' | 'create';",
-    false,
-  ],
-  [
-    'component rejects inline option array',
-    'src/app/features/content/components/content-toolbar/architecture-probe.ts',
+    'component options are outside the screen',
+    screen,
     "export class Example { readonly options = [{ value: 'draft' }]; }",
     false,
   ],
   [
-    'component rejects fields inserted after handlers',
-    'src/app/features/content/components/content-toolbar/architecture-probe.ts',
+    'fields precede methods',
+    screen,
     'export class Example { run(): void {} readonly label = "Example"; }',
     false,
   ],
   [
-    'feature enum is declared in its own layer',
-    'src/app/features/content/enums/architecture-probe.ts',
-    "export enum ExampleStatus { Draft = 'draft' }",
+    'enum has its own folder',
+    'src/app/enums/probe.ts',
+    "export enum Status { Draft = 'draft' }",
     true,
   ],
   [
-    'component accepts owned constants',
-    'src/app/features/content/components/content-toolbar/architecture-probe.ts',
-    "import '../../constants/content-toolbar.constants';",
+    'test can use HTTP testing',
+    'src/app/services/probe.spec.ts',
+    "import '@angular/common/http/testing';",
     true,
-  ],
-  [
-    'component rejects a foreign feature enum',
-    'src/app/features/content/components/content-toolbar/architecture-probe.ts',
-    "import '@features/control-gallery/enums/gallery-tab.enum';",
-    false,
-  ],
-  [
-    'page rejects foreign feature configuration',
-    'src/app/features/content/pages/content/architecture-probe.ts',
-    "import '@features/control-gallery/constants/gallery.constants';",
-    false,
   ],
 ];
-
 for (const [name, filePath, code, allowed] of probes) {
   const results = await eslint.lintText(code, { filePath });
   const errors = results
@@ -297,6 +147,32 @@ for (const [name, filePath, code, allowed] of probes) {
   assert.equal(errors.length === 0, allowed, `${name}: ${JSON.stringify(errors)}`);
 }
 
-console.log(
-  `Architecture boundaries: ${probes.length} positive and negative import probes passed.`,
+function files(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const file = path.join(directory, entry.name);
+    return entry.isDirectory() ? files(file) : [file];
+  });
+}
+const collectionFiles = files(path.join(cwd, 'src/app/features/collections'));
+assert.equal(
+  collectionFiles.filter((file) => file.endsWith('.scss') || file.endsWith('.spec.ts')).length,
+  0,
 );
+assert.equal(
+  collectionFiles.filter(
+    (file) => file.endsWith('.ts') && fs.readFileSync(file, 'utf8').includes('@Component('),
+  ).length,
+  6,
+);
+for (const folder of ['constants', 'enums', 'models', 'services', 'stores', 'forms', 'guards']) {
+  assert.ok(fs.existsSync(path.join(cwd, 'src/app', folder)), `Missing shared folder: ${folder}`);
+  assert.ok(
+    !fs.existsSync(path.join(cwd, 'src/app/features/collections', folder)),
+    `Move ${folder} beside features`,
+  );
+}
+const angular = JSON.parse(fs.readFileSync(path.join(cwd, 'angular.json'), 'utf8'));
+const defaults = angular.projects['boilerate-admin'].schematics['@schematics/angular:component'];
+assert.equal(defaults.style, 'none');
+assert.equal(defaults.skipTests, true);
+console.log(`Architecture: ${probes.length} import checks and screen/style rules passed.`);

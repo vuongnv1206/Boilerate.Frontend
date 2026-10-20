@@ -1,0 +1,50 @@
+<main class="login-page">
+  <form class="login-card" [formGroup]="store.form" (ngSubmit)="signIn()">
+    <span class="brand">b<span>®</span></span>
+    <p class="eyebrow">BOILERATE ADMIN</p>
+    <h1>Đăng nhập workspace</h1>
+    <p class="intro">Dùng tài khoản quản trị đã được tạo trong hệ thống.</p>
+    <div class="field">
+      <label for="login-email">Email</label>
+      <input
+        pInputText
+        id="login-email"
+        type="email"
+        autocomplete="username"
+        formControlName="email"
+        [attr.aria-invalid]="store.form.controls.email.touched && store.form.controls.email.invalid"
+        aria-describedby="email-error"
+      />
+      @if (store.form.controls.email.touched && store.form.controls.email.invalid) {
+        <small id="email-error" class="field-error">Nhập email hợp lệ.</small>
+      }
+    </div>
+    <div class="field">
+      <label for="login-password">Mật khẩu</label>
+      <input
+        pInputText
+        id="login-password"
+        type="password"
+        autocomplete="current-password"
+        formControlName="password"
+        [attr.aria-invalid]="
+          store.form.controls.password.touched && store.form.controls.password.invalid
+        "
+        aria-describedby="password-error"
+      />
+      @if (store.form.controls.password.touched && store.form.controls.password.invalid) {
+        <small id="password-error" class="field-error">Nhập mật khẩu.</small>
+      }
+    </div>
+    @if (store.error()) {
+      <p class="login-error" role="alert">{{ store.error() }}</p>
+    }
+    <p-button
+      type="submit"
+      label="Đăng nhập"
+      [loading]="store.saving()"
+      [disabled]="store.saving()"
+    />
+    <p class="session-note">Phiên đăng nhập chỉ giữ trong bộ nhớ của tab này.</p>
+  </form>
+</main>

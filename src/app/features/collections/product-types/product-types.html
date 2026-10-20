@@ -1,0 +1,92 @@
+<section class="collection-page" aria-labelledby="product-types-heading">
+  <div class="collection-breadcrumb">
+    <ui-icon name="folder" [size]="14" /><span>Bộ sưu tập</span><span>/</span
+    ><strong>Loại sản phẩm</strong>
+  </div>
+  <header class="collection-heading">
+    <div class="heading-copy">
+      <div class="title-row">
+        <h1 id="product-types-heading">Loại sản phẩm</h1>
+        <span>{{ store.items().length }}</span>
+      </div>
+      <p>Quản lý cấu trúc thuộc tính của từng loại sản phẩm.</p>
+    </div>
+    <a class="ui-button primary" routerLink="new"
+      ><ui-icon name="plus" [size]="14" />Thêm loại sản phẩm</a
+    >
+  </header>
+  <div class="collection-tabs">Tất cả loại sản phẩm</div>
+  <div class="collection-toolbar">
+    <label for="product-types-search">Tìm kiếm</label
+    ><input
+      id="product-types-search"
+      type="search"
+      [value]="store.query()"
+      #searchInput
+      (input)="store.search(searchInput.value)"
+      placeholder="Tên hoặc mã loại…"
+    />
+    <div class="toolbar-actions">
+      <button class="ui-button" (click)="store.load()" [disabled]="store.loading()">
+        <ui-icon name="refresh" [size]="14" />Tải lại
+      </button>
+    </div>
+  </div>
+  @if (store.error()) {
+    <div class="collection-notice error-notice" role="alert">{{ store.error() }}</div>
+  }
+  <div class="table-scroll">
+    @if (store.loading()) {
+      <ui-content-state
+        kind="loading"
+        title="Đang tải loại sản phẩm"
+        message="Đang lấy dữ liệu từ cửa hàng."
+      />
+    } @else if (!store.filtered().length) {
+      <ui-content-state
+        title="Chưa có loại sản phẩm phù hợp"
+        message="Thử đổi từ khóa hoặc thêm loại sản phẩm mới."
+      />
+    } @else {
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th scope="col">Tên loại sản phẩm</th>
+            <th scope="col">Mã loại</th>
+            <th scope="col">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of store.rows(); track item.id) {
+            <tr>
+              <td>
+                <a [routerLink]="[item.id]">{{ item.name }}</a>
+              </td>
+              <td>{{ item.code }}</td>
+              <td>{{ item.isActive ? 'Hoạt động' : 'Đã tắt' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+  <footer class="collection-footer">
+    <span>{{ store.filtered().length }} loại sản phẩm</span>
+    <div class="pagination">
+      <button
+        class="ui-button"
+        [disabled]="store.page() === 1"
+        (click)="store.setPage(store.page() - 1)"
+      >
+        Trước</button
+      ><span>Trang {{ store.page() }} / {{ store.totalPages() }}</span
+      ><button
+        class="ui-button"
+        [disabled]="store.page() >= store.totalPages()"
+        (click)="store.setPage(store.page() + 1)"
+      >
+        Sau
+      </button>
+    </div>
+  </footer>
+</section>

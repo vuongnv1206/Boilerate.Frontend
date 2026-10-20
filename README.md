@@ -1,12 +1,12 @@
 # Frontend
 
-Angular Admin của Boilerate, ưu tiên diện mạo workspace Webflow CMS/Ecommerce. Mốc hiện tại triển khai **nền UI với dữ liệu minh họa**: shell compact, theme System/Light/Dark, bộ control PrimeNG, danh sách và editor. Chưa kết nối Backend hoặc triển khai tính năng Catalog thật.
+Angular Admin của Boilerate, theo diện mạo workspace Webflow CMS/Ecommerce. Collections đã gọi API thật: sản phẩm, danh mục và loại sản phẩm; có đăng nhập, form thêm/sửa và xử lý lỗi. Giữ System/Light/Dark và animation bình thường. Gallery dùng để thử control PrimeNG.
 
 Repo FE riêng, private: [Boilerate.Frontend](https://github.com/vuongnv1206/Boilerate.Frontend), nhánh `main`. Backend nằm trong sibling `Boilerate/` khi làm việc ở workspace chung; FE có thể clone, build và chạy CI độc lập. [Kiến trúc codebase](docs/architecture.md) quy định ranh giới, state, forms, runtime/HTTP và theme.
 
-Refactor feature đã triển khai vào Angular: `content` / `content-io`, page/store/service, typed forms, enum/constants riêng và base HTTP qua DI. [Quy tắc code bắt buộc](docs/coding-rules.md) được gắn trong `AGENTS.md` và lint. Local và [CI web](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39441412958) đạt format/lint, **46 architecture/AST probes, 145 unit tests, production build và 20 browser tests** desktop/tablet × hai theme; 16 golden snapshots giữ nguyên. [Báo cáo mới](docs/verification/2026-10-20-content-architecture.md) ghi source, kiểm chứng và giới hạn; [báo cáo baseline](docs/verification/2026-10-20-codebase.md) là lịch sử trước đó.
+Source theo [quy tắc code](docs/coding-rules.md): mỗi phần chỉ có màn danh sách và màn `-io`. Constants/enums/models/services/stores nằm ngang cấp `features`, import qua alias. Form, toolbar, bảng và inspector nhỏ nằm ngay trong màn. [SCSS chung](docs/scss-rules.md) giữ bố cục nhất quán; không tự tạo SCSS/spec cho mỗi component.
 
-Ưu tiên hiện tại: **web desktop/tablet trước**, mobile tối ưu sau theo yêu cầu người dùng. Gate browser/CI hiện chạy 20 tests web; mobile suite vẫn giữ để chạy riêng, có lỗi tooltip focus/scroll được ghi rõ trong báo cáo. Dev server giữ ở [http://localhost:4200](http://localhost:4200); cổng 4300 chỉ dùng tạm cho QA production.
+Ưu tiên **web desktop/tablet**, mobile tối ưu sau. [Kết quả kiểm tra mới](docs/verification/2026-10-20-live-collections.md) ghi source và phạm vi đã chạy. Dev server giữ ở [http://localhost:4200](http://localhost:4200); cổng 4300 chỉ dùng tạm cho QA production.
 
 ## Chạy local
 
@@ -18,7 +18,9 @@ cd D:\MyCode\BoilerateWorkspace\Frontend
 .\run.ps1 start
 ```
 
-Dev server: [http://127.0.0.1:4200/admin](http://127.0.0.1:4200/admin). Mở gallery qua điều hướng bộ control. Các thao tác dữ liệu chỉ nằm trong phiên demo; reload khôi phục fixture. Theme và panel có thể giữ tùy chọn trên trình duyệt.
+Dev server: [http://localhost:4200/admin](http://localhost:4200/admin). Chạy BE tại `http://localhost:5000`; `proxy.conf.json` chuyển `/api/**` sang BE. Đăng nhập bằng tài khoản quản trị đã bootstrap và cấp quyền trong BE. Token chỉ giữ trong bộ nhớ tab, vì vậy reload cần đăng nhập lại. Nội dung đã lưu nằm trong database; theme/panel giữ tùy chọn trình duyệt.
+
+Trong workspace local này, SQL Server dùng database riêng `BoilerateDevelopment`. Cấu hình và tài khoản local ở `../Boilerate/artifacts/local-admin.secrets.json` bị ignore; không đưa file đó vào Git. [Hướng dẫn seed JSON](../Boilerate/docs/backend/history/2026-10-20-development-seeding.md) ghi cách thêm dữ liệu và chạy lại mà không ghi đè dữ liệu đã sửa.
 
 ## PrimeUI license
 
@@ -29,7 +31,7 @@ $env:PRIMEUI_LICENSE_KEY = '<YOUR_VALID_PRIMEUI_LICENSE_KEY>'
 .\run.ps1 start
 ```
 
-Giá trị trong ví dụ là placeholder. Copy `.env.example` thành `.env.local` nếu cần cấu hình local; chỉ `.env.local` được tự động nạp. Giá trị shell/CI luôn thắng local, kể cả chuỗi rỗng. `API_BASE_URL` mặc định `/api`; chưa có màn gọi BE thật. `npm start`/`npm run build` sinh `public/runtime-config.js` bị ignore; khi deploy có thể thay file public này theo môi trường, không cần rebuild bundle. Config được kiểm tra trước bootstrap. Không đặt mật khẩu hoặc access/refresh tokens trong runtime config. Đặt `PRIMEUI_LICENSE_KEY` rỗng để thử trạng thái không có key; bỏ biến shell sẽ dùng lại giá trị local.
+Giá trị trong ví dụ là placeholder. Copy `.env.example` thành `.env.local` nếu cần; shell/CI thắng local, kể cả chuỗi rỗng. `API_BASE_URL` mặc định `/api`. `npm start`/`npm run build` sinh `public/runtime-config.js` bị ignore; có thể thay file theo môi trường mà không rebuild. Không đặt mật khẩu hoặc token trong runtime config. Đặt `PRIMEUI_LICENSE_KEY` rỗng để thử trạng thái không có key; bỏ biến shell để dùng lại local.
 
 ## Kiểm tra
 
@@ -42,11 +44,11 @@ Giá trị trong ví dụ là placeholder. Copy `.env.example` thành `.env.loca
 
 `.\run.ps1 check` gộp format, lint/boundaries, unit tests và build. Khi terminal đã chọn Node phù hợp, có thể dùng npm scripts tương ứng. Lệnh install dùng npm 12.2.0 để tránh lỗi resolver đã gặp ở npm 10 trên máy phát triển. Trên máy mới dùng `npx --yes --package=npm@12.2.0 npm ci`, rồi `npm run check`. Khi deploy, host cần fallback các route SPA về `index.html`, cache runtime config phù hợp và chuyển `/api` tới BE; chưa nghiệm thu deployment.
 
-Browser tests dùng bản production build. Cài Chromium bằng `npx playwright install chromium`, rồi build với biến shell `PRIMEUI_LICENSE_KEY` rỗng và `API_BASE_URL=/api` để cùng trạng thái với CI; không xóa cấu hình local. Sau đó chạy `npm run test:e2e` (hoặc `.\run.ps1 test:e2e`): desktop/tablet × light/dark, giống CI. `test:e2e:mobile` chạy riêng mobile ở bước sau; `test:e2e:all` chạy đủ sáu projects. Preview phục vụ loopback port 4300 và tự đóng khi suite kết thúc. CI Windows dùng baseline win32 đã commit. Điều kiện cấu hình này áp dụng cả khi chạy lại và khi cập nhật ảnh. `npm run test:e2e:update` chỉ dùng khi chủ động đổi thiết kế và review ảnh; CI không tự cập nhật snapshot. Raw reports/traces nằm trong `artifacts/` bị ignore.
+Browser tests dùng production build. Cài Chromium bằng `npx playwright install chromium`, build với `PRIMEUI_LICENSE_KEY` rỗng và `API_BASE_URL=/api`, rồi chạy `npm run test:e2e`: desktop/tablet × light/dark. API fixture chỉ nằm trong `e2e/helpers`, không đưa mock vào route ứng dụng. `test:e2e:mobile`/`test:e2e:all` giữ để kiểm tra sau. Preview dùng port 4300 và tự đóng khi xong. Chỉ cập nhật ảnh khi đã xem lại thay đổi; CI không tự sửa baseline. Raw report/trace nằm trong `artifacts/` bị ignore.
 
 ## Tài liệu và quy chuẩn
 
-- [PRODUCT.md](PRODUCT.md): mục tiêu, người dùng và phạm vi demo.
+- [PRODUCT.md](PRODUCT.md): mục tiêu và phạm vi.
 - [DESIGN.md](DESIGN.md): bố cục, tokens, theme, control và motion.
 - [AGENTS.md](AGENTS.md): folder, naming, Angular conventions và workflow.
 - [admin-ui-design](.agents/skills/admin-ui-design/SKILL.md): skill nhỏ dành cho màn quản trị của dự án.
@@ -57,4 +59,4 @@ Stack hiện tại: Angular/CLI 22.2.3, PrimeNG 22.1.2, TypeScript 6, standalone
 
 Baseline UI trước mốc codebase đã có local QA; [báo cáo cũ](../Boilerate/docs/frontend/verification/2026-10-19-admin-ui-foundation.md) không thay thế kết quả sau refactor. [History codebase](docs/history/) và báo cáo trong `docs/verification/` ghi kiểm chứng mới, kết quả CI và giới hạn thực tế. Animation bình thường bật; fallback reduced motion giữ nguyên. User approval và deployment là các trạng thái nghiệm thu riêng.
 
-Trước mốc kết nối API, đọc [hợp đồng BE–FE](../Boilerate/docs/shared/contracts/frontend-backend.md). Kết quả demo UI không nghiệm thu tích hợp hoặc quyền nghiệp vụ.
+Đọc [hợp đồng BE–FE](../Boilerate/docs/shared/contracts/frontend-backend.md) khi mở rộng API. Kết quả local không thay nghiệm thu deployment hoặc mọi vai trò/quyền.
