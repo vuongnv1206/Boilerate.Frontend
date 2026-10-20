@@ -135,6 +135,7 @@ test('gallery: select, datepicker, dialog, drawer, tooltip and toast', async ({ 
     .toBe(0);
   await expect(page).toHaveScreenshot('dialog.png');
   await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
   await expect(dialogTrigger).toBeFocused();
   const drawerTrigger = page.getByTestId('gallery-drawer-trigger');
   await drawerTrigger.click();
@@ -146,6 +147,9 @@ test('gallery: select, datepicker, dialog, drawer, tooltip and toast', async ({ 
     .toBe(0);
   await expect(page).toHaveScreenshot('drawer.png');
   await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('dialog', { name: 'Tùy chọn hiển thị', exact: true }),
+  ).not.toBeVisible();
   await expect(drawerTrigger).toBeFocused();
   const tooltipTrigger = page.getByRole('button', {
     name: 'Thông tin về bộ giao diện',

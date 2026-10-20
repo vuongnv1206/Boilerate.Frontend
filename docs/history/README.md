@@ -10,6 +10,8 @@ Các bản ghi dưới đây thuộc repo FE độc lập. Lịch sử UI trư�
 - [Ổn định nền scroll trong ảnh overlay CI](2026-10-20-ci-snapshot-scroll.md).
 - [Content data và HTTP transport](2026-10-20-content-data.md).
 - [Feature content và quy chuẩn source](2026-10-20-content-architecture.md).
+- [Browser regression sau refactor](2026-10-20-content-verification.md).
+- [Kiểm chứng feature content](../verification/2026-10-20-content-architecture.md).
 - [Báo cáo kiểm chứng tích hợp](../verification/2026-10-20-codebase.md).
 
 Baseline trước refactor feature đã có CI đạt trên source `dd7fd71`: [run 39417291346](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39417291346), gồm 93 unit tests và 24 browser tests. Kết quả đó không thay thế việc kiểm tra source mới; các bản ghi content ở trên ghi phạm vi và kiểm chứng mới.

@@ -4,7 +4,7 @@ Angular Admin của Boilerate, ưu tiên diện mạo workspace Webflow CMS/Ecom
 
 Repo FE riêng, private: [Boilerate.Frontend](https://github.com/vuongnv1206/Boilerate.Frontend), nhánh `main`. Backend nằm trong sibling `Boilerate/` khi làm việc ở workspace chung; FE có thể clone, build và chạy CI độc lập. [Kiến trúc codebase](docs/architecture.md) quy định ranh giới, state, forms, runtime/HTTP và theme.
 
-Nền codebase đã qua local và [CI thực tế](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39417291346): format/lint, 17 architecture probes, 93 unit tests, production build và 24 browser tests. [Báo cáo](docs/verification/2026-10-20-codebase.md) ghi source được kiểm chứng, ảnh, giới hạn và các bước tái chạy.
+Refactor feature đã triển khai vào Angular: `content` / `content-io`, page/store/service, typed forms, enum/constants riêng và base HTTP qua DI. [Quy tắc code bắt buộc](docs/coding-rules.md) được gắn trong `AGENTS.md` và lint. Local đạt format/lint, **46 architecture/AST probes, 145 unit tests, production build và 30 browser tests**; 24 golden snapshots giữ nguyên. [Báo cáo mới](docs/verification/2026-10-20-content-architecture.md) ghi source, kiểm chứng và trạng thái CI sau refactor; [báo cáo baseline](docs/verification/2026-10-20-codebase.md) là lịch sử trước đó.
 
 ## Chạy local
 

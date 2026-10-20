@@ -1,6 +1,6 @@
 # Tổ chức feature Angular thực tế — 2026-10-20
 
-Trạng thái: Đang triển khai. Người dùng yêu cầu thực hiện refactor source: màn danh sách mang tên chức năng, màn thêm/sửa hậu tố `-io`; component/store/service có trách nhiệm rõ, có base HTTP. Giữ UI Webflow và normal motion; dữ liệu vẫn mock, chưa auth/API BE thật.
+Trạng thái: Source và local verification hoàn thành; chờ CI sau push. Người dùng yêu cầu thực hiện refactor source: màn danh sách mang tên chức năng, màn thêm/sửa hậu tố `-io`; component/store/service có trách nhiệm rõ, có base HTTP. Giữ UI Webflow và normal motion; dữ liệu vẫn mock, chưa auth/API BE thật.
 
 ## Quyết định và tiêu chí
 
@@ -24,4 +24,4 @@ Chấp nhận khi đổi mock bằng DI test-double không sửa page, test load
 
 ## Tiến độ
 
-Steps 1–4 đã triển khai vào route thực; implementation cũ đã xóa. Đã chạy full format/lint, 144 unit tests và production build sau enum/constants migration; sau đó thêm một test transport concurrency, đạt 14 tests của ApiClient. Bản browser đầu có lỗi selector của test mới (khớp cả “Sản phẩm” và “Loại sản phẩm”) và một ca tooltip đua focus sau drawer; đã sửa selector chính xác và chờ overlay đóng trước thao tác tiếp theo, không đổi golden. Đang chạy lại browser/CI trước khi chốt step 5; kết quả cuối ghi trong verification/history.
+Steps 1–4 đã triển khai vào route thực; implementation cũ đã xóa. Step 5 local đạt full format/lint, 46 probes, 145 unit tests, production build và 30 browser tests; 24 ảnh baseline giữ nguyên. Lỗi selector/focus race ở test đã sửa và chạy lại. [Verification](../verification/2026-10-20-content-architecture.md) và [history](../history/2026-10-20-content-verification.md) ghi kết quả thực chạy, phạm vi và giới hạn. Còn push và CI thực tế; không tính tích hợp BE hoặc deployment trong mốc này.
