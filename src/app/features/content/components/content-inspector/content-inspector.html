@@ -1,0 +1,90 @@
+<aside
+  class="inspector"
+  id="item-inspector"
+  [class.inspector-open]="open()"
+  aria-label="Thông tin nội dung"
+  [attr.role]="modal() ? 'dialog' : null"
+  [attr.aria-modal]="modal() ? true : null"
+  [cdkTrapFocus]="modal()"
+>
+  <div class="inspector-heading">
+    <span>Thông tin nội dung</span
+    ><button
+      class="icon-button inspector-toggle"
+      #inspectorClose
+      aria-label="Đóng thông tin nội dung"
+      (click)="closeRequested.emit()"
+    >
+      <ui-icon name="close" [size]="14" />
+    </button>
+  </div>
+  <div class="inspector-scroll">
+    <div class="inspector-preview">
+      <img [src]="record().image" alt="" /><span>{{
+        form().controls.name.value || 'Nội dung mới'
+      }}</span>
+      @if (definition().key === collectionKey.Products) {
+        <strong>{{
+          form().controls.price.value | currency: 'VND' : 'symbol' : '1.0-0' : 'vi'
+        }}</strong>
+      }
+    </div>
+    <section class="inspector-section">
+      <h2>Trạng thái</h2>
+      <ui-status-badge
+        [tone]="
+          record().status === contentStatus.Published
+            ? 'success'
+            : record().status === contentStatus.Draft
+              ? 'warning'
+              : 'muted'
+        "
+        >{{ statusLabels[record().status] }}</ui-status-badge
+      >
+      <p>
+        {{
+          record().status === contentStatus.Draft
+            ? 'Chỉ hiển thị trong workspace mẫu.'
+            : record().status === contentStatus.Published
+              ? 'Trạng thái xuất bản minh họa.'
+              : 'Nội dung đã lưu trữ trong bản mẫu.'
+        }}
+      </p>
+    </section>
+    <section class="inspector-section" [formGroup]="form()">
+      <h2>Cài đặt hiển thị</h2>
+      <div class="featured-field">
+        <label for="item-featured">Nội dung nổi bật</label
+        ><p-toggleswitch inputId="item-featured" formControlName="featured" />
+      </div>
+      <p>Đánh dấu để làm nổi bật trong bản xem thử.</p>
+    </section>
+    <section class="inspector-section metadata">
+      <h2>Thông tin</h2>
+      <dl>
+        <div>
+          <dt>Bộ sưu tập</dt>
+          <dd>{{ definition().label }}</dd>
+        </div>
+        <div>
+          <dt>Cập nhật lần cuối</dt>
+          <dd>{{ record().updatedAt | date: 'HH:mm, dd/MM/yyyy' : '' : 'vi' }}</dd>
+        </div>
+        <div>
+          <dt>Người chỉnh sửa</dt>
+          <dd><span class="author-avatar">D</span>Demo Store</dd>
+        </div>
+        <div>
+          <dt>ID nội dung</dt>
+          <dd class="record-id" [title]="record().id">{{ record().id }}</dd>
+        </div>
+      </dl>
+    </section>
+    <div class="inspector-note">
+      <ui-icon name="info" [size]="15" />
+      <p>
+        Đây là bản mẫu giao diện. Thay đổi của bạn chưa kết nối đến cửa hàng hay hệ thống dữ liệu.
+      </p>
+    </div>
+  </div>
+</aside>

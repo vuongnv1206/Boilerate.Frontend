@@ -9,7 +9,7 @@ import {
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { provideRuntimeConfig } from '../config/runtime-config.token';
+import { RUNTIME_CONFIG, provideRuntimeConfig } from '../config/runtime-config.token';
 import { ApiClient, ApiMethod } from './api-client';
 import { ApiError } from './api-error';
 import { apiErrorInterceptor } from './api-error.interceptor';
@@ -56,6 +56,59 @@ describe('API client transport', () => {
     expect(request.request.responseType).toBe('json');
     request.flush({ total: 3 });
     expect(result).toEqual({ total: 3 });
+  });
+
+  it('keeps concurrent feature requests independent without mutating shared configuration', () => {
+    const config = Object.freeze(TestBed.inject(RUNTIME_CONFIG));
+    const productsOptions = Object.freeze({
+      params: Object.freeze({ page: 2, search: 'đèn bàn' }),
+      headers: Object.freeze({ 'X-Workspace': 'products' }),
+    });
+    const categoriesOptions = Object.freeze({
+      params: Object.freeze({ page: 1, includeArchived: false }),
+      headers: Object.freeze({ 'X-Workspace': 'categories', 'X-View': 'tree' }),
+    });
+    let products: { items: { id: string }[]; total: number } | undefined;
+    let categories: { groups: string[] } | undefined;
+
+    client
+      .get<{ items: { id: string }[]; total: number }>('catalog/products', productsOptions)
+      .subscribe((value) => {
+        products = value;
+      });
+    client.get<{ groups: string[] }>('catalog/categories', categoriesOptions).subscribe((value) => {
+      categories = value;
+    });
+
+    const productsRequest = http.expectOne((value) => value.url === '/api/v1/catalog/products');
+    const categoriesRequest = http.expectOne((value) => value.url === '/api/v1/catalog/categories');
+    expect(productsRequest.request.params.keys()).toEqual(['page', 'search']);
+    expect(productsRequest.request.params.get('page')).toBe('2');
+    expect(productsRequest.request.params.get('search')).toBe('đèn bàn');
+    expect(productsRequest.request.headers.get('X-Workspace')).toBe('products');
+    expect(productsRequest.request.headers.has('X-View')).toBe(false);
+    expect(categoriesRequest.request.params.keys()).toEqual(['page', 'includeArchived']);
+    expect(categoriesRequest.request.params.get('page')).toBe('1');
+    expect(categoriesRequest.request.params.get('includeArchived')).toBe('false');
+    expect(categoriesRequest.request.headers.get('X-Workspace')).toBe('categories');
+    expect(categoriesRequest.request.headers.get('X-View')).toBe('tree');
+
+    // Completing the later request first must not replace the other feature's response.
+    categoriesRequest.flush({ groups: ['Phụ kiện'] });
+    expect(categories?.groups).toEqual(['Phụ kiện']);
+    expect(products).toBeUndefined();
+    productsRequest.flush({ items: [{ id: 'product-1' }], total: 14 });
+    expect(products).toEqual({ items: [{ id: 'product-1' }], total: 14 });
+    expect(categories).toEqual({ groups: ['Phụ kiện'] });
+    expect(config).toEqual({ apiBaseUrl: '/api/v1' });
+    expect(productsOptions).toEqual({
+      params: { page: 2, search: 'đèn bàn' },
+      headers: { 'X-Workspace': 'products' },
+    });
+    expect(categoriesOptions).toEqual({
+      params: { page: 1, includeArchived: false },
+      headers: { 'X-Workspace': 'categories', 'X-View': 'tree' },
+    });
   });
 
   it.each(['POST', 'PUT', 'PATCH'] as const)(

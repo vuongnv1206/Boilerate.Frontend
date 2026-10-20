@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
-import { CollectionKey, ContentItem, ContentStatus } from '../models/content-item';
+import { CollectionKey, ContentStatus } from '../enums/content.enum';
+import type { ContentItem } from '../models/content-item';
 
 /** Feature data boundary. The admin route selects its implementation through DI. */
 export abstract class ContentService {

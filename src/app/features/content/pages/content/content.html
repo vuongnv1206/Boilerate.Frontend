@@ -1,0 +1,129 @@
+<section class="collection-page" aria-labelledby="collection-title">
+  <div class="collection-breadcrumb">
+    <ui-icon name="layers" [size]="13" /><span>Bộ sưu tập</span
+    ><ui-icon name="chevron-right" [size]="12" /><strong>{{ store.definition().label }}</strong
+    ><span class="collection-id">CMS COLLECTION</span>
+  </div>
+  <header class="collection-heading">
+    <div class="heading-copy">
+      <div class="title-row">
+        <h1 id="collection-title">{{ store.definition().label }}</h1>
+        <span class="total-count">{{ store.collectionItems().length }}</span>
+      </div>
+      <p>{{ store.definition().description }}</p>
+    </div>
+    <div class="heading-actions">
+      <button class="ui-button export-button" (click)="store.exportCsv()">
+        <ui-icon name="external-link" [size]="13" />Xuất CSV</button
+      ><a
+        class="ui-button primary"
+        [attr.aria-label]="'Thêm ' + store.definition().singular"
+        routerLink="/admin/items/new"
+        [queryParams]="{ collection: store.definition().key }"
+        ><ui-icon name="plus" [size]="14" /><span>Thêm {{ store.definition().singular }}</span></a
+      >
+    </div>
+  </header>
+  <div class="collection-tabs">
+    <span class="active"
+      >Tất cả nội dung <span>{{ store.collectionItems().length }}</span></span
+    ><span class="collection-summary"
+      ><span class="published-dot"></span>{{ store.collectionItems().length }} mục trong bản
+      mẫu</span
+    >
+  </div>
+  <app-content-toolbar
+    [query]="store.query()"
+    (queryChange)="store.setQuery($event)"
+    [status]="store.status()"
+    (statusChange)="store.setStatus($event)"
+    [visibleColumns]="store.visibleColumns()"
+    (columnToggle)="store.toggleColumn($event)"
+  />
+  @if (store.visibleSelection().length) {
+    <div class="selection-toolbar">
+      <span
+        >Đã chọn <strong>{{ store.visibleSelection().length }}</strong> mục</span
+      ><button class="ui-button small" [disabled]="store.busy()" (click)="store.archiveSelected()">
+        <ui-icon name="archive" [size]="13" />Lưu trữ</button
+      ><button
+        class="ui-button small danger"
+        [disabled]="store.busy()"
+        (click)="deleteOpen.set(true)"
+      >
+        <ui-icon name="trash" [size]="13" />Xóa</button
+      ><button class="icon-button" aria-label="Bỏ chọn tất cả" (click)="store.clearSelection()">
+        <ui-icon name="close" [size]="13" />
+      </button>
+    </div>
+  }
+  @if (store.notice()) {
+    <div class="inline-notice" role="status">
+      <ui-icon name="check" [size]="13" /><span>{{ store.notice() }}</span
+      ><button class="icon-button" aria-label="Đóng thông báo" (click)="store.dismissNotice()">
+        <ui-icon name="close" [size]="12" />
+      </button>
+    </div>
+  }
+  @if (store.error() && store.collectionItems().length) {
+    <div class="inline-error" role="alert">{{ store.error() }}</div>
+  }
+  @if (store.loading()) {
+    <ui-content-state
+      kind="loading"
+      layout="page"
+      title="Đang tải nội dung"
+      message="Vui lòng đợi trong giây lát."
+    />
+  } @else if (store.error() && !store.collectionItems().length) {
+    <ui-content-state
+      kind="error"
+      layout="page"
+      title="Không thể tải nội dung"
+      [message]="store.error()"
+      ><button class="ui-button" (click)="store.retry()">Thử lại</button></ui-content-state
+    >
+  } @else {
+    <app-content-table
+      [definition]="store.definition()"
+      [pageItems]="store.pageItems()"
+      [visibleColumns]="store.visibleColumns()"
+      [selectedIds]="store.selectedIds()"
+      [allPageSelected]="store.allPageSelected()"
+      [rangeStart]="store.rangeStart()"
+      [rangeEnd]="store.rangeEnd()"
+      [total]="store.filtered().length"
+      [pageSize]="store.pageSize()"
+      [currentPage]="store.currentPage()"
+      [pageCount]="store.pageCount()"
+      (itemOpen)="open($event)"
+      (itemToggle)="store.toggleItem($event)"
+      (toggleAll)="store.toggleAll()"
+      (filtersReset)="store.resetFilters()"
+      (itemDuplicate)="store.duplicate($event)"
+      (itemArchive)="store.archive($event)"
+      (pageSizeChange)="store.setPageSize($event)"
+      (pageChange)="store.setPage($event)"
+      [busy]="store.busy()"
+    />
+  }
+</section>
+<p-dialog
+  header="Xóa nội dung mẫu?"
+  [visible]="deleteOpen()"
+  (visibleChange)="deleteOpen.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '400px', maxWidth: '92vw' }"
+  ><p class="delete-description">
+    {{ store.visibleSelection().length }} mục sẽ bị xóa khỏi bản mẫu này. Tải lại trang sẽ khôi phục
+    dữ liệu ban đầu.
+  </p>
+  <ng-template #footer
+    ><button class="ui-button" (click)="deleteOpen.set(false)">Hủy</button
+    ><button class="ui-button danger" [disabled]="store.busy()" (click)="deleteSelected()">
+      Xóa {{ store.visibleSelection().length }} mục
+    </button></ng-template
+  ></p-dialog
+>

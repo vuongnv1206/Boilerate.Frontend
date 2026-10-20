@@ -1,27 +1,35 @@
-import { ContentItem, ContentStatus, slugify } from '../models/content-item';
+import { CollectionKey, ContentStatus } from '../enums/content.enum';
+import { ContentItem, slugify } from '../models/content-item';
 
 const PRODUCTS: readonly [string, string, string, string, number, ContentStatus][] = [
-  ['Túi Everyday Tote', 'bag', 'Phụ kiện', 'ACC-001', 690000, 'published'],
-  ['Đèn bàn Studio', 'lamp', 'Không gian sống', 'LIV-002', 1290000, 'published'],
-  ['Tai nghe Quiet Hours', 'headphones', 'Công nghệ', 'TEC-003', 2490000, 'draft'],
-  ['Ghế Form Lounge', 'chair', 'Nội thất', 'FUR-004', 4590000, 'published'],
-  ['Bình gốm Organic', 'vase', 'Không gian sống', 'LIV-005', 450000, 'published'],
-  ['Máy ảnh Pocket Film', 'camera', 'Công nghệ', 'TEC-006', 3690000, 'draft'],
-  ['Giày Daily Runner', 'shoe', 'Thời trang', 'FAS-007', 1590000, 'published'],
-  ['Sổ tay Field Notes', 'notebook', 'Văn phòng phẩm', 'STA-008', 190000, 'published'],
-  ['Túi Weekender Canvas', 'bag', 'Phụ kiện', 'ACC-009', 1190000, 'draft'],
-  ['Đèn đọc sách Arc', 'lamp', 'Không gian sống', 'LIV-010', 890000, 'published'],
-  ['Bình gốm Still', 'vase', 'Không gian sống', 'LIV-011', 590000, 'archived'],
-  ['Ghế gỗ Sunday', 'chair', 'Nội thất', 'FUR-012', 3290000, 'draft'],
-  ['Sổ tay Morning Pages', 'notebook', 'Văn phòng phẩm', 'STA-013', 250000, 'published'],
-  ['Tai nghe Studio Pro', 'headphones', 'Công nghệ', 'TEC-014', 3290000, 'draft'],
+  ['Túi Everyday Tote', 'bag', 'Phụ kiện', 'ACC-001', 690000, ContentStatus.Published],
+  ['Đèn bàn Studio', 'lamp', 'Không gian sống', 'LIV-002', 1290000, ContentStatus.Published],
+  ['Tai nghe Quiet Hours', 'headphones', 'Công nghệ', 'TEC-003', 2490000, ContentStatus.Draft],
+  ['Ghế Form Lounge', 'chair', 'Nội thất', 'FUR-004', 4590000, ContentStatus.Published],
+  ['Bình gốm Organic', 'vase', 'Không gian sống', 'LIV-005', 450000, ContentStatus.Published],
+  ['Máy ảnh Pocket Film', 'camera', 'Công nghệ', 'TEC-006', 3690000, ContentStatus.Draft],
+  ['Giày Daily Runner', 'shoe', 'Thời trang', 'FAS-007', 1590000, ContentStatus.Published],
+  ['Sổ tay Field Notes', 'notebook', 'Văn phòng phẩm', 'STA-008', 190000, ContentStatus.Published],
+  ['Túi Weekender Canvas', 'bag', 'Phụ kiện', 'ACC-009', 1190000, ContentStatus.Draft],
+  ['Đèn đọc sách Arc', 'lamp', 'Không gian sống', 'LIV-010', 890000, ContentStatus.Published],
+  ['Bình gốm Still', 'vase', 'Không gian sống', 'LIV-011', 590000, ContentStatus.Archived],
+  ['Ghế gỗ Sunday', 'chair', 'Nội thất', 'FUR-012', 3290000, ContentStatus.Draft],
+  [
+    'Sổ tay Morning Pages',
+    'notebook',
+    'Văn phòng phẩm',
+    'STA-013',
+    250000,
+    ContentStatus.Published,
+  ],
+  ['Tai nghe Studio Pro', 'headphones', 'Công nghệ', 'TEC-014', 3290000, ContentStatus.Draft],
 ];
 
 export function createContentFixtures(): ContentItem[] {
   const products = PRODUCTS.map(
     ([name, image, category, sku, price, status], index): ContentItem => ({
       id: `product-${index + 1}`,
-      collection: 'products',
+      collection: CollectionKey.Products,
       name,
       slug: slugify(name),
       description:
@@ -53,20 +61,20 @@ export function createContentFixtures(): ContentItem[] {
   ].map((name, index): ContentItem => ({
     ...seedAt(index),
     id: `category-${index + 1}`,
-    collection: 'categories',
+    collection: CollectionKey.Categories,
     name,
     slug: slugify(name),
-    status: 'published',
+    status: ContentStatus.Published,
     description: `Những thiết kế nổi bật thuộc danh mục ${name.toLowerCase()}.`,
   }));
   const types = ['Sản phẩm vật lý', 'Sản phẩm số', 'Bộ sưu tập'].map(
     (name, index): ContentItem => ({
       ...seedAt(index),
       id: `type-${index + 1}`,
-      collection: 'types',
+      collection: CollectionKey.Types,
       name,
       slug: slugify(name),
-      status: 'published',
+      status: ContentStatus.Published,
       description: 'Cấu trúc nội dung mẫu cho cửa hàng.',
     }),
   );

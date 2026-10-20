@@ -2,11 +2,13 @@
 
 This file applies to the independent Frontend repository. Product intent is in [PRODUCT.md](PRODUCT.md); visual decisions and tokens are in [DESIGN.md](DESIGN.md). Read those before changing a screen. Codebase boundaries and workflow are in [docs/architecture.md](docs/architecture.md). Cross-project progress and contracts remain linked from [the sibling project](../Boilerate/docs/frontend/README.md) when working in the shared workspace; it is not required for FE build/CI.
 
+The mandatory implementation/review standard is [Angular coding rules](docs/coding-rules.md). Read it before adding or refactoring a feature. List pages use the feature name; create/edit/detail pages use `-io`. Enum/type declarations, reusable options and business configuration belong in the feature's `enums`, `models` and `constants`, never inside a component. Component imports are explicit template dependencies; do not introduce a global catch-all UI module.
+
 ## Architecture and naming
 
 - Keep standalone Angular components, strict TypeScript and strict templates. Use signals/computed for local derived state and RxJS where asynchronous streams need cancellation or composition. Keep effects for actual side effects.
 - Organize by responsibility: `core/` for application-wide theme/layout state, `layout/admin-shell/` for workspace chrome, `shared/ui/` for reusable presentation, and `features/` for screens and their local state. Do not create empty layers in advance.
-- Use kebab-case files/folders and PascalCase exported types. A component uses a shared basename for `.ts`, `.html`, `.scss`, and `.spec.ts`, for example `product-editor`. Avoid a mandatory `Component` suffix. Use `app-` selectors; use `ui-` only for reusable shared controls.
+- Use kebab-case files/folders and PascalCase exported types. A component uses a shared basename for `.ts`, `.html`, `.scss`, and `.spec.ts`, for example `product-io`. Avoid a mandatory `Component` suffix. Use `app-` selectors; use `ui-` only for reusable shared controls.
 - Scope state to the smallest owning screen. Do not place demo content, feature rules or API calls in shared UI. Do not import a feature's private internals from another feature.
 - Shell consumes the navigation DI contract; only app composition connects it to a feature public entry. Run architecture probes with lint. Shared form helpers accept structural field-error input rather than importing core HTTP models.
 - Use Angular router lazy boundaries for screens. Keep accessible native links for navigation and buttons for actions. Prefer typed inputs/outputs and Angular control flow.

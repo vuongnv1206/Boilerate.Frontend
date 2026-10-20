@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CONTENT_LIMITS, createContentDraft, isValidItem } from '../models/content-item';
+import { CONTENT_LIMITS } from '../constants/content.constants';
+import { CollectionKey } from '../enums/content.enum';
+import { createContentDraft, isValidItem } from '../models/content-item';
 import { createContentForm } from './content-form';
 
 describe('Content form contract', () => {
@@ -12,12 +14,16 @@ describe('Content form contract', () => {
     expect(form.valid).toBe(true);
   });
 
-  it.each(Object.entries(CONTENT_LIMITS))(
+  it.each(['name', 'description', 'sku', 'seoTitle', 'seoDescription'] as const)(
     'uses the same %s length limit as the data service',
-    (key, limit) => {
+    (field) => {
       const form = createContentForm();
-      const item = { ...createContentDraft('products'), name: 'Tên hợp lệ', slug: 'ten-hop-le' };
-      const field = key as keyof typeof CONTENT_LIMITS;
+      const item = {
+        ...createContentDraft(CollectionKey.Products),
+        name: 'Tên hợp lệ',
+        slug: 'ten-hop-le',
+      };
+      const limit = CONTENT_LIMITS[field];
       form.reset({ ...item, [field]: 'a'.repeat(limit) });
       expect(form.valid).toBe(true);
       expect(isValidItem({ ...item, ...form.getRawValue() })).toBe(true);
@@ -37,7 +43,7 @@ describe('Content form contract', () => {
   ])('rejects invalid numeric content %j in the form and service', (values) => {
     const form = createContentForm();
     const item = {
-      ...createContentDraft('products'),
+      ...createContentDraft(CollectionKey.Products),
       name: 'Tên hợp lệ',
       slug: 'ten-hop-le',
       ...values,

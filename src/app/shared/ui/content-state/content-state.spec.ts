@@ -1,7 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
-import { ContentState, ContentStateKind } from './content-state';
+import { ContentState } from './content-state';
+import { ContentStateKind } from './content-state.model';
 
 @Component({
   imports: [ContentState],

@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Icon } from '../icon/icon';
-
-export type ContentStateKind = 'empty' | 'loading' | 'error';
+import { ContentStateKind } from './content-state.model';
 
 @Component({
   selector: 'ui-content-state',

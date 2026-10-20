@@ -1,0 +1,623 @@
+<div class="gallery-page">
+  <header class="gallery-header">
+    <div>
+      <span class="page-kicker">DESIGN SYSTEM</span>
+      <h1>Bộ giao diện</h1>
+      <p>Một ngôn ngữ chung cho từng thao tác trong không gian quản trị.</p>
+    </div>
+    <span class="version-label"><span aria-hidden="true"></span> Foundation / 01</span>
+  </header>
+
+  <div class="gallery-intro">
+    <ui-icon name="info" [size]="15" />
+    <p>
+      Các control có thể tương tác. Chuyển giao diện ở thanh trên để kiểm tra cùng một trạng thái ở
+      chế độ sáng và tối.
+    </p>
+    <ui-status-badge>Bản xem thử</ui-status-badge>
+  </div>
+
+  <p-tabs [value]="tabs.Controls" class="gallery-tabs">
+    <p-tablist>
+      <p-tab [value]="tabs.Controls">Control</p-tab>
+      <p-tab [value]="tabs.Data">Dữ liệu & lựa chọn</p-tab>
+      <p-tab [value]="tabs.Feedback">Phản hồi & lớp phủ</p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel [value]="tabs.Controls">
+        <section class="specimen-section" aria-labelledby="buttons-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">01</span>
+              <h2 id="buttons-heading">Nút & thao tác</h2>
+            </div>
+            <p>Rõ thứ tự ưu tiên. Cùng chiều cao, cùng nhịp.</p>
+          </div>
+          <div class="specimen-row">
+            <span class="row-caption">Biến thể</span>
+            <div class="control-line">
+              <button class="ui-button primary" type="button" (click)="showToast()">
+                <ui-icon name="plus" [size]="14" /> Tạo mới
+              </button>
+              <button class="ui-button" type="button" (click)="openDialog($event)">
+                Xem trước
+              </button>
+              <button class="ui-button quiet" type="button" (click)="showToast()">
+                Hủy thay đổi
+              </button>
+              <button class="ui-button danger" type="button" (click)="previewDelete()">
+                Xóa bản nháp
+              </button>
+              <button
+                class="icon-button"
+                type="button"
+                aria-label="Cài đặt bản xem thử"
+                pTooltip="Cài đặt bản xem thử"
+                tooltipEvent="both"
+                tooltipPosition="top"
+                (click)="openDrawer($event)"
+              >
+                <ui-icon name="settings" [size]="15" />
+              </button>
+            </div>
+          </div>
+          <div class="specimen-row">
+            <span class="row-caption">Trạng thái</span>
+            <div class="control-line">
+              <button class="ui-button primary" type="button" disabled>Không khả dụng</button>
+              <button
+                class="ui-button"
+                type="button"
+                [disabled]="saving()"
+                [attr.aria-busy]="saving()"
+                (click)="previewSave()"
+                data-testid="gallery-loading-trigger"
+              >
+                @if (saving()) {
+                  <span class="loading-dot" aria-hidden="true"></span>
+                } @else {
+                  <ui-icon name="check" [size]="14" />
+                }
+                {{ saving() ? 'Đang lưu…' : 'Thử trạng thái lưu' }}
+              </button>
+              <span class="save-status" role="status">{{ saveStatus() }}</span>
+            </div>
+          </div>
+          <div class="specimen-note">
+            <kbd>Tab</kbd
+            ><span>Di chuyển giữa các control. Vòng focus luôn hiển thị khi dùng bàn phím.</span>
+          </div>
+        </section>
+
+        <section class="specimen-section" aria-labelledby="input-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">02</span>
+              <h2 id="input-heading">Trường nhập liệu</h2>
+            </div>
+            <p>Nhãn rõ ràng, phản hồi tại đúng vị trí.</p>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label" for="gallery-name">Tên bộ sưu tập</label>
+              <input
+                pInputText
+                id="gallery-name"
+                [ngModel]="collectionName()"
+                (ngModelChange)="collectionName.set($event)"
+                aria-describedby="gallery-name-help"
+              />
+              <ui-field-message id="gallery-name-help"
+                >Tên hiển thị trong danh sách nội dung.</ui-field-message
+              >
+            </div>
+            <div class="field">
+              <label class="field-label" for="gallery-readonly"
+                >Đường dẫn <span class="state-label">Chỉ đọc</span></label
+              >
+              <input
+                pInputText
+                id="gallery-readonly"
+                value="bo-suu-tap-mua-thu"
+                readonly
+                aria-describedby="gallery-readonly-help"
+              />
+              <ui-field-message id="gallery-readonly-help"
+                >Có thể chọn và sao chép giá trị.</ui-field-message
+              >
+            </div>
+            <div class="field">
+              <label class="field-label" for="gallery-invalid"
+                >Tiêu đề hiển thị <span class="required-mark" aria-label="bắt buộc">*</span></label
+              >
+              <input
+                pInputText
+                id="gallery-invalid"
+                placeholder="Nhập tiêu đề"
+                [ngModel]="title()"
+                (ngModelChange)="title.set($event)"
+                [invalid]="titleInvalid()"
+                [attr.aria-invalid]="titleInvalid()"
+                aria-describedby="gallery-title-feedback"
+                required
+              />
+              @if (titleInvalid()) {
+                <ui-field-message tone="error" id="gallery-title-feedback"
+                  ><ui-icon name="info" [size]="12" /> Vui lòng nhập tiêu đề trước khi tiếp
+                  tục.</ui-field-message
+                >
+              } @else {
+                <ui-field-message id="gallery-title-feedback"
+                  >Tiêu đề hợp lệ. Trạng thái lỗi đã được gỡ bỏ.</ui-field-message
+                >
+              }
+            </div>
+            <div class="field">
+              <label class="field-label" for="gallery-disabled"
+                >Mã nội bộ <span class="state-label">Vô hiệu hóa</span></label
+              >
+              <input pInputText id="gallery-disabled" value="COLLECTION-001" disabled />
+              <ui-field-message>Được cấp tự động trong bản xem thử.</ui-field-message>
+            </div>
+            <div class="field field-wide">
+              <label class="field-label" for="gallery-description">Mô tả ngắn</label>
+              <textarea
+                pTextarea
+                id="gallery-description"
+                rows="3"
+                [autoResize]="true"
+                [ngModel]="description()"
+                (ngModelChange)="description.set($event)"
+                aria-describedby="gallery-description-help"
+              ></textarea>
+              <ui-field-message id="gallery-description-help"
+                >Thử một câu tiếng Việt dài để kiểm tra xuống dòng và dấu câu.</ui-field-message
+              >
+            </div>
+          </div>
+        </section>
+
+        <section class="specimen-section" aria-labelledby="special-input-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">03</span>
+              <h2 id="special-input-heading">Giá trị có cấu trúc</h2>
+            </div>
+            <p>Định dạng quen thuộc, lớp phủ nhất quán.</p>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label" for="gallery-price">Giá tham khảo</label>
+              <p-inputnumber
+                inputId="gallery-price"
+                [ngModel]="price()"
+                (ngModelChange)="price.set($event)"
+                mode="currency"
+                currency="VND"
+                locale="vi-VN"
+                [min]="0"
+                [maxFractionDigits]="0"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label" for="gallery-category">Danh mục</label>
+              <p-select
+                inputId="gallery-category"
+                [options]="categories"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="category()"
+                (ngModelChange)="category.set($event)"
+                appendTo="body"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label" for="gallery-tags">Nhãn nội dung</label>
+              <p-multiselect
+                inputId="gallery-tags"
+                [options]="tags"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="selectedTags()"
+                (ngModelChange)="selectedTags.set($event)"
+                placeholder="Chọn nhãn"
+                [maxSelectedLabels]="2"
+                selectedItemsLabel="{0} nhãn được chọn"
+                appendTo="body"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label" for="gallery-date">Ngày lên lịch</label>
+              <p-datepicker
+                inputId="gallery-date"
+                [ngModel]="publishDate()"
+                (ngModelChange)="publishDate.set($event)"
+                dateFormat="dd/mm/yy"
+                placeholder="dd/mm/yyyy"
+                [showIcon]="true"
+                [showClear]="true"
+                appendTo="body"
+              />
+            </div>
+          </div>
+        </section>
+      </p-tabpanel>
+
+      <p-tabpanel [value]="tabs.Data">
+        <section class="specimen-section" aria-labelledby="selection-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">01</span>
+              <h2 id="selection-heading">Lựa chọn & tùy chọn</h2>
+            </div>
+            <p>Trạng thái luôn có nhãn mô tả.</p>
+          </div>
+          <div class="selection-row">
+            <div>
+              <h3>Đánh dấu nổi bật</h3>
+              <p>Ưu tiên nội dung này trong bộ sưu tập.</p>
+            </div>
+            <p-checkbox
+              inputId="gallery-featured"
+              [binary]="true"
+              [ngModel]="featured()"
+              (ngModelChange)="featured.set($event)"
+              ariaLabel="Đánh dấu nội dung nổi bật"
+            />
+          </div>
+          <div class="selection-row">
+            <div>
+              <label for="gallery-notification">Thông báo khi hoàn tất</label>
+              <p>Nhận phản hồi trong không gian làm việc.</p>
+            </div>
+            <p-toggleswitch
+              inputId="gallery-notification"
+              [ngModel]="notifications()"
+              (ngModelChange)="notifications.set($event)"
+            />
+          </div>
+          <div class="selection-row">
+            <div>
+              <label for="gallery-disabled-switch"
+                >Đồng bộ tự động <span class="state-label">Vô hiệu hóa</span></label
+              >
+              <p>Trạng thái minh họa khi một tùy chọn chưa khả dụng.</p>
+            </div>
+            <p-toggleswitch inputId="gallery-disabled-switch" [ngModel]="true" [disabled]="true" />
+          </div>
+        </section>
+
+        <section class="specimen-section" aria-labelledby="table-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">02</span>
+              <h2 id="table-heading">Bảng & phân trang</h2>
+            </div>
+            <span class="table-selection" role="status">{{ selectedCount() }} dòng được chọn</span>
+          </div>
+          <div
+            class="table-container"
+            role="region"
+            aria-label="Bảng nội dung minh họa"
+            tabindex="0"
+          >
+            <p-table
+              [value]="records"
+              dataKey="id"
+              [paginator]="true"
+              [rows]="3"
+              [selection]="selectedRecords()"
+              (selectionChange)="selectedRecords.set($event)"
+              [showCurrentPageReport]="true"
+              currentPageReportTemplate="{first}–{last} / {totalRecords}"
+              [tableStyle]="{ 'min-width': '560px' }"
+            >
+              <ng-template #header>
+                <tr>
+                  <th class="checkbox-column">
+                    <p-table-header-checkbox
+                      inputId="gallery-select-all"
+                      ariaLabel="Chọn tất cả nội dung"
+                    />
+                    <label class="sr-only" for="gallery-select-all">Chọn tất cả nội dung</label>
+                  </th>
+                  <th scope="col">Tên nội dung</th>
+                  <th scope="col">Danh mục</th>
+                  <th scope="col">Trạng thái</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-record>
+                <tr>
+                  <td><p-table-checkbox [value]="record" [ariaLabel]="'Chọn ' + record.name" /></td>
+                  <td class="record-name">{{ record.name }}</td>
+                  <td>{{ record.category }}</td>
+                  <td>
+                    <ui-status-badge
+                      [tone]="record.status === 'Đã xuất bản' ? 'success' : 'neutral'"
+                      >{{ record.status }}</ui-status-badge
+                    >
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+          <div class="specimen-note">
+            <ui-icon name="info" [size]="13" /><span
+              >6 dòng dữ liệu minh họa. Lựa chọn và phân trang chỉ thay đổi giao diện.</span
+            >
+          </div>
+        </section>
+
+        <section class="specimen-section" aria-labelledby="tokens-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">03</span>
+              <h2 id="tokens-heading">Màu theo vai trò</h2>
+            </div>
+            <p>Cùng ý nghĩa trong cả hai theme.</p>
+          </div>
+          <div class="token-strip" aria-label="Bảng màu ngữ nghĩa">
+            <div>
+              <span class="token-swatch token-accent"></span><span>Nhấn mạnh</span
+              ><code>accent</code>
+            </div>
+            <div>
+              <span class="token-swatch token-success"></span><span>Hoàn tất</span
+              ><code>success</code>
+            </div>
+            <div>
+              <span class="token-swatch token-warning"></span><span>Cần lưu ý</span
+              ><code>warning</code>
+            </div>
+            <div>
+              <span class="token-swatch token-danger"></span><span>Có lỗi</span><code>danger</code>
+            </div>
+            <div>
+              <span class="token-swatch token-surface"></span><span>Bề mặt</span
+              ><code>surface</code>
+            </div>
+          </div>
+        </section>
+      </p-tabpanel>
+
+      <p-tabpanel [value]="tabs.Feedback">
+        <section class="specimen-section" aria-labelledby="overlay-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">01</span>
+              <h2 id="overlay-heading">Lớp phủ & ngữ cảnh</h2>
+            </div>
+            <p>Mở đúng nơi, trở về đúng tác vụ.</p>
+          </div>
+          <div class="overlay-example">
+            <div>
+              <h3>Hộp thoại</h3>
+              <p>Dành cho một quyết định ngắn, có điểm bắt đầu và kết thúc rõ ràng.</p>
+            </div>
+            <button
+              class="ui-button"
+              type="button"
+              (click)="openDialog($event)"
+              data-testid="gallery-dialog-trigger"
+            >
+              Mở hộp thoại <ui-icon name="external-link" [size]="13" />
+            </button>
+          </div>
+          <div class="overlay-example">
+            <div>
+              <h3>Panel bên phải</h3>
+              <p>Thêm tùy chọn mà vẫn giữ được ngữ cảnh của màn đang làm việc.</p>
+            </div>
+            <button
+              class="ui-button"
+              type="button"
+              (click)="openDrawer($event)"
+              data-testid="gallery-drawer-trigger"
+            >
+              Mở panel <ui-icon name="sliders" [size]="13" />
+            </button>
+          </div>
+          <div class="overlay-example">
+            <div>
+              <h3>Chú thích</h3>
+              <p>Mô tả bổ sung cho icon; nhãn thao tác vẫn có sẵn cho trình đọc màn hình.</p>
+            </div>
+            <button
+              class="icon-button"
+              type="button"
+              aria-label="Thông tin về bộ giao diện"
+              pTooltip="Mọi control dùng chung token sáng và tối."
+              tooltipEvent="both"
+              tooltipPosition="left"
+            >
+              <ui-icon name="info" [size]="16" />
+            </button>
+          </div>
+        </section>
+
+        <section class="specimen-section" aria-labelledby="feedback-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">02</span>
+              <h2 id="feedback-heading">Thông báo & phản hồi</h2>
+            </div>
+            <p>Ngắn gọn và có thể hành động.</p>
+          </div>
+          <div class="message-stack">
+            <p-message severity="info"
+              >Đây là bản xem thử giao diện. Các thay đổi chỉ tồn tại trong phiên hiện
+              tại.</p-message
+            >
+            <p-message severity="success"
+              >Bản xem thử đã được cập nhật. Bạn có thể tiếp tục chỉnh sửa.</p-message
+            >
+            <p-message severity="warn"
+              >Có nội dung chưa được lưu. Hãy kiểm tra trước khi rời màn hình.</p-message
+            >
+            <p-message severity="error"
+              >Chưa thể hoàn tất thao tác. Vui lòng kiểm tra các trường được đánh dấu.</p-message
+            >
+          </div>
+          <div class="specimen-row feedback-action">
+            <span class="row-caption">Thông báo nổi</span
+            ><button
+              class="ui-button"
+              type="button"
+              (click)="showToast()"
+              data-testid="gallery-toast-trigger"
+            >
+              Thử thông báo <ui-icon name="arrow-right" [size]="14" />
+            </button>
+          </div>
+        </section>
+
+        <section class="specimen-section" aria-labelledby="content-state-heading">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">03</span>
+              <h2 id="content-state-heading">Trạng thái nội dung</h2>
+            </div>
+            <p>Giữ rõ ngữ cảnh khi dữ liệu chưa sẵn sàng.</p>
+          </div>
+          <div class="control-line" aria-label="Chọn trạng thái xem thử">
+            <button
+              class="ui-button"
+              type="button"
+              [attr.aria-pressed]="statePreview() === 'empty'"
+              (click)="statePreview.set('empty')"
+            >
+              Trống
+            </button>
+            <button
+              class="ui-button"
+              type="button"
+              [attr.aria-pressed]="statePreview() === 'loading'"
+              (click)="statePreview.set('loading')"
+            >
+              Đang tải
+            </button>
+            <button
+              class="ui-button"
+              type="button"
+              [attr.aria-pressed]="statePreview() === 'error'"
+              (click)="statePreview.set('error')"
+            >
+              Có lỗi
+            </button>
+          </div>
+          <ui-content-state
+            [kind]="statePreview()"
+            [title]="
+              statePreview() === 'loading'
+                ? 'Đang tải nội dung minh họa'
+                : statePreview() === 'error'
+                  ? 'Chưa thể tải nội dung'
+                  : 'Chưa có nội dung'
+            "
+            [message]="
+              statePreview() === 'error'
+                ? 'Thử lại để quay về trạng thái trống của bản xem thử.'
+                : statePreview() === 'loading'
+                  ? 'Đây là trạng thái minh họa, không gửi yêu cầu lên máy chủ.'
+                  : 'Nội dung mới sẽ xuất hiện tại đây.'
+            "
+          >
+            @if (statePreview() === 'error') {
+              <button class="ui-button" type="button" (click)="statePreview.set('empty')">
+                Thử lại
+              </button>
+            }
+          </ui-content-state>
+        </section>
+
+        <section class="motion-note">
+          <ui-icon name="check" [size]="16" />
+          <div>
+            <h3>Chuyển động có chủ đích</h3>
+            <p>
+              Phản hồi nhanh, panel nhẹ và không có hiệu ứng làm gián đoạn nhập liệu. Tùy chọn giảm
+              chuyển động của hệ thống được tôn trọng.
+            </p>
+          </div>
+          <span>120 / 180 / 240 ms</span>
+        </section>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+
+  <footer class="gallery-footer">
+    <span>BOILERATE / INTERFACE FOUNDATION</span
+    ><span>Gọn trong thao tác. Nhất quán trong trải nghiệm.</span>
+  </footer>
+</div>
+
+<p-dialog
+  header="Lưu bản xem thử?"
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  (onHide)="restoreOverlayFocus()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '420px' }"
+  [breakpoints]="{ '600px': 'calc(100vw - 32px)' }"
+  appendTo="body"
+>
+  <div class="dialog-copy">
+    <div class="dialog-symbol"><ui-icon name="check" [size]="20" /></div>
+    <p>
+      Bạn có thể tiếp tục khám phá các trạng thái của giao diện sau khi lưu. Đây là thao tác minh
+      họa, không gửi dữ liệu lên máy chủ.
+    </p>
+  </div>
+  <ng-template #footer
+    ><button class="ui-button" type="button" (click)="dialogVisible.set(false)">Quay lại</button
+    ><button class="ui-button primary" type="button" (click)="closeDialog()">
+      Lưu bản xem thử
+    </button></ng-template
+  >
+</p-dialog>
+
+<p-drawer
+  header="Tùy chọn hiển thị"
+  [visible]="drawerVisible()"
+  (visibleChange)="drawerVisible.set($event)"
+  (onShow)="focusDrawer()"
+  (onHide)="restoreOverlayFocus()"
+  ariaCloseLabel="Đóng tùy chọn hiển thị"
+  [pt]="{ root: { 'aria-label': 'Tùy chọn hiển thị', 'aria-modal': true, role: 'dialog' } }"
+  position="right"
+  appendTo="body"
+>
+  <div class="drawer-content">
+    <span class="page-kicker">PANEL XEM THỬ</span>
+    <p>Giữ tác vụ chính trong ngữ cảnh, đưa các tùy chọn bổ sung vào một không gian riêng.</p>
+    <div class="drawer-divider"></div>
+    <div class="field">
+      <label class="field-label" for="gallery-drawer-name">Nhãn hiển thị</label
+      ><input #drawerName pInputText id="gallery-drawer-name" value="Không gian nội dung" />
+    </div>
+    <div class="selection-row">
+      <div>
+        <label for="gallery-drawer-notify">Hiển thị thông báo</label>
+        <p>Dùng chung trạng thái với bản xem thử.</p>
+      </div>
+      <p-toggleswitch
+        inputId="gallery-drawer-notify"
+        [ngModel]="notifications()"
+        (ngModelChange)="notifications.set($event)"
+      />
+    </div>
+    <p class="field-help">Nhấn Esc hoặc vùng bên ngoài để đóng panel.</p>
+  </div>
+  <ng-template #footer
+    ><button
+      class="ui-button primary drawer-close"
+      type="button"
+      (click)="drawerVisible.set(false)"
+    >
+      Hoàn tất
+    </button></ng-template
+  >
+</p-drawer>
+<p-toast position="bottom-right" />

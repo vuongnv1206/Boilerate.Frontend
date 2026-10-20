@@ -8,9 +8,11 @@ Các bản ghi dưới đây thuộc repo FE độc lập. Lịch sử UI trư�
 - [Theme và shared presentation](2026-10-20-theme.md).
 - [Kiểm tra tự động và CI](2026-10-20-quality.md).
 - [Ổn định nền scroll trong ảnh overlay CI](2026-10-20-ci-snapshot-scroll.md).
+- [Content data và HTTP transport](2026-10-20-content-data.md).
+- [Feature content và quy chuẩn source](2026-10-20-content-architecture.md).
 - [Báo cáo kiểm chứng tích hợp](../verification/2026-10-20-codebase.md).
 
-CI cuối đã đạt trên source `dd7fd71`: [run 39417291346](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39417291346), gồm 93 unit tests và 24 browser tests. Commit bàn giao kết quả chỉ thay tài liệu và skip CI, không đổi source đã được kiểm chứng.
+Baseline trước refactor feature đã có CI đạt trên source `dd7fd71`: [run 39417291346](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39417291346), gồm 93 unit tests và 24 browser tests. Kết quả đó không thay thế việc kiểm tra source mới; các bản ghi content ở trên ghi phạm vi và kiểm chứng mới.
 
 ## Các commit đã có
 

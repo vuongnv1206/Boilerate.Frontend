@@ -1,0 +1,49 @@
+<div class="collection-toolbar">
+  <label class="search-field"
+    ><ui-icon name="search" [size]="15" /><input
+      pInputText
+      type="search"
+      aria-label="Tìm kiếm nội dung"
+      placeholder="Tìm theo tên, mã hoặc danh mục..."
+      [ngModel]="query()"
+      (ngModelChange)="queryChange.emit($event)"
+    /><span class="search-hint">⌕</span></label
+  >
+  <p-select
+    class="status-select"
+    [options]="statuses"
+    optionLabel="label"
+    optionValue="value"
+    [ngModel]="status()"
+    (ngModelChange)="statusChange.emit($event)"
+    appendTo="body"
+    ariaLabel="Lọc theo trạng thái"
+  />
+  <div class="toolbar-spacer"></div>
+  <button
+    class="ui-button quiet columns-button"
+    aria-label="Cột hiển thị"
+    [attr.aria-expanded]="columnsPanel.overlayVisible()"
+    (click)="columnsPanel.toggle($event)"
+  >
+    <ui-icon name="columns" [size]="14" /><span>Cột hiển thị</span
+    ><ui-icon name="chevron-down" [size]="11" />
+  </button>
+</div>
+
+<p-popover #columnsPanel
+  ><div class="columns-popover">
+    <strong>Cột hiển thị</strong>
+    <p>Tùy chỉnh bảng nội dung của bạn.</p>
+    @for (column of columnOptions; track column.key) {
+      <label [for]="'column-' + column.key"
+        ><p-checkbox
+          [binary]="true"
+          [ngModel]="visibleColumns().has(column.key)"
+          (ngModelChange)="columnToggle.emit(column.key)"
+          [inputId]="'column-' + column.key"
+        /><span>{{ column.label }}</span></label
+      >
+    }
+  </div></p-popover
+>

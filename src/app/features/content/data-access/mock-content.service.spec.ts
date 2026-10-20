@@ -1,12 +1,8 @@
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
-import {
-  CONTENT_LIMITS,
-  ContentItem,
-  createContentDraft,
-  filterItems,
-  slugify,
-} from '../models/content-item';
+import { CONTENT_LIMITS } from '../constants/content.constants';
+import { CollectionKey, ContentStatus } from '../enums/content.enum';
+import { ContentItem, createContentDraft, filterItems, slugify } from '../models/content-item';
 import { MockContentService } from './mock-content.service';
 
 async function product(service: MockContentService, id = 'product-1'): Promise<ContentItem> {
@@ -23,8 +19,8 @@ describe('Mock content data service', () => {
       categories: 6,
       types: 3,
     });
-    const items = await firstValueFrom(service.getCollection('products'));
-    expect(filterItems(items, 'den', 'published')).toHaveLength(2);
+    const items = await firstValueFrom(service.getCollection(CollectionKey.Products));
+    expect(filterItems(items, 'den', ContentStatus.Published)).toHaveLength(2);
     expect(slugify('  Đồ dùng đẹp! ')).toBe('do-dung-dep');
   });
 
@@ -40,7 +36,7 @@ describe('Mock content data service', () => {
     expect(saved.name).toBe('Tên đã sửa');
     saved.name = 'Chỉ sửa response';
     expect((await product(service)).name).toBe('Tên đã sửa');
-    const collection = await firstValueFrom(service.getCollection('products'));
+    const collection = await firstValueFrom(service.getCollection(CollectionKey.Products));
     const first = collection[0];
     if (!first) throw new Error('Expected collection item.');
     first.name = 'Chỉ sửa collection response';
@@ -55,14 +51,18 @@ describe('Mock content data service', () => {
       counts.push(value.products),
     );
     const collectionSubscription = service
-      .getCollection('products')
+      .getCollection(CollectionKey.Products)
       .subscribe((items) => productNames.push(items.map((item) => item.name)));
-    const draft = { ...createContentDraft('products'), name: 'Bản mới', slug: 'ban-moi' };
+    const draft = {
+      ...createContentDraft(CollectionKey.Products),
+      name: 'Bản mới',
+      slug: 'ban-moi',
+    };
     await firstValueFrom(service.save(draft));
-    const updated = await firstValueFrom(service.setStatus([draft.id], 'published'));
-    expect(updated[0]?.status).toBe('published');
+    const updated = await firstValueFrom(service.setStatus([draft.id], ContentStatus.Published));
+    expect(updated[0]?.status).toBe(ContentStatus.Published);
     expect(updated[0]?.updatedAt).toBe((await product(service, draft.id)).updatedAt);
-    expect((await product(service)).status).toBe('published');
+    expect((await product(service)).status).toBe(ContentStatus.Published);
     const remove = service.remove([draft.id]);
     expect(await firstValueFrom(service.getById(draft.id))).toBeDefined();
     await firstValueFrom(remove);
@@ -78,14 +78,14 @@ describe('Mock content data service', () => {
     const original = await product(service);
     await firstValueFrom(service.save({ ...original, name: 'A'.repeat(CONTENT_LIMITS.name) }));
     const duplicate = service.duplicate(original.id);
-    expect((await firstValueFrom(service.getCollection('products'))).length).toBe(14);
+    expect((await firstValueFrom(service.getCollection(CollectionKey.Products))).length).toBe(14);
     const copy = await firstValueFrom(duplicate);
     expect(copy?.name.length).toBe(CONTENT_LIMITS.name);
     expect(copy?.name.endsWith(' (bản sao)')).toBe(true);
     expect(copy?.id).not.toBe(original.id);
     expect(copy?.slug).not.toBe(original.slug);
-    expect(copy?.status).toBe('draft');
-    expect((await product(service)).status).toBe('published');
+    expect(copy?.status).toBe(ContentStatus.Draft);
+    expect((await product(service)).status).toBe(ContentStatus.Published);
   });
 
   it.each(Object.entries(CONTENT_LIMITS))(
@@ -101,9 +101,13 @@ describe('Mock content data service', () => {
 
   it('rejects an invalid draft without inserting it and handles missing IDs explicitly', async () => {
     const service = new MockContentService();
-    await expect(firstValueFrom(service.save(createContentDraft('products')))).rejects.toThrow();
+    await expect(
+      firstValueFrom(service.save(createContentDraft(CollectionKey.Products))),
+    ).rejects.toThrow();
     expect(await firstValueFrom(service.collectionCounts$)).toMatchObject({ products: 14 });
     expect(await firstValueFrom(service.duplicate('missing'))).toBeUndefined();
-    expect(await firstValueFrom(service.setStatus(['missing'], 'archived'))).toEqual([]);
+    expect(await firstValueFrom(service.setStatus(['missing'], ContentStatus.Archived))).toEqual(
+      [],
+    );
   });
 });

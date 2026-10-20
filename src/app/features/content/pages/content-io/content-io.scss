@@ -1,0 +1,177 @@
+:host {
+  display: block;
+  height: 100%;
+}
+.editor-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.editor-breadcrumb {
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-3);
+  > a {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-2);
+    &:hover {
+      color: var(--accent);
+    }
+  }
+  > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  min-height: 80px;
+}
+.editor-title-wrap {
+  min-width: 0;
+  h1 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.4px;
+    margin: 0 0 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+.editor-save-status {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: var(--text-3);
+  font-size: 11px;
+}
+.editor-actions {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  white-space: nowrap;
+}
+.editor-notice {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--text-2);
+  padding: 7px 22px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  > span {
+    flex: 1;
+  }
+  .icon-button {
+    width: 23px;
+    height: 23px;
+  }
+}
+.editor-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  min-height: 0;
+  flex: 1;
+}
+.inspector-toggle {
+  display: none;
+  margin-left: auto;
+}
+.dialog-description {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--text-2);
+}
+@media (max-width: 1200px) {
+  .editor-body {
+    grid-template-columns: minmax(0, 1fr) 245px;
+  }
+  .editor-actions > .ui-button {
+    font-size: 11px;
+  }
+  .editor-title-wrap h1 {
+    max-width: 340px;
+    font-size: 15px;
+  }
+}
+@media (max-width: 1050px) {
+  .inspector-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    border: 0;
+    background: rgb(0 0 0 / 28%);
+  }
+  .editor-body {
+    display: flex;
+    position: relative;
+  }
+  .inspector-toggle {
+    display: inline-flex;
+  }
+  .editor-title-wrap h1 {
+    max-width: 250px;
+  }
+  .editor-toolbar {
+    gap: 12px;
+  }
+  .editor-actions .status-badge {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  :host {
+    --control-height: 40px;
+  }
+  .ui-button {
+    min-height: 40px;
+  }
+  .icon-button {
+    width: 40px;
+    height: 40px;
+  }
+  .editor-breadcrumb > a {
+    min-height: 40px;
+  }
+  .editor-breadcrumb {
+    padding-left: 16px;
+    padding-right: 12px;
+    font-size: 11px;
+  }
+  .editor-toolbar {
+    padding: 17px 16px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    min-height: 118px;
+  }
+  .editor-title-wrap {
+    width: 100%;
+    h1 {
+      max-width: 100%;
+      font-size: 16px;
+    }
+  }
+  .editor-save-status {
+    font-size: 11px;
+  }
+  .editor-actions {
+    gap: 8px;
+  }
+}

@@ -1,12 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, defer, distinctUntilChanged, map, of } from 'rxjs';
-import {
-  CONTENT_LIMITS,
-  CollectionKey,
-  ContentItem,
-  ContentStatus,
-  isValidItem,
-} from '../models/content-item';
+import { CONTENT_COPY_SUFFIX, CONTENT_LIMITS } from '../constants/content.constants';
+import { CollectionKey, ContentStatus } from '../enums/content.enum';
+import { ContentItem, isValidItem } from '../models/content-item';
 import { createContentFixtures } from './content.fixtures';
 import { ContentService } from './content.service';
 
@@ -17,9 +13,13 @@ export class MockContentService extends ContentService {
 
   readonly collectionCounts$ = this.records.pipe(
     map((records) => ({
-      products: records.filter((item) => item.collection === 'products').length,
-      categories: records.filter((item) => item.collection === 'categories').length,
-      types: records.filter((item) => item.collection === 'types').length,
+      [CollectionKey.Products]: records.filter((item) => item.collection === CollectionKey.Products)
+        .length,
+      [CollectionKey.Categories]: records.filter(
+        (item) => item.collection === CollectionKey.Categories,
+      ).length,
+      [CollectionKey.Types]: records.filter((item) => item.collection === CollectionKey.Types)
+        .length,
     })),
     distinctUntilChanged(
       (previous, current) =>
@@ -53,14 +53,13 @@ export class MockContentService extends ContentService {
     return defer(() => {
       const original = this.records.value.find((record) => record.id === id);
       if (!original) return of(undefined);
-      const suffix = ' (bản sao)';
       return of(
         this.persist({
           ...original,
           id: `demo-${crypto.randomUUID()}`,
-          name: `${original.name.slice(0, CONTENT_LIMITS.name - suffix.length).trimEnd()}${suffix}`,
+          name: `${original.name.slice(0, CONTENT_LIMITS.name - CONTENT_COPY_SUFFIX.length).trimEnd()}${CONTENT_COPY_SUFFIX}`,
           slug: `${original.slug}-copy-${this.records.value.length}`,
-          status: 'draft',
+          status: ContentStatus.Draft,
         }),
       );
     });

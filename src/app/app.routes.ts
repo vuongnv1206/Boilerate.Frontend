@@ -17,9 +17,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./features/content-workspace/content-workspace.routes').then(
-            (module) => module.CONTENT_WORKSPACE_ROUTES,
-          ),
+          import('./features/content/content.routes').then((module) => module.CONTENT_ROUTES),
       },
     ],
   },

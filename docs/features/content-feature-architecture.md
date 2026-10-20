@@ -10,6 +10,7 @@ Trạng thái: Đang triển khai. Người dùng yêu cầu thực hiện refac
 - `ContentStore` sở hữu query/selection/pagination/actions. `ContentIoStore` sở hữu form, load/save/autosave/status/dirty decisions; components chỉ nhận input/phát output, xử lý focus tại view.
 - Base `ApiClient` dùng HttpClient + runtime API base + interceptor hiện có, typed methods/options; không tự retry/toast/auth hoặc đoán endpoint. Feature data service dùng composition khi nối API sau.
 - Sửa lỗi duplicate tên vượt 180 ký tự; dùng giới hạn chung giữa form và mock validation.
+- Bổ sung theo steering: rule bắt buộc ở `docs/coding-rules.md` và `AGENTS.md`; enum/constants/model tách khỏi component, imports standalone cụ thể và style class thống nhất. Đối chiếu BE, eco-fe và NanoFE core; chọn base HTTP composition/stateless và DI, giữ state/grid ở feature.
 
 ## Bước và kiểm chứng
 
@@ -17,10 +18,10 @@ Trạng thái: Đang triển khai. Người dùng yêu cầu thực hiện refac
 2. Màn `content`, store và component toolbar/table thực sự sử dụng.
 3. Màn `content-io`, store/form/controller và component form/inspector thực sự sử dụng.
 4. Tích hợp route/providers/navigation, xóa implementation cũ, lint boundaries cho pages/components/state/data-access.
-5. Format/lint/unit/build, 24 browser tests/goldens hai theme ba viewport; CI thực tế và commit nhỏ/push. Chưa dùng test cũ làm kết quả sau refactor.
+5. Format/lint/unit/build, 24 browser tests/goldens + 6 content workflow tests hai theme ba viewport; CI thực tế và commit nhỏ/push. Chưa dùng test cũ làm kết quả sau refactor.
 
 Chấp nhận khi đổi mock bằng DI test-double không sửa page, test load/error/save failure/cancellation và validation hoạt động; search/filter/page/selection, autosave/dirty guard/inspector giữ hành vi; ảnh không bị cập nhật để che hồi quy.
 
 ## Tiến độ
 
-Đã đọc source/quy chuẩn, xác nhận refactor chưa thực hiện ở lượt review trước. Các luồng source được phân công theo file ownership để tránh sửa chồng nhau. Kết quả thực chạy sẽ ghi trong history/verification sau khi tích hợp.
+Steps 1–4 đã triển khai vào route thực; implementation cũ đã xóa. Đã chạy full format/lint, 144 unit tests và production build sau enum/constants migration; sau đó thêm một test transport concurrency, đạt 14 tests của ApiClient. Bản browser đầu có lỗi selector của test mới (khớp cả “Sản phẩm” và “Loại sản phẩm”) và một ca tooltip đua focus sau drawer; đã sửa selector chính xác và chờ overlay đóng trước thao tác tiếp theo, không đổi golden. Đang chạy lại browser/CI trước khi chốt step 5; kết quả cuối ghi trong verification/history.

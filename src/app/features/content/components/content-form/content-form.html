@@ -1,0 +1,241 @@
+<nav class="editor-tabs" aria-label="Các phần chỉnh sửa">
+  <button
+    [class.active]="activeTab() === contentTab.Details"
+    [attr.aria-pressed]="activeTab() === contentTab.Details"
+    (click)="tabChange.emit(contentTab.Details)"
+  >
+    Nội dung</button
+  ><button
+    [class.active]="activeTab() === contentTab.Media"
+    [attr.aria-pressed]="activeTab() === contentTab.Media"
+    (click)="tabChange.emit(contentTab.Media)"
+  >
+    Hình ảnh</button
+  ><button
+    [class.active]="activeTab() === contentTab.Seo"
+    [attr.aria-pressed]="activeTab() === contentTab.Seo"
+    (click)="tabChange.emit(contentTab.Seo)"
+  >
+    Thiết lập SEO
+  </button>
+</nav>
+<div class="form-scroll">
+  <form class="editor-form" [formGroup]="form()" (ngSubmit)="save.emit()" novalidate>
+    @if (activeTab() === contentTab.Details) {
+      <section class="form-section">
+        <div class="section-heading">
+          <ui-icon name="file" [size]="16" />
+          <h2>Thông tin cơ bản</h2>
+        </div>
+        <p class="section-description">Nội dung chính hiển thị trong bộ sưu tập của bạn.</p>
+        <div class="field">
+          <label class="field-label" for="item-name"
+            >Tên {{ definition().singular }} <span class="required">*</span></label
+          ><input
+            pInputText
+            id="item-name"
+            formControlName="name"
+            placeholder="Nhập tên nội dung"
+            [maxlength]="limits.name"
+            [attr.aria-invalid]="invalid('name')"
+            aria-describedby="name-help"
+          /><ui-field-message id="name-help" [tone]="invalid('name') ? 'error' : 'help'">{{
+            invalid('name')
+              ? 'Tên cần có ký tự ngoài khoảng trắng, tối đa 180 ký tự.'
+              : 'Đặt tên ngắn gọn, dễ nhận biết trong danh sách.'
+          }}</ui-field-message>
+        </div>
+        <div class="field">
+          <label class="field-label" for="item-slug"
+            >Slug <span class="required">*</span><ui-icon name="link" [size]="12"
+          /></label>
+          <div class="slug-input">
+            <span>/{{ definition().key }}/</span
+            ><input
+              pInputText
+              id="item-slug"
+              formControlName="slug"
+              placeholder="duong-dan-noi-dung"
+              [attr.aria-invalid]="invalid('slug')"
+              aria-describedby="slug-help"
+            />
+          </div>
+          <ui-field-message id="slug-help" [tone]="invalid('slug') ? 'error' : 'help'">{{
+            invalid('slug')
+              ? 'Dùng chữ thường không dấu, số và dấu gạch ngang.'
+              : 'Đường dẫn thân thiện, không có khoảng trắng.'
+          }}</ui-field-message>
+        </div>
+        <div class="field">
+          <label class="field-label" for="item-description">Mô tả</label
+          ><textarea
+            pTextarea
+            id="item-description"
+            formControlName="description"
+            rows="5"
+            [maxlength]="limits.description"
+            placeholder="Kể một chút về nội dung này..."
+            aria-describedby="description-help"
+          ></textarea
+          ><ui-field-message id="description-help"
+            >Mô tả ngắn gọn về chất liệu, thiết kế và những điểm đặc biệt.</ui-field-message
+          >
+        </div>
+        @if (definition().key === collectionKey.Products) {
+          <div class="field category-field">
+            <label class="field-label" for="item-category">Danh mục</label
+            ><p-select
+              inputId="item-category"
+              [options]="categories"
+              formControlName="category"
+              appendTo="body"
+            /><ui-field-message>Giúp khách hàng tìm thấy những món đồ phù hợp.</ui-field-message>
+          </div>
+        }
+      </section>
+      @if (definition().key === collectionKey.Products) {
+        <section class="form-section">
+          <div class="section-heading">
+            <ui-icon name="tag" [size]="16" />
+            <h2>Giá & tồn kho</h2>
+            <span class="section-demo">MẪU GIAO DIỆN</span>
+          </div>
+          <p class="section-description">Thiết lập các giá trị minh họa cho sản phẩm.</p>
+          <div class="fields-row">
+            <div class="field">
+              <label class="field-label" for="item-price"
+                >Giá bán <span class="required">*</span></label
+              ><p-inputnumber
+                inputId="item-price"
+                formControlName="price"
+                mode="currency"
+                currency="VND"
+                locale="vi-VN"
+                [minFractionDigits]="0"
+                [maxFractionDigits]="0"
+                [min]="0"
+                [invalid]="invalid('price')"
+              />
+              @if (invalid('price')) {
+                <ui-field-message tone="error">Giá bán phải lớn hơn hoặc bằng 0.</ui-field-message>
+              }
+            </div>
+            <div class="field">
+              <label class="field-label" for="item-sku">Mã SKU</label
+              ><input
+                pInputText
+                id="item-sku"
+                formControlName="sku"
+                placeholder="VD: ACC-001"
+                [maxlength]="limits.sku"
+              />
+            </div>
+          </div>
+          <div class="field stock-field">
+            <label class="field-label" for="item-stock">Số lượng tồn kho</label
+            ><p-inputnumber
+              inputId="item-stock"
+              formControlName="stock"
+              [min]="0"
+              [maxFractionDigits]="0"
+              [invalid]="invalid('stock')"
+            /><ui-field-message>Giá trị minh họa, chưa kết nối hệ thống kho.</ui-field-message>
+          </div>
+        </section>
+      }
+    }
+    @if (activeTab() === contentTab.Media) {
+      <section class="form-section">
+        <div class="section-heading">
+          <ui-icon name="image" [size]="16" />
+          <h2>Hình ảnh nội dung</h2>
+        </div>
+        <p class="section-description">Chọn hình minh họa để xem trước bố cục nội dung.</p>
+        <div class="main-image">
+          <img [src]="record().image" [alt]="record().name || 'Hình minh họa'" />
+        </div>
+        <div class="image-choices" role="group" aria-label="Chọn hình minh họa">
+          @for (image of images; track image) {
+            <button
+              type="button"
+              [class.selected]="record().image === '/images/' + image + '.svg'"
+              [attr.aria-label]="'Chọn hình ' + image"
+              [attr.aria-pressed]="record().image === '/images/' + image + '.svg'"
+              (click)="imageChange.emit(image)"
+            >
+              <img [src]="'/images/' + image + '.svg'" alt="" />
+            </button>
+          }
+        </div>
+        <p class="media-note">
+          <ui-icon name="info" [size]="14" />Hình minh họa có sẵn trong bản mẫu. Tải ảnh thật sẽ
+          được bổ sung khi triển khai tính năng.
+        </p>
+      </section>
+    }
+    @if (activeTab() === contentTab.Seo) {
+      <section class="form-section">
+        <div class="section-heading">
+          <ui-icon name="globe" [size]="16" />
+          <h2>Thiết lập SEO</h2>
+        </div>
+        <p class="section-description">
+          Xem trước cách nội dung có thể xuất hiện trên công cụ tìm kiếm.
+        </p>
+        <div class="field">
+          <label class="field-label" for="seo-title">Tiêu đề trang</label
+          ><input
+            pInputText
+            id="seo-title"
+            formControlName="seoTitle"
+            [maxlength]="limits.seoTitle"
+            placeholder="Tiêu đề hiển thị trên kết quả tìm kiếm"
+          /><ui-field-message
+            >{{ form().controls.seoTitle.value.length }}/{{ limits.seoTitle }} ký
+            tự</ui-field-message
+          >
+        </div>
+        <div class="field">
+          <label class="field-label" for="seo-description">Mô tả trang</label
+          ><textarea
+            pTextarea
+            id="seo-description"
+            formControlName="seoDescription"
+            rows="4"
+            [maxlength]="limits.seoDescription"
+            placeholder="Mô tả ngắn về nội dung"
+          ></textarea
+          ><ui-field-message
+            >{{ form().controls.seoDescription.value.length }}/{{ limits.seoDescription }} ký
+            tự</ui-field-message
+          >
+        </div>
+        <div class="search-preview">
+          <span class="preview-label">BẢN XEM TRƯỚC</span
+          ><span class="preview-site">Demo Store</span
+          ><span class="preview-url"
+            >demo-store.local › {{ definition().key }} › {{ form().controls.slug.value }}</span
+          ><strong>{{
+            form().controls.seoTitle.value || form().controls.name.value || 'Tiêu đề nội dung'
+          }}</strong>
+          <p>
+            {{
+              form().controls.seoDescription.value ||
+                'Thêm mô tả để xem trước kết quả tìm kiếm của nội dung.'
+            }}
+          </p>
+        </div>
+      </section>
+    }
+    <div class="form-end">
+      <ui-icon name="info" [size]="13" /><span
+        >{{
+          record().status === contentStatus.Draft
+            ? 'Bản nháp hợp lệ tự lưu sau khi bạn ngừng nhập.'
+            : 'Bấm “Lưu thay đổi” để lưu nội dung đang chỉnh sửa.'
+        }}
+        Dữ liệu chỉ tồn tại trong bản mẫu.</span
+      >
+    </div>
+  </form>
+</div>

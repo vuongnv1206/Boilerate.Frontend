@@ -1,0 +1,191 @@
+@if (store.item(); as record) {
+  <section class="editor-page" aria-labelledby="editor-title">
+    <div class="editor-breadcrumb" [attr.inert]="inspectorModal() ? '' : null">
+      <a [routerLink]="['/admin/collections', store.definition().key]"
+        ><ui-icon name="arrow-left" [size]="14" />{{ store.definition().label }}</a
+      ><ui-icon name="chevron-right" [size]="11" /><span>{{ record.name || 'Nội dung mới' }}</span
+      ><button
+        class="icon-button inspector-toggle"
+        #inspectorToggle
+        aria-label="Mở thông tin nội dung"
+        [attr.aria-expanded]="inspectorOpen()"
+        aria-controls="item-inspector"
+        (click)="toggleInspector()"
+      >
+        <ui-icon name="sliders" [size]="16" />
+      </button>
+    </div>
+    <header class="editor-toolbar" [attr.inert]="inspectorModal() ? '' : null">
+      <div class="editor-title-wrap">
+        <h1 id="editor-title">{{ record.name || 'Thêm ' + store.definition().singular }}</h1>
+        <span class="editor-save-status" role="status"
+          ><ui-icon
+            [name]="
+              store.saveState() === contentSaveState.Saved
+                ? 'check-circle'
+                : store.saveState() === contentSaveState.Invalid
+                  ? 'alert'
+                  : 'clock'
+            "
+            [size]="12"
+          />{{
+            store.busy()
+              ? 'Đang lưu...'
+              : store.saveState() === contentSaveState.Saved
+                ? 'Đã lưu trong bản mẫu'
+                : store.saveState() === contentSaveState.New
+                  ? 'Chưa lưu · nội dung mới'
+                  : store.saveState() === contentSaveState.Invalid
+                    ? 'Cần kiểm tra nội dung'
+                    : record.status === contentStatus.Draft
+                      ? 'Đang chờ tự lưu...'
+                      : 'Có thay đổi chưa lưu'
+          }}</span
+        >
+      </div>
+      <div class="editor-actions">
+        <button
+          class="ui-button"
+          [disabled]="!store.form.dirty || store.busy()"
+          [title]="store.form.dirty ? 'Lưu thay đổi trong bản mẫu' : 'Chưa có thay đổi cần lưu'"
+          (click)="store.save()"
+        >
+          Lưu thay đổi
+        </button>
+        @if (record.status === contentStatus.Draft) {
+          <button
+            class="ui-button primary"
+            [disabled]="store.busy()"
+            (click)="confirmPublish.set(true)"
+          >
+            Xuất bản<ui-icon name="chevron-down" [size]="12" />
+          </button>
+        } @else if (record.status === contentStatus.Archived) {
+          <button
+            class="ui-button primary"
+            [disabled]="store.busy()"
+            (click)="store.restoreDraft()"
+          >
+            Khôi phục bản nháp
+          </button>
+        } @else {
+          <ui-status-badge tone="success">Đã xuất bản</ui-status-badge>
+        }
+      </div>
+    </header>
+    @if (store.notice()) {
+      <div class="editor-notice" role="status">
+        <ui-icon
+          [name]="
+            store.mutationError() || store.saveState() === contentSaveState.Invalid
+              ? 'alert'
+              : 'check'
+          "
+          [size]="14"
+        /><span>{{ store.notice() }}</span
+        ><button class="icon-button" aria-label="Đóng thông báo" (click)="store.dismissNotice()">
+          <ui-icon name="close" [size]="12" />
+        </button>
+      </div>
+    }
+    <div class="editor-body">
+      <app-content-form
+        [form]="store.form"
+        [record]="record"
+        [activeTab]="store.activeTab()"
+        [attr.inert]="inspectorModal() ? '' : null"
+        (tabChange)="store.setActiveTab($event)"
+        (save)="store.save()"
+        (imageChange)="store.setImage($event)"
+      />
+      @if (inspectorModal()) {
+        <button
+          class="inspector-backdrop"
+          aria-label="Đóng thông tin nội dung"
+          tabindex="-1"
+          (click)="closeInspector()"
+        ></button>
+      }
+      <app-content-inspector
+        [form]="store.form"
+        [record]="record"
+        [open]="inspectorOpen()"
+        [modal]="inspectorModal()"
+        (closeRequested)="closeInspector()"
+      />
+    </div>
+  </section>
+} @else if (store.loading()) {
+  <ui-content-state
+    layout="page"
+    kind="loading"
+    icon="clock"
+    title="Đang tải nội dung"
+    message="Vui lòng chờ trong giây lát."
+  />
+} @else if (store.loadError()) {
+  <ui-content-state
+    layout="page"
+    kind="error"
+    icon="alert"
+    title="Không tải được nội dung"
+    [message]="store.loadError()"
+  >
+    <button class="ui-button" (click)="retryLoad()">Thử lại</button>
+  </ui-content-state>
+} @else {
+  <ui-content-state
+    layout="page"
+    icon="file"
+    title="Không tìm thấy nội dung"
+    message="Nội dung này không có trong phiên bản mẫu hiện tại."
+  >
+    <a class="ui-button" routerLink="/admin/collections/products">Quay về danh sách</a>
+  </ui-content-state>
+}
+<p-dialog
+  header="Xuất bản nội dung mẫu?"
+  appendTo="body"
+  [visible]="confirmPublish()"
+  (visibleChange)="confirmPublish.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '420px', maxWidth: '92vw' }"
+  ><p class="dialog-description">
+    Nội dung sẽ chuyển sang trạng thái “Đã xuất bản” trong bản mẫu UI. Thao tác này không xuất bản
+    lên website thật.
+  </p>
+  @if (store.mutationError()) {
+    <p class="dialog-description" role="alert">{{ store.notice() }}</p>
+  }
+  <ng-template #footer
+    ><button class="ui-button" (click)="confirmPublish.set(false)">Hủy</button
+    ><button class="ui-button primary" [disabled]="store.busy()" (click)="publish()">
+      Xuất bản trong bản mẫu
+    </button></ng-template
+  ></p-dialog
+>
+<p-dialog
+  header="Bạn có thay đổi chưa lưu"
+  appendTo="body"
+  [visible]="leaveOpen()"
+  (visibleChange)="!$event && resolveLeave(false)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '460px', maxWidth: '92vw' }"
+  ><p class="dialog-description">
+    Lưu thay đổi vào bản mẫu trước khi rời màn hình, hoặc bỏ những thay đổi đang chỉnh sửa.
+  </p>
+  @if (store.mutationError()) {
+    <p class="dialog-description" role="alert">{{ store.notice() }}</p>
+  }
+  <ng-template #footer
+    ><button class="ui-button quiet" (click)="resolveLeave(false)">Ở lại</button
+    ><button class="ui-button" (click)="resolveLeave(true)">Bỏ thay đổi</button
+    ><button class="ui-button primary" [disabled]="store.busy()" (click)="resolveLeave(true, true)">
+      Lưu và rời đi
+    </button></ng-template
+  ></p-dialog
+>

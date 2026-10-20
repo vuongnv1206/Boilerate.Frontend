@@ -1,0 +1,188 @@
+<div
+  class="table-scroll"
+  role="region"
+  [attr.aria-label]="'Bảng ' + definition().label + ' — cuộn ngang để xem thêm cột'"
+  tabindex="0"
+>
+  <table class="content-table">
+    <caption class="visually-hidden">
+      {{
+        definition().label
+      }}
+      — danh sách nội dung minh họa
+    </caption>
+    <thead>
+      <tr>
+        <th class="selection-cell">
+          <label
+            class="selection-hit-target"
+            for="select-all"
+            aria-label="Chọn tất cả mục trên trang"
+          >
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="allPageSelected()"
+              (ngModelChange)="toggleAll.emit()"
+              inputId="select-all"
+              ariaLabel="Chọn tất cả mục trên trang"
+            />
+          </label>
+        </th>
+        <th scope="col" class="name-cell">
+          <span>Tên {{ definition().singular }}</span
+          ><ui-icon name="chevron-down" [size]="11" />
+        </th>
+        @if (visibleColumns().has(columns.Status)) {
+          <th scope="col" class="status-cell">Trạng thái</th>
+        }
+        @if (
+          visibleColumns().has(columns.Category) && definition().key === collectionKeys.Products
+        ) {
+          <th scope="col" class="category-cell">Danh mục</th>
+        }
+        @if (visibleColumns().has(columns.Price) && definition().key === collectionKeys.Products) {
+          <th scope="col" class="price-cell">Giá bán</th>
+        }
+        @if (visibleColumns().has(columns.Updated)) {
+          <th scope="col" class="updated-cell">Cập nhật gần nhất</th>
+        }
+        <th class="menu-cell"><span class="visually-hidden">Thao tác</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of pageItems(); track item.id) {
+        <tr [class.row-selected]="selectedIds().has(item.id)" (click)="itemOpen.emit(item)">
+          <td class="selection-cell" (click)="$event.stopPropagation()">
+            <label
+              class="selection-hit-target"
+              [for]="'select-' + item.id"
+              [attr.aria-label]="'Chọn ' + item.name"
+            >
+              <p-checkbox
+                [binary]="true"
+                [ngModel]="selectedIds().has(item.id)"
+                (ngModelChange)="itemToggle.emit(item.id)"
+                [inputId]="'select-' + item.id"
+                [ariaLabel]="'Chọn ' + item.name"
+              />
+            </label>
+          </td>
+          <td class="name-cell">
+            <div class="item-identity">
+              <img [src]="item.image" alt="" class="item-thumbnail" width="36" height="36" />
+              <div>
+                <a [routerLink]="['/admin/items', item.id]" (click)="$event.stopPropagation()">{{
+                  item.name
+                }}</a
+                ><span>{{ item.slug }}</span>
+              </div>
+            </div>
+          </td>
+          @if (visibleColumns().has(columns.Status)) {
+            <td class="status-cell">
+              <ui-status-badge
+                [tone]="
+                  item.status === contentStatuses.Published
+                    ? 'success'
+                    : item.status === contentStatuses.Draft
+                      ? 'warning'
+                      : 'muted'
+                "
+                >{{ statusLabels[item.status] }}</ui-status-badge
+              >
+            </td>
+          }
+          @if (
+            visibleColumns().has(columns.Category) && definition().key === collectionKeys.Products
+          ) {
+            <td class="category-cell">
+              <span class="category-chip">{{ item.category }}</span>
+            </td>
+          }
+          @if (
+            visibleColumns().has(columns.Price) && definition().key === collectionKeys.Products
+          ) {
+            <td class="price-cell">
+              {{ item.price | currency: 'VND' : 'symbol' : '1.0-0' : 'vi' }}
+            </td>
+          }
+          @if (visibleColumns().has(columns.Updated)) {
+            <td class="updated-cell">
+              <span>{{ item.updatedAt | date: 'dd/MM/yyyy' : '' : 'vi' }}</span
+              ><span class="updated-author">bởi Demo Store</span>
+            </td>
+          }
+          <td class="menu-cell" (click)="$event.stopPropagation()">
+            <button
+              class="icon-button row-menu-button"
+              [attr.aria-label]="'Thao tác với ' + item.name"
+              (click)="menuItem.set(item); rowMenu.toggle($event)"
+            >
+              <ui-icon name="more-horizontal" [size]="17" />
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr class="empty-row">
+          <td [attr.colspan]="8">
+            <ui-content-state
+              title="Không tìm thấy nội dung"
+              message="Thử từ khóa khác hoặc xóa bộ lọc để xem tất cả nội dung."
+            >
+              <button class="ui-button" (click)="filtersReset.emit()">Xóa bộ lọc</button>
+            </ui-content-state>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <div class="table-bottom-note">
+    <ui-icon name="check" [size]="12" />Tất cả nội dung đã được tải<span>Chỉ dữ liệu minh họa</span>
+  </div>
+</div>
+<footer class="pagination">
+  <span
+    >Hiển thị <strong>{{ rangeStart() }}–{{ rangeEnd() }}</strong> trong {{ total() }} mục</span
+  >
+  <div class="pagination-right">
+    <label class="page-size"
+      ><span>Số dòng</span
+      ><select
+        aria-label="Số dòng trên trang"
+        [ngModel]="pageSize()"
+        (ngModelChange)="pageSizeChange.emit(+$event)"
+      >
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+      </select></label
+    ><span class="page-divider"></span><span>{{ currentPage() }} / {{ pageCount() }}</span
+    ><button
+      class="icon-button"
+      aria-label="Trang trước"
+      [disabled]="currentPage() === 1"
+      (click)="pageChange.emit(currentPage() - 1)"
+    >
+      <ui-icon name="chevron-left" [size]="15" /></button
+    ><button
+      class="icon-button"
+      aria-label="Trang sau"
+      [disabled]="currentPage() >= pageCount()"
+      (click)="pageChange.emit(currentPage() + 1)"
+    >
+      <ui-icon name="chevron-right" [size]="15" />
+    </button>
+  </div>
+</footer>
+
+<p-popover #rowMenu
+  ><div class="row-actions">
+    <button (click)="openMenuItem(); rowMenu.hide()">
+      <ui-icon name="external-link" [size]="14" />Chỉnh sửa nội dung</button
+    ><button [disabled]="busy()" (click)="duplicateMenuItem(); rowMenu.hide()">
+      <ui-icon name="copy" [size]="14" />Tạo bản sao</button
+    ><button [disabled]="busy()" (click)="archiveMenuItem(); rowMenu.hide()">
+      <ui-icon name="archive" [size]="14" />Lưu trữ
+    </button>
+  </div></p-popover
+>

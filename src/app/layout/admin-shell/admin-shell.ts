@@ -1,4 +1,4 @@
-import { A11yModule } from '@angular/cdk/a11y';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import {
   Component,
   DestroyRef,
@@ -22,11 +22,12 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { DialogModule } from 'primeng/dialog';
+import { Dialog } from 'primeng/dialog';
 import { ThemeController } from '../../core/theme/theme-controller';
 import { WORKSPACE_NAVIGATION } from '../../core/navigation/workspace-navigation';
 import { Icon } from '../../shared/ui/icon/icon';
 import { focusWhenVisible } from '../../shared/ui/focus-when-visible';
+import { ADMIN_LAYOUT, ADMIN_THEME_OPTIONS } from './admin-shell.constants';
 
 function preference(key: string, fallback: string): string {
   try {
@@ -38,7 +39,7 @@ function preference(key: string, fallback: string): string {
 
 @Component({
   selector: 'app-admin-shell',
-  imports: [A11yModule, RouterOutlet, RouterLink, RouterLinkActive, Icon, DialogModule],
+  imports: [CdkTrapFocus, RouterOutlet, RouterLink, RouterLinkActive, Icon, Dialog],
   templateUrl: './admin-shell.html',
   styleUrl: './admin-shell.scss',
 })
@@ -51,23 +52,27 @@ export class AdminShell {
   private readonly panelToggle = viewChild<ElementRef<HTMLButtonElement>>('panelToggle');
   private readonly contextPanel = viewChild<ElementRef<HTMLElement>>('contextPanel');
   private focusAfterNavigation = false;
-  private readonly mobileQuery = window.matchMedia('(max-width: 760px)');
+  private readonly mobileQuery = window.matchMedia(ADMIN_LAYOUT.mobileQuery);
   readonly isMobile = signal(this.mobileQuery.matches);
   readonly currentUrl = signal(this.router.url);
   readonly isGallery = computed(() => this.currentUrl().includes('/controls'));
   readonly sidebarWidth = signal(
-    Math.min(320, Math.max(200, Number(preference('boilerate.context-width', '240')) || 240)),
+    Math.min(
+      ADMIN_LAYOUT.panelMax,
+      Math.max(
+        ADMIN_LAYOUT.panelMin,
+        Number(preference(ADMIN_LAYOUT.widthStorageKey, String(ADMIN_LAYOUT.panelDefault))) ||
+          ADMIN_LAYOUT.panelDefault,
+      ),
+    ),
   );
-  readonly collapsed = signal(preference('boilerate.context-collapsed', 'false') === 'true');
+  readonly collapsed = signal(preference(ADMIN_LAYOUT.collapsedStorageKey, 'false') === 'true');
   readonly mobileOpen = signal(false);
   readonly helpOpen = signal(false);
   readonly resizing = signal(false);
   private helpOpenedFromMobile = false;
-  readonly themeModes = [
-    { mode: 'light', label: 'Sáng', icon: 'sun' },
-    { mode: 'dark', label: 'Tối', icon: 'moon' },
-    { mode: 'system', label: 'Hệ thống', icon: 'monitor' },
-  ] as const;
+  readonly themeModes = ADMIN_THEME_OPTIONS;
+  readonly layout = ADMIN_LAYOUT;
 
   constructor() {
     const onViewportChange = (event: MediaQueryListEvent) => {
@@ -154,7 +159,13 @@ export class AdminShell {
   }
 
   resize(event: PointerEvent): void {
-    if (this.resizing()) this.sidebarWidth.set(Math.min(320, Math.max(200, event.clientX - 44)));
+    if (this.resizing())
+      this.sidebarWidth.set(
+        Math.min(
+          ADMIN_LAYOUT.panelMax,
+          Math.max(ADMIN_LAYOUT.panelMin, event.clientX - ADMIN_LAYOUT.railWidth),
+        ),
+      );
   }
 
   endResize(): void {
@@ -164,22 +175,22 @@ export class AdminShell {
 
   resizeWithKey(event: KeyboardEvent): void {
     const widths: Record<string, number> = {
-      ArrowLeft: this.sidebarWidth() - 8,
-      ArrowRight: this.sidebarWidth() + 8,
-      Home: 200,
-      End: 320,
+      ArrowLeft: this.sidebarWidth() - ADMIN_LAYOUT.resizeStep,
+      ArrowRight: this.sidebarWidth() + ADMIN_LAYOUT.resizeStep,
+      Home: ADMIN_LAYOUT.panelMin,
+      End: ADMIN_LAYOUT.panelMax,
     };
     const width = widths[event.key];
     if (width === undefined) return;
     event.preventDefault();
-    this.sidebarWidth.set(Math.max(200, Math.min(320, width)));
+    this.sidebarWidth.set(Math.max(ADMIN_LAYOUT.panelMin, Math.min(ADMIN_LAYOUT.panelMax, width)));
     this.persist();
   }
 
   private persist(): void {
     try {
-      localStorage.setItem('boilerate.context-width', String(this.sidebarWidth()));
-      localStorage.setItem('boilerate.context-collapsed', String(this.collapsed()));
+      localStorage.setItem(ADMIN_LAYOUT.widthStorageKey, String(this.sidebarWidth()));
+      localStorage.setItem(ADMIN_LAYOUT.collapsedStorageKey, String(this.collapsed()));
     } catch {
       /* Preferences are optional when storage is unavailable. */
     }

@@ -1,5 +1,13 @@
-export type CollectionKey = 'products' | 'categories' | 'types';
-export type ContentStatus = 'draft' | 'published' | 'archived';
+import {
+  COLLECTIONS,
+  CONTENT_DEFAULTS,
+  CONTENT_LIMITS,
+  CONTENT_SLUG_PATTERN,
+  DEFAULT_CONTENT_COLLECTION,
+} from '../constants/content.constants';
+import { CollectionKey, ContentStatus } from '../enums/content.enum';
+import { ContentColumn } from '../enums/content-table.enum';
+import type { ContentStatusFilter } from './content-view.model';
 
 /** Workspace demonstration model; this is not a Catalog API DTO. */
 export interface ContentItem {
@@ -30,56 +38,14 @@ export interface CollectionDefinition {
 
 export interface ListViewState {
   query: string;
-  status: ContentStatus | 'all';
+  status: ContentStatusFilter;
   page: number;
   pageSize: number;
-  columns: string[];
+  columns: ContentColumn[];
 }
 
-export const CONTENT_LIMITS = {
-  name: 180,
-  description: 2000,
-  sku: 64,
-  seoTitle: 70,
-  seoDescription: 160,
-} as const;
-
-export const CONTENT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-const PRODUCT_COLLECTION: CollectionDefinition = {
-  key: 'products',
-  label: 'Sản phẩm',
-  singular: 'sản phẩm',
-  icon: 'box',
-  description: 'Quản lý và sắp xếp nội dung sản phẩm của cửa hàng.',
-};
-
-export const COLLECTIONS: readonly CollectionDefinition[] = [
-  PRODUCT_COLLECTION,
-  {
-    key: 'categories',
-    label: 'Danh mục',
-    singular: 'danh mục',
-    icon: 'tag',
-    description: 'Nhóm nội dung thành các danh mục dễ khám phá.',
-  },
-  {
-    key: 'types',
-    label: 'Loại sản phẩm',
-    singular: 'loại sản phẩm',
-    icon: 'layers',
-    description: 'Các loại nội dung và cấu trúc của bộ sưu tập.',
-  },
-];
-
-export const STATUS_LABELS: Record<ContentStatus, string> = {
-  draft: 'Bản nháp',
-  published: 'Đã xuất bản',
-  archived: 'Đã lưu trữ',
-};
-
 export function collectionDefinition(value: string | null): CollectionDefinition {
-  return COLLECTIONS.find((collection) => collection.key === value) ?? PRODUCT_COLLECTION;
+  return COLLECTIONS.find((collection) => collection.key === value) ?? DEFAULT_CONTENT_COLLECTION;
 }
 
 export function slugify(value: string): string {
@@ -97,7 +63,7 @@ export function slugify(value: string): string {
 export function filterItems(
   items: readonly ContentItem[],
   query: string,
-  status: ContentStatus | 'all',
+  status: ContentStatusFilter,
 ): ContentItem[] {
   const normalizedQuery = slugify(query).replace(/-/g, ' ');
   return items.filter(
@@ -132,9 +98,9 @@ export function createContentDraft(collection: CollectionKey): ContentItem {
     name: '',
     slug: '',
     description: '',
-    category: 'Phụ kiện',
-    status: 'draft',
-    image: '/images/bag.svg',
+    category: CONTENT_DEFAULTS.category,
+    status: ContentStatus.Draft,
+    image: CONTENT_DEFAULTS.image,
     price: 0,
     sku: '',
     stock: 0,
