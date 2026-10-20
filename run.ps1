@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('install', 'start', 'build', 'test', 'lint', 'check', 'format:check')]
+    [ValidateSet('install', 'start', 'build', 'test', 'lint', 'check', 'format:check', 'test:e2e', 'test:e2e:update', 'preview')]
     [string]$Task = 'start',
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$TaskArguments
@@ -28,37 +28,12 @@ if (-not $selectedNode) { throw 'Angular 22 requires Node 22.22.3+, 24.15.0+ or 
 $env:Path = (Split-Path $selectedNode) + [IO.Path]::PathSeparator + $env:Path
 Push-Location $PSScriptRoot
 try {
-    if ($Task -in @('start', 'build', 'check')) {
-        & $selectedNode 'scripts/runtime-config.mjs'
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    }
+    $npmEntry = Join-Path (Split-Path (Get-Command npm -ErrorAction Stop).Source) 'node_modules\npm\bin\npm-cli.js'
+    if (-not (Test-Path -LiteralPath $npmEntry)) { throw 'npm CLI was not found beside npm. Install npm with your supported Node runtime.' }
     if ($Task -eq 'install') {
-        $npmEntry = Join-Path (Split-Path (Get-Command npm -ErrorAction Stop).Source) 'node_modules\npm\bin\npm-cli.js'
-        if (-not (Test-Path -LiteralPath $npmEntry)) { throw 'npm CLI was not found beside npm. Install npm with your supported Node runtime.' }
         & $selectedNode $npmEntry exec --yes --package=npm@12.2.0 -- npm ci @TaskArguments
     } else {
-        $cliEntry = switch ($Task) {
-            'lint' { 'node_modules/eslint/bin/eslint.js' }
-            'format:check' { 'node_modules/prettier/bin/prettier.cjs' }
-            default { 'node_modules/@angular/cli/bin/ng.js' }
-        }
-        if ($Task -eq 'check') {
-            & $selectedNode 'node_modules/eslint/bin/eslint.js' src
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            & $selectedNode $cliEntry test --watch=false
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            & $selectedNode $cliEntry build
-        } elseif ($Task -eq 'start') {
-            & $selectedNode $cliEntry serve --host 127.0.0.1 --port 4200 @TaskArguments
-        } elseif ($Task -eq 'test') {
-            & $selectedNode $cliEntry test --watch=false @TaskArguments
-        } elseif ($Task -eq 'lint') {
-            & $selectedNode $cliEntry src @TaskArguments
-        } elseif ($Task -eq 'format:check') {
-            & $selectedNode $cliEntry --check src public angular.json 'tsconfig*.json' package.json @TaskArguments
-        } else {
-            & $selectedNode $cliEntry $Task @TaskArguments
-        }
+        & $selectedNode $npmEntry run $Task -- @TaskArguments
     }
     $taskExitCode = $LASTEXITCODE
 } finally {

@@ -44,7 +44,11 @@
         },
         "test": {
           "builder": "@angular/build:unit-test",
-          "options": { "tsConfig": "tsconfig.spec.json", "runner": "vitest" }
+          "options": {
+            "tsConfig": "tsconfig.spec.json",
+            "runner": "vitest",
+            "runnerConfig": "vitest-base.config.mts"
+          }
         }
       }
     }

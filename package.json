@@ -13,8 +13,11 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false",
     "lint": "eslint src && npm run test:architecture",
-    "format:check": "prettier --check src public angular.json tsconfig*.json package.json",
-    "check": "npm run lint && npm run test && npm run build",
+    "format:check": "prettier --check src public scripts e2e docs .github playwright.config.ts angular.json tsconfig*.json package.json eslint.config.mjs vitest-base.config.mts",
+    "check": "npm run format:check && npm run lint && npm run test && npm run build",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "preview": "node scripts/serve-dist.mjs",
     "test:architecture": "node scripts/check-boundaries.mjs"
   },
   "packageManager": "npm@12.2.0",
@@ -37,15 +40,16 @@
     "@angular/cli": "22.2.3",
     "@angular/compiler-cli": "22.2.3",
     "@eslint/js": "^9.39.0",
+    "@playwright/test": "1.64.1",
     "angular-eslint": "22.6.0",
     "eslint": "^9.39.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^5.4.0",
     "jsdom": "^27.4.0",
     "prettier": "^3.6.2",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.46.0",
-    "vitest": "^4.0.8",
-    "eslint-import-resolver-typescript": "^4.4.5",
-    "eslint-plugin-boundaries": "^5.4.0"
+    "vitest": "^4.0.8"
   },
   "overrides": {
     "handlebars": "4.7.10"
