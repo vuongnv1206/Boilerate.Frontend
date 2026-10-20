@@ -141,10 +141,10 @@
         /></a>
       </div>
       <nav class="collection-nav" aria-label="Bộ sưu tập">
-        @for (collection of collections; track collection.key) {
-          <a [routerLink]="['/admin/collections', collection.key]" routerLinkActive="selected"
+        @for (collection of navigation.collections(); track collection.key) {
+          <a [routerLink]="collection.path" routerLinkActive="selected"
             ><ui-icon [name]="collection.icon" [size]="16" /><span>{{ collection.label }}</span
-            ><span class="nav-count">{{ store.collection(collection.key).length }}</span></a
+            ><span class="nav-count">{{ collection.count }}</span></a
           >
         }
       </nav>

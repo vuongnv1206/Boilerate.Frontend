@@ -1,16 +1,45 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Component, signal } from '@angular/core';
+import { CanDeactivateFn, Router, provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AdminShell } from './admin-shell';
-import { ItemEditor } from '../../features/content-workspace/item-editor/item-editor';
-import { itemEditorGuard } from '../../features/content-workspace/item-editor/item-editor.guard';
+import {
+  WORKSPACE_NAVIGATION,
+  WorkspaceCollectionLink,
+} from '../../core/navigation/workspace-navigation';
+
+@Component({
+  selector: 'app-guarded-test-page',
+  template: '@if (leaveOpen()) { <div role="dialog" tabindex="0">Bạn có thay đổi chưa lưu</div> }',
+})
+class GuardedTestPage {
+  readonly leaveOpen = signal(false);
+  readonly value = signal('');
+  private resolve: ((leave: boolean) => void) | undefined;
+
+  confirmLeave(): Promise<boolean> {
+    this.leaveOpen.set(true);
+    return new Promise((resolve) => (this.resolve = resolve));
+  }
+
+  resolveLeave(leave: boolean): void {
+    this.leaveOpen.set(false);
+    this.resolve?.(leave);
+  }
+}
+
+const guardedTestPage: CanDeactivateFn<GuardedTestPage> = (page) => page.confirmLeave();
 
 describe('Workspace navigation accessibility', () => {
   let mobile = true;
+  const collections = signal<readonly WorkspaceCollectionLink[]>([]);
 
   beforeEach(() => {
     localStorage.clear();
     mobile = true;
+    collections.set([
+      { key: 'example', label: 'Bộ sưu tập thử', icon: 'box', path: '/example', count: 2 },
+    ]);
     vi.stubGlobal(
       'matchMedia',
       vi.fn(() => ({
@@ -21,7 +50,10 @@ describe('Workspace navigation accessibility', () => {
         removeListener: vi.fn(),
       })),
     );
-    TestBed.configureTestingModule({ imports: [AdminShell], providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      imports: [AdminShell],
+      providers: [provideRouter([]), { provide: WORKSPACE_NAVIGATION, useValue: { collections } }],
+    });
   });
 
   afterEach(() => {
@@ -74,6 +106,18 @@ describe('Workspace navigation accessibility', () => {
     expect(document.activeElement).toBe(host.querySelector('main'));
   });
 
+  it('renders navigation supplied by DI and reacts to count changes without a content store', () => {
+    const fixture = TestBed.createComponent(AdminShell);
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('.collection-nav a')?.textContent).toContain('Bộ sưu tập thử');
+    expect(host.querySelector('.nav-count')?.textContent).toBe('2');
+    collections.update((links) => links.map((link) => ({ ...link, count: 7 })));
+    fixture.detectChanges();
+    expect(host.querySelector('.nav-count')?.textContent).toBe('7');
+    expect(host.querySelector('.collection-nav a')?.getAttribute('href')).toBe('/example');
+  });
+
   it('clamps keyboard resizing and restores layout preferences after recreation', () => {
     mobile = false;
     const fixture = TestBed.createComponent(AdminShell);
@@ -92,19 +136,12 @@ describe('Workspace navigation accessibility', () => {
   });
 
   it('releases mobile navigation before a dirty guard opens and keeps the editor usable after cancellation', async () => {
-    TestBed.overrideComponent(ItemEditor, {
-      set: {
-        imports: [],
-        template:
-          '@if (leaveOpen()) { <div role="dialog" tabindex="0">Bạn có thay đổi chưa lưu</div> }',
-      },
-    });
     const router = TestBed.inject(Router);
     router.resetConfig([
       {
         path: 'admin/items/:id',
-        component: ItemEditor,
-        canDeactivate: [itemEditorGuard],
+        component: GuardedTestPage,
+        canDeactivate: [guardedTestPage],
         runGuardsAndResolvers: 'paramsOrQueryParamsChange',
       },
     ]);
@@ -115,11 +152,10 @@ describe('Workspace navigation accessibility', () => {
     await fixture.whenStable();
     const host: HTMLElement = fixture.nativeElement;
     const editor = fixture.debugElement.query(
-      (element) => element.componentInstance instanceof ItemEditor,
-    )?.componentInstance as ItemEditor | undefined;
+      (element) => element.componentInstance instanceof GuardedTestPage,
+    )?.componentInstance as GuardedTestPage | undefined;
     if (!editor) throw new Error('Editor route did not render.');
-    editor.form.controls.name.setValue('   ');
-    editor.form.markAsDirty();
+    editor.value.set('   ');
     fixture.componentInstance.toggleSidebar();
     fixture.detectChanges();
     await fixture.whenStable();
@@ -140,7 +176,7 @@ describe('Workspace navigation accessibility', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(router.url).toBe('/admin/items/new?collection=products');
-    expect(editor.form.controls.name.value).toBe('   ');
+    expect(editor.value()).toBe('   ');
     expect(host.querySelector('main')?.hasAttribute('inert')).toBe(false);
     expect(document.activeElement).toBe(host.querySelector('main'));
   });

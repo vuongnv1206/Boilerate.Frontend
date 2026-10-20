@@ -24,8 +24,7 @@ import {
 } from '@angular/router';
 import { DialogModule } from 'primeng/dialog';
 import { ThemeController } from '../../core/theme/theme-controller';
-import { COLLECTIONS } from '../../features/content-workspace/content-model';
-import { DemoContentStore } from '../../features/content-workspace/demo-content-store';
+import { WORKSPACE_NAVIGATION } from '../../core/navigation/workspace-navigation';
 import { Icon } from '../../shared/ui/icon/icon';
 import { focusWhenVisible } from '../../shared/ui/focus-when-visible';
 
@@ -45,8 +44,7 @@ function preference(key: string, fallback: string): string {
 })
 export class AdminShell {
   readonly theme = inject(ThemeController);
-  readonly store = inject(DemoContentStore);
-  readonly collections = COLLECTIONS;
+  readonly navigation = inject(WORKSPACE_NAVIGATION);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);

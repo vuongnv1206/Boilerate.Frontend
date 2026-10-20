@@ -1,34 +1,26 @@
 import { Routes } from '@angular/router';
-import { itemEditorGuard } from './features/content-workspace/item-editor/item-editor.guard';
+import { provideWorkspaceNavigation } from './app.providers';
 
 export const routes: Routes = [
   {
     path: 'admin',
+    providers: [provideWorkspaceNavigation()],
     loadComponent: () => import('./layout/admin-shell/admin-shell').then((m) => m.AdminShell),
     children: [
       {
-        path: 'collections/:collection',
-        loadComponent: () =>
-          import('./features/content-workspace/collection-list/collection-list').then(
-            (m) => m.CollectionList,
-          ),
-        title: 'Bộ sưu tập · Boilerate',
-      },
-      {
-        path: 'items/:id',
-        canDeactivate: [itemEditorGuard],
-        runGuardsAndResolvers: 'paramsOrQueryParamsChange',
-        loadComponent: () =>
-          import('./features/content-workspace/item-editor/item-editor').then((m) => m.ItemEditor),
-        title: 'Chỉnh sửa nội dung · Boilerate',
-      },
-      {
         path: 'controls',
-        loadComponent: () =>
-          import('./features/control-gallery/control-gallery').then((m) => m.ControlGallery),
-        title: 'Bộ giao diện · Boilerate',
+        loadChildren: () =>
+          import('./features/control-gallery/control-gallery.routes').then(
+            (module) => module.CONTROL_GALLERY_ROUTES,
+          ),
       },
-      { path: '', pathMatch: 'full', redirectTo: 'collections/products' },
+      {
+        path: '',
+        loadChildren: () =>
+          import('./features/content-workspace/content-workspace.routes').then(
+            (module) => module.CONTENT_WORKSPACE_ROUTES,
+          ),
+      },
     ],
   },
   { path: '', pathMatch: 'full', redirectTo: 'admin/collections/products' },

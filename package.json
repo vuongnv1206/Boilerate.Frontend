@@ -12,9 +12,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false",
-    "lint": "eslint src",
+    "lint": "eslint src && npm run test:architecture",
     "format:check": "prettier --check src public angular.json tsconfig*.json package.json",
-    "check": "npm run lint && npm run test && npm run build"
+    "check": "npm run lint && npm run test && npm run build",
+    "test:architecture": "node scripts/check-boundaries.mjs"
   },
   "packageManager": "npm@12.2.0",
   "dependencies": {
@@ -42,6 +43,11 @@
     "prettier": "^3.6.2",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.46.0",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^5.4.0"
+  },
+  "overrides": {
+    "handlebars": "4.7.10"
   }
 }

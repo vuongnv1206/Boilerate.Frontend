@@ -14,6 +14,13 @@
     "target": "ES2022",
     "module": "preserve",
     "moduleResolution": "bundler",
+    "paths": {
+      "@app/*": ["./src/app/*"],
+      "@core/*": ["./src/app/core/*"],
+      "@layout/*": ["./src/app/layout/*"],
+      "@shared/*": ["./src/app/shared/*"],
+      "@features/*": ["./src/app/features/*"]
+    },
     "lib": ["ES2022", "dom"]
   },
   "angularCompilerOptions": {
