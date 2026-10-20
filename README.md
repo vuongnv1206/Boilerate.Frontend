@@ -4,6 +4,8 @@ Angular Admin của Boilerate, ưu tiên diện mạo workspace Webflow CMS/Ecom
 
 Repo FE riêng, private: [Boilerate.Frontend](https://github.com/vuongnv1206/Boilerate.Frontend), nhánh `main`. Backend nằm trong sibling `Boilerate/` khi làm việc ở workspace chung; FE có thể clone, build và chạy CI độc lập. [Kiến trúc codebase](docs/architecture.md) quy định ranh giới, state, forms, runtime/HTTP và theme.
 
+Nền codebase đã qua local và [CI thực tế](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39417291346): format/lint, 17 architecture probes, 93 unit tests, production build và 24 browser tests. [Báo cáo](docs/verification/2026-10-20-codebase.md) ghi source được kiểm chứng, ảnh, giới hạn và các bước tái chạy.
+
 ## Chạy local
 
 Yêu cầu Node tương thích Angular 22; runtime lựa chọn trong `.node-version` là **24.19.0**. `run.ps1` chọn Node phù hợp trên PATH hoặc runtime bundled của Codex; có thể đặt `BOILERATE_NODE` tới `node.exe` mong muốn. Script chỉ chỉnh PATH của tiến trình hiện tại, không thay Node global.
