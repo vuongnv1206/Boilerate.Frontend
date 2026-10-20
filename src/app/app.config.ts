@@ -11,6 +11,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { RuntimeConfig } from './core/config/runtime-config';
 import { provideRuntimeConfig } from './core/config/runtime-config.token';
 import { apiErrorInterceptor } from './core/http/api-error.interceptor';
+import { authInterceptor } from './core/auth/auth.interceptor';
 import { routes } from './app.routes';
 import { ThemeController } from './core/theme/theme-controller';
 import { WorkspacePreset } from './core/theme/workspace-preset';
@@ -18,7 +19,7 @@ import { WorkspacePreset } from './core/theme/workspace-preset';
 export const createAppConfig = (runtimeConfig: RuntimeConfig): ApplicationConfig => ({
   providers: [
     provideRuntimeConfig(runtimeConfig),
-    provideHttpClient(withInterceptors([apiErrorInterceptor])),
+    provideHttpClient(withInterceptors([apiErrorInterceptor, authInterceptor])),
     { provide: LOCALE_ID, useValue: 'vi' },
     provideBrowserGlobalErrorListeners(),
     provideRouter(
