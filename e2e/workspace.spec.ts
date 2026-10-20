@@ -127,6 +127,12 @@ test('gallery: select, datepicker, dialog, drawer, tooltip and toast', async ({ 
     'background-color',
     surface === '#242426' ? 'rgb(36, 36, 38)' : 'rgb(255, 255, 255)',
   );
+  // Focus and automatic scrolling of the previous tab can differ on CI.
+  // The modal scene uses an explicit background position in every viewport.
+  await page.locator('app-control-gallery').evaluate((element) => element.scrollTo(0, 0));
+  await expect
+    .poll(() => page.locator('app-control-gallery').evaluate((element) => element.scrollTop))
+    .toBe(0);
   await expect(page).toHaveScreenshot('dialog.png');
   await page.keyboard.press('Escape');
   await expect(dialogTrigger).toBeFocused();
@@ -134,6 +140,10 @@ test('gallery: select, datepicker, dialog, drawer, tooltip and toast', async ({ 
   await drawerTrigger.click();
   await expect(page.getByRole('dialog', { name: 'Tùy chọn hiển thị', exact: true })).toBeVisible();
   await expect(page.locator('#gallery-drawer-name')).toBeFocused();
+  await page.locator('app-control-gallery').evaluate((element) => element.scrollTo(0, 0));
+  await expect
+    .poll(() => page.locator('app-control-gallery').evaluate((element) => element.scrollTop))
+    .toBe(0);
   await expect(page).toHaveScreenshot('drawer.png');
   await page.keyboard.press('Escape');
   await expect(drawerTrigger).toBeFocused();
