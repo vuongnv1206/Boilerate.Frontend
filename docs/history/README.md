@@ -17,6 +17,8 @@ Các bản ghi dưới đây thuộc repo FE độc lập. Lịch sử UI trư�
 
 Baseline trước refactor feature đã có CI đạt trên source `dd7fd71`: [run 39417291346](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39417291346), gồm 93 unit tests và 24 browser tests. Kết quả đó không thay thế việc kiểm tra source mới; các bản ghi content ở trên ghi phạm vi và kiểm chứng mới.
 
+Refactor feature và web gate đã có [CI mới 39441412958](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39441412958) đạt trên `9f6e371`: 46 probes, 145 unit tests và 20 browser tests desktop/tablet. Mobile hoãn theo yêu cầu người dùng, không coi lỗi tooltip cũ đã sửa. [Audit package seed 1.0.1](../reference-audits/template-seeding-1.0.1.md) ghi đề xuất cho mốc nối API, chưa thực hiện database writes.
+
 ## Các commit đã có
 
 | Commit    | Nhóm thay đổi                                     |

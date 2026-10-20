@@ -43,4 +43,8 @@ CI source `f7820db` [run 39424389364](https://github.com/vuongnv1206/Boilerate.F
 
 Theo yêu cầu tiếp theo của người dùng: tạm hoãn UI mobile, tập trung web. Gate `test:e2e` và CI chuyển sang desktop/tablet × light/dark, 20 tests và 16 golden snapshots. Giữ nguyên 10 mobile tests cùng baseline qua `test:e2e:mobile`; `test:e2e:all` chạy đủ 30. Chưa tính lỗi mobile là đã sửa hoặc nghiệm thu. [History phạm vi](../history/2026-10-20-web-scope.md).
 
-Gate web mới đã đạt **20/20 local**, không retry, 1.1 phút; 16 golden snapshots giữ nguyên. Format và diff check đạt sau đổi scripts/phạm vi; không đổi production source kể từ `f7820db`. CI gate mới đang chờ push/run thực tế. Nghiệm thu thiết kế của người dùng, mobile thật/Safari, license hợp lệ và deployment vẫn là các trạng thái riêng. Dev server được giữ tại `http://localhost:4200`, preview 4300 chỉ dành cho QA production và tự đóng sau test.
+Gate web mới đã đạt **20/20 local**, không retry, 1.1 phút; 16 golden snapshots giữ nguyên. Format và diff check đạt sau đổi scripts/phạm vi; không đổi production source kể từ `f7820db`.
+
+**CI web đạt trên source `9f6e371`**: [run 39441412958](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39441412958), mọi step success gồm install locked dependencies, format/lint, **46 probes, 145 tests / 20 files**, production build, Chromium và **20/20 browser tests (1.1 phút)**. Đã đọc job logs để xác nhận số lượng; không có flaky trong summary. Các commit bàn giao sau đó chỉ sửa tài liệu và skip CI, không thay source đã kiểm.
+
+Nghiệm thu thiết kế của người dùng, mobile thật/Safari, license hợp lệ và deployment vẫn là các trạng thái riêng. Dev server được giữ tại `http://localhost:4200`, preview 4300 chỉ dành cho QA production và tự đóng sau test. Khảo sát [seed package 1.0.1](../reference-audits/template-seeding-1.0.1.md) không đồng nghĩa đã seed DB hoặc nối API thật.

@@ -1,6 +1,6 @@
 # Tổ chức feature Angular thực tế — 2026-10-20
 
-Trạng thái: Source và local verification hoàn thành; chờ CI sau push. Người dùng yêu cầu thực hiện refactor source: màn danh sách mang tên chức năng, màn thêm/sửa hậu tố `-io`; component/store/service có trách nhiệm rõ, có base HTTP. Giữ UI Webflow và normal motion; dữ liệu vẫn mock, chưa auth/API BE thật.
+Trạng thái: Hoàn thành source, local và CI theo phạm vi web đã chốt; mobile hoãn. Người dùng yêu cầu thực hiện refactor source: màn danh sách mang tên chức năng, màn thêm/sửa hậu tố `-io`; component/store/service có trách nhiệm rõ, có base HTTP. Giữ UI Webflow và normal motion; dữ liệu vẫn mock, chưa auth/API BE thật.
 
 ## Quyết định và tiêu chí
 
@@ -24,4 +24,6 @@ Chấp nhận khi đổi mock bằng DI test-double không sửa page, test load
 
 ## Tiến độ
 
-Steps 1–4 đã triển khai vào route thực; implementation cũ đã xóa. Step 5 local đạt full format/lint, 46 probes, 145 unit tests, production build và 30 browser tests; 24 ảnh baseline giữ nguyên. CI source `f7820db` browser 29/30 pass do tooltip mobile-dark; không coi lỗi này đã sửa. Người dùng chuyển ưu tiên sang web, hoãn mobile: gate 20 tests desktop/tablet đang chạy lại local/CI. [Verification](../verification/2026-10-20-content-architecture.md) và [history phạm vi](../history/2026-10-20-web-scope.md) ghi kết quả và giới hạn. Người dùng cũng đề xuất nối API thật, SQL Server làm mặc định BE; đã khảo sát contract nhưng đang cần instance/database và lệnh seed để chốt môi trường. Chưa gọi BE hoặc seed DB.
+Steps 1–4 đã triển khai vào route thực; implementation cũ đã xóa. Step 5 hoàn thành local/CI cho web: format/lint, 46 probes, 145 unit tests, production build và 20 browser tests desktop/tablet ở hai theme; 16 golden snapshots giữ nguyên. [CI web 39441412958](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39441412958) đạt trên `9f6e371`. CI trước đó `f7820db` browser 29/30 pass do tooltip mobile-dark; không coi lỗi này đã sửa. Người dùng chuyển ưu tiên sang web và hoãn mobile. [Verification](../verification/2026-10-20-content-architecture.md) và [history phạm vi](../history/2026-10-20-web-scope.md) ghi bằng chứng và giới hạn. Người dùng cũng đề xuất nối API thật, SQL Server làm mặc định BE; đã khảo sát contract, cần chốt database integration. Chưa gọi BE hoặc seed DB.
+
+Đã đọc package NuGet được người dùng chỉ định: [audit seeding 1.0.1](../reference-audits/template-seeding-1.0.1.md). Package có seeder Identity và custom seeder runner; chưa thấy dataset Catalog. Đề xuất thêm seed-dev explicit theo model hiện tại thay vì khôi phục auto-migrate/seed startup và phép ghép quyền cũ. Cấu hình instance local có service MSSQLSERVER chạy; tên database integration còn chưa chốt.
