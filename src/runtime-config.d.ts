@@ -1,3 +1,3 @@
 interface Window {
-  readonly __BOILERATE_UI__?: Readonly<{ primeUiLicense?: string }>;
+  readonly __BOILERATE_UI__?: unknown;
 }

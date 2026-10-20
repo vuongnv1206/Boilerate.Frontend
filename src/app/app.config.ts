@@ -7,12 +7,18 @@ import {
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { providePrimeNG } from 'primeng/config';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { RuntimeConfig } from './core/config/runtime-config';
+import { provideRuntimeConfig } from './core/config/runtime-config.token';
+import { apiErrorInterceptor } from './core/http/api-error.interceptor';
 import { routes } from './app.routes';
 import { ThemeController } from './core/theme/theme-controller';
 import { WorkspacePreset } from './core/theme/workspace-preset';
 
-export const appConfig: ApplicationConfig = {
+export const createAppConfig = (runtimeConfig: RuntimeConfig): ApplicationConfig => ({
   providers: [
+    provideRuntimeConfig(runtimeConfig),
+    provideHttpClient(withInterceptors([apiErrorInterceptor])),
     { provide: LOCALE_ID, useValue: 'vi' },
     provideBrowserGlobalErrorListeners(),
     provideRouter(
@@ -22,7 +28,7 @@ export const appConfig: ApplicationConfig = {
     ),
     provideAppInitializer(() => inject(ThemeController).initialize()),
     providePrimeNG({
-      license: window.__BOILERATE_UI__?.primeUiLicense,
+      license: runtimeConfig.primeUiLicense,
       ripple: false,
       theme: {
         preset: WorkspacePreset,
@@ -152,4 +158,4 @@ export const appConfig: ApplicationConfig = {
       },
     }),
   ],
-};
+});
