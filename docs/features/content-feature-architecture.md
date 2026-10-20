@@ -18,10 +18,10 @@ Trạng thái: Source và local verification hoàn thành; chờ CI sau push. Ng
 2. Màn `content`, store và component toolbar/table thực sự sử dụng.
 3. Màn `content-io`, store/form/controller và component form/inspector thực sự sử dụng.
 4. Tích hợp route/providers/navigation, xóa implementation cũ, lint boundaries cho pages/components/state/data-access.
-5. Format/lint/unit/build, 24 browser tests/goldens + 6 content workflow tests hai theme ba viewport; CI thực tế và commit nhỏ/push. Chưa dùng test cũ làm kết quả sau refactor.
+5. Format/lint/unit/build, browser regression + content workflow ở hai theme; CI thực tế và commit nhỏ/push. Theo yêu cầu mới, gate hiện tại là web desktop/tablet (20 tests), mobile tối ưu sau và giữ suite riêng (10 tests).
 
 Chấp nhận khi đổi mock bằng DI test-double không sửa page, test load/error/save failure/cancellation và validation hoạt động; search/filter/page/selection, autosave/dirty guard/inspector giữ hành vi; ảnh không bị cập nhật để che hồi quy.
 
 ## Tiến độ
 
-Steps 1–4 đã triển khai vào route thực; implementation cũ đã xóa. Step 5 local đạt full format/lint, 46 probes, 145 unit tests, production build và 30 browser tests; 24 ảnh baseline giữ nguyên. Lỗi selector/focus race ở test đã sửa và chạy lại. [Verification](../verification/2026-10-20-content-architecture.md) và [history](../history/2026-10-20-content-verification.md) ghi kết quả thực chạy, phạm vi và giới hạn. Còn push và CI thực tế; không tính tích hợp BE hoặc deployment trong mốc này.
+Steps 1–4 đã triển khai vào route thực; implementation cũ đã xóa. Step 5 local đạt full format/lint, 46 probes, 145 unit tests, production build và 30 browser tests; 24 ảnh baseline giữ nguyên. CI source `f7820db` browser 29/30 pass do tooltip mobile-dark; không coi lỗi này đã sửa. Người dùng chuyển ưu tiên sang web, hoãn mobile: gate 20 tests desktop/tablet đang chạy lại local/CI. [Verification](../verification/2026-10-20-content-architecture.md) và [history phạm vi](../history/2026-10-20-web-scope.md) ghi kết quả và giới hạn. Người dùng cũng đề xuất nối API thật, SQL Server làm mặc định BE; đã khảo sát contract nhưng đang cần instance/database và lệnh seed để chốt môi trường. Chưa gọi BE hoặc seed DB.

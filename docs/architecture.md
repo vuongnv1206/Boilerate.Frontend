@@ -61,6 +61,8 @@ Root theme trước lần vẽ đầu, overlays appended to body, normal motion 
 
 Playwright được lock cùng browser, dùng 6 projects (desktop 1440×900, tablet 1024×768, mobile viewport 390×844 × light/dark), locale vi-VN, múi giờ Việt Nam, normal motion. Baseline ảnh theo platform; CI Windows dùng cùng win32 baseline. Không tự cập nhật snapshot trong CI. Khi đổi UI chủ đích, review diff và cập nhật baseline cùng commit thay đổi. Viewport mobile không thay thế nghiệm thu thiết bị thật/Safari.
 
+Theo ưu tiên mới của người dùng, gate hiện tại `test:e2e` và CI chạy 4 projects web desktop/tablet (20 tests). `test:e2e:mobile` giữ 2 projects mobile (10 tests) cho bước tối ưu sau; `test:e2e:all` chạy cả 6. Không xóa ca test hoặc nới assertion để bỏ lỗi tooltip mobile đã ghi trong verification. Dev server dùng localhost:4200; preview 4300 là server tạm của kiểm thử production.
+
 CI chỉ checkout repo FE, không cần BE hoặc license secret. Bản build dùng cho visual regression có `PRIMEUI_LICENSE_KEY` rỗng để cùng trạng thái license với CI; giữ nguyên hành vi cảnh báo/watermark của vendor. Không dùng ảnh QA để né kiểm tra license.
 
 Mỗi thay đổi có history và bằng chứng thực chạy; implemented/local verified/CI/user accepted/deployed là các trạng thái riêng. Hợp đồng nghiệp vụ/API vẫn thuộc repo BE; từ workspace có thể đọc `../Boilerate/docs/shared/contracts/frontend-backend.md`. Không nhân bản hợp đồng đó trong FE.

@@ -4,6 +4,8 @@ This file applies to the independent Frontend repository. Product intent is in [
 
 The mandatory implementation/review standard is [Angular coding rules](docs/coding-rules.md). Read it before adding or refactoring a feature. List pages use the feature name; create/edit/detail pages use `-io`. Enum/type declarations, reusable options and business configuration belong in the feature's `enums`, `models` and `constants`, never inside a component. Component imports are explicit template dependencies; do not introduce a global catch-all UI module.
 
+Current user priority (2026-10-20): web first. Required browser verification and CI cover desktop/tablet in both themes. Mobile UI optimization and its known gallery tooltip focus/scroll issue are deferred; retain mobile tests/baselines for explicit follow-up using `test:e2e:mobile` or `test:e2e:all`. The development URL stays `http://localhost:4200`; port 4300 is a temporary production preview for browser tests.
+
 ## Architecture and naming
 
 - Keep standalone Angular components, strict TypeScript and strict templates. Use signals/computed for local derived state and RxJS where asynchronous streams need cancellation or composition. Keep effects for actual side effects.

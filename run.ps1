@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('install', 'start', 'build', 'test', 'lint', 'check', 'format:check', 'test:e2e', 'test:e2e:update', 'preview')]
+    [ValidateSet('install', 'start', 'build', 'test', 'lint', 'check', 'format:check', 'test:e2e', 'test:e2e:mobile', 'test:e2e:all', 'test:e2e:update', 'preview')]
     [string]$Task = 'start',
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$TaskArguments

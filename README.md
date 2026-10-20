@@ -6,6 +6,8 @@ Repo FE riêng, private: [Boilerate.Frontend](https://github.com/vuongnv1206/Boi
 
 Refactor feature đã triển khai vào Angular: `content` / `content-io`, page/store/service, typed forms, enum/constants riêng và base HTTP qua DI. [Quy tắc code bắt buộc](docs/coding-rules.md) được gắn trong `AGENTS.md` và lint. Local đạt format/lint, **46 architecture/AST probes, 145 unit tests, production build và 30 browser tests**; 24 golden snapshots giữ nguyên. [Báo cáo mới](docs/verification/2026-10-20-content-architecture.md) ghi source, kiểm chứng và trạng thái CI sau refactor; [báo cáo baseline](docs/verification/2026-10-20-codebase.md) là lịch sử trước đó.
 
+Ưu tiên hiện tại: **web desktop/tablet trước**, mobile tối ưu sau theo yêu cầu người dùng. Gate browser/CI hiện chạy 20 tests web; mobile suite vẫn giữ để chạy riêng, có lỗi tooltip focus/scroll được ghi rõ trong báo cáo. Dev server giữ ở [http://localhost:4200](http://localhost:4200); cổng 4300 chỉ dùng tạm cho QA production.
+
 ## Chạy local
 
 Yêu cầu Node tương thích Angular 22; runtime lựa chọn trong `.node-version` là **24.19.0**. `run.ps1` chọn Node phù hợp trên PATH hoặc runtime bundled của Codex; có thể đặt `BOILERATE_NODE` tới `node.exe` mong muốn. Script chỉ chỉnh PATH của tiến trình hiện tại, không thay Node global.
@@ -40,7 +42,7 @@ Giá trị trong ví dụ là placeholder. Copy `.env.example` thành `.env.loca
 
 `.\run.ps1 check` gộp format, lint/boundaries, unit tests và build. Khi terminal đã chọn Node phù hợp, có thể dùng npm scripts tương ứng. Lệnh install dùng npm 12.2.0 để tránh lỗi resolver đã gặp ở npm 10 trên máy phát triển. Trên máy mới dùng `npx --yes --package=npm@12.2.0 npm ci`, rồi `npm run check`. Khi deploy, host cần fallback các route SPA về `index.html`, cache runtime config phù hợp và chuyển `/api` tới BE; chưa nghiệm thu deployment.
 
-Browser tests dùng bản production build. Cài Chromium bằng `npx playwright install chromium`, rồi build với biến shell `PRIMEUI_LICENSE_KEY` rỗng và `API_BASE_URL=/api` để cùng trạng thái với CI; không xóa cấu hình local. Sau đó chạy `npm run test:e2e` (hoặc `.\run.ps1 test:e2e`). Preview phục vụ loopback port 4300. Sáu projects bao phủ desktop/tablet/mobile viewport × light/dark. CI Windows dùng baseline win32 đã commit. Điều kiện cấu hình này áp dụng cả khi chạy lại và khi cập nhật ảnh. `npm run test:e2e:update` chỉ dùng khi chủ động đổi thiết kế và review ảnh; CI không tự cập nhật snapshot. Raw reports/traces nằm trong `artifacts/` bị ignore.
+Browser tests dùng bản production build. Cài Chromium bằng `npx playwright install chromium`, rồi build với biến shell `PRIMEUI_LICENSE_KEY` rỗng và `API_BASE_URL=/api` để cùng trạng thái với CI; không xóa cấu hình local. Sau đó chạy `npm run test:e2e` (hoặc `.\run.ps1 test:e2e`): desktop/tablet × light/dark, giống CI. `test:e2e:mobile` chạy riêng mobile ở bước sau; `test:e2e:all` chạy đủ sáu projects. Preview phục vụ loopback port 4300 và tự đóng khi suite kết thúc. CI Windows dùng baseline win32 đã commit. Điều kiện cấu hình này áp dụng cả khi chạy lại và khi cập nhật ảnh. `npm run test:e2e:update` chỉ dùng khi chủ động đổi thiết kế và review ảnh; CI không tự cập nhật snapshot. Raw reports/traces nằm trong `artifacts/` bị ignore.
 
 ## Tài liệu và quy chuẩn
 
