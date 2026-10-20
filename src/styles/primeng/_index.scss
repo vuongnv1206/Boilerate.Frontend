@@ -1,0 +1,270 @@
+// Supported preset tokens own colors; these application-level styles own compact density.
+.p-component,
+.p-inputtext,
+.p-textarea,
+.p-select,
+.p-multiselect,
+.p-inputnumber-input,
+.p-button,
+.p-datepicker,
+.p-dialog,
+.p-drawer,
+.p-toast {
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+.p-inputtext,
+.p-textarea,
+.p-inputnumber-input {
+  border-radius: var(--radius);
+  padding: 6px 9px;
+  min-height: var(--control-height);
+  box-shadow: none;
+}
+
+.p-inputtext:enabled:focus,
+.p-textarea:enabled:focus,
+.p-inputnumber-input:enabled:focus {
+  box-shadow: 0 0 0 1px var(--focus-ring);
+}
+
+.p-select,
+.p-multiselect {
+  min-height: var(--control-height);
+  border-radius: var(--radius);
+  align-items: center;
+}
+.p-select-label,
+.p-multiselect-label {
+  padding: 6px 9px;
+}
+.p-select-dropdown,
+.p-multiselect-dropdown {
+  width: 28px;
+}
+.p-select-dropdown svg,
+.p-multiselect-dropdown svg {
+  width: 12px;
+  height: 12px;
+}
+.p-select-option,
+.p-multiselect-option {
+  font-size: 13px;
+  padding: 7px 9px;
+}
+.p-select-overlay,
+.p-multiselect-overlay,
+.p-datepicker-panel {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-0);
+  box-shadow: var(--overlay-shadow);
+  border-radius: 5px;
+}
+
+.p-button {
+  min-height: 30px;
+  padding: 6px 10px;
+  gap: 6px;
+  border-radius: var(--radius);
+  font-weight: 500;
+  box-shadow: none;
+}
+.p-button-label {
+  font-weight: 500;
+}
+.p-button-sm {
+  font-size: 12px;
+  padding: 4px 8px;
+  min-height: 26px;
+}
+.p-checkbox {
+  width: 15px;
+  height: 15px;
+}
+.p-checkbox-box {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+}
+.p-checkbox-icon {
+  width: 10px;
+  height: 10px;
+}
+.p-toggleswitch {
+  width: 30px;
+  height: 18px;
+}
+.p-toggleswitch-handle {
+  width: 12px;
+  height: 12px;
+}
+.p-toggleswitch-checked .p-toggleswitch-handle {
+  inset-inline-start: calc(100% - 15px);
+}
+.p-datepicker {
+  width: 100%;
+}
+.p-datepicker-input {
+  width: 100%;
+}
+.p-datepicker-panel {
+  font-size: 12px;
+  min-width: 270px;
+  padding: 10px;
+}
+.p-datepicker-day {
+  width: 30px;
+  height: 30px;
+  font-size: 12px;
+}
+
+.p-datatable {
+  font-size: 12px;
+}
+.p-datatable-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.p-datatable-thead > tr > th {
+  background: var(--surface-1);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 10px 12px;
+  border-color: var(--border);
+}
+.p-datatable-tbody > tr {
+  background: var(--surface-0);
+  color: var(--text-1);
+}
+.p-datatable-tbody > tr > td {
+  padding: 10px 12px;
+  border-color: var(--border);
+}
+.p-datatable-tbody > tr:hover {
+  background: var(--surface-2);
+}
+.p-paginator {
+  background: var(--surface-0);
+  padding: 10px;
+  font-size: 12px;
+  gap: 3px;
+  border-radius: 0;
+}
+.p-paginator-page,
+.p-paginator-first,
+.p-paginator-prev,
+.p-paginator-next,
+.p-paginator-last {
+  min-width: 28px;
+  height: 28px;
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+.p-tablist-tab-list {
+  background: transparent;
+  border-color: var(--border);
+}
+.p-tab {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: transparent;
+}
+.p-tab-active {
+  color: var(--text-1);
+}
+.p-tablist-active-bar {
+  background: var(--accent);
+  height: 2px;
+}
+.p-tabpanels {
+  background: transparent;
+  padding: 20px 0 0;
+  color: var(--text-1);
+}
+.p-dialog {
+  background: var(--surface-0);
+  color: var(--text-1);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  box-shadow: var(--overlay-shadow);
+}
+.p-dialog-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.p-dialog-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.p-dialog-content {
+  padding: 20px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.p-dialog-footer {
+  padding: 14px 20px;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+.p-dialog-mask,
+.p-drawer-mask {
+  background: rgb(10 10 15 / 36%);
+  backdrop-filter: blur(1px);
+}
+.p-drawer {
+  background: var(--surface-0);
+  color: var(--text-1);
+  border-color: var(--border);
+}
+.p-drawer-header {
+  padding: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.p-drawer-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.p-drawer-enter-right,
+.p-drawer-leave-right {
+  animation-duration: var(--motion-slow);
+  animation-timing-function: var(--ease-out);
+}
+.p-drawer-content {
+  padding: 20px;
+  font-size: 13px;
+}
+.p-tooltip-text {
+  font-size: 11px;
+  padding: 6px 9px;
+  border-radius: 4px;
+}
+.p-toast {
+  width: min(360px, calc(100vw - 32px));
+}
+.p-toast-message {
+  border-radius: 6px;
+  background: var(--surface-0);
+  color: var(--text-1);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--overlay-shadow);
+}
+.p-toast-message-content {
+  padding: 14px;
+  gap: 10px;
+}
+.p-toast-summary {
+  font-size: 12px;
+  font-weight: 600;
+}
+.p-toast-detail {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.p-message {
+  font-size: 12px;
+}
