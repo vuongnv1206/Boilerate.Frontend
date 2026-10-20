@@ -35,3 +35,7 @@ Refactor feature và web gate đã có [CI mới 39441412958](https://github.com
 | `6ebf64b` | Browser regression và CI                          |
 | `21663ef` | Tài liệu kiến trúc và quy chuẩn checkout          |
 | `dd7fd71` | Chuẩn hóa nền scroll của ảnh overlay; CI cuối đạt |
+| `b70f9be` | Phiên API trong bộ nhớ và refresh                 |
+| `8ac71e0` | Collections API, 6 màn đơn giản và SCSS chung     |
+
+Source collections `8ac71e0` đã có [CI 39461384076](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39461384076) đạt: 141 unit tests, 24 browser tests desktop/tablet và production build. [Báo cáo API thật](../verification/2026-10-20-live-collections.md) ghi riêng QA SQL Server local và phần mobile/deployment chưa nghiệm thu.

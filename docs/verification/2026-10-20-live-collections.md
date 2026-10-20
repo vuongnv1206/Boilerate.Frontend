@@ -20,4 +20,8 @@ Mobile tối ưu sau. Token chỉ giữ trong tab, reload phải đăng nhập l
 
 Chọn Node theo `.node-version`, cài theo lockfile với npm 12.2.0, đặt `PRIMEUI_LICENSE_KEY` rỗng và `API_BASE_URL=/api`, rồi chạy `npm run check`, `npx playwright install chromium`, `npm run test:e2e`. Browser suite dùng API fixture, không cần BE hoặc SQL Server trên CI. QA lưu dữ liệu thật cần BE5000 và tài khoản local như README; không đưa credentials vào fixture.
 
-CI mới chưa được ghi nhận cho đến khi có run trên commit thực tế. CI cũ trong các báo cáo content demo không chứng minh source này.
+## CI đã đạt
+
+Source `8ac71e00a8a62196d4b71addec6b148489982859` đã push lên `main`. [Run 39461384076](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39461384076) hoàn tất thành công: cài dependency từ lockfile, format/lint, 34 kiểm tra import và quy tắc màn/style, 141 unit tests / 22 files, production build và 24 browser tests (2,8 phút, không retry hoặc bỏ qua). Report/trace được lưu làm artifact của run.
+
+CI dùng Windows, Node 24.19.0, API fixture và license rỗng; không dùng SQL Server hay credentials local. Bằng chứng lưu SQL Server là lượt QA local đã ghi ở trên. Commit tài liệu sau source này dùng `[skip ci]`; không thay source hoặc baseline đã kiểm tra. CI cũ trong các báo cáo content demo giữ làm lịch sử.
