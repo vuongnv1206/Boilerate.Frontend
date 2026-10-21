@@ -34,4 +34,29 @@ describe('List URL state', () => {
     expect(slugify(' Đèn bàn / GỖ ĐẸP ')).toBe('den-ban-go-dep');
     expect(slugify('---')).toBe('');
   });
+  it('round trips catalog filters without dropping zero and false', () => {
+    const values = {
+      categoryId: '20000000-0000-0000-0000-000000000001',
+      productTypeId: '10000000-0000-0000-0000-000000000001',
+      fulfillmentKind: '4',
+      inStock: 'false',
+      minimumPrice: '0',
+      maximumPrice: '150000',
+      sortBy: 'price',
+      sortDirection: 'asc',
+    };
+    expect(listQueryParams(readProductListQuery(values))).toEqual(values);
+    expect(
+      listQueryParams(
+        readProductListQuery({
+          categoryId: 'not-an-id',
+          minimumPrice: '-1',
+          maximumPrice: ['10'],
+          inStock: '0',
+          sortBy: 'other',
+          fulfillmentKind: '9',
+        }),
+      ),
+    ).toEqual({});
+  });
 });

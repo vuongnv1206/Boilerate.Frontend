@@ -8,11 +8,12 @@ import { ProductsStore } from '@stores/products.store';
 
 describe('ProductsStore', () => {
   const first: ProductPage = { items: [], total: 40, pageNumber: 1, pageSize: 10 };
-  const service = { search: vi.fn() };
+  const service = { search: vi.fn(), bulkStatus: vi.fn() };
   let store: ProductsStore;
 
   beforeEach(() => {
     service.search.mockReset().mockReturnValue(of(first));
+    service.bulkStatus.mockReset();
     TestBed.configureTestingModule({
       providers: [
         { provide: AuthSession, useValue: { can: () => true } },
@@ -68,5 +69,70 @@ describe('ProductsStore', () => {
     expect(store.page().pageNumber).toBe(3);
     store.load();
     expect(service.search).toHaveBeenLastCalledWith({ pageNumber: 1, pageSize: 10, search: 'ghế' });
+  });
+
+  it('sends all server filters and keeps zero price and unavailable stock', () => {
+    store.applyQuery({
+      q: '',
+      status: null,
+      page: 1,
+      pageSize: 20,
+      categoryId: 'cat',
+      productTypeId: 'type',
+      fulfillmentKind: 2,
+      inStock: false,
+      minimumPrice: 0,
+      maximumPrice: 50000,
+      sortBy: 'price',
+      sortDirection: 'asc',
+    });
+    expect(service.search).toHaveBeenLastCalledWith({
+      pageNumber: 1,
+      pageSize: 20,
+      categoryId: 'cat',
+      productTypeId: 'type',
+      fulfillmentKind: 2,
+      inStock: false,
+      minimumPrice: 0,
+      maximumPrice: 50000,
+      sortBy: 'price',
+      sortDirection: 'asc',
+    });
+  });
+
+  it('keeps selection on failed bulk and prevents duplicate submissions', () => {
+    service.search.mockReturnValue(
+      of({
+        ...first,
+        items: [
+          {
+            id: 'one',
+            version: 'v1',
+            name: 'Áo',
+            slug: 'ao',
+            status: 1,
+            fromPrice: 100,
+            inStock: true,
+            fulfillmentKind: 1,
+          },
+        ],
+      }),
+    );
+    store.load();
+    store.toggle('one');
+    const pending = new Subject<unknown>();
+    service.bulkStatus.mockReturnValue(pending);
+    store.changeSelectedStatus(ProductStatus.Published).subscribe();
+    store.changeSelectedStatus(ProductStatus.Published).subscribe();
+    expect(service.bulkStatus).toHaveBeenCalledOnce();
+    expect(service.bulkStatus).toHaveBeenCalledWith({
+      items: [{ id: 'one', version: 'v1' }],
+      status: 2,
+    });
+    expect(store.selectedIds().has('one')).toBe(true);
+    pending.error(new Error('offline'));
+    expect(store.selectedIds().has('one')).toBe(true);
+    expect(store.bulkBusy()).toBe(false);
+    expect(store.error()).toContain('kiểm tra kết quả');
   });
 });

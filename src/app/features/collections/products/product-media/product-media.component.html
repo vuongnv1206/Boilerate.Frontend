@@ -1,0 +1,117 @@
+<section
+  class="product-media"
+  aria-labelledby="product-media-title"
+  [attr.aria-busy]="store.busy()"
+>
+  <div class="product-media__header">
+    <div>
+      <h2 id="product-media-title">Hình ảnh</h2>
+      <p id="product-media-help">
+        PNG hoặc JPEG, tối đa 5 MiB mỗi ảnh. {{ media().length }}/{{ limit }} ảnh.
+      </p>
+    </div>
+    <label class="product-media__upload" for="product-media-upload">Thêm ảnh</label>
+    <input
+      id="product-media-upload"
+      class="product-media__file"
+      type="file"
+      multiple
+      [accept]="accept"
+      [disabled]="blocked() || !store.canUpload() || media().length >= limit"
+      aria-describedby="product-media-help product-media-status"
+      (change)="upload($event)"
+    />
+  </div>
+  <p id="product-media-status" class="field-help" role="status">
+    @if (store.busy()) {
+      Đang tải ảnh lên…
+    } @else if (!store.canUpload() && !disabled()) {
+      Cần quyền cập nhật sản phẩm để tải ảnh lên.
+    } @else {
+      Thứ tự ảnh và nội dung thay thế được ghi nhận khi lưu sản phẩm.
+    }
+  </p>
+  @if (store.error()) {
+    <p class="field-error" role="alert">{{ store.error() }}</p>
+  }
+  <ol class="product-media__list" aria-label="Ảnh sản phẩm">
+    @for (item of items(); track item.mediaAssetId; let index = $index) {
+      <li class="product-media__item">
+        <div class="product-media__preview">
+          @if (previews.url(item.mediaAssetId); as imageUrl) {
+            <a
+              [href]="imageUrl"
+              target="_blank"
+              rel="noopener"
+              [attr.aria-label]="'Xem ảnh ' + (index + 1)"
+            >
+              <img
+                [src]="imageUrl"
+                [alt]="item.altText || 'Ảnh sản phẩm ' + (index + 1)"
+                width="80"
+                height="80"
+              />
+            </a>
+          } @else if (previews.loading(item.mediaAssetId)) {
+            <span role="status">Đang tải ảnh…</span>
+          } @else {
+            <span>Chưa xem được ảnh</span>
+            <button
+              type="button"
+              class="text-button"
+              [attr.aria-label]="'Tải lại ảnh ' + (index + 1)"
+              (click)="previews.reload(item.mediaAssetId)"
+            >
+              Tải lại
+            </button>
+          }
+        </div>
+        <div class="product-media__details field">
+          <label [for]="'product-media-alt-' + item.mediaAssetId">Mô tả ảnh {{ index + 1 }}</label>
+          <input
+            pInputText
+            [id]="'product-media-alt-' + item.mediaAssetId"
+            [value]="item.altText || ''"
+            maxlength="500"
+            [disabled]="blocked()"
+            (input)="altText(item.mediaAssetId, $event)"
+          />
+          @if (previews.error(item.mediaAssetId)) {
+            <p class="field-error">{{ previews.error(item.mediaAssetId) }}</p>
+          }
+        </div>
+        <div class="product-media__actions">
+          <button
+            type="button"
+            class="icon-button"
+            [disabled]="blocked() || index === 0"
+            [attr.aria-label]="'Đưa ảnh ' + (index + 1) + ' lên trước'"
+            (click)="move(item.mediaAssetId, -1)"
+          >
+            <ui-icon name="chevron-up" />
+          </button>
+          <button
+            type="button"
+            class="icon-button"
+            [disabled]="blocked() || index === items().length - 1"
+            [attr.aria-label]="'Đưa ảnh ' + (index + 1) + ' xuống sau'"
+            (click)="move(item.mediaAssetId, 1)"
+          >
+            <ui-icon name="chevron-down" />
+          </button>
+          <button
+            type="button"
+            class="text-button"
+            [disabled]="blocked()"
+            [attr.aria-label]="'Gỡ ảnh ' + (index + 1)"
+            (click)="remove(item.mediaAssetId)"
+          >
+            Gỡ
+          </button>
+        </div>
+      </li>
+    } @empty {
+      <li class="product-media__empty">Chưa có ảnh sản phẩm.</li>
+    }
+  </ol>
+</section>

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '@core/http/api-client';
-import { CategoryDto, SaveCategoryRequest } from '@models/category.dto';
+import { CategoryDto, CategoryProductCount, SaveCategoryRequest } from '@models/category.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -9,6 +9,9 @@ export class CategoriesService {
 
   getAll(): Observable<readonly CategoryDto[]> {
     return this.api.get<readonly CategoryDto[]>('categories');
+  }
+  summaries(): Observable<readonly CategoryProductCount[]> {
+    return this.api.get<readonly CategoryProductCount[]>('categories/summaries');
   }
   create(request: SaveCategoryRequest): Observable<CategoryDto> {
     return this.api.post<CategoryDto>('categories', request);

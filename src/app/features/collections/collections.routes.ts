@@ -10,6 +10,8 @@ export const COLLECTIONS_ROUTES: Routes = [
   {
     path: 'products',
     providers: [ProductsService],
+    loadComponent: () =>
+      import('./products/products-workspace.component').then((m) => m.ProductsWorkspace),
     children: [
       {
         path: '',

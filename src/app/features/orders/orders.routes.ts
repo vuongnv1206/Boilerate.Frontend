@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { permissionGuard } from '@guards/permission.guard';
 import { OrdersService } from '@services/orders.service';
+import { unsavedChangesGuard } from '@guards/unsaved-changes.guard';
 
 export const ORDER_ROUTES: Routes = [
   {
@@ -16,6 +17,7 @@ export const ORDER_ROUTES: Routes = [
       },
       {
         path: ':id',
+        canDeactivate: [unsavedChangesGuard],
         canActivate: [permissionGuard],
         data: { permission: { functionCode: 'Order', actionCode: 'View' } },
         loadComponent: () => import('./order-detail.component').then((m) => m.OrderDetail),

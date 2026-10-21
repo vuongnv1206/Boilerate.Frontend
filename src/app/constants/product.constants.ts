@@ -36,3 +36,21 @@ export const PRODUCT_FIELD_ALIASES = {
   'variants[0].sku': 'sku',
   'variants[0].price': 'price',
 } as const;
+
+export const PRODUCT_LIST_FULFILLMENT_OPTIONS = [
+  { label: 'Tất cả cách giao', value: null },
+  ...PRODUCT_FULFILLMENT_OPTIONS,
+];
+export const PRODUCT_STOCK_FILTER_OPTIONS = [
+  { label: 'Tất cả khả dụng', value: null },
+  { label: 'Có sẵn', value: true },
+  { label: 'Chưa khả dụng', value: false },
+];
+export const PRODUCT_SORT_OPTIONS = [
+  { label: 'Cập nhật mới nhất', value: 'modified:desc' },
+  { label: 'Cập nhật cũ nhất', value: 'modified:asc' },
+  { label: 'Tên A → Z', value: 'name:asc' },
+  { label: 'Tên Z → A', value: 'name:desc' },
+  { label: 'Giá tăng dần', value: 'price:asc' },
+  { label: 'Giá giảm dần', value: 'price:desc' },
+];

@@ -83,10 +83,7 @@ test('editor: validation, dirty guard, API save and conflict', async ({ page, ca
   await name.blur();
   await expect(name).toHaveAttribute('aria-invalid', 'true');
   await name.fill(`${original} — chỉnh sửa kiểm thử`);
-  await page
-    .locator('.editor-breadcrumb')
-    .getByRole('link', { name: 'Sản phẩm', exact: true })
-    .click();
+  await page.locator('.catalog-back').click();
   const guard = page.getByRole('dialog');
   await expect(guard).toBeVisible();
   await guard.getByRole('button', { name: 'Ở lại', exact: true }).click();

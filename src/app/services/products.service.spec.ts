@@ -82,4 +82,79 @@ describe('ProductsService Catalog wire contract', () => {
       request.flush(url === '/api/categories' || url === '/api/product-types' ? [] : {});
     }
   });
+
+  it('uses the exact product SKU mutation and filtered stock contracts', () => {
+    service
+      .editVariant({
+        productId: 'p1',
+        variantId: 'v1',
+        version: 'pv1',
+        price: 0,
+        compareAtPrice: null,
+        isActive: true,
+        imageMediaId: null,
+      })
+      .subscribe();
+    const variant = http.expectOne('/api/products/p1/variants/v1');
+    expect(variant.request.method).toBe('PUT');
+    expect(variant.request.body.version).toBe('pv1');
+    expect(variant.request.body.price).toBe(0);
+    variant.flush({});
+    service.inventory('p1', 2).subscribe();
+    const inventory = http.expectOne('/api/inventory?productId=p1&page=2&size=100');
+    expect(inventory.request.method).toBe('GET');
+    inventory.flush({ items: [], total: 0, pageNumber: 2, pageSize: 100 });
+    const adjustment = {
+      inventoryItemId: 'i1',
+      version: 'iv1',
+      operationId: 'op1',
+      delta: -2,
+      reason: 'Kiểm kho',
+    };
+    service.adjustInventory(adjustment).subscribe();
+    const movement = http.expectOne('/api/inventory/i1/adjustments');
+    expect(movement.request.body).toEqual(adjustment);
+    movement.flush({});
+    service
+      .importDigital('p1', 'v1', 'pv2', [{ reference: 'KEY-1', content: 'Secret' }])
+      .subscribe();
+    const digital = http.expectOne('/api/digital-inventory/variants/v1/items');
+    expect(digital.request.body).toEqual({
+      productId: 'p1',
+      variantId: 'v1',
+      version: 'pv2',
+      items: [{ reference: 'KEY-1', content: 'Secret' }],
+    });
+    digital.flush([]);
+  });
+  it('submits one versioned catalog editor command and an atomic bulk status command', () => {
+    const editor = {
+      id: 'p1',
+      version: 'pv1',
+      productTypeVersion: 'tv1',
+      content: {
+        name: 'Sản phẩm',
+        slug: 'san-pham',
+        description: null,
+        categoryIds: [],
+        fields: [],
+        media: [],
+      },
+      optionEdits: [],
+      variantEdits: [],
+      addedVariants: [],
+      defaultVariantSku: 'SKU-1',
+    };
+    service.saveEditor(editor).subscribe();
+    const save = http.expectOne('/api/products/p1/editor');
+    expect(save.request.method).toBe('PUT');
+    expect(save.request.body).toEqual(editor);
+    save.flush({});
+    const bulk = { items: [{ id: 'p1', version: 'pv2' }], status: ProductStatus.Published };
+    service.bulkStatus(bulk).subscribe();
+    const status = http.expectOne('/api/products/bulk-status');
+    expect(status.request.method).toBe('POST');
+    expect(status.request.body).toEqual(bulk);
+    status.flush({ items: [{ id: 'p1', status: ProductStatus.Published, version: 'pv3' }] });
+  });
 });

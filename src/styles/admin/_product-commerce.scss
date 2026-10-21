@@ -1,0 +1,114 @@
+.collection-screen {
+  .product-content-fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .product-commerce {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 0 32px 32px;
+  }
+  .product-commerce-heading,
+  .product-commerce-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .product-commerce-actions {
+    justify-content: flex-start;
+  }
+  .product-commerce-heading h3,
+  .product-commerce-heading h2 {
+    margin: 0;
+  }
+  .product-commerce-table {
+    max-width: 100%;
+    overflow-x: auto;
+    margin-bottom: 12px;
+  }
+  .product-commerce-table .content-table {
+    min-width: 540px;
+    font-size: 12px;
+  }
+  .product-commerce-table .content-table th,
+  .product-commerce-table .content-table td {
+    padding: 10px 8px;
+    white-space: normal;
+    vertical-align: top;
+  }
+  .product-commerce-secondary {
+    display: block;
+    color: var(--text-3);
+    margin-top: 4px;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  .product-commerce-help {
+    color: var(--text-2);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .product-commerce-editor {
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface-1);
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .product-checkbox {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+    font-size: 12px;
+  }
+  .product-options-list,
+  .product-create-option,
+  .product-create-sku {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: 16px;
+  }
+  .product-create-option .fields-row,
+  .product-create-sku .fields-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
+  .product-create-option .fields-row > button,
+  .product-create-sku .fields-row > button {
+    margin-bottom: 20px;
+    justify-self: start;
+  }
+  .product-form-error {
+    color: var(--danger);
+    font-size: 12px;
+  }
+  .product-digital-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .product-secret {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: var(--surface-0);
+    border: 1px solid var(--border);
+    padding: 12px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  @media (max-width: 1050px) {
+    .product-commerce {
+      padding: 0 24px 24px;
+    }
+  }
+}

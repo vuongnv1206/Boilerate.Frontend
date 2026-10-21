@@ -1,32 +1,27 @@
-# Verification — Admin Orders workspace — 2026-10-21
+# Verification — Admin Orders and connected admin features — 2026-10-21
 
-## Phạm vi
+## Scope
 
-Kiểm chứng source và build cho module `/admin/orders` và `/admin/orders/:id`. Báo cáo này không thay cho authenticated browser, API deployment, database provider hoặc production acceptance.
+Current FE checkout for shipping, after-sales, SKU/price/inventory, manual renewals, and user administration. Browser tests use deterministic HTTP fixtures and validate UI behavior/request snapshots. They do not replace authenticated acceptance against external carrier/payment systems or a production deployment.
 
-## Kết quả
+## Results
 
-| Lệnh                                                          | Môi trường                  | Kết quả                                  |
-| ------------------------------------------------------------- | --------------------------- | ---------------------------------------- |
-| `npm run format:check`                                        | Windows, repo FE            | Pass; toàn bộ file dùng Prettier.        |
-| `npm run lint`                                                | Windows, repo FE            | Pass; ESLint và architecture checks.     |
-| `npm run test:architecture`                                   | Windows, repo FE            | Pass; 43 import/screen/style checks.     |
-| `node node_modules/@angular/cli/bin/ng.js build`              | Bundled Node 24.19.0        | Pass; Orders list/detail được lazy-load. |
-| `node node_modules/@angular/cli/bin/ng.js test --watch=false` | Bundled Node 24.19.0/Vitest | Pass; 27 test files, 171 tests.          |
+| Command                                                                                                 | Environment                                                   | Result                                                                                             |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `run.ps1 check`                                                                                         | Windows, supported bundled Node 24.19.0                       | Pass: Prettier, ESLint, 43 architecture checks, 35 test files/218 tests, production Angular build. |
+| Focused shipping/after-sales/renewal unit tests                                                         | Vitest                                                        | Pass: 3 files/17 tests.                                                                            |
+| `run.ps1 test:e2e -- e2e/orders.spec.ts e2e/product-commerce.spec.ts e2e/system-administration.spec.ts` | Playwright Chromium, desktop/tablet × Light/Dark, fixture API | Pass: 96 tests (shipping 24, SKU/price/inventory 28, user/role administration 44).                 |
 
-## Bằng chứng source
+## Verified behavior
 
-- Query list nằm trong URL, dùng server-side filter và giữ query khi vào/back từ detail.
-- Detail không có Edit/inline edit; snapshot và timeline là read-only.
-- Permission dùng capability BE; section Shipping/After-sales được gọi độc lập và lỗi section được cô lập.
-- 409 giữ màn hình, báo stale version và reload DTO; không tự retry command.
-- Action cancel/retry bị khóa theo payment status và `PhysicalDispatchStarted`; stale detail/mutation response không thể ghi đè order đang mở.
-- Timeline và các section lazy-load giữ trạng thái lỗi riêng, có thao tác retry thay vì biến lỗi thành empty state.
-- Không gọi endpoint và không render nội dung digital delivery trong detail lát đầu.
+- Order list/detail, partial dispatch and delivery, response-loss retry, permission gating, and conflict draft retention.
+- SKU combinations/prices, inventory adjustment replay, canonical reload, and Unique/Shared digital inventory reveal controls.
+- User profile/role workflows, permission matrix, permission gating, conflict handling, and draft retention.
+- Refund and return payload validation, COD closure gating, permission checks, conflict reload, and immutable retry request through focused component tests.
+- Renewal claim, start retry, verification payload, permission checks, expiry validation, and target/evidence reveal state through focused component tests.
 
-## Chưa kiểm chứng
+## Limits
 
-- Chưa đăng nhập actor development trong browser để chạy E2E.
-- Chưa chạy cùng backend/seed thực tế để kiểm list filters, command response, history và version conflict qua HTTP.
-- Chưa có bằng chứng browser cho Light/Dark/System, responsive, focus/accessibility và back-forward thật.
-- Node hệ thống của máy không đáp ứng yêu cầu Angular; kết quả build/test dùng bundled Node 24.19.0.
+- Playwright uses fixture APIs. Do not interpret its pass result as live API or database acceptance. See the BE feature reports for SQL Server contract/service acceptance.
+- Renewal and after-sales currently have unit coverage but are not included in the browser E2E suites.
+- FE development server runs at `http://127.0.0.1:4200`; authenticated API runs at `http://127.0.0.1:5000`. Docker/deployment acceptance was deferred by the user.

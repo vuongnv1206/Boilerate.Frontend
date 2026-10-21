@@ -1,5 +1,18 @@
 import { BrowserContext, Route } from '@playwright/test';
 
+interface SystemUser {
+  id: string;
+  userName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string | null;
+  imageUrl: string | null;
+  emailConfirmed: boolean;
+  isActive: boolean;
+  version: string;
+}
+
 export async function installSystemApi(
   context: BrowserContext,
   centralAdmin = true,
@@ -51,18 +64,24 @@ export async function installSystemApi(
   const permissions = new Map<string, Array<{ functionId: string; actionId: string }>>([
     ['editor', [{ functionId: 'category', actionId: 'view' }]],
   ]);
-  const user = {
+  const user: SystemUser = {
     id: 'worker',
     userName: 'staff',
     firstName: 'Nhân viên',
     lastName: 'Nội dung',
     email: 'staff@example.test',
+    phoneNumber: '0900000001',
+    imageUrl: null,
+    emailConfirmed: true,
     isActive: true,
     version: 'u1',
   };
-  let assignedRoles = ['editor'];
+  const users = [user];
+  const assignedRoles = new Map([['worker', ['editor']]]);
   const writes: Array<{ path: string; body: Record<string, unknown> }> = [];
   let saveFailure = 0;
+  let userGrants: readonly string[] = ['View', 'Create', 'Update', 'Delete'];
+  let userFailure: { status: number; errors?: Record<string, string[]> } | null = null;
   const reply = (route: Route, data: unknown, status = 200) =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
   const text = (route: Route, value: string) =>
@@ -71,14 +90,18 @@ export async function installSystemApi(
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\//u, '');
     const method = request.method();
-    const body = request.postDataJSON() as Record<string, unknown> | null;
+    const contentType = request.headers()['content-type'] ?? '';
+    const body = contentType.startsWith('multipart/form-data')
+      ? multipartFields(request.postDataBuffer()?.toString('utf8') ?? '', contentType)
+      : (request.postDataJSON() as Record<string, unknown> | null);
     if (path === 'personal/authorization')
       return reply(route, {
         isCentralAdmin: centralAdmin,
         permissions: [
-          ...['Role', 'User', 'Function', 'Action'].flatMap((f) =>
+          ...['Role', 'Function', 'Action'].flatMap((f) =>
             ['View', 'Create', 'Update', 'Delete'].map((a) => `Permissions.${f}.${a}`),
           ),
+          ...userGrants.map((action) => `Permissions.User.${action}`),
           ...(includeCatalog
             ? [
                 'Permissions.Product.View',
@@ -92,7 +115,12 @@ export async function installSystemApi(
       });
     if (!/^(roles|users|functions|actions|function-groups)(\/|$)/u.test(path))
       return route.fallback();
-    if (method !== 'GET' && body) writes.push({ path, body });
+    if (method !== 'GET') writes.push({ path, body: body ?? {} });
+    if (userFailure && path.startsWith('users/') && path !== 'users/search' && method !== 'GET') {
+      const { status, errors } = userFailure;
+      userFailure = null;
+      return reply(route, { status, title: 'Rejected', errors }, status);
+    }
     if (saveFailure && method === 'PUT') {
       const status = saveFailure;
       saveFailure = 0;
@@ -180,9 +208,61 @@ export async function installSystemApi(
         return text(route, 'Deleted.');
       }
     }
-    if (path === 'users/search') return reply(route, { data: [user], totalCount: 1 });
-    if (path === 'users/worker') return reply(route, user);
-    if (path === 'users/worker/roles') {
+    if (path === 'users/search') return reply(route, { data: users, totalCount: users.length });
+    if (path === 'users/create' && method === 'POST') {
+      const created: SystemUser = {
+        id: `user-${++revision}`,
+        userName: String(body?.['userName']),
+        firstName: String(body?.['firstName']),
+        lastName: String(body?.['lastName']),
+        email: String(body?.['email']),
+        phoneNumber: (body?.['phoneNumber'] as string | null) ?? null,
+        imageUrl: null,
+        emailConfirmed: false,
+        isActive: true,
+        version: `u${revision}`,
+      };
+      users.push(created);
+      assignedRoles.set(created.id, []);
+      const message = `User ${created.userName} Registered.`;
+      return request.headers()['accept'] === 'application/json'
+        ? reply(route, message)
+        : text(route, message);
+    }
+    const targetUser = path.startsWith('users/')
+      ? users.find((candidate) => candidate.id === path.split('/')[1])
+      : undefined;
+    if (targetUser && /^users\/[^/]+$/u.test(path)) {
+      if (method === 'GET') return reply(route, targetUser);
+      if (method === 'PUT') {
+        if (body?.['Id'] !== targetUser.id)
+          return reply(route, { status: 400, errors: { Id: ['The Id field is required.'] } }, 400);
+        if (body?.['Version'] !== targetUser.version)
+          return reply(route, { status: 409, title: 'Version conflict' }, 409);
+        targetUser.firstName = String(body?.['FirstName']);
+        targetUser.lastName = String(body?.['LastName']);
+        targetUser.phoneNumber = (body?.['PhoneNumber'] as string | undefined) ?? null;
+        if (body?.['Image']) targetUser.imageUrl = `/uploads/${String(body['Image'])}`;
+        else if (body?.['DeleteCurrentImage'] === 'true') targetUser.imageUrl = null;
+        targetUser.version = `u${++revision}`;
+        return reply(route, { message: 'User profile updated successfully' });
+      }
+    }
+    if (targetUser && path.endsWith('/toggle-status') && method === 'POST') {
+      if (body?.['version'] !== targetUser.version)
+        return reply(route, { status: 409, title: 'Version conflict' }, 409);
+      targetUser.isActive = Boolean(body?.['activateUser']);
+      targetUser.version = `u${++revision}`;
+      return reply(route, { message: 'User status updated successfully' });
+    }
+    if (targetUser && path.endsWith('/password-reset') && method === 'POST') {
+      const message =
+        'If your email is registered, you will receive a password reset link shortly.';
+      return request.headers()['accept'] === 'application/json'
+        ? reply(route, message)
+        : text(route, message);
+    }
+    if (targetUser && path.endsWith('/roles')) {
       if (method === 'GET')
         return reply(
           route,
@@ -190,11 +270,13 @@ export async function installSystemApi(
             roleId: r.id,
             roleName: r.name,
             description: r.description,
-            enabled: assignedRoles.includes(r.id),
+            enabled: assignedRoles.get(targetUser.id)?.includes(r.id) ?? false,
           })),
         );
-      assignedRoles = body?.['roleIds'] as string[];
-      user.version = `u${++revision}`;
+      if (body?.['version'] !== targetUser.version)
+        return reply(route, { status: 409, title: 'Version conflict' }, 409);
+      assignedRoles.set(targetUser.id, body?.['roleIds'] as string[]);
+      targetUser.version = `u${++revision}`;
       return text(route, 'User roles updated.');
     }
     if (path === 'functions' && method === 'GET') return reply(route, functions);
@@ -260,10 +342,30 @@ export async function installSystemApi(
   return {
     groups,
     roles,
+    users,
     writes,
     permissions,
+    setUserPermissions: (grants: readonly string[]) => {
+      userGrants = grants;
+    },
+    failNextUserMutation: (status: number, errors?: Record<string, string[]>) => {
+      userFailure = { status, errors };
+    },
     failNextSave: (status: number) => {
       saveFailure = status;
     },
   };
+}
+
+function multipartFields(data: string, contentType: string): Record<string, string> {
+  const boundary = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/u);
+  const fields: Record<string, string> = {};
+  for (const part of data.split(`--${boundary?.[1] ?? boundary?.[2] ?? ''}`)) {
+    const name = part.match(/name="([^"]+)"/u)?.[1];
+    const separator = part.indexOf('\r\n\r\n');
+    if (!name || separator < 0) continue;
+    fields[name] =
+      part.match(/filename="([^"]+)"/u)?.[1] ?? part.slice(separator + 4).replace(/\r\n$/u, '');
+  }
+  return fields;
 }

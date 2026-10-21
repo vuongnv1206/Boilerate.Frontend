@@ -187,63 +187,542 @@
             </ol>
           }
         </section>
-        <section class="order-card collapsed-section">
-          <div>
-            <span class="eyebrow">Shipping</span>
-            <h2>Vận chuyển</h2>
-            @if (!store.canViewShipping()) {
-              <p>Section bị ẩn vì thiếu quyền Shipping.View.</p>
-            } @else if (store.relatedLoading()) {
-              <p class="order-muted">Đang tải shipment…</p>
-            } @else if (store.shippingError()) {
-              <p class="order-form-error" role="alert">{{ store.shippingError() }}</p>
-              <button class="ui-button" type="button" (click)="store.reloadRelated()">
-                Tải lại shipment
+        <section class="order-card shipping-card">
+          <div class="order-card-heading">
+            <div>
+              <span class="eyebrow">Shipping</span>
+              <h2>Vận chuyển</h2>
+            </div>
+            @if (canDispatch()) {
+              <button
+                class="ui-button primary"
+                type="button"
+                [disabled]="(!pendingDispatch() && !store.canDispatch()) || store.actionBusy()"
+                [title]="
+                  store.canDispatch()
+                    ? 'Tạo lần giao hàng'
+                    : 'Đơn chưa đủ điều kiện hoặc không còn số lượng vật lý để giao'
+                "
+                (click)="openDispatch()"
+              >
+                {{ pendingDispatch() ? 'Kiểm tra yêu cầu giao' : 'Tạo lần giao' }}
               </button>
-            } @else if (store.shipments(); as shipments) {
-              <p>
-                {{
-                  shipments.length ? shipments.length + ' shipment · chỉ đọc' : 'Chưa có shipment'
-                }}
-              </p>
-            } @else {
-              <p>Chưa có dữ liệu shipment.</p>
             }
           </div>
-          <ui-icon name="chevron-right" [size]="16" />
+          @if (
+            canDispatch() &&
+            store.shipments() !== null &&
+            !store.canDispatch() &&
+            !store.actionBusy() &&
+            !store.relatedLoading() &&
+            !store.shippingError()
+          ) {
+            <p class="order-muted">
+              Chưa thể tạo lần giao: đơn chưa sẵn sàng hoặc không còn số lượng vật lý cần giao.
+            </p>
+          }
+          @if (!store.canViewShipping()) {
+            <p class="order-muted">Cần quyền Shipping.View để xem vận chuyển.</p>
+          } @else if (store.relatedLoading()) {
+            <p class="order-muted">Đang tải shipment…</p>
+          } @else if (store.shippingError()) {
+            <p class="order-form-error" role="alert">{{ store.shippingError() }}</p>
+            <button class="ui-button" type="button" (click)="store.reloadRelated()">
+              Tải lại shipment
+            </button>
+          } @else if (store.shipments(); as shipments) {
+            @if (shipments.length === 0) {
+              <p class="order-muted">Chưa có shipment.</p>
+            } @else {
+              <div class="shipment-list">
+                @for (shipment of shipments; track shipment.id) {
+                  <article class="shipment-card">
+                    <div class="shipment-heading">
+                      <div>
+                        <strong>{{ shipment.carrier }}</strong>
+                        <span class="shipment-tracking">{{ shipment.trackingNumber }}</span>
+                      </div>
+                      <ui-status-badge
+                        [tone]="
+                          shipment.status === shipmentStatus.Delivered ? 'success' : 'warning'
+                        "
+                        >{{ shipmentStatusLabels[shipment.status] }}</ui-status-badge
+                      >
+                    </div>
+                    <p class="order-muted">
+                      Xuất lúc {{ shipment.dispatchedAtUtc | date: 'dd/MM/yyyy HH:mm' }}
+                      @if (shipment.deliveredAtUtc) {
+                        · Giao lúc {{ shipment.deliveredAtUtc | date: 'dd/MM/yyyy HH:mm' }}
+                      }
+                    </p>
+                    <ul class="shipment-lines">
+                      @for (line of shipment.items; track line.orderItemId) {
+                        <li>
+                          <span>{{ shipmentLineLabel(order, line.orderItemId) }}</span>
+                          <strong>× {{ line.quantity }}</strong>
+                        </li>
+                      }
+                    </ul>
+                    @if (
+                      canDeliver() &&
+                      (store.canDeliverShipment(shipment) || pendingDeliveries()[shipment.id])
+                    ) {
+                      <div class="shipment-actions">
+                        <button
+                          class="ui-button"
+                          type="button"
+                          [disabled]="store.actionBusy()"
+                          (click)="openDelivery(shipment)"
+                        >
+                          {{
+                            pendingDeliveries()[shipment.id]
+                              ? 'Kiểm tra kết quả giao'
+                              : 'Xác nhận đã giao'
+                          }}
+                        </button>
+                      </div>
+                    }
+                  </article>
+                }
+              </div>
+            }
+          } @else {
+            <p class="order-muted">Chưa có dữ liệu shipment.</p>
+          }
         </section>
-        <section class="order-card collapsed-section">
-          <div>
-            <span class="eyebrow">After-sales</span>
-            <h2>Đổi trả & hoàn tiền</h2>
-            @if (!store.canViewAfterSales()) {
-              <p>Section bị ẩn vì thiếu quyền AfterSales.View.</p>
-            } @else if (store.relatedLoading()) {
-              <p class="order-muted">Đang tải after-sales…</p>
-            } @else if (store.afterSalesError()) {
-              <p class="order-form-error" role="alert">{{ store.afterSalesError() }}</p>
-              <button class="ui-button" type="button" (click)="store.reloadRelated()">
-                Tải lại after-sales
-              </button>
-            } @else if (store.afterSales(); as afterSales) {
-              <p>
-                Đã hoàn
-                {{
-                  afterSales.refundedAmount | currency: order.currency : 'symbol-narrow' : '1.0-0'
-                }}
-                · chỉ đọc
-              </p>
-            } @else {
-              <p>Chưa có dữ liệu after-sales.</p>
+        <section class="order-card after-sales-card">
+          <div class="order-card-heading">
+            <div>
+              <span class="eyebrow">After-sales</span>
+              <h2>Đổi trả & hoàn tiền</h2>
+            </div>
+            @if (store.afterSales(); as afterSales) {
+              <div class="after-sales-actions">
+                @if (canRefund() && !afterSales.closed && afterSales.refundableAmount > 0) {
+                  <button
+                    class="ui-button"
+                    type="button"
+                    [disabled]="store.afterSalesBusy() || pendingReturn()"
+                    (click)="openRefundForm()"
+                  >
+                    {{ pendingRefund() ? 'Kiểm tra yêu cầu hoàn' : 'Ghi nhận hoàn tiền' }}
+                  </button>
+                }
+                @if (canReceiveReturn() && !afterSales.closed && returnableLines().length > 0) {
+                  <button
+                    class="ui-button"
+                    type="button"
+                    [disabled]="store.afterSalesBusy() || pendingRefund()"
+                    (click)="openReturnForm()"
+                  >
+                    {{ pendingReturn() ? 'Kiểm tra yêu cầu trả hàng' : 'Nhận hàng trả về' }}
+                  </button>
+                }
+              </div>
             }
           </div>
-          <ui-icon name="chevron-right" [size]="16" />
+          @if (!store.canViewAfterSales()) {
+            <p class="order-muted">Cần quyền AfterSales.View để xem sổ hậu mãi.</p>
+          } @else if (store.relatedLoading()) {
+            <p class="order-muted">Đang tải after-sales…</p>
+          } @else if (store.afterSalesError()) {
+            <p class="order-form-error" role="alert">{{ store.afterSalesError() }}</p>
+            <button class="ui-button" type="button" (click)="store.reloadRelated()">
+              Tải lại after-sales
+            </button>
+          } @else if (store.afterSales(); as afterSales) {
+            <div class="after-sales-summary">
+              <span
+                >Đã nhận
+                <strong>{{
+                  afterSales.receivedAmount | currency: order.currency : 'symbol-narrow' : '1.0-0'
+                }}</strong></span
+              >
+              <span
+                >Đã hoàn
+                <strong>{{
+                  afterSales.refundedAmount | currency: order.currency : 'symbol-narrow' : '1.0-0'
+                }}</strong></span
+              >
+              <span
+                >Còn có thể hoàn
+                <strong>{{
+                  afterSales.refundableAmount | currency: order.currency : 'symbol-narrow' : '1.0-0'
+                }}</strong></span
+              >
+              @if (afterSales.closed) {
+                <span class="after-sales-closed">Đơn đã đóng</span>
+              }
+            </div>
+            @if (store.afterSalesActionError()) {
+              <div class="order-action-message" role="alert">
+                <ui-icon name="alert" [size]="15" />{{ store.afterSalesActionError() }}
+                @if (store.afterSalesActionFailure() === 'uncertain' && pendingRefund()) {
+                  <button
+                    class="ui-button"
+                    type="button"
+                    [disabled]="store.afterSalesBusy()"
+                    (click)="submitRefund()"
+                  >
+                    Thử lại đúng khoản hoàn
+                  </button>
+                }
+                @if (store.afterSalesActionFailure() === 'uncertain' && pendingReturn()) {
+                  <button
+                    class="ui-button"
+                    type="button"
+                    [disabled]="store.afterSalesBusy()"
+                    (click)="submitReturn()"
+                  >
+                    Thử lại đúng phiếu nhận
+                  </button>
+                }
+              </div>
+            }
+            @if (order.currency.toUpperCase() !== 'VND' && canRefund()) {
+              <p class="order-muted">API hiện chỉ ghi nhận hoàn tiền VND.</p>
+            }
+            <div class="after-sales-ledgers">
+              <section>
+                <h3>Các khoản đã hoàn</h3>
+                @if (afterSales.refunds.length) {
+                  <div class="table-scroll">
+                    <table class="content-table after-sales-table">
+                      <thead>
+                        <tr>
+                          <th>Chứng từ</th>
+                          <th>Số tiền</th>
+                          <th>Nguồn</th>
+                          <th>Lý do</th>
+                          <th>Thời điểm</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (refund of afterSales.refunds; track refund.id) {
+                          <tr>
+                            <td>{{ refund.reference }}</td>
+                            <td>
+                              {{
+                                refund.amount
+                                  | currency: refund.currency : 'symbol-narrow' : '1.0-0'
+                              }}
+                            </td>
+                            <td>
+                              {{
+                                refund.source === 'ManualBankTransfer' ? 'Chuyển khoản' : 'Tiền mặt'
+                              }}
+                            </td>
+                            <td>{{ refund.reason }}</td>
+                            <td>{{ refund.refundedAtUtc | date: 'dd/MM/yyyy HH:mm' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="order-muted">Chưa ghi nhận khoản hoàn nào.</p>
+                }
+              </section>
+              <section>
+                <h3>Phiếu nhận hàng trả</h3>
+                @if (afterSales.returns.length) {
+                  <div class="table-scroll">
+                    <table class="content-table after-sales-table">
+                      <thead>
+                        <tr>
+                          <th>Chứng từ</th>
+                          <th>Số lượng nhận</th>
+                          <th>Nhập kho</th>
+                          <th>Lý do</th>
+                          <th>Thời điểm</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (receipt of afterSales.returns; track receipt.id) {
+                          <tr>
+                            <td>{{ receipt.reference }}</td>
+                            <td>{{ returnQuantity(receipt) }}</td>
+                            <td>{{ restockQuantity(receipt) }}</td>
+                            <td>
+                              {{ receipt.reason
+                              }}{{ receipt.closeRemainingCod ? ' · đã đóng COD còn lại' : '' }}
+                            </td>
+                            <td>{{ receipt.receivedAtUtc | date: 'dd/MM/yyyy HH:mm' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="order-muted">Chưa nhận hàng trả.</p>
+                }
+              </section>
+            </div>
+
+            @if (refundFormOpen()) {
+              <form class="after-sales-form" (submit)="$event.preventDefault(); submitRefund()">
+                <div class="after-sales-form-heading">
+                  <h3>Ghi nhận khoản đã hoàn thực tế</h3>
+                  <button
+                    class="ui-button"
+                    type="button"
+                    [disabled]="pendingRefund() !== null"
+                    (click)="closeRefundForm()"
+                  >
+                    Đóng
+                  </button>
+                </div>
+                <p class="order-muted">
+                  Đây là ghi sổ khoản đã hoàn bên ngoài. Màn hình không chuyển tiền.
+                </p>
+                <div class="order-form-grid">
+                  <label
+                    >Mã chứng từ<input
+                      pInputText
+                      [ngModel]="refundReference()"
+                      (ngModelChange)="refundReference.set($event); markRefundDirty()"
+                      name="refundReference"
+                      maxlength="100"
+                      pattern="[A-Za-z0-9._-]+"
+                      [disabled]="pendingRefund() !== null"
+                  /></label>
+                  <label
+                    >Số tiền VND<input
+                      pInputText
+                      type="number"
+                      min="1"
+                      step="1"
+                      [max]="afterSales.refundableAmount"
+                      [ngModel]="refundAmount()"
+                      (ngModelChange)="
+                        refundAmount.set($event === '' ? null : +$event); markRefundDirty()
+                      "
+                      name="refundAmount"
+                      [disabled]="pendingRefund() !== null"
+                  /></label>
+                  <label
+                    >Thời điểm hoàn<input
+                      type="datetime-local"
+                      [ngModel]="refundAt()"
+                      (ngModelChange)="refundAt.set($event); markRefundDirty()"
+                      name="refundAt"
+                      [disabled]="pendingRefund() !== null"
+                  /></label>
+                  <label
+                    >Nguồn<select
+                      [ngModel]="refundSource()"
+                      (ngModelChange)="refundSource.set($event); markRefundDirty()"
+                      name="refundSource"
+                      [disabled]="pendingRefund() !== null"
+                    >
+                      <option value="ManualBankTransfer">Chuyển khoản ngân hàng</option>
+                      <option value="ManualCash">Tiền mặt</option>
+                    </select></label
+                  >
+                  <label class="after-sales-wide-field"
+                    >Lý do<input
+                      pInputText
+                      [ngModel]="refundReason()"
+                      (ngModelChange)="refundReason.set($event); markRefundDirty()"
+                      name="refundReason"
+                      maxlength="1000"
+                      [disabled]="pendingRefund() !== null"
+                  /></label>
+                </div>
+                <div class="dialog-actions">
+                  @if (pendingRefund()) {
+                    <button
+                      class="ui-button"
+                      type="button"
+                      [disabled]="store.afterSalesBusy()"
+                      (click)="submitRefund()"
+                    >
+                      Thử lại đúng yêu cầu
+                    </button>
+                  }
+                  <button
+                    class="ui-button primary"
+                    type="submit"
+                    [disabled]="
+                      store.afterSalesBusy() || pendingRefund() !== null || !refundCanSubmit()
+                    "
+                  >
+                    {{ store.afterSalesBusy() ? 'Đang lưu…' : 'Lưu khoản hoàn' }}
+                  </button>
+                </div>
+              </form>
+            }
+
+            @if (returnFormOpen()) {
+              <form class="after-sales-form" (submit)="$event.preventDefault(); submitReturn()">
+                <div class="after-sales-form-heading">
+                  <h3>Nhận hàng vật lý đã trả</h3>
+                  <button
+                    class="ui-button"
+                    type="button"
+                    [disabled]="pendingReturn() !== null"
+                    (click)="closeReturnForm()"
+                  >
+                    Đóng
+                  </button>
+                </div>
+                <p class="order-muted">
+                  Chọn số lượng đã nhận theo từng shipment. Chỉ nhập kho phần còn bán được.
+                </p>
+                @if (!store.canViewShipping() || store.shipments() === null) {
+                  <p class="order-muted">
+                    Cần Shipping.View và danh sách shipment để đối chiếu hàng đã xuất.
+                  </p>
+                } @else {
+                  <div class="table-scroll">
+                    <table class="content-table after-sales-table return-entry-table">
+                      <thead>
+                        <tr>
+                          <th>Shipment / SKU</th>
+                          <th>Còn có thể nhận</th>
+                          <th>Đã nhận lần này</th>
+                          <th>Nhập kho</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (line of returnableLines(); track line.shipmentId + line.orderItemId) {
+                          <tr>
+                            <td>
+                              <strong>{{ line.name }}</strong
+                              ><span class="order-contact"
+                                >{{ line.carrier }} · {{ line.trackingNumber }} ·
+                                {{ line.sku }}</span
+                              >
+                            </td>
+                            <td>{{ line.remaining }}</td>
+                            <td>
+                              <input
+                                aria-label="Số lượng nhận"
+                                type="number"
+                                min="0"
+                                [max]="line.remaining"
+                                [ngModel]="
+                                  returnQuantities()[
+                                    returnLineKey(line.shipmentId, line.orderItemId)
+                                  ] ?? 0
+                                "
+                                (ngModelChange)="
+                                  setReturnQuantity(line.shipmentId, line.orderItemId, $event)
+                                "
+                                [name]="'return-' + line.shipmentId + line.orderItemId"
+                                [disabled]="pendingReturn() !== null"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                aria-label="Số lượng nhập kho"
+                                type="number"
+                                min="0"
+                                [max]="
+                                  returnQuantities()[
+                                    returnLineKey(line.shipmentId, line.orderItemId)
+                                  ] ?? 0
+                                "
+                                [ngModel]="
+                                  restockQuantities()[
+                                    returnLineKey(line.shipmentId, line.orderItemId)
+                                  ] ?? 0
+                                "
+                                (ngModelChange)="
+                                  setRestockQuantity(line.shipmentId, line.orderItemId, $event)
+                                "
+                                [name]="'restock-' + line.shipmentId + line.orderItemId"
+                                [disabled]="pendingReturn() !== null || !store.canAdjustInventory()"
+                              />
+                            </td>
+                          </tr>
+                        } @empty {
+                          <tr>
+                            <td colspan="4">Không còn số lượng đã xuất để nhận lại.</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                  @if (!store.canAdjustInventory()) {
+                    <p class="order-muted">
+                      Thiếu Inventory.Adjust: số lượng nhập kho bị khóa ở 0.
+                    </p>
+                  }
+                }
+                <div class="order-form-grid after-sales-return-meta">
+                  <label
+                    >Mã chứng từ<input
+                      pInputText
+                      [ngModel]="returnReference()"
+                      (ngModelChange)="returnReference.set($event); markReturnDirty()"
+                      name="returnReference"
+                      maxlength="100"
+                      pattern="[A-Za-z0-9._-]+"
+                      [disabled]="pendingReturn() !== null"
+                  /></label>
+                  <label
+                    >Lý do<input
+                      pInputText
+                      [ngModel]="returnReason()"
+                      (ngModelChange)="returnReason.set($event); markReturnDirty()"
+                      name="returnReason"
+                      maxlength="1000"
+                      [disabled]="pendingReturn() !== null"
+                  /></label>
+                </div>
+                @if (
+                  order.paymentMethod === paymentMethod.CashOnDelivery &&
+                  order.paymentStatus === paymentStatus.Unpaid
+                ) {
+                  <label class="after-sales-cod-choice"
+                    ><input
+                      type="checkbox"
+                      [ngModel]="closeRemainingCod()"
+                      (ngModelChange)="closeRemainingCod.set($event); markReturnDirty()"
+                      name="closeRemainingCod"
+                      [disabled]="pendingReturn() !== null || !returnSelectionCompletesDispatched()"
+                    />
+                    Đã nhận lại toàn bộ hàng đã xuất; đóng COD còn lại của đơn</label
+                  >
+                }
+                <div class="dialog-actions">
+                  @if (pendingReturn()) {
+                    <button
+                      class="ui-button"
+                      type="button"
+                      [disabled]="store.afterSalesBusy()"
+                      (click)="submitReturn()"
+                    >
+                      Thử lại đúng yêu cầu
+                    </button>
+                  }
+                  <button
+                    class="ui-button primary"
+                    type="submit"
+                    [disabled]="
+                      store.afterSalesBusy() || pendingReturn() !== null || !returnCanSubmit()
+                    "
+                  >
+                    {{ store.afterSalesBusy() ? 'Đang lưu…' : 'Lưu phiếu nhận' }}
+                  </button>
+                </div>
+              </form>
+            }
+          } @else {
+            <p class="order-muted">Chưa có dữ liệu after-sales.</p>
+          }
         </section>
         <section class="order-card collapsed-section">
           <div>
             <span class="eyebrow">Renewal</span>
             <h2>Gia hạn</h2>
-            <p>Summary read-only; action renewal chưa mở trong lát đầu.</p>
+            @if (store.canViewRenewals()) {
+              <p>Request gia hạn được xử lý trong hàng chờ riêng, gồm claim và xác minh độc lập.</p>
+              <a class="ui-button" [routerLink]="['/admin/renewals']">Mở hàng chờ gia hạn</a>
+            } @else {
+              <p>Cần quyền Renewal.View để mở hàng chờ xử lý.</p>
+            }
           </div>
           <ui-icon name="chevron-right" [size]="16" />
         </section>
@@ -351,3 +830,142 @@
     </button>
   </div></p-dialog
 >
+<p-dialog
+  header="Tạo lần giao hàng"
+  [visible]="dispatchDialog()"
+  (visibleChange)="dispatchDialog.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '620px', maxWidth: '94vw' }"
+  ><div class="order-form-grid">
+    <label
+      >Hãng vận chuyển *<input
+        pInputText
+        required
+        aria-required="true"
+        maxlength="100"
+        [disabled]="dispatchLocked()"
+        [ngModel]="dispatchCarrier()"
+        (ngModelChange)="dispatchCarrier.set($event)" /></label
+    ><label
+      >Mã vận chuyển *<input
+        pInputText
+        required
+        aria-required="true"
+        maxlength="100"
+        [disabled]="dispatchLocked()"
+        [ngModel]="dispatchTrackingNumber()"
+        (ngModelChange)="dispatchTrackingNumber.set($event)"
+    /></label>
+  </div>
+  <div class="dispatch-lines">
+    <h3>Số lượng giao trong lần này</h3>
+    @if (pendingDispatch(); as pending) {
+      <p class="order-muted" role="status">
+        Yêu cầu đã gửi đang được giữ nguyên để kiểm tra kết quả. Gửi lại sẽ xác nhận cùng yêu cầu,
+        không tạo lần giao mới.
+      </p>
+      <ul class="shipment-lines">
+        @for (line of pending.items; track line.orderItemId) {
+          <li>
+            <span>{{
+              store.order()
+                ? shipmentLineLabel(store.order()!, line.orderItemId)
+                : 'Sản phẩm trong đơn'
+            }}</span
+            ><strong>× {{ line.quantity }}</strong>
+          </li>
+        }
+      </ul>
+    } @else {
+      @for (line of store.dispatchableLines(); track line.orderItem.id) {
+        <label class="dispatch-line">
+          <span>
+            {{ line.orderItem.name }}
+            <small>{{ line.orderItem.sku }} · còn {{ line.remaining }}</small>
+          </span>
+          <input
+            pInputText
+            type="number"
+            min="0"
+            step="1"
+            [disabled]="dispatchLocked()"
+            [max]="maxDispatchQuantity(line.remaining)"
+            [attr.aria-label]="'Số lượng giao: ' + line.orderItem.name"
+            [ngModel]="dispatchQuantities()[line.orderItem.id] ?? 0"
+            (ngModelChange)="setDispatchQuantity(line.orderItem.id, $event)"
+          />
+        </label>
+      }
+    }
+    @if (dispatchNotice()) {
+      <p class="order-muted" role="status">{{ dispatchNotice() }}</p>
+    }
+    <p class="order-muted">
+      Chọn ít nhất một dòng; mỗi lần giao tối đa 50 dòng và 999 sản phẩm trên một dòng.
+    </p>
+  </div>
+  @if (store.actionError()) {
+    <p class="order-form-error" role="alert">{{ store.actionError() }}</p>
+  }
+  <div class="dialog-actions">
+    <button class="ui-button" type="button" (click)="dispatchDialog.set(false)">Đóng</button
+    ><button
+      class="ui-button primary"
+      type="button"
+      [disabled]="!dispatchCanSubmit() || store.actionBusy()"
+      (click)="submitDispatch()"
+    >
+      {{
+        store.actionBusy()
+          ? 'Đang gửi…'
+          : pendingDispatch()
+            ? 'Kiểm tra lại yêu cầu đã gửi'
+            : 'Tạo shipment'
+      }}
+    </button>
+  </div></p-dialog
+>
+<p-dialog
+  header="Xác nhận giao thành công"
+  [visible]="deliveryTarget() !== null"
+  (visibleChange)="onDeliveryDialogVisibility($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '460px', maxWidth: '92vw' }"
+  ><p>
+    @if (deliveryTarget() && pendingDeliveries()[deliveryTarget()!.id]) {
+      Yêu cầu xác nhận giao đang chờ kiểm tra kết quả. Gửi lại sẽ dùng đúng yêu cầu trước.
+    }
+    @if (currentDeliveryTarget(); as shipment) {
+      @if (shipment.status === shipmentStatus.Delivered) {
+        Shipment {{ shipment.carrier }} · {{ shipment.trackingNumber }} đã được ghi nhận là đã giao.
+      } @else {
+        Shipment {{ shipment.carrier }} · {{ shipment.trackingNumber }} sẽ được đánh dấu đã giao.
+      }
+    }
+    Việc này không tự xác nhận khoản thu COD.
+  </p>
+  @if (store.actionError()) {
+    <p class="order-form-error" role="alert">{{ store.actionError() }}</p>
+  }
+  <div class="dialog-actions">
+    <button class="ui-button" type="button" (click)="deliveryTarget.set(null)">Đóng</button
+    ><button
+      class="ui-button primary"
+      type="button"
+      [disabled]="!currentDeliveryCanSubmit() || store.actionBusy()"
+      (click)="submitDelivery()"
+    >
+      {{ store.actionBusy() ? 'Đang gửi…' : 'Xác nhận đã giao' }}
+    </button>
+  </div></p-dialog
+>
+<ui-confirm-dialog
+  title="Rời khỏi đơn hàng?"
+  message="Bản nháp giao hàng, hoàn tiền, đổi trả hoặc yêu cầu chưa xác nhận sẽ không còn được giữ trên màn hình. Hãy đối chiếu kết quả trước khi tạo thao tác mới."
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

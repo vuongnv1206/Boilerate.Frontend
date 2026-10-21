@@ -29,6 +29,13 @@ export const COLLECTION_LINKS = [
     path: '/admin/orders',
     permission: { functionCode: 'Order', actionCode: 'View' },
   },
+  {
+    key: 'renewals',
+    label: 'Gia hạn thủ công',
+    icon: 'settings',
+    path: '/admin/renewals',
+    permission: { functionCode: 'Renewal', actionCode: 'View' },
+  },
 ] as const satisfies readonly ProtectedNavigationLink[];
 
 export const SYSTEM_LINKS: readonly ProtectedNavigationLink[] = [

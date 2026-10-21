@@ -19,8 +19,7 @@ import { Icon } from '@shared/ui/icon/icon.component';
 import { ContentState } from '@shared/ui/content-state/content-state.component';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog/confirm-dialog.component';
 import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation';
-
-type UserAction = 'status' | 'password-reset';
+import { validationMessage } from '@shared/forms/validation-message';
 
 @Component({
   selector: 'app-user-io',
@@ -33,11 +32,12 @@ type UserAction = 'status' | 'password-reset';
 export class UserIo implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private actionTrigger: HTMLElement | null = null;
   readonly store = inject(UserRolesStore);
   readonly confirmation = inject(LeaveConfirmation);
   readonly form = createUserForm();
   readonly section = signal<'profile' | 'roles'>('profile');
-  readonly actionTarget = signal<UserAction | null>(null);
+  readonly actionTarget = signal<'status' | 'password-reset' | null>(null);
   ngOnInit(): void {
     this.store.setForm(this.form);
     this.route.paramMap
@@ -56,6 +56,18 @@ export class UserIo implements OnInit {
   }
   chooseImage(file: File | null): void {
     this.store.setImage(file);
+  }
+  fieldError(field: keyof ReturnType<typeof createUserForm>['controls']): string {
+    return validationMessage(this.form.controls[field]);
+  }
+  openAction(action: 'status' | 'password-reset', event: Event): void {
+    if (!this.store.canUpdate() || this.store.saving()) return;
+    this.actionTrigger = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    this.actionTarget.set(action);
+  }
+  restoreActionFocus(): void {
+    this.actionTrigger?.focus();
+    this.actionTrigger = null;
   }
   runAction(): void {
     const action = this.actionTarget();

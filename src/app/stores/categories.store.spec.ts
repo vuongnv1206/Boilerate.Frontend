@@ -19,7 +19,11 @@ describe('CategoriesStore', () => {
       sortOrder: 0,
       isActive: true,
     };
-    const service = { getAll: vi.fn(() => of([category])), delete: vi.fn(() => of(false)) };
+    const service = {
+      getAll: vi.fn(() => of([category])),
+      summaries: vi.fn(() => of([{ id: 'one', productCount: 3 }])),
+      delete: vi.fn(() => of(false)),
+    };
     TestBed.configureTestingModule({
       providers: [
         { provide: AuthSession, useValue: { can: () => true } },
@@ -30,6 +34,7 @@ describe('CategoriesStore', () => {
     const store = TestBed.inject(CategoriesStore);
     const done = vi.fn();
     store.load();
+    expect(store.productCount('one')).toBe(3);
     store.applyQuery({ q: 'sơ mi', page: 1 });
     expect(store.rows()).toEqual([category]);
     store.delete(category).subscribe((deleted) => {

@@ -1,63 +1,93 @@
-<section class="collection-page" aria-labelledby="collection-title">
-  <div class="collection-breadcrumb">
-    <ui-icon name="layers" [size]="13" /><span>Bộ sưu tập</span
-    ><ui-icon name="chevron-right" [size]="12" /><strong>Sản phẩm</strong
-    ><span class="collection-id">CATALOG</span>
-  </div>
-  <header class="collection-heading">
-    <div class="heading-copy">
-      <div class="title-row">
-        <h1 id="collection-title">Sản phẩm</h1>
-        <span class="total-count">{{ store.page().total }}</span>
-      </div>
-      <p>Quản lý nội dung, phân loại và trạng thái sản phẩm.</p>
-    </div>
-    <div class="heading-actions">
-      @if (store.canCreate()) {
-        <a
-          class="ui-button primary"
-          aria-label="Thêm sản phẩm"
-          routerLink="/admin/collections/products/new"
-          [queryParams]="routeQuery()"
-          ><ui-icon name="plus" [size]="14" /><span>Thêm sản phẩm</span></a
-        >
-      }
-    </div>
-  </header>
-  <div class="collection-tabs">
-    <span class="active"
-      >Tất cả sản phẩm <span>{{ store.page().total }}</span></span
-    ><span class="collection-summary">Dữ liệu từ hệ thống</span>
-  </div>
-  <div class="collection-toolbar">
+<section class="collection-page catalog-products" aria-labelledby="collection-title">
+  <header class="catalog-list-toolbar">
+    <h1 id="collection-title" aria-label="Sản phẩm">
+      Sản phẩm <span>{{ store.page().total }}</span>
+    </h1>
     <label class="search-field"
-      ><ui-icon name="search" [size]="14" />
-      <input
+      ><ui-icon name="search" [size]="14" /><input
         pInputText
         type="search"
         aria-label="Tìm sản phẩm"
         placeholder="Tìm sản phẩm…"
         [ngModel]="store.query()"
         (ngModelChange)="setQuery($event)"
-      />
-    </label>
+        [disabled]="store.bulkBusy()"
+    /></label>
+    <button
+      class="ui-button"
+      type="button"
+      (click)="filtersOpen.set(true)"
+      [disabled]="store.bulkBusy()"
+    >
+      <ui-icon name="filter" [size]="14" />Bộ lọc
+      @if (filterCount()) {
+        <span>{{ filterCount() }}</span>
+      }
+    </button>
     <p-select
-      [options]="statusOptions"
+      [options]="sortOptions"
       optionLabel="label"
       optionValue="value"
-      [ngModel]="store.status()"
-      (ngModelChange)="setStatus($event)"
-      ariaLabel="Lọc trạng thái sản phẩm"
+      [ngModel]="sortValue()"
+      (ngModelChange)="setSort($event)"
+      ariaLabel="Sắp xếp sản phẩm"
       appendTo="body"
+      [disabled]="store.bulkBusy()"
     />
-    <span class="toolbar-hint">Tìm kiếm trên toàn bộ danh sách</span>
-  </div>
-
+    <button
+      class="icon-button"
+      type="button"
+      aria-label="Tải lại sản phẩm"
+      (click)="store.load(); store.loadLookups()"
+      [disabled]="store.loading() || store.bulkBusy()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
+    @if (store.canCreate()) {
+      <a
+        class="ui-button primary"
+        aria-label="Thêm sản phẩm"
+        routerLink="/admin/collections/products/new"
+        [queryParams]="routeQuery()"
+        ><ui-icon name="plus" [size]="14" /><span>Thêm sản phẩm</span></a
+      >
+    }
+  </header>
+  @if (store.notice()) {
+    <div class="collection-notice" role="status">{{ store.notice() }}</div>
+  }
+  @if (store.lookupError()) {
+    <div class="collection-notice" role="alert">{{ store.lookupError() }}</div>
+  }
   @if (store.selectedIds().size) {
     <div class="selection-toolbar">
       <span
         >Đã chọn <strong>{{ store.selectedIds().size }}</strong> sản phẩm trên trang</span
-      ><button class="icon-button" aria-label="Bỏ chọn tất cả" (click)="store.clearSelection()">
+      >
+      @if (store.canPublish()) {
+        <button
+          class="ui-button"
+          type="button"
+          (click)="bulkTarget.set(status.Published)"
+          [disabled]="store.bulkBusy()"
+        >
+          Xuất bản đã chọn</button
+        ><button
+          class="ui-button"
+          type="button"
+          (click)="bulkTarget.set(status.Archived)"
+          [disabled]="store.bulkBusy()"
+        >
+          Lưu trữ đã chọn
+        </button>
+      }
+      <button
+        class="icon-button"
+        type="button"
+        aria-label="Bỏ chọn tất cả"
+        (click)="store.clearSelection()"
+        [disabled]="store.bulkBusy()"
+      >
         <ui-icon name="close" [size]="13" />
       </button>
     </div>
@@ -73,14 +103,14 @@
     <ui-content-state
       kind="error"
       layout="page"
-      title="Không thể tải sản phẩm"
+      title="Không thể tải hoặc cập nhật sản phẩm"
       [message]="store.error()"
-      ><button class="ui-button" (click)="store.load()">Thử lại</button></ui-content-state
+      ><button class="ui-button" (click)="store.load()">Tải lại</button></ui-content-state
     >
   } @else {
     <div class="collection-table">
       <div class="table-scroll" role="region" aria-label="Danh sách sản phẩm" tabindex="0">
-        <table class="content-table">
+        <table class="content-table catalog-products-table">
           <thead>
             <tr>
               <th class="selection-cell">
@@ -89,12 +119,16 @@
                   aria-label="Chọn tất cả trên trang"
                   [checked]="store.allSelected()"
                   (change)="store.toggleAll()"
+                  [disabled]="store.bulkBusy()"
                 />
               </th>
               <th class="name-cell" scope="col">Tên sản phẩm</th>
-              <th class="status-cell" scope="col">Trạng thái</th>
+              <th scope="col">Trạng thái</th>
               <th scope="col">Giá từ</th>
+              <th scope="col">Loại sản phẩm</th>
+              <th scope="col">Cách giao</th>
               <th scope="col">Khả dụng</th>
+              <th scope="col">Cập nhật</th>
             </tr>
           </thead>
           <tbody>
@@ -106,11 +140,18 @@
                     [attr.aria-label]="'Chọn ' + item.name"
                     [checked]="store.selectedIds().has(item.id)"
                     (change)="store.toggle(item.id)"
+                    [disabled]="store.bulkBusy()"
                   />
                 </td>
                 <td class="name-cell">
                   <div class="item-identity">
-                    <span class="product-symbol"><ui-icon name="box" [size]="17" /></span>
+                    <span class="catalog-thumbnail">
+                      @if (previews.url(item.thumbnailMediaId ?? null); as url) {
+                        <img [src]="url" alt="" />
+                      } @else {
+                        <ui-icon name="image" [size]="17" />
+                      }
+                    </span>
                     <div>
                       <a
                         [routerLink]="['/admin/collections/products', item.id]"
@@ -139,19 +180,22 @@
                       : (item.fromPrice | currency: 'VND' : 'symbol-narrow' : '1.0-0')
                   }}
                 </td>
+                <td>{{ item.productTypeName ?? '—' }}</td>
+                <td>{{ fulfillmentLabel(item.fulfillmentKind) }}</td>
                 <td>
                   <span class="availability" [class.available]="item.inStock">{{
                     item.inStock ? 'Có sẵn' : 'Chưa khả dụng'
                   }}</span>
                 </td>
+                <td>{{ item.modifiedOn ? (item.modifiedOn | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
               </tr>
             } @empty {
               <tr class="empty-row">
-                <td colspan="5">
+                <td colspan="8">
                   <ui-content-state
                     kind="empty"
                     title="Không có sản phẩm"
-                    message="Thử thay đổi từ khóa hoặc trạng thái."
+                    message="Thử thay đổi từ khóa hoặc bộ lọc."
                     ><button class="ui-button" (click)="resetFilters()">
                       Xóa bộ lọc
                     </button></ui-content-state
@@ -169,8 +213,7 @@
         >
         <div class="pagination-right">
           <label class="page-size"
-            >Mỗi trang
-            <select
+            >Mỗi trang<select
               aria-label="Số sản phẩm mỗi trang"
               [value]="store.page().pageSize"
               (change)="changePageSize($event)"
@@ -179,11 +222,11 @@
                 <option [value]="size">{{ size }}</option>
               }
             </select></label
-          ><span class="page-divider"></span
-          ><button
+          ><span class="page-divider"></span>
+          <button
             class="icon-button"
             aria-label="Trang trước"
-            [disabled]="store.page().pageNumber <= 1"
+            [disabled]="store.page().pageNumber <= 1 || store.bulkBusy()"
             (click)="setPage(store.page().pageNumber - 1)"
           >
             <ui-icon name="chevron-left" [size]="14" /></button
@@ -191,7 +234,7 @@
           ><button
             class="icon-button"
             aria-label="Trang sau"
-            [disabled]="store.page().pageNumber >= store.pageCount()"
+            [disabled]="store.page().pageNumber >= store.pageCount() || store.bulkBusy()"
             (click)="setPage(store.page().pageNumber + 1)"
           >
             <ui-icon name="chevron-right" [size]="14" />
@@ -201,3 +244,126 @@
     </div>
   }
 </section>
+<p-dialog
+  header="Bộ lọc sản phẩm"
+  [visible]="filtersOpen()"
+  (visibleChange)="filtersOpen.set($event)"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '480px', maxWidth: '94vw' }"
+>
+  <div class="catalog-filter-fields">
+    <label for="filter-product-status"
+      >Trạng thái<p-select
+        inputId="filter-product-status"
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="store.status()"
+        (ngModelChange)="setStatus($event)"
+        ariaLabel="Lọc trạng thái sản phẩm"
+        appendTo="body"
+    /></label>
+    <label for="filter-product-category"
+      >Danh mục<p-select
+        inputId="filter-product-category"
+        [options]="categoryOptions()"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="store.filters().categoryId ?? null"
+        (ngModelChange)="setFilter('categoryId', $event)"
+        [showClear]="true"
+        placeholder="Tất cả danh mục"
+        ariaLabel="Lọc danh mục sản phẩm"
+        appendTo="body"
+    /></label>
+    <label for="filter-product-type"
+      >Loại sản phẩm<p-select
+        inputId="filter-product-type"
+        [options]="typeOptions()"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="store.filters().productTypeId ?? null"
+        (ngModelChange)="setFilter('productTypeId', $event)"
+        [showClear]="true"
+        placeholder="Tất cả loại"
+        ariaLabel="Lọc loại sản phẩm"
+        appendTo="body"
+    /></label>
+    <label for="filter-product-fulfillment"
+      >Cách giao<p-select
+        inputId="filter-product-fulfillment"
+        [options]="fulfillmentOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="store.filters().fulfillmentKind ?? null"
+        (ngModelChange)="setFilter('fulfillmentKind', $event)"
+        ariaLabel="Lọc cách giao"
+        appendTo="body"
+    /></label>
+    <label for="filter-product-stock"
+      >Khả dụng<p-select
+        inputId="filter-product-stock"
+        [options]="stockOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="store.filters().inStock ?? null"
+        (ngModelChange)="setFilter('inStock', $event)"
+        ariaLabel="Lọc khả dụng"
+        appendTo="body"
+    /></label>
+    <div class="catalog-filter-prices">
+      <label
+        >Giá từ (VND)<input
+          type="number"
+          min="0"
+          step="1"
+          [value]="store.filters().minimumPrice ?? ''"
+          (change)="setPrice('minimumPrice', $event)" /></label
+      ><label
+        >Đến (VND)<input
+          type="number"
+          min="0"
+          step="1"
+          [value]="store.filters().maximumPrice ?? ''"
+          (change)="setPrice('maximumPrice', $event)"
+      /></label>
+    </div>
+  </div>
+  <ng-template #footer
+    ><button class="ui-button" (click)="resetFilters()">Xóa bộ lọc</button
+    ><button class="ui-button primary" (click)="filtersOpen.set(false)">Xong</button></ng-template
+  >
+</p-dialog>
+<p-dialog
+  [header]="
+    bulkTarget() === status.Published ? 'Xuất bản sản phẩm đã chọn' : 'Lưu trữ sản phẩm đã chọn'
+  "
+  [visible]="bulkTarget() !== null"
+  (visibleChange)="!$event && bulkTarget.set(null)"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!store.bulkBusy()"
+  [closeOnEscape]="!store.bulkBusy()"
+  [style]="{ width: '460px', maxWidth: '94vw' }"
+>
+  <p class="collection-dialog-copy">
+    {{ bulkTarget() === status.Published ? 'Xuất bản' : 'Lưu trữ' }}
+    {{ store.selectedIds().size }} sản phẩm? Hệ thống sẽ kiểm tra toàn bộ lựa chọn trước khi cập
+    nhật.
+  </p>
+  @if (store.error()) {
+    <p class="collection-dialog-copy" role="alert">{{ store.error() }}</p>
+  }
+  <ng-template #footer
+    ><button class="ui-button" [disabled]="store.bulkBusy()" (click)="bulkTarget.set(null)">
+      Hủy</button
+    ><button class="ui-button primary" [disabled]="store.bulkBusy()" (click)="confirmBulk()">
+      {{ store.bulkBusy() ? 'Đang cập nhật…' : 'Xác nhận' }}
+    </button></ng-template
+  >
+</p-dialog>

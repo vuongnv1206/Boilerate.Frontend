@@ -19,3 +19,7 @@ export interface SaveCategoryRequest {
   readonly sortOrder: number;
   readonly isActive: boolean;
 }
+export interface CategoryProductCount {
+  readonly id: string;
+  readonly productCount: number;
+}

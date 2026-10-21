@@ -1,5 +1,20 @@
 import { slugify } from '@utils/text.util';
-import { FormControl, FormRecord, FormBuilder, ValidatorFn, Validators } from '@angular/forms';
+import {
+  FormArray,
+  FormControl,
+  FormRecord,
+  FormBuilder,
+  FormGroup,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
+import {
+  CreateOptionForm,
+  CreateSkuForm,
+  createOptionForm,
+  createSkuRow,
+  nullableVndPrice,
+} from '@forms/product-commerce.form';
 import {
   PRODUCT_LIMITS,
   PRODUCT_FIELD_ALIASES,
@@ -8,22 +23,19 @@ import {
 } from '@constants/product.constants';
 import { ProductFulfillmentKind } from '@enums/product.enum';
 import { ProductFieldType } from '@enums/product-field-type.enum';
-import { ProductFieldControlValue, ProductForm } from '@forms/product-form.model';
+import { ProductFieldControlValue, ProductForm, ProductMediaForm } from '@forms/product-form.model';
 import { ProductFieldDefinition, ProductTypeLookup } from '@models/product-lookups.dto';
 import {
   ProductContent,
   ProductDto,
   ProductFieldInput,
   ProductFieldValue,
+  ProductMedia,
+  SaveProductEditor,
 } from '@models/product.dto';
 
 const trimmedRequired: ValidatorFn = (control) =>
   typeof control.value === 'string' && control.value.trim() ? null : { required: true };
-
-const vndPrice: ValidatorFn = (control) =>
-  typeof control.value === 'number' && Number.isSafeInteger(control.value) && control.value >= 0
-    ? null
-    : { vndPrice: true };
 
 export function createProductForm(): ProductForm {
   const builder = new FormBuilder().nonNullable;
@@ -49,12 +61,19 @@ export function createProductForm(): ProductForm {
         Validators.pattern(PRODUCT_SKU_PATTERN),
       ],
     ],
-    price: new FormControl<number | null>(0, [Validators.required, vndPrice]),
+    price: new FormControl<number | null>(0, nullableVndPrice),
+    defaultVariantSku: builder.control(''),
+    media: new FormArray<ProductMediaForm>([]),
+    options: new FormArray<CreateOptionForm>([]),
+    variants: new FormArray<CreateSkuForm>([]),
     fields: new FormRecord<FormControl<ProductFieldControlValue>>({}),
   });
 }
 
 export function initializeProductForm(form: ProductForm, item: ProductDto | null): void {
+  form.controls.options.clear({ emitEvent: false });
+  form.controls.variants.clear({ emitEvent: false });
+  form.controls.media.clear({ emitEvent: false });
   form.reset(
     {
       name: item?.name ?? '',
@@ -65,9 +84,33 @@ export function initializeProductForm(form: ProductForm, item: ProductDto | null
       fulfillmentKind: item?.fulfillmentKind ?? ProductFulfillmentKind.Physical,
       sku: item?.variants.find((variant) => variant.isDefault)?.sku ?? '',
       price: item?.variants.find((variant) => variant.isDefault)?.price ?? 0,
+      defaultVariantSku: item?.variants.find((variant) => variant.isDefault)?.sku ?? '',
     },
     { emitEvent: false },
   );
+  for (const media of item?.media ?? [])
+    form.controls.media.push(createProductMediaForm(media), { emitEvent: false });
+  for (const option of item?.options ?? [])
+    form.controls.options.push(createOptionForm(option), { emitEvent: false });
+  for (const variant of item?.variants ?? []) {
+    const selection: Record<string, string> = {};
+    for (const selected of variant.selections) {
+      const option = item?.options.find((value) => value.id === selected.optionId);
+      const value = option?.values.find((value) => value.id === selected.optionValueId);
+      if (option && value) selection[option.code] = value.code;
+    }
+    const row = createSkuRow(variant.sku, selection, variant.price);
+    row.patchValue(
+      {
+        id: variant.id,
+        compareAtPrice: variant.compareAtPrice,
+        isActive: variant.isActive,
+        imageMediaId: variant.imageMediaId,
+      },
+      { emitEvent: false },
+    );
+    form.controls.variants.push(row, { emitEvent: false });
+  }
   setProductIdentityReadonly(form, !!item);
 }
 
@@ -142,8 +185,119 @@ export function toProductContent(
     description: value.description.trim() || null,
     categoryIds: value.categoryIds,
     fields,
-    media: original?.media ?? [],
+    media: value.media.map((media, index) => ({
+      mediaAssetId: media.mediaAssetId,
+      sortOrder: index,
+      altText: media.altText?.trim() || null,
+    })),
   };
+}
+
+export function createProductMediaForm(media: ProductMedia): ProductMediaForm {
+  return new FormGroup({
+    mediaAssetId: new FormControl(media.mediaAssetId, {
+      nonNullable: true,
+      validators: Validators.required,
+    }),
+    sortOrder: new FormControl(media.sortOrder, { nonNullable: true }),
+    altText: new FormControl<string | null>(media.altText, Validators.maxLength(500)),
+  });
+}
+
+export function productEditorRequest(
+  form: ProductForm,
+  schema: ProductTypeLookup,
+  item: ProductDto,
+  allowPrice = true,
+): SaveProductEditor {
+  const raw = form.getRawValue();
+  return {
+    id: item.id,
+    version: item.version,
+    productTypeVersion: schema.version,
+    content: toProductContent(form, schema, item),
+    optionEdits: raw.options
+      .filter((option) => !!option.id)
+      .map((option) => ({
+        optionId: option.id,
+        name: option.name.trim(),
+        sortOrder: option.sortOrder,
+        addValues: option.values
+          .filter((value) => !value.id)
+          .map((value) => ({ code: value.code.trim().toUpperCase(), label: value.label.trim() })),
+        values: option.values
+          .filter((value) => !!value.id)
+          .map((value) => ({
+            id: value.id,
+            label: value.label.trim(),
+            sortOrder: value.sortOrder,
+          })),
+      })),
+    variantEdits: raw.variants
+      .filter((variant) => !!variant.id)
+      .map((variant) => {
+        const canonical = item.variants.find((value) => value.id === variant.id);
+        return {
+          variantId: variant.id,
+          price: allowPrice ? variant.price : (canonical?.price ?? null),
+          compareAtPrice: allowPrice ? variant.compareAtPrice : (canonical?.compareAtPrice ?? null),
+          isActive: variant.isActive,
+          imageMediaId: variant.imageMediaId,
+        };
+      }),
+    addedVariants: raw.variants
+      .filter((variant) => !variant.id)
+      .map((variant) => ({
+        sku: variant.sku.trim(),
+        options: variant.options,
+        price: allowPrice ? variant.price : null,
+        compareAtPrice: allowPrice ? variant.compareAtPrice : null,
+        isActive: variant.isActive,
+        imageMediaId: variant.imageMediaId,
+      })),
+    defaultVariantSku:
+      raw.defaultVariantSku || item.variants.find((variant) => variant.isDefault)?.sku || '',
+  };
+}
+
+/** Validation indexes refer to the submitted deltas, rather than the full grid. */
+export function productEditorAliases(
+  request: SaveProductEditor,
+  form: ProductForm,
+): Readonly<Record<string, string>> {
+  const aliases: Record<string, string> = { ...productFieldAliases(request.content.fields) };
+  const rows = form.controls.variants.controls;
+  const addAliases = (prefix: string, index: number, target: string, fields: readonly string[]) => {
+    for (const field of fields)
+      for (const name of [prefix, prefix[0]?.toLowerCase() + prefix.slice(1)]) {
+        const lower = field[0]?.toLowerCase() + field.slice(1);
+        aliases[`${name}[${index}].${field}`] = `${target}.${lower}`;
+        aliases[`${name}[${index}].${lower}`] = `${target}.${lower}`;
+      }
+  };
+  request.variantEdits.forEach((variant, index) =>
+    addAliases(
+      'VariantEdits',
+      index,
+      `variants.${rows.findIndex((row) => row.controls.id.value === variant.variantId)}`,
+      ['Price', 'CompareAtPrice', 'IsActive', 'ImageMediaId'],
+    ),
+  );
+  request.addedVariants.forEach((variant, index) =>
+    addAliases(
+      'AddedVariants',
+      index,
+      `variants.${rows.findIndex((row) => !row.controls.id.value && row.controls.sku.value.trim() === variant.sku)}`,
+      ['Sku', 'Price', 'CompareAtPrice', 'IsActive', 'ImageMediaId'],
+    ),
+  );
+  request.optionEdits.forEach((option, index) => {
+    const optionIndex = form.controls.options.controls.findIndex(
+      (row) => row.controls.id.value === option.optionId,
+    );
+    addAliases('OptionEdits', index, `options.${optionIndex}`, ['Name', 'SortOrder']);
+  });
+  return aliases;
 }
 
 export function productSlug(name: string): string {

@@ -1,39 +1,32 @@
 <section class="collection-page" aria-labelledby="product-types-heading">
-  <div class="collection-breadcrumb">
-    <ui-icon name="folder" [size]="14" /><span>Bộ sưu tập</span><span>/</span
-    ><strong>Loại sản phẩm</strong>
-  </div>
-  <header class="collection-heading">
-    <div class="heading-copy">
-      <div class="title-row">
-        <h1 id="product-types-heading">Loại sản phẩm</h1>
-        <span>{{ store.items().length }}</span>
-      </div>
-      <p>Quản lý cấu trúc thuộc tính của từng loại sản phẩm.</p>
-    </div>
+  <header class="catalog-list-toolbar">
+    <h1 id="product-types-heading">
+      Loại sản phẩm <span>{{ store.items().length }}</span>
+    </h1>
+    <label class="search-field"
+      ><span class="sr-only">Tìm loại sản phẩm</span
+      ><input
+        id="product-types-search"
+        type="search"
+        [value]="store.query()"
+        #searchInput
+        (input)="search(searchInput.value)"
+        placeholder="Tên hoặc mã loại…"
+    /></label>
+    <button
+      class="icon-button"
+      aria-label="Tải lại loại sản phẩm"
+      (click)="store.load()"
+      [disabled]="store.loading()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
     @if (store.canCreate()) {
       <a class="ui-button primary" routerLink="new" [queryParams]="routeQuery()"
         ><ui-icon name="plus" [size]="14" />Thêm loại sản phẩm</a
       >
     }
   </header>
-  <div class="collection-tabs">Tất cả loại sản phẩm</div>
-  <div class="collection-toolbar">
-    <label for="product-types-search">Tìm kiếm</label
-    ><input
-      id="product-types-search"
-      type="search"
-      [value]="store.query()"
-      #searchInput
-      (input)="search(searchInput.value)"
-      placeholder="Tên hoặc mã loại…"
-    />
-    <div class="toolbar-actions">
-      <button class="ui-button" (click)="store.load()" [disabled]="store.loading()">
-        <ui-icon name="refresh" [size]="14" />Tải lại
-      </button>
-    </div>
-  </div>
   @if (store.error()) {
     <div class="collection-notice error-notice" role="alert">{{ store.error() }}</div>
   }

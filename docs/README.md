@@ -9,6 +9,7 @@
 | Tokens và style dùng chung              | [Quy tắc SCSS](scss-rules.md)                                                                                             |
 | Danh sách và thêm/sửa Catalog qua API   | [Collections](features/live-admin-collections.md)                                                                         |
 | Quản trị đơn hàng theo workspace        | [Admin Orders](features/admin-orders.md)                                                                                  |
+| Claim, xử lý và xác minh gia hạn        | [Gia hạn thủ công](features/admin-renewals.md)                                                                            |
 | Nhóm chức năng, vai trò và gán quyền    | [Quản trị hệ thống](features/system-administration.md)                                                                    |
 | Đăng nhập, khôi phục phiên và đăng xuất | [Giữ phiên](features/persistent-session.md)                                                                               |
 | Các tính năng đã triển khai theo mốc    | [Lịch sử tính năng](history/README.md)                                                                                    |

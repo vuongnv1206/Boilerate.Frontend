@@ -1,4 +1,5 @@
 import { expect, test as base, type BrowserContext, type Page, type Route } from '@playwright/test';
+import { Buffer } from 'node:buffer';
 
 interface Category {
   id: string;
@@ -67,14 +68,51 @@ interface Product {
   fields: unknown[];
   media: unknown[];
   fulfillmentKind: number;
+  createdOn: string;
+  modifiedOn: string;
+}
+
+interface ProductOption {
+  id: string;
+  code: string;
+  name: string;
+  sortOrder: number;
+  values: { id: string; code: string; label: string; sortOrder: number }[];
+}
+
+interface ProductVariantInput {
+  sku: string;
+  price: number | null;
+  compareAtPrice: number | null;
+  options: Record<string, string>;
+  isActive?: boolean;
+  imageMediaId?: string | null;
 }
 
 interface ProductWrite {
   version?: string;
   productTypeId?: string;
+  productTypeVersion?: string;
   fulfillmentKind?: number;
   content: Pick<Product, 'name' | 'slug' | 'description' | 'categoryIds' | 'fields' | 'media'>;
-  variants?: { sku: string; price: number }[];
+  options?: { code: string; name: string; values: { code: string; label: string }[] }[];
+  variants?: ProductVariantInput[];
+  defaultVariantSku?: string | null;
+  optionEdits?: {
+    optionId: string;
+    name: string;
+    sortOrder: number;
+    addValues: { code: string; label: string }[];
+    values: { id: string; label: string; sortOrder: number }[];
+  }[];
+  variantEdits?: {
+    variantId: string;
+    price: number | null;
+    compareAtPrice: number | null;
+    isActive: boolean;
+    imageMediaId: string | null;
+  }[];
+  addedVariants?: ProductVariantInput[];
 }
 
 export interface ApiRequest {
@@ -149,6 +187,12 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
   let sessionActive = false;
   let refreshVersion = 0;
   let refreshCookie = '';
+  let mediaSequence = 100;
+  const mediaAssets = new Map<string, Buffer>();
+  const imageBytes = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+    'base64',
+  );
   const categories = categoryNames.map((name, index): Category => ({
     id: id(2, index),
     version: `category-${index}-v1`,
@@ -206,6 +250,8 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
     fields: [],
     media: [],
     fulfillmentKind: 1,
+    createdOn: '2026-10-01T00:00:00.000Z',
+    modifiedOn: new Date(Date.UTC(2026, 9, 21, 10) - index * 60_000).toISOString(),
   }));
   const api: CatalogApi = {
     setPermissions: (grants) => {
@@ -263,6 +309,114 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
       { status: 409, title: 'Conflict', detail: 'Record changed; reload before editing.' },
       409,
     );
+  const forbidden = (route: Route) => reply(route, { status: 403, title: 'Forbidden' }, 403);
+  const invalid = (route: Route, message: string) =>
+    reply(route, { status: 422, title: 'Validation failed', errors: { Product: [message] } }, 422);
+  const can = (functionCode: string, action: string) =>
+    permissions.includes(`Permissions.${functionCode}.${action}`);
+  const priceOf = (product: Product): number | null => {
+    const prices = product.variants
+      .filter((variant) => variant.isActive && variant.price !== null)
+      .map((variant) => variant.price as number);
+    return prices.length ? Math.min(...prices) : null;
+  };
+  const inStock = (product: Product) =>
+    product.variants.some((variant) => variant.isActive && variant.inStock);
+  const mediaId = (product: Product) => {
+    const gallery = product.media as { mediaAssetId: string; sortOrder: number }[];
+    return (
+      product.variants.find((variant) => variant.isDefault)?.imageMediaId ??
+      [...gallery].sort((a, b) => a.sortOrder - b.sortOrder)[0]?.mediaAssetId ??
+      null
+    );
+  };
+  const summary = (product: Product) => ({
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    status: product.status,
+    fromPrice: priceOf(product),
+    inStock: inStock(product),
+    fulfillmentKind: product.fulfillmentKind,
+    productTypeId: product.productTypeId,
+    productTypeName: productTypes.find((type) => type.id === product.productTypeId)?.name ?? '',
+    thumbnailMediaId: mediaId(product),
+    version: product.version,
+    modifiedOn: product.modifiedOn,
+  });
+  const variantFrom = (
+    input: ProductVariantInput,
+    options: ProductOption[],
+    index: number,
+  ): Product['variants'][number] => ({
+    id: id(4, products.length * 1000 + index + version * 100),
+    sku: input.sku,
+    combinationKey: Object.entries(input.options)
+      .sort()
+      .map(([key, value]) => `${key}=${value}`)
+      .join('|'),
+    price: input.price,
+    compareAtPrice: input.compareAtPrice,
+    currency: 'VND',
+    isDefault: false,
+    isActive: input.isActive ?? true,
+    imageMediaId: input.imageMediaId ?? null,
+    inStock: false,
+    selections: Object.entries(input.options).map(([code, valueCode]) => {
+      const option = options.find((option) => option.code === code);
+      const value = option?.values.find((value) => value.code === valueCode);
+      return { optionId: option?.id ?? '', optionValueId: value?.id ?? '' };
+    }),
+  });
+  const invalidProduct = (product: Product): string | null => {
+    if (products.some((other) => other.id !== product.id && other.slug === product.slug))
+      return 'Đường dẫn đã được sử dụng.';
+    if (
+      !product.variants.length ||
+      product.variants.filter((variant) => variant.isDefault && variant.isActive).length !== 1
+    )
+      return 'Sản phẩm cần một SKU mặc định đang hoạt động.';
+    const seen = new Set<string>();
+    const combinations = new Set<string>();
+    const gallery = product.media as { mediaAssetId: string }[];
+    if (
+      gallery.length > 30 ||
+      new Set(gallery.map((item) => item.mediaAssetId)).size !== gallery.length
+    )
+      return 'Danh sách ảnh không hợp lệ.';
+    for (const variant of product.variants) {
+      const sku = variant.sku.toUpperCase();
+      if (
+        seen.has(sku) ||
+        products.some(
+          (other) =>
+            other.id !== product.id &&
+            other.variants.some((item) => item.sku.toUpperCase() === sku),
+        )
+      )
+        return 'Mã SKU đã tồn tại.';
+      seen.add(sku);
+      const combination = (variant.selections as { optionId: string; optionValueId: string }[])
+        .map((selection) => `${selection.optionId}=${selection.optionValueId}`)
+        .sort()
+        .join('|');
+      if (combinations.has(combination)) return 'Tổ hợp SKU đã tồn tại.';
+      combinations.add(combination);
+      if (
+        variant.imageMediaId &&
+        !gallery.some((item) => item.mediaAssetId === variant.imageMediaId)
+      )
+        return 'Ảnh SKU phải nằm trong ảnh sản phẩm.';
+      if (variant.price !== null && (!Number.isInteger(variant.price) || variant.price < 0))
+        return 'Giá VND phải là số nguyên không âm.';
+      if (
+        variant.compareAtPrice !== null &&
+        (variant.price === null || variant.compareAtPrice <= variant.price)
+      )
+        return 'Giá gốc phải lớn hơn giá bán.';
+    }
+    return null;
+  };
   const fields = (inputs: Field[], start = 0): Field[] =>
     inputs.map((field, index) => ({
       ...field,
@@ -286,7 +440,10 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
     const method = request.method();
     const authorization = request.headers()['authorization'];
     const requestedWith = request.headers()['x-requested-with'];
-    const body = request.postData() ? (request.postDataJSON() as Record<string, unknown>) : null;
+    const body =
+      request.postData() && request.headers()['content-type']?.includes('application/json')
+        ? (request.postDataJSON() as Record<string, unknown>)
+        : null;
     api.requests.push({
       method,
       path,
@@ -342,32 +499,121 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
     if (path === 'personal/permissions' && method === 'GET') return reply(route, permissions);
     if (path === 'personal/authorization' && method === 'GET')
       return reply(route, { permissions, isCentralAdmin: false });
+    if (path === 'media' && method === 'POST') {
+      if (!can('Product', 'Update')) return forbidden(route);
+      const bytes = request.postDataBuffer();
+      if (!bytes?.length || !request.headers()['content-type']?.startsWith('multipart/form-data'))
+        return invalid(route, 'Chọn tệp ảnh.');
+      const mediaId = id(7, ++mediaSequence);
+      mediaAssets.set(mediaId, imageBytes);
+      return reply(route, {
+        id: mediaId,
+        contentType: 'image/png',
+        size: imageBytes.length,
+        state: 'Ready',
+        version: `media-${++version}`,
+      });
+    }
+    if (path.startsWith('media/') && method === 'GET') {
+      if (!can('Product', 'View')) return forbidden(route);
+      const mediaId = path.split('/')[1] ?? '';
+      const linked = products.some((product) =>
+        (product.media as { mediaAssetId: string }[]).some((item) => item.mediaAssetId === mediaId),
+      );
+      const media = mediaAssets.get(mediaId) ?? (linked ? imageBytes : null);
+      if (!media) return reply(route, { status: 404 }, 404);
+      return route.fulfill({
+        body: media,
+        contentType: 'image/png',
+        headers: { 'cache-control': 'no-store' },
+      });
+    }
+    if (path === 'inventory' && method === 'GET')
+      return reply(route, { items: [], total: 0, pageNumber: 1, pageSize: 100 });
     if (path === 'products/search' && method === 'POST') {
+      if (!can('Product', 'View')) return forbidden(route);
       const pageNumber = Number(body?.['pageNumber'] ?? 1);
       const pageSize = Number(body?.['pageSize'] ?? 10);
       const query = slug(String(body?.['search'] ?? ''));
       const items = products.filter(
         (product) =>
-          (!query || slug(product.name).includes(query)) &&
-          (!body?.['status'] || product.status === body['status']),
+          (!query || slug(`${product.name} ${product.slug}`).includes(query)) &&
+          (!body?.['status'] || product.status === body['status']) &&
+          (!body?.['categoryId'] || product.categoryIds.includes(String(body['categoryId']))) &&
+          (!body?.['productTypeId'] || product.productTypeId === body['productTypeId']) &&
+          (!body?.['fulfillmentKind'] || product.fulfillmentKind === body['fulfillmentKind']) &&
+          (typeof body?.['inStock'] !== 'boolean' || inStock(product) === body['inStock']) &&
+          (body?.['minimumPrice'] == null ||
+            (priceOf(product) !== null && priceOf(product)! >= Number(body['minimumPrice']))) &&
+          (body?.['maximumPrice'] == null ||
+            (priceOf(product) !== null && priceOf(product)! <= Number(body['maximumPrice']))),
       );
+      const direction = body?.['sortDirection'] === 'asc' ? 1 : -1;
+      items.sort((a, b) => {
+        const order =
+          body?.['sortBy'] === 'name'
+            ? a.name.localeCompare(b.name, 'vi')
+            : body?.['sortBy'] === 'price'
+              ? (priceOf(a) ?? -1) - (priceOf(b) ?? -1)
+              : a.modifiedOn.localeCompare(b.modifiedOn);
+        return order * direction || a.id.localeCompare(b.id);
+      });
       return reply(route, {
-        items: items.slice((pageNumber - 1) * pageSize, pageNumber * pageSize).map((product) => ({
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          status: product.status,
-          fromPrice: product.variants[0]?.price ?? null,
-          inStock: true,
-          fulfillmentKind: product.fulfillmentKind,
-        })),
+        items: items.slice((pageNumber - 1) * pageSize, pageNumber * pageSize).map(summary),
         total: items.length,
         pageNumber,
         pageSize,
       });
     }
+    if (path === 'products/bulk-status' && method === 'POST') {
+      if (!can('Product', 'Publish')) return forbidden(route);
+      const targets = body?.['items'] as { id: string; version: string }[] | undefined;
+      const status = Number(body?.['status']);
+      if (
+        !targets?.length ||
+        targets.length > 100 ||
+        new Set(targets.map((target) => target.id)).size !== targets.length ||
+        ![1, 2, 3].includes(status)
+      )
+        return invalid(route, 'Danh sách trạng thái không hợp lệ.');
+      const matches = targets.map((target) => products.find((product) => product.id === target.id));
+      if (matches.some((product, index) => !product || product.version !== targets[index]?.version))
+        return conflict(route);
+      if (
+        status === 2 &&
+        matches.some((product) =>
+          product?.variants.some((variant) => variant.isActive && variant.price === null),
+        )
+      )
+        return invalid(route, 'Đặt giá cho SKU trước khi xuất bản.');
+      const changed = matches.map((product) => {
+        if (!product) throw new Error('Fixture product missing');
+        product.status = status;
+        product.version = `status-${++version}`;
+        product.modifiedOn = new Date().toISOString();
+        return { id: product.id, status: product.status, version: product.version };
+      });
+      return reply(route, { items: changed });
+    }
     if (path === 'products' && method === 'POST') {
+      if (!can('Product', 'Create')) return forbidden(route);
       const input = body as unknown as ProductWrite;
+      const options: ProductOption[] = (input.options ?? []).map((option, index) => ({
+        id: id(5, products.length * 100 + index),
+        code: option.code,
+        name: option.name,
+        sortOrder: index,
+        values: option.values.map((value, valueIndex) => ({
+          ...value,
+          id: id(6, products.length * 1000 + index * 100 + valueIndex),
+          sortOrder: valueIndex,
+        })),
+      }));
+      const variants = (input.variants ?? []).map((variant, index) =>
+        variantFrom(variant, options, index),
+      );
+      const defaultSku = input.defaultVariantSku ?? variants[0]?.sku;
+      variants.forEach((variant) => (variant.isDefault = variant.sku === defaultSku));
       const product: Product = {
         ...structuredClone(products[0]!),
         ...input.content,
@@ -376,15 +622,13 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
         fulfillmentKind: input.fulfillmentKind!,
         status: 1,
         version: `created-${++version}`,
-        variants: [
-          {
-            ...structuredClone(products[0]!.variants[0]!),
-            id: id(4, products.length),
-            sku: input.variants![0]!.sku,
-            price: input.variants![0]!.price,
-          },
-        ],
+        options,
+        variants,
+        createdOn: new Date().toISOString(),
+        modifiedOn: new Date().toISOString(),
       };
+      const validation = invalidProduct(product);
+      if (validation) return invalid(route, validation);
       products.push(product);
       return reply(route, product);
     }
@@ -393,22 +637,106 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
       if (!product) return reply(route, { status: 404 }, 404);
       if (method === 'GET') return reply(route, product);
       if (method === 'PUT') {
+        if (!can('Product', 'Update')) return forbidden(route);
         if (rejectSave) {
           rejectSave = false;
           return conflict(route);
         }
         const input = body as unknown as ProductWrite;
         if (input.version !== product.version) return conflict(route);
-        Object.assign(product, input.content, { version: `saved-${++version}` });
+        if (
+          input.productTypeVersion &&
+          productTypes.find((type) => type.id === product.productTypeId)?.version !==
+            input.productTypeVersion
+        )
+          return conflict(route);
+        const draft = structuredClone(product);
+        Object.assign(draft, input.content);
+        if (path.endsWith('/editor')) {
+          const options = draft.options as ProductOption[];
+          for (const edit of input.optionEdits ?? []) {
+            const option = options.find((option) => option.id === edit.optionId);
+            if (!option) return invalid(route, 'Lựa chọn không tồn tại.');
+            option.name = edit.name;
+            option.sortOrder = edit.sortOrder;
+            for (const valueEdit of edit.values) {
+              const value = option.values.find((value) => value.id === valueEdit.id);
+              if (!value) return invalid(route, 'Giá trị lựa chọn không tồn tại.');
+              Object.assign(value, { label: valueEdit.label, sortOrder: valueEdit.sortOrder });
+            }
+            for (const value of edit.addValues) {
+              if (option.values.some((current) => current.code === value.code))
+                return invalid(route, 'Mã giá trị đã tồn tại.');
+              option.values.push({
+                ...value,
+                id: id(6, ++mediaSequence + 10_000),
+                sortOrder: option.values.length,
+              });
+            }
+          }
+          for (const edit of input.variantEdits ?? []) {
+            const variant = draft.variants.find((variant) => variant.id === edit.variantId);
+            if (!variant) return invalid(route, 'SKU không tồn tại.');
+            if (
+              !can('Price', 'Update') &&
+              (variant.price !== edit.price || variant.compareAtPrice !== edit.compareAtPrice)
+            )
+              return forbidden(route);
+            Object.assign(variant, {
+              price: edit.price,
+              compareAtPrice: edit.compareAtPrice,
+              isActive: edit.isActive,
+              imageMediaId: edit.imageMediaId,
+            });
+          }
+          for (const added of input.addedVariants ?? []) {
+            if (!can('Price', 'Update') && (added.price !== null || added.compareAtPrice !== null))
+              return forbidden(route);
+            const variant = variantFrom(added, options, draft.variants.length);
+            const selections = variant.selections as { optionId: string; optionValueId: string }[];
+            if (
+              selections.length !== options.length ||
+              selections.some((selection) => !selection.optionId || !selection.optionValueId)
+            )
+              return invalid(route, 'Tổ hợp SKU không hợp lệ.');
+            draft.variants.push(variant);
+          }
+          if (input.defaultVariantSku)
+            draft.variants.forEach(
+              (variant) => (variant.isDefault = variant.sku === input.defaultVariantSku),
+            );
+        }
+        const validation = invalidProduct(draft);
+        if (validation) return invalid(route, validation);
+        Object.assign(product, draft, {
+          version: `saved-${++version}`,
+          modifiedOn: new Date().toISOString(),
+        });
         return reply(route, product);
       }
       if (path.endsWith('/status') && method === 'POST') {
+        if (!can('Product', 'Publish')) return forbidden(route);
         if (body?.['version'] !== product.version) return conflict(route);
+        if (
+          Number(body['status']) === 2 &&
+          product.variants.some((variant) => variant.isActive && variant.price === null)
+        )
+          return invalid(route, 'Đặt giá cho SKU trước khi xuất bản.');
         product.status = Number(body['status']);
         product.version = `status-${++version}`;
+        product.modifiedOn = new Date().toISOString();
         return reply(route, product);
       }
     }
+    if (path === 'categories/summaries' && method === 'GET')
+      return reply(
+        route,
+        categories.map((category) => ({
+          id: category.id,
+          productCount: products.filter((product) => product.categoryIds.includes(category.id))
+            .length,
+        })),
+      );
     if (path === 'categories' && method === 'GET') return reply(route, categories);
     if (path === 'categories' && method === 'POST') {
       const category = {

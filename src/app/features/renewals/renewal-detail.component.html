@@ -1,0 +1,359 @@
+@if (store.detailLoading() && !store.detail()) {
+  <ui-content-state
+    kind="loading"
+    layout="page"
+    title="Đang tải yêu cầu gia hạn"
+    message="Đang mở lịch sử xử lý."
+  />
+} @else if (store.detailError() && !store.detail()) {
+  <ui-content-state
+    kind="error"
+    layout="page"
+    title="Không thể tải yêu cầu gia hạn"
+    [message]="store.detailError()"
+  >
+    <button class="ui-button" type="button" (click)="activeId && store.loadDetail(activeId)">
+      Tải lại
+    </button>
+  </ui-content-state>
+} @else if (store.detail(); as detail) {
+  @if (detail.renewal.id === activeId) {
+    <section class="renewal-detail-page" aria-labelledby="renewal-detail-title">
+      <header class="renewal-detail-header">
+        <div>
+          <a class="order-back-link" [routerLink]="['/admin/renewals']"
+            ><ui-icon name="arrow-left" [size]="14" /> Quay lại gia hạn</a
+          >
+          <div class="renewal-detail-title-row">
+            <div>
+              <span class="eyebrow">Yêu cầu gia hạn</span>
+              <h1 id="renewal-detail-title">{{ detail.renewal.name }}</h1>
+            </div>
+            <span class="renewal-status" [attr.data-status]="detail.renewal.status">{{
+              statusLabels[detail.renewal.status]
+            }}</span>
+          </div>
+          <p>
+            {{ detail.renewal.sku
+            }}{{
+              detail.renewal.optionDescription ? ' · ' + detail.renewal.optionDescription : ''
+            }}
+            · Số lượng {{ detail.renewal.quantity }} · Version {{ detail.renewal.version }}
+          </p>
+        </div>
+        @if (store.canViewOrders()) {
+          <a class="ui-button" [routerLink]="['/admin/orders', detail.renewal.orderId]"
+            >Mở đơn hàng</a
+          >
+        }
+      </header>
+
+      @if (store.commandError()) {
+        <div class="renewal-command-message" role="alert">
+          <ui-icon name="alert" [size]="15" />
+          <span>{{ store.commandError() }}</span>
+          @if (store.commandFailure() === 'uncertain' && pendingCommand()) {
+            <button
+              class="ui-button"
+              type="button"
+              [disabled]="store.commandBusy()"
+              (click)="retry()"
+            >
+              Thử lại đúng yêu cầu
+            </button>
+          }
+        </div>
+      }
+      @if (store.detailError()) {
+        <p class="order-form-error" role="alert">{{ store.detailError() }}</p>
+        <button class="ui-button" type="button" (click)="store.reloadDetail()">
+          Tải lại dữ liệu
+        </button>
+      }
+
+      <div class="renewal-workspace-grid">
+        <main class="renewal-main-column">
+          <section class="order-card renewal-target-card">
+            <div class="order-card-heading">
+              <div>
+                <span class="eyebrow">Thông tin nhận từ khách</span>
+                <h2>Tài khoản đích</h2>
+              </div>
+              <span class="order-readonly-note">Được che mặc định</span>
+            </div>
+            <p class="renewal-private-value">
+              {{ detail.renewal.targetPreview || 'Khách chưa nhập thông tin tài khoản' }}
+            </p>
+            @if (detail.renewal.targetPreview && store.canReveal()) {
+              @if (store.revealedTarget(); as target) {
+                <div class="renewal-revealed-value">
+                  <code>{{ target.content }}</code
+                  ><button class="ui-button" type="button" (click)="hideTarget()">Ẩn lại</button>
+                </div>
+              } @else {
+                <button
+                  class="ui-button"
+                  type="button"
+                  [disabled]="store.commandBusy()"
+                  (click)="revealTarget()"
+                >
+                  Xem thông tin đầy đủ
+                </button>
+              }
+            }
+          </section>
+
+          <section class="order-card renewal-action-card">
+            <div class="order-card-heading">
+              <div>
+                <span class="eyebrow">Thao tác</span>
+                <h2>Quy trình xử lý</h2>
+              </div>
+              @if (detail.claimUntilUtc) {
+                <span class="order-readonly-note"
+                  >Lease đến {{ detail.claimUntilUtc | date: 'dd/MM/yyyy HH:mm' }}</span
+                >
+              }
+            </div>
+            @if (detail.renewal.status === status.AwaitingTarget) {
+              <p class="order-muted">
+                Yêu cầu sẽ sẵn sàng khi khách cung cấp định danh tài khoản đích trong trang đơn hàng
+                của họ.
+              </p>
+            }
+            @if (
+              detail.renewal.status === status.Ready ||
+              (detail.renewal.status === status.Claimed && store.claimAvailable())
+            ) {
+              @if (store.canProcess()) {
+                <button
+                  class="ui-button primary"
+                  type="button"
+                  [disabled]="
+                    store.commandBusy() || pendingCommand() !== null || !store.claimAvailable()
+                  "
+                  (click)="claim()"
+                >
+                  {{
+                    detail.renewal.status === status.Claimed
+                      ? 'Nhận lại việc hết hạn'
+                      : 'Nhận xử lý'
+                  }}
+                </button>
+              }
+            }
+            @if (detail.renewal.status === status.Claimed) {
+              @if (detail.claimToken && store.canProcess()) {
+                <div class="renewal-action-buttons">
+                  <button
+                    class="ui-button primary"
+                    type="button"
+                    [disabled]="
+                      store.commandBusy() ||
+                      pendingCommand() !== null ||
+                      !store.isCommandAvailable(detail, 'start')
+                    "
+                    (click)="start()"
+                  >
+                    Bắt đầu gia hạn
+                  </button>
+                  <button
+                    class="ui-button"
+                    type="button"
+                    [disabled]="
+                      store.commandBusy() ||
+                      pendingCommand() !== null ||
+                      !store.isCommandAvailable(detail, 'release')
+                    "
+                    (click)="release()"
+                  >
+                    Trả lại hàng chờ
+                  </button>
+                </div>
+                <p class="order-muted">
+                  Bắt đầu sẽ ghi nhận một lần xử lý cần xác minh. Hãy chỉ thao tác trên dịch vụ bên
+                  ngoài sau khi server xác nhận bước này.
+                </p>
+              } @else if (detail.claimedBy) {
+                <p class="order-muted">Đang được một nhân viên khác nhận xử lý.</p>
+              }
+            }
+            @if (detail.renewal.status === status.PendingVerification) {
+              @if (store.canVerify()) {
+                <form class="renewal-verify-form" (submit)="$event.preventDefault(); verify()">
+                  <h3>Xác minh lần xử lý</h3>
+                  <label class="renewal-checkbox"
+                    ><input
+                      type="checkbox"
+                      [ngModel]="applied()"
+                      (ngModelChange)="applied.set($event); dirty.set(true)"
+                      name="applied"
+                      [disabled]="pendingCommand() !== null"
+                    />
+                    Gia hạn đã được áp dụng</label
+                  >
+                  @if (applied()) {
+                    <label for="renewal-expiry">Thời hạn mới còn hiệu lực</label>
+                    <input
+                      id="renewal-expiry"
+                      type="datetime-local"
+                      [ngModel]="newExpiresAt()"
+                      (ngModelChange)="newExpiresAt.set($event); dirty.set(true)"
+                      name="newExpiresAt"
+                      [disabled]="pendingCommand() !== null"
+                    />
+                  }
+                  <label for="renewal-note">Ghi chú xác minh</label>
+                  <textarea
+                    id="renewal-note"
+                    rows="3"
+                    maxlength="1200"
+                    [ngModel]="note()"
+                    (ngModelChange)="note.set($event); dirty.set(true)"
+                    name="note"
+                    [disabled]="pendingCommand() !== null"
+                  ></textarea>
+                  <label for="renewal-evidence">Bằng chứng (tùy chọn)</label>
+                  <textarea
+                    id="renewal-evidence"
+                    rows="2"
+                    maxlength="1800"
+                    [ngModel]="evidence()"
+                    (ngModelChange)="evidence.set($event); dirty.set(true)"
+                    name="evidence"
+                    [disabled]="pendingCommand() !== null"
+                  ></textarea>
+                  <button
+                    class="ui-button primary"
+                    type="submit"
+                    [disabled]="
+                      !verifyCanSubmit() || store.commandBusy() || pendingCommand() !== null
+                    "
+                  >
+                    {{ store.commandBusy() ? 'Đang lưu…' : 'Lưu kết quả xác minh' }}
+                  </button>
+                </form>
+              } @else {
+                <p class="order-muted">
+                  Yêu cầu đang chờ nhân viên có quyền Renewal.Verify xác minh kết quả thực tế.
+                </p>
+              }
+            }
+            @if (detail.renewal.status === status.Completed) {
+              <dl class="renewal-completion-data">
+                <dt>Hoàn tất</dt>
+                <dd>{{ detail.renewal.completedAtUtc | date: 'dd/MM/yyyy HH:mm' }}</dd>
+                <dt>Hạn đã xác minh</dt>
+                <dd>{{ detail.renewal.verifiedExpiresAtUtc | date: 'dd/MM/yyyy HH:mm' }}</dd>
+              </dl>
+            }
+          </section>
+
+          <section class="order-card renewal-history-card">
+            <div class="order-card-heading">
+              <div>
+                <span class="eyebrow">Audit metadata</span>
+                <h2>Lịch sử xử lý</h2>
+              </div>
+            </div>
+            @if (store.historyError()) {
+              <p class="order-form-error" role="alert">{{ store.historyError() }}</p>
+              <button class="ui-button" type="button" (click)="store.reloadDetail()">
+                Tải lại lịch sử
+              </button>
+            } @else if (store.history().length) {
+              <div class="table-scroll">
+                <table class="content-table renewal-history-table">
+                  <thead>
+                    <tr>
+                      <th>Thao tác</th>
+                      <th>Người thực hiện</th>
+                      <th>Trạng thái</th>
+                      <th>Thời điểm</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of store.history(); track item.operationId) {
+                      <tr>
+                        <td>{{ item.action }}</td>
+                        <td>{{ item.actorId }}</td>
+                        <td>{{ statusLabels[item.statusAfter] }}</td>
+                        <td>{{ item.occurredAtUtc | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="order-muted">Chưa có lịch sử thao tác.</p>
+            }
+          </section>
+        </main>
+
+        <aside class="renewal-inspector">
+          <section class="inspector-card">
+            <span class="eyebrow">Các lần xử lý</span>
+            <h2>{{ detail.attempts.length }} lần</h2>
+            @for (attempt of detail.attempts; track attempt.id) {
+              <article class="renewal-attempt">
+                <strong>{{ outcomeLabels[attempt.outcome] }}</strong>
+                <span
+                  >{{ attempt.startedAtUtc | date: 'dd/MM/yyyy HH:mm' }} ·
+                  {{ attempt.startedBy }}</span
+                >
+                @if (attempt.verifiedAtUtc) {
+                  <span
+                    >Xác minh {{ attempt.verifiedAtUtc | date: 'dd/MM/yyyy HH:mm' }} ·
+                    {{ attempt.verifiedBy }}</span
+                  >
+                }
+                @if (attempt.newExpiresAtUtc) {
+                  <span>Hạn mới {{ attempt.newExpiresAtUtc | date: 'dd/MM/yyyy HH:mm' }}</span>
+                }
+                @if (store.canVerify()) {
+                  @if (store.revealedEvidence()[attempt.id]; as content) {
+                    <div class="renewal-revealed-value">
+                      <code>{{ content.content }}</code
+                      ><button class="ui-button" type="button" (click)="hideEvidence(attempt.id)">
+                        Ẩn
+                      </button>
+                    </div>
+                  } @else {
+                    <button
+                      class="ui-button"
+                      type="button"
+                      [disabled]="store.commandBusy()"
+                      (click)="revealEvidence(attempt.id)"
+                    >
+                      Xem bằng chứng
+                    </button>
+                  }
+                }
+              </article>
+            }
+            @if (!detail.attempts.length) {
+              <p class="order-muted">Chưa bắt đầu xử lý.</p>
+            }
+          </section>
+          <section class="inspector-card">
+            <span class="eyebrow">Trạng thái yêu cầu</span>
+            <dl>
+              <dt>Mã đơn</dt>
+              <dd class="monospace">{{ detail.renewal.orderId }}</dd>
+              <dt>Số lượng</dt>
+              <dd>{{ detail.renewal.quantity }}</dd>
+              <dt>Người nhận xử lý</dt>
+              <dd>{{ detail.claimedBy || 'Chưa nhận' }}</dd>
+            </dl>
+          </section>
+        </aside>
+      </div>
+    </section>
+  }
+}
+<ui-confirm-dialog
+  title="Rời khỏi yêu cầu gia hạn?"
+  message="Bản nháp xác minh hoặc thao tác chưa đối chiếu sẽ bị bỏ khỏi màn hình. Nếu kết quả máy chủ chưa rõ, hãy thử lại đúng yêu cầu trước khi rời."
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

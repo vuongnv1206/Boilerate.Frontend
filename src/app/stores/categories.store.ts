@@ -2,7 +2,17 @@ import { ListQuery } from '@models/list-query.model';
 import { AuthSession } from '@core/auth/auth-session';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, Observable, Subscription, catchError, defer, finalize, take, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  Subscription,
+  catchError,
+  defer,
+  finalize,
+  forkJoin,
+  take,
+  tap,
+} from 'rxjs';
 import { ApiError } from '@core/http/api-error';
 import { CATEGORY_PAGE_SIZE } from '@constants/category.constants';
 import { CategoriesService } from '@services/categories.service';
@@ -13,6 +23,8 @@ export class CategoriesStore {
   private readonly session = inject(AuthSession);
   readonly canCreate = computed(() => this.session.can('Category', 'Create'));
   readonly canDelete = computed(() => this.session.can('Category', 'Delete'));
+  readonly canViewProducts = computed(() => this.session.can('Product', 'View'));
+  private readonly counts = signal<ReadonlyMap<string, number>>(new Map());
   private readonly service = inject(CategoriesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly loadedState = signal(false);
@@ -58,12 +70,15 @@ export class CategoriesStore {
     this.loadSubscription?.unsubscribe();
     this.loadingState.set(true);
     this.errorState.set('');
-    this.loadSubscription = this.service
-      .getAll()
+    this.loadSubscription = forkJoin({
+      items: this.service.getAll(),
+      counts: this.service.summaries(),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (items) => {
+        next: ({ items, counts }) => {
           this.records.set(items);
+          this.counts.set(new Map(counts.map((item) => [item.id, item.productCount])));
           this.loadedState.set(true);
 
           this.loadingState.set(false);
@@ -77,6 +92,9 @@ export class CategoriesStore {
 
   parentName(parentId: string | null): string {
     return this.items().find((item) => item.id === parentId)?.name ?? '—';
+  }
+  productCount(id: string): number {
+    return this.counts().get(id) ?? 0;
   }
   delete(category: CategoryDto): Observable<boolean> {
     return defer(() => {

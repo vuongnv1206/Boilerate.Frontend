@@ -9,6 +9,11 @@ export interface ProductSummary {
   readonly fromPrice: number | null;
   readonly inStock: boolean;
   readonly fulfillmentKind: ProductFulfillmentKind;
+  readonly productTypeId?: string;
+  readonly productTypeName?: string;
+  readonly thumbnailMediaId?: string | null;
+  readonly version?: string;
+  readonly modifiedOn?: string;
 }
 
 export interface ProductPage {
@@ -23,6 +28,14 @@ export interface ProductSearch {
   readonly pageSize: number;
   readonly search?: string;
   readonly status?: ProductStatus;
+  readonly categoryId?: string;
+  readonly productTypeId?: string;
+  readonly fulfillmentKind?: ProductFulfillmentKind;
+  readonly inStock?: boolean;
+  readonly minimumPrice?: number;
+  readonly maximumPrice?: number;
+  readonly sortBy?: 'modified' | 'name' | 'price';
+  readonly sortDirection?: 'asc' | 'desc';
 }
 
 export interface ProductVariant {
@@ -87,6 +100,8 @@ export interface ProductDto {
   readonly fields: readonly ProductFieldValue[];
   readonly media: readonly ProductMedia[];
   readonly fulfillmentKind: ProductFulfillmentKind;
+  readonly createdOn?: string;
+  readonly modifiedOn?: string;
 }
 
 export interface ProductContent {
@@ -102,14 +117,91 @@ export interface CreateProduct {
   readonly productTypeId: string;
   readonly productTypeVersion: string;
   readonly content: ProductContent;
-  readonly options: readonly [];
-  readonly variants: readonly {
-    readonly sku: string;
-    readonly price: number;
-    readonly compareAtPrice: null;
-    readonly options: Readonly<Record<string, string>>;
-  }[];
+  readonly options: readonly ProductOptionInput[];
+  readonly variants: readonly ProductVariantInput[];
   readonly fulfillmentKind: ProductFulfillmentKind;
+  readonly defaultVariantSku?: string | null;
+}
+
+export interface ProductOptionInput {
+  readonly code: string;
+  readonly name: string;
+  readonly values: readonly { readonly code: string; readonly label: string }[];
+}
+
+export interface ProductVariantInput {
+  readonly sku: string;
+  readonly price: number | null;
+  readonly compareAtPrice: number | null;
+  readonly options: Readonly<Record<string, string>>;
+  readonly isActive?: boolean;
+  readonly imageMediaId?: string | null;
+}
+
+export interface SaveProductEditor extends EditProduct {
+  readonly optionEdits: readonly {
+    readonly optionId: string;
+    readonly name: string;
+    readonly sortOrder: number;
+    readonly addValues: readonly { readonly code: string; readonly label: string }[];
+    readonly values: readonly {
+      readonly id: string;
+      readonly label: string;
+      readonly sortOrder: number;
+    }[];
+  }[];
+  readonly variantEdits: readonly {
+    readonly variantId: string;
+    readonly price: number | null;
+    readonly compareAtPrice: number | null;
+    readonly isActive: boolean;
+    readonly imageMediaId: string | null;
+  }[];
+  readonly addedVariants: readonly ProductVariantInput[];
+  readonly defaultVariantSku: string;
+}
+
+export interface BulkProductStatus {
+  readonly items: readonly { readonly id: string; readonly version: string }[];
+  readonly status: ProductStatus;
+}
+
+export interface BulkProductStatusResult {
+  readonly items: readonly {
+    readonly id: string;
+    readonly status: ProductStatus;
+    readonly version: string;
+  }[];
+}
+
+export interface AddProductVariant {
+  readonly productId: string;
+  readonly version: string;
+  readonly variant: ProductVariantInput;
+}
+
+export interface EditProductVariant {
+  readonly productId: string;
+  readonly variantId: string;
+  readonly version: string;
+  readonly price: number | null;
+  readonly compareAtPrice: number | null;
+  readonly isActive: boolean;
+  readonly imageMediaId: string | null;
+}
+
+export interface EditProductOption {
+  readonly productId: string;
+  readonly optionId: string;
+  readonly version: string;
+  readonly name: string;
+  readonly sortOrder: number;
+  readonly addValues: readonly { readonly code: string; readonly label: string }[];
+  readonly values: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly sortOrder: number;
+  }[];
 }
 
 export interface EditProduct {

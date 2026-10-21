@@ -32,7 +32,7 @@
         <button
           type="button"
           class="ui-button"
-          (click)="actionTarget.set('password-reset')"
+          (click)="openAction('password-reset', $event)"
           [disabled]="!store.canUpdate() || store.saving() || !user.emailConfirmed"
           [attr.title]="
             user.emailConfirmed ? null : 'Email cần được xác nhận trước khi gửi liên kết.'
@@ -44,8 +44,8 @@
           type="button"
           class="ui-button"
           [class.danger]="user.isActive"
-          (click)="actionTarget.set('status')"
-          [disabled]="!store.canUpdate() || store.saving() || store.profileDirty()"
+          (click)="openAction('status', $event)"
+          [disabled]="!store.canUpdate() || store.saving()"
         >
           {{ user.isActive ? 'Vô hiệu hóa' : 'Kích hoạt' }} tài khoản
         </button>
@@ -140,7 +140,12 @@
                       formControlName="firstName"
                       maxlength="75"
                       autocomplete="given-name"
+                      [attr.aria-invalid]="!!fieldError('firstName')"
+                      aria-describedby="user-first-name-error"
                     />
+                    @if (fieldError('firstName'); as error) {
+                      <small id="user-first-name-error" class="field-error">{{ error }}</small>
+                    }
                   </div>
                   <div class="field">
                     <label for="user-last-name">Tên *</label>
@@ -150,7 +155,12 @@
                       formControlName="lastName"
                       maxlength="75"
                       autocomplete="family-name"
+                      [attr.aria-invalid]="!!fieldError('lastName')"
+                      aria-describedby="user-last-name-error"
                     />
+                    @if (fieldError('lastName'); as error) {
+                      <small id="user-last-name-error" class="field-error">{{ error }}</small>
+                    }
                   </div>
                 </div>
                 <div class="field-row">
@@ -162,7 +172,12 @@
                       type="email"
                       formControlName="email"
                       autocomplete="email"
+                      [attr.aria-invalid]="!!fieldError('email')"
+                      aria-describedby="user-email-error"
                     />
+                    @if (fieldError('email'); as error) {
+                      <small id="user-email-error" class="field-error">{{ error }}</small>
+                    }
                     @if (store.record()) {
                       <small>Email không thể đổi tại đây vì cần quy trình xác nhận riêng.</small>
                     }
@@ -175,7 +190,12 @@
                       type="tel"
                       formControlName="phoneNumber"
                       autocomplete="tel"
+                      [attr.aria-invalid]="!!fieldError('phoneNumber')"
+                      aria-describedby="user-phone-error"
                     />
+                    @if (fieldError('phoneNumber'); as error) {
+                      <small id="user-phone-error" class="field-error">{{ error }}</small>
+                    }
                   </div>
                 </div>
                 @if (store.isNew()) {
@@ -187,8 +207,13 @@
                       formControlName="userName"
                       minlength="6"
                       autocomplete="username"
+                      [attr.aria-invalid]="!!fieldError('userName')"
+                      aria-describedby="user-username-help user-username-error"
                     />
-                    <small>Tối thiểu 6 ký tự.</small>
+                    <small id="user-username-help">Tối thiểu 6 ký tự.</small>
+                    @if (fieldError('userName'); as error) {
+                      <small id="user-username-error" class="field-error">{{ error }}</small>
+                    }
                   </div>
                   <div class="field-row">
                     <div class="field">
@@ -200,8 +225,13 @@
                         formControlName="password"
                         minlength="9"
                         autocomplete="new-password"
+                        [attr.aria-invalid]="!!fieldError('password')"
+                        aria-describedby="user-password-help user-password-error"
                       />
-                      <small>Tối thiểu 9 ký tự.</small>
+                      <small id="user-password-help">Tối thiểu 9 ký tự.</small>
+                      @if (fieldError('password'); as error) {
+                        <small id="user-password-error" class="field-error">{{ error }}</small>
+                      }
                     </div>
                     <div class="field">
                       <label for="user-confirm-password">Nhập lại mật khẩu *</label>
@@ -211,11 +241,22 @@
                         type="password"
                         formControlName="confirmPassword"
                         autocomplete="new-password"
+                        [attr.aria-invalid]="
+                          !!fieldError('confirmPassword') || form.hasError('passwordMismatch')
+                        "
+                        aria-describedby="user-confirm-password-error user-password-match-error"
                       />
+                      @if (fieldError('confirmPassword'); as error) {
+                        <small id="user-confirm-password-error" class="field-error">{{
+                          error
+                        }}</small>
+                      }
                     </div>
                   </div>
                   @if (form.hasError('passwordMismatch') && form.controls.confirmPassword.touched) {
-                    <p class="system-error" role="alert">Mật khẩu nhập lại chưa khớp.</p>
+                    <p id="user-password-match-error" class="system-error" role="alert">
+                      Mật khẩu nhập lại chưa khớp.
+                    </p>
                   }
                 } @else {
                   @if (store.record()?.imageUrl) {
@@ -318,6 +359,7 @@
   header="Xác nhận thao tác"
   [visible]="!!actionTarget()"
   (visibleChange)="!$event && actionTarget.set(null)"
+  (onHide)="restoreActionFocus()"
   [modal]="true"
   appendTo="body"
   [draggable]="false"

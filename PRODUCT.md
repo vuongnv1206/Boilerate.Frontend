@@ -11,7 +11,7 @@ Yêu cầu tích hợp được dẫn từ [README](README.md); phạm vi kiểm
 ## Nguyên tắc sản phẩm
 
 - Webflow CMS/Ecommerce workspace là tham chiếu chính: điều hướng ổn định, panel theo ngữ cảnh, thao tác gần nội dung.
-- Mở một bản ghi thay vùng danh sách, giữ rail và panel để người dùng biết mình đang ở đâu. Inspector chứa metadata/trạng thái liên quan; form chính giữ nội dung chỉnh sửa.
+- Mở một bản ghi giữ danh sách sản phẩm ở cạnh editor để chuyển bản ghi mà không mất bộ lọc. Metadata nằm cuối editor; form chính giữ nội dung, ảnh, options và variants cùng một bản nhập.
 - Tiếng Việt là ngôn ngữ giao diện. Tên source/type dùng tiếng Anh; nội dung UI tránh thuật ngữ triển khai.
 - Desktop là môi trường chính; màn nhỏ vẫn tìm, đọc, chỉnh mẫu và mở điều hướng được. Thu gọn hoặc chuyển panel thành overlay trước khi ép form quá hẹp.
 - System/Light/Dark là lựa chọn đồng cấp. Theme không đổi dữ liệu hoặc tác vụ đang làm.

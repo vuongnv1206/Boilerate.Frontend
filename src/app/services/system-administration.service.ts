@@ -106,10 +106,11 @@ export class SystemAdministrationService {
     return this.api.text('PUT', `users/${encodeURIComponent(id)}/roles`, { version, roleIds });
   }
   createUser(request: CreateUserRequest): Observable<string> {
-    return this.api.post('users/create', request);
+    return this.api.post('users/create', request, { headers: { Accept: 'application/json' } });
   }
   updateUser(id: string, request: UpdateUserRequest): Observable<void> {
     const form = new FormData();
+    form.append('Id', id);
     form.append('Version', request.version);
     form.append('FirstName', request.firstName);
     form.append('LastName', request.lastName);
@@ -127,6 +128,8 @@ export class SystemAdministrationService {
     });
   }
   requestUserPasswordReset(id: string): Observable<string> {
-    return this.api.post(`users/${encodeURIComponent(id)}/password-reset`, null);
+    return this.api.post(`users/${encodeURIComponent(id)}/password-reset`, null, {
+      headers: { Accept: 'application/json' },
+    });
   }
 }

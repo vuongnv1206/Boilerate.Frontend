@@ -43,6 +43,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'renewals',
+        loadChildren: () =>
+          import('./features/renewals/renewals.routes').then((m) => m.RENEWAL_ROUTES),
+      },
+      {
         path: '',
         loadChildren: () => import('./features/orders/orders.routes').then((m) => m.ORDER_ROUTES),
       },

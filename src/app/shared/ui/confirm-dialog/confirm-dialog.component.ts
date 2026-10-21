@@ -14,7 +14,7 @@ import { Dialog } from 'primeng/dialog';
     [resizable]="false"
     [style]="{ width: '410px', maxWidth: '92vw' }"
     ><p class="collection-dialog-copy">
-      Thay đổi của anh chưa được lưu. Rời khỏi màn hình sẽ bỏ các thay đổi này.
+      {{ message() }}
     </p>
     <ng-template #footer
       ><button class="ui-button" (click)="answered.emit(false)">Ở lại</button
@@ -27,5 +27,8 @@ import { Dialog } from 'primeng/dialog';
 export class ConfirmDialog {
   readonly visible = input.required<boolean>();
   readonly title = input.required<string>();
+  readonly message = input(
+    'Thay đổi của anh chưa được lưu. Rời khỏi màn hình sẽ bỏ các thay đổi này.',
+  );
   readonly answered = output<boolean>();
 }

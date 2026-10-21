@@ -4,12 +4,15 @@ import {
   EMPTY,
   Observable,
   Subscription,
+  Subject,
   catchError,
   defer,
+  filter,
   finalize,
   map,
   of,
   switchMap,
+  takeUntil,
   tap,
 } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
@@ -17,6 +20,7 @@ import { normalizeApiError } from '@core/http/normalize-api-error';
 import { createUserForm } from '@forms/system.form';
 import { SystemUserDto, UserRoleDto } from '@models/system.dto';
 import { SystemAdministrationService } from '@services/system-administration.service';
+import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
 
 /** User profile, lifecycle and role assignment state for the system administration editor. */
 @Injectable()
@@ -25,6 +29,8 @@ export class UserRolesStore {
   private readonly session = inject(AuthSession);
   private readonly destroyRef = inject(DestroyRef);
   private request: Subscription | undefined;
+  private readonly cancelWrites = new Subject<void>();
+  private generation = 0;
   private formState: ReturnType<typeof createUserForm> | null = null;
   private readonly imageState = signal<File | null>(null);
   private readonly formRevision = signal(0);
@@ -73,7 +79,11 @@ export class UserRolesStore {
   readonly dirty = computed(() => this.profileDirty() || this.rolesDirty());
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.request?.unsubscribe());
+    this.destroyRef.onDestroy(() => {
+      this.request?.unsubscribe();
+      this.cancelWrites.next();
+      this.cancelWrites.complete();
+    });
   }
 
   setForm(form: ReturnType<typeof createUserForm>): void {
@@ -84,7 +94,10 @@ export class UserRolesStore {
   }
 
   load(id: string): void {
+    const generation = ++this.generation;
+    this.cancelWrites.next();
     this.request?.unsubscribe();
+    this.savingState.set(false);
     this.readyState.set(false);
     this.loadingState.set(false);
     this.errorState.set('');
@@ -111,6 +124,7 @@ export class UserRolesStore {
       )
       .subscribe({
         next: ({ user, roles }) => {
+          if (generation !== this.generation) return;
           this.recordState.set(user);
           this.rolesState.set(roles);
           const selected = new Set(roles.filter((role) => role.enabled).map((role) => role.roleId));
@@ -121,6 +135,7 @@ export class UserRolesStore {
           this.loadingState.set(false);
         },
         error: (error: unknown) => {
+          if (generation !== this.generation) return;
           this.errorState.set(normalizeApiError(error).message);
           this.loadingState.set(false);
         },
@@ -145,10 +160,13 @@ export class UserRolesStore {
     return defer(() => {
       const form = this.formState;
       if (!form || !this.ready() || !this.canWrite() || this.saving()) return EMPTY;
+      clearServerErrors(form);
       form.markAllAsTouched();
       if (form.invalid) return EMPTY;
       const value = form.getRawValue();
       const current = this.record();
+      const revision = this.formRevision();
+      const image = this.image();
       const phoneNumber = value.phoneNumber.trim() || null;
 
       if (!current) {
@@ -167,6 +185,7 @@ export class UserRolesStore {
         ).pipe(
           tap(({ message }) => {
             this.createdState.set(true);
+            this.hydrateForm();
             this.noticeState.set(message.replace(/\r?\n/gu, ' '));
           }),
           map(() => null),
@@ -181,17 +200,19 @@ export class UserRolesStore {
             lastName: value.lastName.trim(),
             email: value.email.trim(),
             phoneNumber,
-            image: this.image(),
+            image,
             deleteCurrentImage: value.deleteCurrentImage,
           })
-          .pipe(
-            switchMap(() => this.service.user(current.id)),
-            tap((saved) => {
-              this.recordState.set(saved);
-              this.imageState.set(null);
-              this.hydrateForm();
-            }),
-          ),
+          .pipe(switchMap(() => this.service.user(current.id))),
+      ).pipe(
+        tap((saved) => {
+          this.recordState.set(saved);
+          if (this.image() === image) this.imageState.set(null);
+          if (revision === this.formRevision()) this.hydrateForm();
+          else {
+            this.noticeState.set('Đã lưu bản trước. Thay đổi mới trong hồ sơ chưa được lưu.');
+          }
+        }),
       );
     });
   }
@@ -206,13 +227,15 @@ export class UserRolesStore {
       if (!user || !this.ready() || !this.canUpdate() || this.saving()) return EMPTY;
       const snapshot = this.selected();
       return this.write(
-        this.service.saveUserRoles(user.id, user.version, [...snapshot]).pipe(
-          switchMap(() => this.service.user(user.id)),
-          tap((saved) => {
-            this.recordState.set(saved);
-            this.baseline.set(snapshot);
-          }),
-        ),
+        this.service
+          .saveUserRoles(user.id, user.version, [...snapshot])
+          .pipe(switchMap(() => this.service.user(user.id))),
+      ).pipe(
+        tap((saved) => {
+          this.recordState.set(saved);
+          this.baseline.set(snapshot);
+          this.noticeState.set('Đã lưu vai trò.');
+        }),
       );
     });
   }
@@ -222,25 +245,27 @@ export class UserRolesStore {
       const user = this.record();
       if (!user || !this.ready() || !this.canUpdate() || this.saving()) return EMPTY;
       return this.write(
-        this.service.toggleUserStatus(user.id, user.version, !user.isActive).pipe(
-          switchMap(() => this.service.user(user.id)),
-          tap((saved) => {
-            this.recordState.set(saved);
-            this.hydrateForm();
-          }),
-        ),
-      );
+        this.service
+          .toggleUserStatus(user.id, user.version, !user.isActive)
+          .pipe(switchMap(() => this.service.user(user.id))),
+      ).pipe(tap((saved) => this.recordState.set(saved)));
     });
   }
 
   requestPasswordReset(): Observable<string> {
     return defer(() => {
       const user = this.record();
-      if (!user || !this.ready() || !this.canUpdate() || this.saving()) return EMPTY;
-      return this.write(
-        this.service
-          .requestUserPasswordReset(user.id)
-          .pipe(tap(() => this.noticeState.set('Đã yêu cầu gửi liên kết đặt lại mật khẩu.'))),
+      if (
+        !user ||
+        !user.emailConfirmed ||
+        !user.email ||
+        !this.ready() ||
+        !this.canUpdate() ||
+        this.saving()
+      )
+        return EMPTY;
+      return this.write(this.service.requestUserPasswordReset(user.id)).pipe(
+        tap(() => this.noticeState.set('Đã yêu cầu gửi liên kết đặt lại mật khẩu.')),
       );
     });
   }
@@ -274,23 +299,37 @@ export class UserRolesStore {
   }
 
   private write<T>(request: Observable<T>): Observable<T> {
+    const generation = this.generation;
     this.savingState.set(true);
     this.errorState.set('');
     this.noticeState.set('');
     return request.pipe(
-      takeUntilDestroyed(this.destroyRef),
+      filter(() => generation === this.generation),
       switchMap((saved) =>
         this.session.authorizationChanged().pipe(
           catchError(() => of(undefined)),
           map(() => saved),
         ),
       ),
+      takeUntil(this.cancelWrites),
+      takeUntilDestroyed(this.destroyRef),
+      filter(() => generation === this.generation),
       tap(() => this.noticeState.set('Đã lưu thay đổi.')),
       catchError((error: unknown) => {
-        this.errorState.set(normalizeApiError(error).message);
+        if (generation !== this.generation) return EMPTY;
+        const normalized = normalizeApiError(error);
+        if (this.formState) applyServerErrors(this.formState, normalized.fieldErrors);
+        this.formRevision.update((revision) => revision + 1);
+        this.errorState.set(
+          normalized.status === 409
+            ? 'Dữ liệu đã thay đổi. Nội dung đang nhập được giữ lại; tải lại để đối chiếu trước khi lưu tiếp.'
+            : normalized.message,
+        );
         return EMPTY;
       }),
-      finalize(() => this.savingState.set(false)),
+      finalize(() => {
+        if (generation === this.generation) this.savingState.set(false);
+      }),
     );
   }
 }

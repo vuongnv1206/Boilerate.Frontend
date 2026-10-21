@@ -32,6 +32,11 @@ export enum ProductFulfillmentKind {
   ManualExtension = 4,
 }
 
+export enum ShipmentStatus {
+  Dispatched = 1,
+  Delivered = 2,
+}
+
 export interface OrderSummary {
   readonly id: string;
   readonly number: string;
@@ -102,11 +107,34 @@ export interface OrderHistoryEntry {
 
 export interface ShipmentSummary {
   readonly id: string;
+  readonly orderId: string;
+  readonly orderVersion: string;
+  readonly version: string;
   readonly carrier: string;
   readonly trackingNumber: string;
-  readonly status: number;
+  readonly status: ShipmentStatus;
   readonly dispatchedAtUtc: string;
   readonly deliveredAtUtc: string | null;
+  readonly items: readonly ShipmentLineDto[];
+}
+
+export interface ShipmentLineDto {
+  readonly orderItemId: string;
+  readonly quantity: number;
+}
+
+export interface DispatchShipmentRequest {
+  readonly orderVersion: string;
+  readonly operationId: string;
+  readonly carrier: string;
+  readonly trackingNumber: string;
+  readonly items: readonly ShipmentLineDto[];
+}
+
+export interface DeliverShipmentRequest {
+  readonly orderVersion: string;
+  readonly version: string;
+  readonly operationId: string;
 }
 
 export interface AfterSalesSummary {
@@ -116,6 +144,67 @@ export interface AfterSalesSummary {
   readonly receivedAmount: number;
   readonly refundedAmount: number;
   readonly refundableAmount: number;
+  readonly refunds: readonly RefundDto[];
+  readonly returns: readonly PhysicalReturnDto[];
+}
+
+export interface ConfirmRefundRequest {
+  readonly orderVersion: string;
+  readonly operationId: string;
+  readonly reference: string;
+  readonly amount: number;
+  readonly currency: 'VND';
+  readonly refundedAtUtc: string;
+  readonly reason: string;
+  readonly source: 'ManualBankTransfer' | 'ManualCash';
+}
+
+export interface ReturnLineInput {
+  readonly shipmentId: string;
+  readonly orderItemId: string;
+  readonly quantity: number;
+  readonly restockQuantity: number;
+}
+
+export interface ReceiveReturnRequest {
+  readonly orderVersion: string;
+  readonly operationId: string;
+  readonly reference: string;
+  readonly reason: string;
+  readonly items: readonly ReturnLineInput[];
+  readonly closeRemainingCod: boolean;
+}
+
+export interface RefundDto {
+  readonly id: string;
+  readonly receiptId: string;
+  readonly reference: string;
+  readonly source: 'ManualBankTransfer' | 'ManualCash';
+  readonly amount: number;
+  readonly currency: string;
+  readonly reason: string;
+  readonly refundedAtUtc: string;
+}
+
+export interface PhysicalReturnDto {
+  readonly id: string;
+  readonly reference: string;
+  readonly reason: string;
+  readonly receivedAtUtc: string;
+  readonly closeRemainingCod: boolean;
+  readonly items: readonly ReturnLineInput[];
+}
+
+export interface RefundResult {
+  readonly refund: RefundDto;
+  readonly orderVersion: string;
+  readonly closed: boolean;
+}
+
+export interface ReturnResult {
+  readonly return: PhysicalReturnDto;
+  readonly orderVersion: string;
+  readonly closed: boolean;
 }
 
 export interface OrderListQuery {

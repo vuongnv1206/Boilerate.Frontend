@@ -86,12 +86,171 @@ test('system: create a role and assign it to an existing user', async ({ page, c
   await expect(page.getByRole('status')).toContainText('Đã lưu');
   await page.getByRole('link', { name: 'Người dùng', exact: true }).click();
   await page.getByRole('link', { name: 'Nhân viên Nội dung', exact: true }).click();
+  await page.getByRole('button', { name: 'Vai trò được gán', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Nhân viên kiểm thử', exact: true }).check();
   await page.getByRole('button', { name: 'Lưu vai trò', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Đã lưu vai trò');
   expect(api.writes.find((w) => w.path === 'users/worker/roles')?.body['roleIds']).toContain(
     api.roles.find((r) => r.name === 'Nhân viên kiểm thử')?.id,
   );
+});
+
+test('system users: creation validates input, renders field errors and leaves no saved draft', async ({
+  page,
+  context,
+}, testInfo) => {
+  const api = await installSystemApi(context);
+  await ready(page, '/admin/system/users');
+  await page.screenshot({ path: testInfo.outputPath('user-list.png'), fullPage: true });
+  await page.getByRole('link', { name: 'Thêm người dùng', exact: true }).click();
+  await page.getByLabel('Họ *', { exact: true }).fill('Nguyễn Văn');
+  await page.getByLabel('Tên *', { exact: true }).fill('Nhân viên vận hành cửa hàng');
+  await page.getByLabel('Email *', { exact: true }).fill('new-staff@example.test');
+  await page.getByLabel('Tên đăng nhập *', { exact: true }).fill('new-staff');
+  await page.getByLabel('Mật khẩu ban đầu *', { exact: true }).fill('InitialPassword!234');
+  await page.getByLabel('Nhập lại mật khẩu *', { exact: true }).fill('MismatchPassword!234');
+  await page.getByRole('button', { name: 'Tạo người dùng', exact: true }).click();
+  await expect(page.getByText('Mật khẩu nhập lại chưa khớp.', { exact: true })).toBeVisible();
+  expect(api.writes.filter((write) => write.path === 'users/create')).toHaveLength(0);
+  await page.getByLabel('Nhập lại mật khẩu *', { exact: true }).fill('InitialPassword!234');
+  api.failNextUserMutation(400, { UserName: ['Tên đăng nhập đã tồn tại.'] });
+  await page.getByRole('button', { name: 'Tạo người dùng', exact: true }).click();
+  await expect(page.locator('#user-username-error')).toHaveText('Tên đăng nhập đã tồn tại.');
+  await expect(page.locator('#user-username')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator('#user-password')).toHaveValue('InitialPassword!234');
+  await page.locator('#user-username').fill('new-staff-unique');
+  await page.getByRole('button', { name: 'Tạo người dùng', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Tạo người dùng thành công', exact: true }),
+  ).toBeVisible();
+  expect(api.users.find((user) => user.userName === 'new-staff-unique')?.emailConfirmed).toBe(
+    false,
+  );
+  await page.screenshot({ path: testInfo.outputPath('user-created.png'), fullPage: true });
+  await page.getByRole('link', { name: 'Quay lại danh sách người dùng', exact: true }).click();
+  await expect(page).toHaveURL(/\/system\/users$/u);
+  await expect(page.getByRole('dialog', { name: 'Bỏ thay đổi người dùng?' })).toHaveCount(0);
+  await page
+    .getByRole('link', { name: 'Nguyễn Văn Nhân viên vận hành cửa hàng', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Gửi link đặt lại mật khẩu', exact: true }),
+  ).toBeDisabled();
+});
+
+test('system users: conflict retains profile and image draft, reload asks and a retry uses the version', async ({
+  page,
+  context,
+}, testInfo) => {
+  const api = await installSystemApi(context);
+  await ready(page, '/admin/system/users/worker');
+  await page.screenshot({ path: testInfo.outputPath('user-profile.png'), fullPage: true });
+  await expect(page.locator('#user-email')).toBeDisabled();
+  await page.getByLabel('Họ *', { exact: true }).fill('Tên hồ sơ đang chỉnh sửa');
+  await page.getByLabel('Số điện thoại', { exact: true }).fill('');
+  await page.getByLabel('Ảnh đại diện mới', { exact: true }).setInputFiles({
+    name: 'avatar.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('fixture-image'),
+  });
+  api.failNextUserMutation(409);
+  await page.getByRole('button', { name: 'Lưu hồ sơ', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('tải lại để đối chiếu');
+  await expect(page.locator('#user-first-name')).toHaveValue('Tên hồ sơ đang chỉnh sửa');
+  await expect(page.getByText('Đã chọn: avatar.png', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Tải lại', exact: true }).click();
+  const confirmation = page.getByRole('dialog', { name: 'Bỏ thay đổi người dùng?', exact: true });
+  await expect(confirmation).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath('user-conflict-confirmation.png'),
+    fullPage: true,
+  });
+  await confirmation.getByRole('button', { name: 'Ở lại', exact: true }).click();
+  await expect(page.locator('#user-first-name')).toHaveValue('Tên hồ sơ đang chỉnh sửa');
+  await page.getByRole('button', { name: 'Lưu hồ sơ', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Đã lưu');
+  const write = api.writes.filter((request) => request.path === 'users/worker').at(-1);
+  expect(write?.body['Version']).toBe('u1');
+  expect(write?.body['Image']).toBe('avatar.png');
+  expect(api.users[0]?.phoneNumber).toBeNull();
+  expect(api.users[0]?.imageUrl).toBe('/uploads/avatar.png');
+  await expect(page.getByRole('button', { name: 'Lưu hồ sơ', exact: true })).toBeDisabled();
+});
+
+test('system users: status, roles and reset keep an independent profile draft', async ({
+  page,
+  context,
+}, testInfo) => {
+  const api = await installSystemApi(context);
+  await ready(page, '/admin/system/users/worker');
+  await page.getByLabel('Họ *', { exact: true }).fill('Hồ sơ chưa lưu');
+  await page.getByRole('button', { name: 'Vô hiệu hóa tài khoản', exact: true }).click();
+  const action = page.getByRole('dialog', { name: 'Xác nhận thao tác', exact: true });
+  await expect(action).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('user-status-dialog.png'), fullPage: true });
+  await page.keyboard.press('Escape');
+  await expect(action).not.toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Vô hiệu hóa tài khoản', exact: true }),
+  ).toBeFocused();
+  await page.getByRole('button', { name: 'Vô hiệu hóa tài khoản', exact: true }).click();
+  await action.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Kích hoạt tài khoản', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('#user-first-name')).toHaveValue('Hồ sơ chưa lưu');
+  const statusVersion = api.users[0]?.version;
+  expect(api.writes.find((write) => write.path.endsWith('/toggle-status'))?.body).toMatchObject({
+    version: 'u1',
+    activateUser: false,
+    userId: 'worker',
+  });
+  await page.getByRole('button', { name: 'Vai trò được gán', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Nhân viên nội dung', exact: false }).uncheck();
+  await page.getByRole('button', { name: 'Lưu vai trò', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Đã lưu vai trò');
+  expect(api.writes.find((write) => write.path === 'users/worker/roles')?.body['version']).toBe(
+    statusVersion,
+  );
+  await page.getByRole('button', { name: /^Thông tin tài khoản/u }).click();
+  await expect(page.locator('#user-first-name')).toHaveValue('Hồ sơ chưa lưu');
+  await page.getByRole('button', { name: 'Gửi link đặt lại mật khẩu', exact: true }).click();
+  await action.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Đã yêu cầu gửi liên kết đặt lại mật khẩu.');
+  await expect(page.locator('#user-first-name')).toHaveValue('Hồ sơ chưa lưu');
+  expect(api.writes.filter((write) => write.path.endsWith('/password-reset'))).toHaveLength(1);
+  await page.getByRole('link', { name: 'Quay lại', exact: true }).click();
+  const confirmation = page.getByRole('dialog', { name: 'Bỏ thay đổi người dùng?', exact: true });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: 'Ở lại', exact: true }).click();
+  await expect(page.locator('#user-first-name')).toHaveValue('Hồ sơ chưa lưu');
+});
+
+test('system users: view-only access disables writes and prevents a create URL', async ({
+  page,
+  context,
+}) => {
+  const api = await installSystemApi(context);
+  api.setUserPermissions(['View']);
+  await ready(page, '/admin/system/users/worker');
+  await expect(page.locator('#user-first-name')).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Lưu hồ sơ', exact: true })).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: 'Vô hiệu hóa tài khoản', exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: 'Gửi link đặt lại mật khẩu', exact: true }),
+  ).toBeDisabled();
+  await page.getByRole('button', { name: 'Vai trò được gán', exact: true }).click();
+  await expect(
+    page.getByRole('checkbox', { name: 'Nhân viên nội dung', exact: false }),
+  ).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Lưu vai trò', exact: true })).toBeDisabled();
+  await page.goto('/admin/system/users/new');
+  await expect(page).toHaveURL(/\/admin\/forbidden$/u);
+  expect(
+    api.writes.filter((write) => write.path.startsWith('users/') && write.path !== 'users/search'),
+  ).toHaveLength(0);
 });
 
 test('system: group dialog inherits theme, saves API data and closes with the keyboard', async ({

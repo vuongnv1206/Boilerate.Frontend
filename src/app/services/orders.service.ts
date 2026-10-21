@@ -3,12 +3,18 @@ import { Observable } from 'rxjs';
 import { ApiClient } from '@core/http/api-client';
 import {
   ConfirmPaymentRequest,
+  ConfirmRefundRequest,
   AfterSalesSummary,
+  DeliverShipmentRequest,
+  DispatchShipmentRequest,
   OrderDto,
   OrderHistoryEntry,
   OrderListQuery,
   OrderPage,
   ShipmentSummary,
+  ReceiveReturnRequest,
+  RefundResult,
+  ReturnResult,
 } from '@models/order.dto';
 
 @Injectable()
@@ -46,8 +52,34 @@ export class OrdersService {
     );
   }
 
+  dispatchShipment(id: string, request: DispatchShipmentRequest): Observable<ShipmentSummary> {
+    return this.api.post<ShipmentSummary>(
+      `admin/orders/${encodeURIComponent(id)}/shipments`,
+      request,
+    );
+  }
+
+  deliverShipment(
+    orderId: string,
+    shipmentId: string,
+    request: DeliverShipmentRequest,
+  ): Observable<ShipmentSummary> {
+    return this.api.post<ShipmentSummary>(
+      `admin/orders/${encodeURIComponent(orderId)}/shipments/${encodeURIComponent(shipmentId)}/deliver`,
+      request,
+    );
+  }
+
   afterSales(id: string): Observable<AfterSalesSummary> {
     return this.api.get<AfterSalesSummary>(`admin/orders/${encodeURIComponent(id)}/after-sales`);
+  }
+
+  confirmRefund(id: string, request: ConfirmRefundRequest): Observable<RefundResult> {
+    return this.api.post(`admin/orders/${encodeURIComponent(id)}/refunds`, request);
+  }
+
+  receiveReturn(id: string, request: ReceiveReturnRequest): Observable<ReturnResult> {
+    return this.api.post(`admin/orders/${encodeURIComponent(id)}/returns`, request);
   }
 
   cancel(id: string, version: string): Observable<OrderDto> {

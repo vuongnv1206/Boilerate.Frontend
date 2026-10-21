@@ -2,6 +2,22 @@
 
 Chỉ ghi các khả năng đã triển khai theo mốc. Chi tiết sửa code tra trong Git; cách ghi tài liệu theo [quy tắc docs](../README.md#quy-tắc-duy-trì-docs).
 
+## 21/10/2026 — Vận hành shipping và hậu mãi trong Admin Orders
+
+Chi tiết đơn hiển thị shipment, ledger hoàn tiền và hàng nhận trả về. Nhân viên có quyền có thể giao từng phần, xác nhận shipment, ghi khoản hoàn đã chuyển và nhận lại hàng theo số đã xuất. Các thao tác dùng version/idempotency; COD cần xác nhận thu riêng. Xem [Admin Orders](../features/admin-orders.md).
+
+## 21/10/2026 — Quản lý SKU, giá và tồn qua web
+
+Chủ shop có thể tạo lựa chọn và SKU, quản lý giá/default, điều chỉnh tồn vật lý và quản lý tồn số Unique/Shared theo quyền. Xem [Collections](../features/live-admin-collections.md).
+
+## 21/10/2026 — Catalog workspace theo trải nghiệm Webflow
+
+Danh sách sản phẩm compact giữ filter/sort trong URL, editor giữ rail sản phẩm và lưu content/options/SKU/giá/default/gallery trong một transaction. Categories có số sản phẩm, ảnh có preview xác thực, bulk status và nhân bản Draft dùng ID mới. CSV được để sau catalog. Xem [Collections](../features/live-admin-collections.md) và [hồ sơ phối hợp BE–FE](../../../Boilerate/docs/shared/features/catalog-workspace.md).
+
+## 21/10/2026 — Xử lý gia hạn thủ công
+
+Nhân viên có thể claim, bắt đầu xử lý có ghi nhận, xác minh kết quả/hạn mới và xem nội dung tài khoản hoặc bằng chứng theo quyền, có audit. Xem [Admin Renewals](../features/admin-renewals.md).
+
 ## 21/10/2026 — Quản trị phân quyền theo nhóm
 
 Có màn vai trò với danh mục nhóm/chức năng/action từ API, chọn nhanh theo kết quả lọc, quản lý danh mục và gán vai trò cho tài khoản hiện có. Menu/route/thao tác dùng chung checker Function–Action và trạng thái CentralAdmin từ BE. Xem [Quản trị hệ thống](../features/system-administration.md) và bằng chứng tích hợp được dẫn tại đó; runtime đợt này chỉ SQL Server.

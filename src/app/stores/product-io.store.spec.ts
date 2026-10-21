@@ -54,7 +54,7 @@ describe('ProductIoStore', () => {
     productTypes: vi.fn(),
     productType: vi.fn(),
     create: vi.fn(),
-    edit: vi.fn(),
+    saveEditor: vi.fn(),
     changeStatus: vi.fn(),
   };
   let store: ProductIoStore;
@@ -67,7 +67,7 @@ describe('ProductIoStore', () => {
     );
     service.productTypes.mockReturnValue(of([schema]));
     service.productType.mockReturnValue(of(schema));
-    service.edit.mockReturnValue(of({ ...item, version: 'product-version-2' }));
+    service.saveEditor.mockReturnValue(of({ ...item, version: 'product-version-2' }));
     service.create.mockReturnValue(of(item));
     service.changeStatus.mockReturnValue(
       of({ ...item, status: ProductStatus.Published, version: 'product-version-3' }),
@@ -96,16 +96,16 @@ describe('ProductIoStore', () => {
     expect(store.form.disabled).toBe(true);
     store.save().subscribe();
     store.changeStatus(ProductStatus.Published);
-    expect(service.edit).not.toHaveBeenCalled();
+    expect(service.saveEditor).not.toHaveBeenCalled();
     expect(service.changeStatus).not.toHaveBeenCalled();
   });
 
   it('loads typed detail and saves content with both concurrency versions, preserving media', () => {
     store.load(item.id);
     changeName();
-    expect(service.edit).not.toHaveBeenCalled();
+    expect(service.saveEditor).not.toHaveBeenCalled();
     store.save().subscribe();
-    expect(service.edit).toHaveBeenCalledWith({
+    expect(service.saveEditor).toHaveBeenCalledWith({
       id: item.id,
       version: item.version,
       productTypeVersion: schema.version,
@@ -117,6 +117,18 @@ describe('ProductIoStore', () => {
         fields: [],
         media: item.media,
       },
+      optionEdits: [],
+      variantEdits: [
+        {
+          variantId: 'variant-1',
+          price: 120000,
+          compareAtPrice: null,
+          isActive: true,
+          imageMediaId: null,
+        },
+      ],
+      addedVariants: [],
+      defaultVariantSku: 'SKU-1',
     });
     expect(store.item()?.version).toBe('product-version-2');
     expect(store.form.pristine).toBe(true);
@@ -152,7 +164,7 @@ describe('ProductIoStore', () => {
   it('keeps dirty input and concurrency version after a 409 instead of auto retrying', () => {
     store.load(item.id);
     changeName('Tên đang nhập');
-    service.edit.mockReturnValue(
+    service.saveEditor.mockReturnValue(
       throwError(
         () => new ApiError({ status: 409, kind: 'conflict', message: 'conflict', fieldErrors: {} }),
       ),
@@ -162,7 +174,7 @@ describe('ProductIoStore', () => {
     expect(store.form.controls.name.value).toBe('Tên đang nhập');
     expect(store.form.dirty).toBe(true);
     expect(store.item()?.version).toBe(item.version);
-    expect(service.edit).toHaveBeenCalledTimes(1);
+    expect(service.saveEditor).toHaveBeenCalledTimes(1);
     expect(store.busy()).toBe(false);
   });
 
@@ -189,7 +201,7 @@ describe('ProductIoStore', () => {
     });
 
     expect(service.create).toHaveBeenCalledTimes(1);
-    expect(service.edit).toHaveBeenCalledWith(
+    expect(service.saveEditor).toHaveBeenCalledWith(
       expect.objectContaining({
         id: item.id,
         content: expect.objectContaining({ name: 'Nội dung mới hơn' }),
@@ -202,7 +214,7 @@ describe('ProductIoStore', () => {
   it('maps server content validation back to the form and retains unsaved values', () => {
     store.load(item.id);
     changeName('Tên đang nhập');
-    service.edit.mockReturnValue(
+    service.saveEditor.mockReturnValue(
       throwError(
         () =>
           new ApiError({
@@ -221,12 +233,12 @@ describe('ProductIoStore', () => {
 
   it('blocks duplicate submissions and does not erase edits made while a save is pending', () => {
     const pending = new Subject<ProductDto>();
-    service.edit.mockReturnValue(pending);
+    service.saveEditor.mockReturnValue(pending);
     store.load(item.id);
     changeName('Phiên bản gửi');
     store.save().subscribe();
     store.save().subscribe();
-    expect(service.edit).toHaveBeenCalledTimes(1);
+    expect(service.saveEditor).toHaveBeenCalledTimes(1);
     changeName('Thay đổi mới hơn');
     pending.next({ ...item, name: 'Phiên bản gửi', version: 'new-version' });
     expect(store.form.controls.name.value).toBe('Thay đổi mới hơn');
@@ -314,7 +326,7 @@ describe('ProductIoStore', () => {
     store.load(item.id);
     store.form.controls.fields.controls['field-number']?.setValue(0);
     changeName();
-    service.edit.mockReturnValue(
+    service.saveEditor.mockReturnValue(
       throwError(
         () =>
           new ApiError({
@@ -335,5 +347,73 @@ describe('ProductIoStore', () => {
     expect(store.summary()).toEqual(['Cần kiểm tra dữ liệu liên quan']);
     expect(store.form.controls.fields.controls['field-number']?.value).toBe(0);
     expect(store.form.dirty).toBe(true);
+  });
+  it('saves content and SKU prices in one versioned command and retains the draft on conflict reload', () => {
+    store.load(item.id);
+    changeName('Nội dung mới');
+    store.form.controls.variants.at(0).controls.price.setValue(99000);
+    service.saveEditor.mockReturnValue(
+      throwError(
+        () => new ApiError({ status: 409, kind: 'conflict', message: 'Conflict', fieldErrors: {} }),
+      ),
+    );
+    store.save().subscribe();
+    expect(service.saveEditor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.objectContaining({ name: 'Nội dung mới' }),
+        variantEdits: [expect.objectContaining({ variantId: 'variant-1', price: 99000 })],
+        defaultVariantSku: 'SKU-1',
+      }),
+    );
+    service.get.mockReturnValue(of({ ...item, name: 'Tên từ máy chủ', version: 'fresh-version' }));
+    store.reloadCanonical();
+    expect(store.item()?.version).toBe('fresh-version');
+    expect(store.form.controls.name.value).toBe('Nội dung mới');
+    expect(store.form.controls.variants.at(0).controls.price.value).toBe(99000);
+    expect(store.form.dirty).toBe(true);
+    service.saveEditor.mockReturnValue(of({ ...item, version: 'saved-version' }));
+    store.save().subscribe();
+    expect(service.saveEditor).toHaveBeenLastCalledWith(
+      expect.objectContaining({ version: 'fresh-version' }),
+    );
+  });
+
+  it('duplicates content and image links into a new draft with fresh SKU identities and no stock calls', () => {
+    store.load(null, item.id);
+    expect(store.item()).toBeNull();
+    expect(store.form.controls.slug.value).toBe('ghe-copy');
+    expect(store.form.controls.sku.value).toBe('SKU-1-COPY');
+    expect(store.form.controls.variants.at(0).controls.id.value).toBe('');
+    expect(store.form.controls.media.getRawValue()).toEqual(item.media);
+    expect(store.form.dirty).toBe(true);
+    store.save().subscribe();
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.objectContaining({ name: 'Ghế (bản sao)', media: item.media }),
+        variants: [expect.objectContaining({ sku: 'SKU-1-COPY' })],
+      }),
+    );
+    expect(service.saveEditor).not.toHaveBeenCalled();
+  });
+
+  it('keeps canonical prices and strips new prices when Price.Update is absent', () => {
+    vi.spyOn(store, 'canPrice').mockReturnValue(false);
+    store.load(item.id);
+    changeName();
+    store.form.controls.variants.at(0).controls.price.setValue(1);
+    store.save().subscribe();
+    expect(service.saveEditor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variantEdits: [expect.objectContaining({ price: 120000 })],
+      }),
+    );
+  });
+  it('clears copied prices visibly when duplicating without Price.Update', () => {
+    vi.spyOn(store, 'canPrice').mockReturnValue(false);
+    store.load(null, item.id);
+    expect(store.form.controls.price.value).toBeNull();
+    expect(store.form.controls.variants.at(0).controls.price.value).toBeNull();
+    expect(store.form.controls.variants.at(0).controls.compareAtPrice.value).toBeNull();
+    expect(store.notice()).toContain('Giá không được sao chép');
   });
 });

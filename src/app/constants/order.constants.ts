@@ -3,6 +3,7 @@ import {
   OrderPaymentMethod,
   OrderPaymentStatus,
   OrderStatus,
+  ShipmentStatus,
 } from '@models/order.dto';
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -46,3 +47,8 @@ export const ORDER_PAYMENT_METHOD_LABELS: Record<OrderPaymentMethod, string> = {
 };
 
 export const ORDER_PAGE_SIZES = [10, 20, 50] as const;
+
+export const SHIPMENT_STATUS_LABELS: Record<ShipmentStatus, string> = {
+  [ShipmentStatus.Dispatched]: 'Đang giao',
+  [ShipmentStatus.Delivered]: 'Đã giao',
+};

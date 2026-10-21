@@ -20,13 +20,13 @@ GetDesign Webflow trong thư viện local phân tích website marketing. Chỉ d
 | Topbar             | 44px                                                                  | Mỏng, tên workspace và ngữ cảnh; action ngắn gọn phía phải                  |
 | Panel ngữ cảnh     | 240px, min 200px, max 320px                                           | Điều hướng theo nhóm; kéo mép phải để resize; thu gọn và nhớ kích thước     |
 | Toolbar vùng chính | Khoảng 48px, tăng khi cần wrap                                        | Tiêu đề, search/filter và action của màn hiện tại                           |
-| Inspector          | 280px                                                                 | Bên phải editor; nhóm trạng thái và metadata; cuộn độc lập khi cần          |
+| Rail sản phẩm      | 218px desktop; 240px overlay tablet                                      | Giữ danh sách và bộ lọc cạnh editor; tablet mở bằng panel có focus trap     |
 | Control            | 30px chuẩn desktop                                                    | Form, toolbar và bảng dùng cùng nhịp; textarea/đa dòng tự mở rộng           |
 | Bảng               | Header 34px; dòng 62px cho fixture hai dòng (68px từ viewport 1500px) | Thumbnail 36px; tên chính 13px, metadata 11px; viền ngang mảnh; số căn phải |
 
-Shell chiếm viewport, tránh scroll cả document trên desktop. Panel và phần nội dung cuộn trong vùng sở hữu; header/toolbar giữ ổn định. List dùng hết vùng chính, không bọc trong card lớn. Editor dùng form nhóm trường ở giữa và inspector bên phải, vẫn giữ điều hướng workspace.
+Shell chiếm viewport, tránh scroll cả document trên desktop. Panel và phần nội dung cuộn trong vùng sở hữu; header/toolbar giữ ổn định. List dùng hết vùng chính, không bọc trong card lớn. Catalog editor giữ rail sản phẩm bên trái; metadata nằm ở cuối form và không lặp thành inspector.
 
-Mốc responsive triển khai: tối đa 1050px, inspector chuyển xuống dưới; tối đa 760px, panel điều hướng chuyển thành lớp phủ có trạng thái modal. Rail/action vẫn truy cập được; bảng được cuộn ngang trong container có tên truy cập. Không ẩn dữ liệu quan trọng chỉ để làm ảnh gọn. Control và hit target ở màn nhỏ tăng tới ít nhất 40px. Các breakpoint và hit target này đã có CSS/unit coverage, chưa được nghiệm thu browser mobile.
+Mốc responsive triển khai: tối đa 1150px, rail sản phẩm chuyển thành panel overlay; tối đa 760px, toolbar và form co lại. Rail/action vẫn truy cập được; bảng được cuộn ngang trong container có tên truy cập. Không ẩn dữ liệu quan trọng chỉ để làm ảnh gọn. Control và hit target ở màn nhỏ tăng tới ít nhất 40px. Các breakpoint và hit target này đã có CSS/unit coverage, chưa được nghiệm thu browser mobile.
 
 Resize có pointer capture/cleanup; giới hạn min/max và bảo vệ khi storage không khả dụng. Separator có accessible name, `role="separator"`, giá trị hiện tại và hỗ trợ ArrowLeft/ArrowRight; có nút thu gọn/mở thay cho kéo. Preference không chứa nội dung form.
 
@@ -83,7 +83,7 @@ Control gallery phải cho thử trạng thái thay vì chỉ vẽ ảnh. Giữ 
 
 Danh sách: breadcrumb/tiêu đề, search tiếng Việt, filter trạng thái, chọn dòng, count và pagination. Cột tên có link mở editor; checkbox không vô tình mở dòng. Không có kết quả thì giữ query/filter và cho cách xóa bộ lọc.
 
-Editor: quay lại danh sách, tên bản ghi, save status và action ở toolbar; form nhóm trường rõ; inspector chứa trạng thái và metadata. Collections lưu qua API thật; chỉ báo thành công sau phản hồi server. Validation chặn lưu thiếu trường; dirty state không bị mất âm thầm khi chuyển màn. Giữ trạng thái tìm/lọc/phân trang khi quay lại nếu màn hiện tại hỗ trợ. Gallery tiếp tục là nơi thử control.
+Editor: quay lại danh sách, tên bản ghi, save status và action ở toolbar; form nhóm trường rõ; ảnh, options và bảng variants dùng chung bản nhập, metadata ở cuối. Collections lưu qua API thật; chỉ báo thành công sau phản hồi server. Validation chặn lưu thiếu trường; dirty state không bị mất âm thầm khi chuyển màn. Giữ trạng thái tìm/lọc/phân trang khi quay lại nếu màn hiện tại hỗ trợ. Gallery tiếp tục là nơi thử control.
 
 Copy dùng tiếng Việt tự nhiên, ngắn gọn; tên nút là động từ gắn đối tượng. Nội dung dài wrap ở form, ellipsis ở cột có cách đọc đầy đủ. Ngày/số tiền theo locale Việt Nam; fixture phải có dấu và tên dài.
 

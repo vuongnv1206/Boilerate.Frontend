@@ -23,6 +23,7 @@ import { ApiError } from '@core/http/api-error';
 import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
 import { ProductsService } from '@services/products.service';
 import { ProductStatus } from '@enums/product.enum';
+import { generateSkuRows, optionInputs, skuInputs } from '@forms/product-commerce.form';
 import {
   configureProductFields,
   initializeProductForm,
@@ -30,6 +31,8 @@ import {
   productFieldAliases,
   setProductIdentityReadonly,
   toProductContent,
+  productEditorRequest,
+  productEditorAliases,
 } from '@forms/product.form';
 import { ProductCategoryLookup, ProductTypeLookup } from '@models/product-lookups.dto';
 import { CreateProduct, ProductDto } from '@models/product.dto';
@@ -45,6 +48,8 @@ export class ProductIoStore {
     this.session.can('Product', this.item() ? 'Update' : 'Create'),
   );
   readonly canPublish = computed(() => this.session.can('Product', 'Publish'));
+  readonly canCreate = computed(() => this.session.can('Product', 'Create'));
+  readonly canPrice = computed(() => this.session.can('Price', 'Update'));
   private readonly service = inject(ProductsService);
   private readonly destroyRef = inject(DestroyRef);
   private currentForm: ProductForm | null = null;
@@ -135,7 +140,7 @@ export class ProductIoStore {
       });
   }
 
-  load(id: string | null): void {
+  load(id: string | null, duplicateFrom: string | null = null): void {
     this.generation++;
     this.cancelRequests();
     const generation = this.generation;
@@ -152,8 +157,9 @@ export class ProductIoStore {
     this.summaryState.set([]);
     this.revision = 0;
     initializeProductForm(this.form, null);
+    const sourceId = id || duplicateFrom;
     this.loadSubscription = forkJoin({
-      item: id ? this.service.get(id) : of(null),
+      item: sourceId ? this.service.get(sourceId) : of(null),
       categories: this.service.categories(),
       types: this.service.productTypes(),
     })
@@ -172,7 +178,7 @@ export class ProductIoStore {
       .subscribe({
         next: ({ item, categories, types, schema }) => {
           if (generation !== this.generation) return;
-          this.itemState.set(item);
+          this.itemState.set(duplicateFrom ? null : item);
           this.categoriesState.set(
             categories.filter(
               (category) => category.isActive || item?.categoryIds.includes(category.id),
@@ -183,12 +189,49 @@ export class ProductIoStore {
           );
           this.schemaState.set(schema);
           initializeProductForm(this.form, item);
+          if (duplicateFrom && item) {
+            this.form.controls.name.setValue(`${item.name} (bản sao)`, { emitEvent: false });
+            this.form.controls.slug.setValue(`${item.slug.slice(0, 190)}-copy`, {
+              emitEvent: false,
+            });
+            this.form.controls.sku.setValue(
+              `${item.variants.find((variant) => variant.isDefault)?.sku ?? 'SKU'}-COPY`,
+              { emitEvent: false },
+            );
+            for (const option of this.form.controls.options.controls) {
+              option.controls.id.setValue('', { emitEvent: false });
+              for (const value of option.controls.values.controls)
+                value.controls.id.setValue('', { emitEvent: false });
+            }
+            for (const row of this.form.controls.variants.controls) {
+              row.controls.id.setValue('', { emitEvent: false });
+              row.controls.sku.setValue(`${row.controls.sku.value.slice(0, 90)}-COPY`, {
+                emitEvent: false,
+              });
+              if (!this.canPrice())
+                row.patchValue({ price: null, compareAtPrice: null }, { emitEvent: false });
+            }
+            if (!this.canPrice()) this.form.controls.price.setValue(null, { emitEvent: false });
+            this.form.controls.defaultVariantSku.setValue(
+              `${item.variants.find((variant) => variant.isDefault)?.sku ?? ''}-COPY`,
+              { emitEvent: false },
+            );
+          }
           if (schema) {
             this.form.controls.productTypeId.setValue(schema.id, { emitEvent: false });
             configureProductFields(this.form, schema, item?.fields);
           }
           this.applyAccess();
           this.form.markAsPristine();
+          if (duplicateFrom) {
+            this.form.markAsDirty();
+            this.dirtyState.set(true);
+            this.noticeState.set(
+              this.canPrice()
+                ? 'Bản sao chưa được tạo. Kiểm tra đường dẫn, mã SKU và lưu sản phẩm mới.'
+                : 'Bản sao chưa được tạo. Giá không được sao chép vì chưa có quyền cập nhật giá; kiểm tra đường dẫn và mã SKU rồi lưu sản phẩm mới.',
+            );
+          }
           this.loadingState.set(false);
           this.loadedState.set(true);
           if (!schema)
@@ -214,26 +257,77 @@ export class ProductIoStore {
         return EMPTY;
       }
       const item = this.item();
+      if (!item && this.form.controls.options.length) {
+        const options = optionInputs(this.form.controls.options.controls);
+        const variants = skuInputs(this.form.controls.variants.controls);
+        try {
+          generateSkuRows(options, '', null, []);
+        } catch (error: unknown) {
+          this.errorState.set(error instanceof Error ? error.message : 'Kiểm tra lựa chọn SKU.');
+          return EMPTY;
+        }
+        const selectionKey = (value: Readonly<Record<string, string>>) =>
+          JSON.stringify(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)));
+        if (
+          !variants.length ||
+          variants.length > 200 ||
+          new Set(variants.map((variant) => variant.sku.toUpperCase())).size !== variants.length ||
+          new Set(variants.map((variant) => selectionKey(variant.options))).size !==
+            variants.length ||
+          variants.some(
+            (variant) =>
+              Object.keys(variant.options).length !== options.length ||
+              options.some(
+                (option) =>
+                  !option.values.some((value) => value.code === variant.options[option.code]),
+              ),
+          )
+        ) {
+          this.errorState.set(
+            'Tạo lại tổ hợp sau khi sửa lựa chọn; giữ ít nhất một SKU có mã và tổ hợp riêng.',
+          );
+          return EMPTY;
+        }
+      }
       const content = toProductContent(this.form, schema, item);
       const raw = this.form.getRawValue();
-      const request: Observable<ProductDto> = item
-        ? this.service.edit({
-            id: item.id,
-            version: item.version,
-            productTypeVersion: schema.version,
-            content,
-          })
+      const editorRequest = item
+        ? productEditorRequest(this.form, schema, item, this.canPrice())
+        : null;
+      const request: Observable<ProductDto> = editorRequest
+        ? this.service.saveEditor(editorRequest)
         : this.service.create({
             productTypeId: schema.id,
             productTypeVersion: schema.version,
             content,
-            options: [],
-            variants: [
-              { sku: raw.sku.trim(), price: raw.price ?? 0, compareAtPrice: null, options: {} },
-            ],
+            options: optionInputs(this.form.controls.options.controls),
+            variants: this.form.controls.options.length
+              ? skuInputs(this.form.controls.variants.controls).map((variant) =>
+                  this.canPrice() ? variant : { ...variant, price: null, compareAtPrice: null },
+                )
+              : [
+                  {
+                    sku: raw.sku.trim(),
+                    price: this.canPrice() ? raw.price : null,
+                    compareAtPrice: null,
+                    options: {},
+                  },
+                ],
             fulfillmentKind: raw.fulfillmentKind,
+            defaultVariantSku: raw.defaultVariantSku || raw.variants[0]?.sku || raw.sku.trim(),
           } satisfies CreateProduct);
-      const aliases = productFieldAliases(content.fields);
+      const aliases = {
+        ...(editorRequest
+          ? productEditorAliases(editorRequest, this.form)
+          : productFieldAliases(content.fields)),
+      };
+      if (!item && raw.options.length) {
+        raw.variants.forEach((_variant, index) => {
+          for (const field of ['Sku', 'Price', 'CompareAtPrice'])
+            aliases[`Variants[${index}].${field}`] =
+              `variants.${index}.${field[0]?.toLowerCase()}${field.slice(1)}`;
+        });
+      }
       const generation = this.generation;
       const revision = this.revision;
       this.busyState.set(true);
@@ -309,6 +403,95 @@ export class ProductIoStore {
     this.noticeState.set('');
   }
 
+  generateSkus(): void {
+    if (!this.isNew() || !this.canWrite()) return;
+    this.form.controls.options.markAllAsTouched();
+    if (this.form.controls.options.invalid) {
+      this.errorState.set('Kiểm tra mã và tên lựa chọn trước khi tạo tổ hợp.');
+      return;
+    }
+    try {
+      const rows = generateSkuRows(
+        optionInputs(this.form.controls.options.controls),
+        this.form.controls.sku.value,
+        this.canPrice() ? this.form.controls.price.value : null,
+        this.form.controls.variants.controls,
+      );
+      this.form.controls.variants.clear({ emitEvent: false });
+      rows.forEach((row) => this.form.controls.variants.push(row, { emitEvent: false }));
+      this.form.markAsDirty();
+      this.form.updateValueAndValidity();
+      this.dirtyState.set(true);
+      this.errorState.set('');
+    } catch (error: unknown) {
+      this.errorState.set(error instanceof Error ? error.message : 'Không tạo được tổ hợp SKU.');
+    }
+  }
+
+  acceptCommerceProduct(product: ProductDto): void {
+    if (this.item()?.id !== product.id) return;
+    this.itemState.set(product);
+    const schema = this.schema();
+    if (!this.form.dirty && schema) {
+      initializeProductForm(this.form, product);
+      configureProductFields(this.form, schema, product.fields);
+      this.applyAccess();
+      this.form.markAsPristine();
+    }
+  }
+
+  discard(): void {
+    const schema = this.schema();
+    initializeProductForm(this.form, this.item());
+    if (schema) configureProductFields(this.form, schema, this.item()?.fields);
+    this.applyAccess();
+    this.form.markAsPristine();
+    this.dirtyState.set(false);
+    this.errorState.set('');
+    this.summaryState.set([]);
+  }
+
+  reloadCanonical(): void {
+    const item = this.item();
+    if (!item || this.busy()) return;
+    const generation = this.generation;
+    this.busyState.set(true);
+    this.service
+      .get(item.id)
+      .pipe(
+        take(1),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          if (generation === this.generation) this.busyState.set(false);
+        }),
+      )
+      .subscribe({
+        next: (saved) => {
+          if (generation !== this.generation) return;
+          this.itemState.set(saved);
+          if (!this.canPrice()) {
+            for (const row of this.form.controls.variants.controls) {
+              const canonical = saved.variants.find(
+                (variant) => variant.id === row.controls.id.value,
+              );
+              if (canonical)
+                row.patchValue(
+                  { price: canonical.price, compareAtPrice: canonical.compareAtPrice },
+                  { emitEvent: false },
+                );
+            }
+          }
+          this.errorState.set('');
+          this.noticeState.set(
+            'Đã tải phiên bản mới. Nội dung đang nhập được giữ; kiểm tra rồi lưu lại.',
+          );
+        },
+        error: (error: unknown) => {
+          if (generation === this.generation) this.setError(error, 'Không tải được phiên bản mới.');
+        },
+      });
+  }
+
   hasUnsavedChanges(): boolean {
     return this.form.dirty || this.busy();
   }
@@ -349,15 +532,32 @@ export class ProductIoStore {
 
   private applyAccess(): void {
     if (!this.currentForm) return;
+    const wasDirty = this.currentForm.dirty;
     if (!this.canWrite()) {
       if (this.currentForm.enabled) this.currentForm.disable({ emitEvent: false });
     } else {
       if (this.currentForm.disabled) this.currentForm.enable({ emitEvent: false });
       setProductIdentityReadonly(this.currentForm, !!this.item() || this.busy());
+      for (const option of this.currentForm.controls.options.controls) {
+        if (option.controls.id.value) {
+          option.controls.code.disable({ emitEvent: false });
+          for (const value of option.controls.values.controls)
+            if (value.controls.id.value) value.controls.code.disable({ emitEvent: false });
+        }
+      }
+      for (const variant of this.currentForm.controls.variants.controls) {
+        if (variant.controls.id.value) variant.controls.sku.disable({ emitEvent: false });
+        if (!this.canPrice()) {
+          variant.controls.price.disable({ emitEvent: false });
+          variant.controls.compareAtPrice.disable({ emitEvent: false });
+        }
+      }
+      if (!this.canPrice()) this.currentForm.controls.price.disable({ emitEvent: false });
       for (const field of this.schema()?.fields ?? [])
         if (!field.isActive)
           this.currentForm.controls.fields.controls[field.id]?.disable({ emitEvent: false });
     }
+    if (wasDirty) this.currentForm.markAsDirty();
   }
 
   private cancelRequests(): void {

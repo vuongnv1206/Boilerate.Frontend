@@ -1,39 +1,32 @@
 <section class="collection-page" aria-labelledby="categories-heading">
-  <div class="collection-breadcrumb">
-    <ui-icon name="folder" [size]="14" /><span>Bộ sưu tập</span><span>/</span
-    ><strong>Danh mục</strong>
-  </div>
-  <header class="collection-heading">
-    <div class="heading-copy">
-      <div class="title-row">
-        <h1 id="categories-heading">Danh mục</h1>
-        <span>{{ store.items().length }}</span>
-      </div>
-      <p>Tổ chức sản phẩm theo nhóm và cấu trúc danh mục.</p>
-    </div>
+  <header class="catalog-list-toolbar">
+    <h1 id="categories-heading">
+      Danh mục <span>{{ store.items().length }}</span>
+    </h1>
+    <label class="search-field"
+      ><span class="sr-only">Tìm danh mục</span
+      ><input
+        id="categories-search"
+        type="search"
+        [value]="store.query()"
+        #searchInput
+        (input)="search(searchInput.value)"
+        placeholder="Tên hoặc slug…"
+    /></label>
+    <button
+      class="icon-button"
+      aria-label="Tải lại danh mục"
+      (click)="store.load()"
+      [disabled]="store.loading()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
     @if (store.canCreate()) {
       <a class="ui-button primary" routerLink="new" [queryParams]="routeQuery()"
         ><ui-icon name="plus" [size]="14" />Thêm danh mục</a
       >
     }
   </header>
-  <div class="collection-tabs">Tất cả danh mục</div>
-  <div class="collection-toolbar">
-    <label for="categories-search">Tìm kiếm</label
-    ><input
-      id="categories-search"
-      type="search"
-      [value]="store.query()"
-      #searchInput
-      (input)="search(searchInput.value)"
-      placeholder="Tên hoặc slug…"
-    />
-    <div class="toolbar-actions">
-      <button class="ui-button" (click)="store.load()" [disabled]="store.loading()">
-        <ui-icon name="refresh" [size]="14" />Tải lại
-      </button>
-    </div>
-  </div>
   @if (store.error()) {
     <div class="collection-notice error-notice" role="alert">{{ store.error() }}</div>
   }
@@ -59,6 +52,7 @@
             <th scope="col">Tên danh mục</th>
             <th scope="col">Danh mục cha</th>
             <th scope="col">Trạng thái</th>
+            <th scope="col">Sản phẩm</th>
             <th scope="col">Thứ tự</th>
             <th scope="col">Thao tác</th>
           </tr>
@@ -73,6 +67,17 @@
               </td>
               <td>{{ store.parentName(item.parentId) }}</td>
               <td>{{ item.isActive ? 'Hoạt động' : 'Đã tắt' }}</td>
+              <td>
+                @if (store.canViewProducts()) {
+                  <a
+                    routerLink="/admin/collections/products"
+                    [queryParams]="{ categoryId: item.id }"
+                    >{{ store.productCount(item.id) }} sản phẩm</a
+                  >
+                } @else {
+                  {{ store.productCount(item.id) }}
+                }
+              </td>
               <td>{{ item.sortOrder }}</td>
               <td>
                 <button

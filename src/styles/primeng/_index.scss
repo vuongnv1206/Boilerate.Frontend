@@ -24,12 +24,6 @@
   box-shadow: none;
 }
 
-.p-inputtext:enabled:focus,
-.p-textarea:enabled:focus,
-.p-inputnumber-input:enabled:focus {
-  box-shadow: 0 0 0 1px var(--focus-ring);
-}
-
 .p-select,
 .p-multiselect {
   min-height: var(--control-height);
@@ -53,10 +47,11 @@
 }
 
 .p-button {
-  min-height: 30px;
-  padding: 6px 10px;
+  min-height: var(--control-height);
+  padding: 5px 10px;
   gap: 6px;
   border-radius: var(--radius);
+  font-size: 12px;
   font-weight: 500;
   box-shadow: none;
 }

@@ -47,6 +47,13 @@ export class ApiClient {
     });
   }
 
+  blob(resource: string, options?: ApiRequestOptions): Observable<Blob> {
+    return this.http.get(apiUrl(this.config.apiBaseUrl, resource), {
+      ...options,
+      responseType: 'blob',
+    });
+  }
+
   request<T>(
     method: ApiMethod,
     resource: string,

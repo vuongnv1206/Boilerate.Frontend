@@ -8,7 +8,7 @@ test('URL state survives editor Back and browser Back, and is isolated between c
   await expect(page).toHaveURL(/\?page=2$/u);
   await page.locator('.content-table tbody a').first().click();
   await expect(page).toHaveURL(/products\/[0-9a-f-]+\?page=2$/u);
-  await page.locator('.editor-breadcrumb a').click();
+  await page.locator('.catalog-back').click();
   await expect(page).toHaveURL(/products\?page=2$/u);
   await expect(page.locator('.content-table tbody tr')).toHaveCount(4);
   await page.getByRole('searchbox', { name: 'Tìm sản phẩm' }).fill('tui');

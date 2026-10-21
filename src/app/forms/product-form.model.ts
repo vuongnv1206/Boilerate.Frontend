@@ -1,4 +1,5 @@
-import { FormControl, FormGroup, FormRecord } from '@angular/forms';
+import { FormArray, FormControl, FormGroup, FormRecord } from '@angular/forms';
+import { CreateOptionForm, CreateSkuForm } from '@forms/product-commerce.form';
 import { ProductFulfillmentKind } from '@enums/product.enum';
 
 export type ProductFieldControlValue = string | number | boolean | null;
@@ -12,5 +13,15 @@ export type ProductForm = FormGroup<{
   fulfillmentKind: FormControl<ProductFulfillmentKind>;
   sku: FormControl<string>;
   price: FormControl<number | null>;
+  defaultVariantSku: FormControl<string>;
+  media: FormArray<ProductMediaForm>;
+  options: FormArray<CreateOptionForm>;
+  variants: FormArray<CreateSkuForm>;
   fields: FormRecord<FormControl<ProductFieldControlValue>>;
+}>;
+
+export type ProductMediaForm = FormGroup<{
+  mediaAssetId: FormControl<string>;
+  sortOrder: FormControl<number>;
+  altText: FormControl<string | null>;
 }>;

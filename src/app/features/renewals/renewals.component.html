@@ -1,0 +1,138 @@
+<section class="collection-page renewals-page" aria-labelledby="renewals-title">
+  <div class="collection-breadcrumb">
+    <ui-icon name="layers" [size]="13" /><span>Workspace</span> ><ui-icon
+      name="chevron-right"
+      [size]="12"
+    /><strong>Gia hạn</strong>
+  </div>
+  <header class="collection-heading">
+    <div class="heading-copy">
+      <div class="title-row">
+        <h1 id="renewals-title">Gia hạn thủ công</h1>
+        <span class="total-count">{{ store.page().total }}</span>
+      </div>
+      <p>Nhận xử lý, theo dõi lần gia hạn và xác minh kết quả cho khách.</p>
+    </div>
+  </header>
+  <div class="collection-tabs">
+    <span class="active">Yêu cầu gia hạn</span
+    ><span class="collection-summary">Thông tin tài khoản luôn được che</span>
+  </div>
+  <div class="collection-toolbar renewals-toolbar">
+    <label class="renewal-filter" for="renewal-status"
+      >Trạng thái
+      <select
+        id="renewal-status"
+        [value]="store.selectedStatus() ?? ''"
+        (change)="setStatus($any($event.target).value)"
+      >
+        @for (option of statusOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+  </div>
+  @if (store.loading()) {
+    <ui-content-state
+      kind="loading"
+      layout="page"
+      title="Đang tải yêu cầu gia hạn"
+      message="Vui lòng chờ."
+    />
+  } @else if (store.error()) {
+    <ui-content-state
+      kind="error"
+      layout="page"
+      title="Không thể tải gia hạn"
+      [message]="store.error()"
+    >
+      <button class="ui-button" type="button" (click)="store.loadPage(store.page().pageNumber)">
+        Thử lại
+      </button>
+    </ui-content-state>
+  } @else {
+    <div class="collection-table">
+      <div class="table-scroll" role="region" aria-label="Danh sách yêu cầu gia hạn" tabindex="0">
+        <table class="content-table renewal-table">
+          <thead>
+            <tr>
+              <th>Mặt hàng</th>
+              <th>Mã đơn</th>
+              <th>Thông tin tài khoản</th>
+              <th>Trạng thái</th>
+              <th>Số lượng</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of store.page().items; track item.renewal.id) {
+              <tr>
+                <td class="name-cell">
+                  <a [routerLink]="[item.renewal.id]">{{ item.renewal.name }}</a
+                  ><span class="order-contact"
+                    >{{ item.renewal.sku
+                    }}{{
+                      item.renewal.optionDescription ? ' · ' + item.renewal.optionDescription : ''
+                    }}</span
+                  >
+                </td>
+                <td>
+                  @if (store.canViewOrders()) {
+                    <a [routerLink]="['/admin/orders', item.renewal.orderId]">Mở đơn hàng</a>
+                  } @else {
+                    <span class="renewal-order-reference">{{ item.renewal.orderId }}</span>
+                  }
+                </td>
+                <td>
+                  <span class="renewal-private-value">{{
+                    item.renewal.targetPreview || 'Chưa nhập'
+                  }}</span>
+                </td>
+                <td>
+                  <span class="renewal-status" [attr.data-status]="item.renewal.status">{{
+                    statuses[item.renewal.status]
+                  }}</span>
+                </td>
+                <td>{{ item.renewal.quantity }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="renewal-empty">Không có yêu cầu trong trạng thái này.</div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <nav class="renewal-pagination" aria-label="Phân trang gia hạn">
+        <span>Trang {{ store.page().pageNumber }} / {{ store.pageCount() }}</span>
+        <button
+          class="ui-button"
+          type="button"
+          [disabled]="store.page().pageNumber <= 1"
+          (click)="previous()"
+        >
+          Trước
+        </button>
+        @for (page of pageNumbers(); track page) {
+          <button
+            class="ui-button"
+            type="button"
+            [attr.aria-current]="page === store.page().pageNumber ? 'page' : null"
+            (click)="updateQuery(page, store.selectedStatus())"
+          >
+            {{ page }}
+          </button>
+        }
+        <button
+          class="ui-button"
+          type="button"
+          [disabled]="store.page().pageNumber >= store.pageCount()"
+          (click)="next()"
+        >
+          Sau
+        </button>
+      </nav>
+    </div>
+  }
+</section>

@@ -1,0 +1,593 @@
+<section class="form-section product-commerce" aria-labelledby="product-commerce-title">
+  <div class="product-commerce-heading">
+    <h2 id="product-commerce-title">Lựa chọn và SKU</h2>
+    @if (catalog().isNew()) {
+      <button
+        class="ui-button small"
+        type="button"
+        [disabled]="!catalog().canWrite() || options().length >= 3 || store.hasDraft()"
+        (click)="addOption()"
+      >
+        Thêm lựa chọn
+      </button>
+    }
+  </div>
+  <p class="section-description">
+    Lựa chọn, giá và ảnh SKU được lưu cùng nội dung sản phẩm. Tồn kho được ghi nhận riêng.
+  </p>
+  <fieldset
+    class="product-content-fieldset"
+    [disabled]="!catalog().canWrite() || store.hasDraft() || catalog().busy()"
+  >
+    <div class="catalog-options">
+      @for (option of options(); track option; let optionIndex = $index) {
+        <section class="catalog-option-row" [attr.aria-label]="'Lựa chọn ' + (optionIndex + 1)">
+          <div class="fields-row">
+            <div class="field">
+              <label class="field-label" [for]="'option-name-' + optionIndex">Tên lựa chọn</label
+              ><input
+                pInputText
+                [id]="'option-name-' + optionIndex"
+                [formControl]="option.controls.name"
+              /><ui-field-message tone="error">{{ error(option.controls.name) }}</ui-field-message>
+            </div>
+            <div class="field">
+              <label class="field-label" [for]="'option-code-' + optionIndex">Mã lựa chọn</label
+              ><input
+                pInputText
+                [id]="'option-code-' + optionIndex"
+                [formControl]="option.controls.code"
+              /><ui-field-message tone="error">{{ error(option.controls.code) }}</ui-field-message>
+            </div>
+            <div class="field">
+              <label class="field-label" [for]="'option-order-' + optionIndex">Thứ tự</label
+              ><input
+                pInputText
+                type="number"
+                min="0"
+                step="1"
+                [id]="'option-order-' + optionIndex"
+                [formControl]="option.controls.sortOrder"
+              />
+            </div>
+            @if (!option.controls.id.value) {
+              <button type="button" class="ui-button small" (click)="removeOption(optionIndex)">
+                Bỏ lựa chọn
+              </button>
+            }
+          </div>
+          @for (value of option.controls.values.controls; track value; let valueIndex = $index) {
+            <div class="fields-row">
+              <div class="field">
+                <label class="field-label" [for]="'value-label-' + optionIndex + '-' + valueIndex"
+                  >Giá trị {{ valueIndex + 1 }}</label
+                ><input
+                  pInputText
+                  [id]="'value-label-' + optionIndex + '-' + valueIndex"
+                  [formControl]="value.controls.label"
+                /><ui-field-message tone="error">{{
+                  error(value.controls.label)
+                }}</ui-field-message>
+              </div>
+              <div class="field">
+                <label class="field-label" [for]="'value-code-' + optionIndex + '-' + valueIndex"
+                  >Mã giá trị</label
+                ><input
+                  pInputText
+                  [id]="'value-code-' + optionIndex + '-' + valueIndex"
+                  [formControl]="value.controls.code"
+                /><ui-field-message tone="error">{{ error(value.controls.code) }}</ui-field-message>
+              </div>
+              <div class="field">
+                <label class="field-label" [for]="'value-order-' + optionIndex + '-' + valueIndex"
+                  >Thứ tự</label
+                ><input
+                  pInputText
+                  type="number"
+                  min="0"
+                  step="1"
+                  [id]="'value-order-' + optionIndex + '-' + valueIndex"
+                  [formControl]="value.controls.sortOrder"
+                />
+              </div>
+              @if (!value.controls.id.value) {
+                <button
+                  type="button"
+                  class="ui-button small"
+                  [disabled]="option.controls.values.length <= 1"
+                  (click)="removeValue(optionIndex, valueIndex)"
+                >
+                  Bỏ giá trị
+                </button>
+              }
+            </div>
+          }
+          <button class="ui-button small" type="button" (click)="addValue(optionIndex)">
+            Thêm giá trị
+          </button>
+        </section>
+      }
+    </div>
+    @if (options().length) {
+      <button class="ui-button" type="button" (click)="generate()">
+        Tạo / cập nhật tổ hợp SKU
+      </button>
+      <p class="section-description">
+        Tối đa 3 lựa chọn và 200 SKU. Mã và tổ hợp đã lưu được giữ nguyên.
+      </p>
+    }
+  </fieldset>
+  @if (localError()) {
+    <p class="product-form-error" role="alert">{{ localError() }}</p>
+  }
+  <div
+    class="catalog-variant-table product-commerce-table"
+    role="region"
+    aria-label="Các SKU của sản phẩm"
+    tabindex="0"
+  >
+    <table class="content-table">
+      <thead>
+        <tr>
+          <th>Ảnh</th>
+          <th>Mặc định</th>
+          @for (option of options(); track option) {
+            <th>{{ option.controls.name.value || 'Lựa chọn' }}</th>
+          }
+          <th>Khả dụng</th>
+          <th>SKU</th>
+          <th>Giá VND</th>
+          <th>Giá so sánh</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of form().controls.variants.controls; track row; let index = $index) {
+          <tr>
+            <td>
+              @if (
+                previews.url(
+                  row.controls.imageMediaId.value ||
+                    form().controls.media.controls[0]?.controls.mediaAssetId.value
+                );
+                as url
+              ) {
+                <img class="catalog-thumbnail" [src]="url" alt="" width="28" height="28" />
+              } @else {
+                <span class="catalog-thumbnail" aria-hidden="true">—</span>
+              }
+            </td>
+            <td>
+              <button
+                class="icon-button"
+                type="button"
+                [attr.aria-label]="'Đặt mặc định ' + row.controls.sku.value"
+                [attr.aria-pressed]="
+                  form().controls.defaultVariantSku.value === row.controls.sku.value
+                "
+                [disabled]="
+                  !catalog().canWrite() || !row.controls.isActive.value || store.hasDraft()
+                "
+                (click)="setDefault(row)"
+              >
+                {{ form().controls.defaultVariantSku.value === row.controls.sku.value ? '★' : '☆' }}
+              </button>
+            </td>
+            @for (option of options(); track option; let optionIndex = $index) {
+              <td>{{ valueLabel(row, optionIndex) }}</td>
+            }
+            <td>{{ quantity(row) }}</td>
+            <td>
+              {{ row.controls.sku.value }}
+              @if (!row.controls.isActive.value) {
+                <small>Ngừng sử dụng</small>
+              }
+            </td>
+            <td>
+              {{
+                row.controls.price.value === null
+                  ? 'Chưa đặt giá'
+                  : (row.controls.price.value | currency: 'VND' : 'symbol-narrow' : '1.0-0')
+              }}
+            </td>
+            <td>
+              {{
+                row.controls.compareAtPrice.value === null
+                  ? '—'
+                  : (row.controls.compareAtPrice.value
+                    | currency: 'VND' : 'symbol-narrow' : '1.0-0')
+              }}
+            </td>
+            <td>
+              <div class="product-commerce-actions">
+                <button
+                  class="ui-button small"
+                  type="button"
+                  [attr.aria-label]="'Sửa SKU ' + row.controls.sku.value"
+                  [attr.aria-expanded]="expanded() === row"
+                  [disabled]="catalog().busy() || store.hasDraft()"
+                  (click)="expand(row)"
+                >
+                  Chi tiết
+                </button>
+                @if (
+                  product() &&
+                  row.controls.id.value &&
+                  ((product()?.fulfillmentKind === kind.Physical && store.canInventory()) ||
+                    ((product()?.fulfillmentKind === kind.DigitalUnique ||
+                      product()?.fulfillmentKind === kind.DigitalShared) &&
+                      store.canDigital()))
+                ) {
+                  <button
+                    class="ui-button small"
+                    type="button"
+                    [attr.aria-label]="
+                      (product()?.fulfillmentKind === kind.Physical ? 'Tồn kho ' : 'Nội dung số ') +
+                      row.controls.sku.value
+                    "
+                    [disabled]="blocked() || !!expanded() || store.hasDraft() || store.busy()"
+                    (click)="openStock(row)"
+                  >
+                    {{ product()?.fulfillmentKind === kind.Physical ? 'Tồn kho' : 'Nội dung số' }}
+                  </button>
+                }
+                @if (!row.controls.id.value) {
+                  <button
+                    class="ui-button small"
+                    type="button"
+                    [disabled]="!catalog().canWrite() || form().controls.variants.length <= 1"
+                    (click)="removeRow(index)"
+                  >
+                    Bỏ SKU
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+          @if (expanded() === row) {
+            <tr>
+              <td [attr.colspan]="options().length + 8">
+                <section
+                  class="catalog-variant-detail"
+                  [formGroup]="rowForm"
+                  aria-label="Chi tiết SKU"
+                >
+                  <fieldset class="product-content-fieldset">
+                    <div class="fields-row">
+                      <div class="field">
+                        <label class="field-label" for="variant-sku">Mã SKU</label
+                        ><input
+                          pInputText
+                          id="variant-sku"
+                          formControlName="sku"
+                        /><ui-field-message tone="error">{{
+                          error(rowForm.controls.sku)
+                        }}</ui-field-message>
+                      </div>
+                      <div class="field">
+                        <label class="field-label" for="variant-price">Giá bán VND</label
+                        ><input
+                          pInputText
+                          id="variant-price"
+                          type="number"
+                          min="0"
+                          step="1"
+                          formControlName="price"
+                        /><ui-field-message tone="error">{{
+                          error(rowForm.controls.price)
+                        }}</ui-field-message>
+                      </div>
+                      <div class="field">
+                        <label class="field-label" for="variant-compare">Giá so sánh VND</label
+                        ><input
+                          pInputText
+                          id="variant-compare"
+                          type="number"
+                          min="0"
+                          step="1"
+                          formControlName="compareAtPrice"
+                        /><ui-field-message tone="error">{{
+                          error(rowForm.controls.compareAtPrice)
+                        }}</ui-field-message>
+                      </div>
+                    </div>
+                    @if (rowForm.hasError('comparePrice') && rowForm.touched) {
+                      <p class="product-form-error">Giá so sánh phải lớn hơn giá bán.</p>
+                    }
+                    <div class="field">
+                      <label class="field-label" for="variant-image">Ảnh SKU</label
+                      ><select id="variant-image" formControlName="imageMediaId">
+                        <option [ngValue]="null">Dùng ảnh sản phẩm</option>
+                        @for (
+                          media of form().controls.media.controls;
+                          track media.controls.mediaAssetId.value
+                        ) {
+                          <option [value]="media.controls.mediaAssetId.value">
+                            {{
+                              media.controls.altText.value ||
+                                'Ảnh ' + (media.controls.sortOrder.value + 1)
+                            }}
+                          </option>
+                        }
+                      </select>
+                    </div>
+                    <label class="product-checkbox"
+                      ><input type="checkbox" formControlName="isActive" />Đang bán</label
+                    >
+                    @if (!catalog().canPrice()) {
+                      <p class="section-description">
+                        Cần quyền cập nhật giá để sửa giá bán và giá so sánh.
+                      </p>
+                    }
+                    <div class="product-commerce-actions">
+                      <button class="ui-button primary" type="button" (click)="applyRow()">
+                        Áp dụng vào bản chỉnh sửa</button
+                      ><button class="ui-button" type="button" (click)="cancelRow()">
+                        Hủy chỉnh SKU
+                      </button>
+                    </div>
+                  </fieldset>
+                </section>
+              </td>
+            </tr>
+          }
+        } @empty {
+          <tr>
+            <td [attr.colspan]="options().length + 8">
+              Thêm lựa chọn rồi tạo tổ hợp SKU, hoặc nhập SKU đơn ở trên.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (blocked() && product()) {
+    <p class="product-commerce-help">Lưu hoặc bỏ thay đổi catalog trước khi thao tác tồn kho.</p>
+  }
+  @if (store.loading()) {
+    <p role="status">Đang tải tồn kho…</p>
+  }
+  @if (store.notice()) {
+    <p class="editor-notice" role="status">{{ store.notice() }}</p>
+  }
+  @if (store.error()) {
+    <div class="editor-error" role="alert">
+      <span>{{ store.error() }}</span
+      ><button class="ui-button small" [disabled]="store.busy()" (click)="store.reloadCanonical()">
+        Tải bản mới, giữ nội dung nhập
+      </button>
+    </div>
+  }
+  @if (store.mode(); as mode) {
+    <section class="product-commerce-editor" aria-label="Vận hành tồn kho">
+      <div class="product-commerce-heading">
+        <h3>
+          {{ mode === 'inventory' ? 'Điều chỉnh và lịch sử tồn' : 'Nội dung số' }}
+          {{ store.selectedVariant()?.sku }}
+        </h3>
+        <button
+          class="ui-button small"
+          [disabled]="store.busy() || !!store.pendingAdjustment()"
+          (click)="close()"
+        >
+          Đóng trình sửa
+        </button>
+      </div>
+      @if (mode === 'inventory') {
+        @if (store.selectedBalance(); as balance) {
+          <p>
+            Tồn {{ balance.onHand }} · Đã giữ {{ balance.reserved }} · Bán được
+            {{ balance.available }}
+          </p>
+          @if (store.canAdjust()) {
+            <form
+              [formGroup]="store.adjustmentForm"
+              (submit)="$event.preventDefault(); store.adjust()"
+            >
+              <fieldset
+                [disabled]="store.busy() || !!store.pendingAdjustment()"
+                class="product-content-fieldset"
+              >
+                <div class="field">
+                  <label for="inventory-delta" class="field-label">Số lượng tăng / giảm</label
+                  ><input
+                    pInputText
+                    id="inventory-delta"
+                    type="number"
+                    step="1"
+                    formControlName="delta"
+                    aria-describedby="inventory-delta-help inventory-delta-error"
+                  /><ui-field-message id="inventory-delta-help"
+                    >Nhập số dương để nhập kho, số âm để giảm kho.</ui-field-message
+                  ><ui-field-message id="inventory-delta-error" tone="error">{{
+                    error(store.adjustmentForm.controls.delta)
+                  }}</ui-field-message>
+                </div>
+                <div class="field">
+                  <label for="inventory-reason" class="field-label">Lý do điều chỉnh</label
+                  ><textarea
+                    pTextarea
+                    id="inventory-reason"
+                    formControlName="reason"
+                    rows="2"
+                    aria-describedby="inventory-reason-error"
+                  ></textarea
+                  ><ui-field-message id="inventory-reason-error" tone="error">{{
+                    error(store.adjustmentForm.controls.reason)
+                  }}</ui-field-message>
+                </div>
+              </fieldset>
+              <button class="ui-button primary" type="submit" [disabled]="store.busy()">
+                {{ store.pendingAdjustment() ? 'Gửi lại đúng yêu cầu cũ' : 'Ghi nhận điều chỉnh' }}
+              </button>
+            </form>
+          }
+          @if (store.pendingAdjustment()) {
+            <p class="product-commerce-help" role="status">
+              Kết quả chưa rõ. Yêu cầu cũ được giữ nguyên để gửi lại an toàn. Mã:
+              {{ store.pendingAdjustment()?.operationId }}
+            </p>
+          }
+          <h4>Lịch sử tồn kho</h4>
+          @if (store.movements(); as ledger) {
+            <div class="product-commerce-table">
+              <table class="content-table">
+                <thead>
+                  <tr>
+                    <th>Thời gian</th>
+                    <th>Thay đổi</th>
+                    <th>Tồn sau</th>
+                    <th>Lý do</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (movement of ledger.items; track movement.id) {
+                    <tr>
+                      <td>{{ movement.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{ movement.delta > 0 ? '+' : '' }}{{ movement.delta }}</td>
+                      <td>{{ movement.quantityAfter }}</td>
+                      <td>{{ movement.reason }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4">Chưa có điều chỉnh.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="product-commerce-actions">
+              <button
+                class="ui-button small"
+                [disabled]="ledger.pageNumber <= 1"
+                (click)="store.loadMovements(ledger.pageNumber - 1)"
+              >
+                Trước</button
+              ><span>Trang {{ ledger.pageNumber }} · {{ ledger.total }} bản ghi</span
+              ><button
+                class="ui-button small"
+                [disabled]="ledger.pageNumber * ledger.pageSize >= ledger.total"
+                (click)="store.loadMovements(ledger.pageNumber + 1)"
+              >
+                Sau
+              </button>
+            </div>
+          }
+        }
+      }
+      @if (mode === 'digital') {
+        @if (
+          (product()?.fulfillmentKind === kind.DigitalShared && store.canDigitalUpdate()) ||
+          (product()?.fulfillmentKind === kind.DigitalUnique && store.canImport())
+        ) {
+          <form
+            [formGroup]="store.digitalForm"
+            (submit)="$event.preventDefault(); store.saveDigital()"
+          >
+            <fieldset [disabled]="store.busy()" class="product-content-fieldset">
+              @if (product()?.fulfillmentKind === kind.DigitalUnique) {
+                <div class="field">
+                  <label for="digital-reference" class="field-label">Mã nội dung riêng</label
+                  ><input
+                    pInputText
+                    id="digital-reference"
+                    formControlName="reference"
+                    aria-describedby="digital-reference-error"
+                  /><ui-field-message id="digital-reference-error" tone="error">{{
+                    error(store.digitalForm.controls.reference)
+                  }}</ui-field-message>
+                </div>
+              }
+              <div class="field">
+                <label for="digital-content" class="field-label">Nội dung giao cho khách</label
+                ><textarea
+                  pTextarea
+                  id="digital-content"
+                  rows="4"
+                  formControlName="content"
+                  aria-describedby="digital-content-help digital-content-error"
+                ></textarea
+                ><ui-field-message id="digital-content-help"
+                  >Tối đa 8.000 byte UTF-8. Nội dung hiện có chỉ được đọc qua thao tác Xem nội
+                  dung.</ui-field-message
+                ><ui-field-message id="digital-content-error" tone="error">{{
+                  error(store.digitalForm.controls.content)
+                }}</ui-field-message>
+              </div>
+              @if (product()?.fulfillmentKind === kind.DigitalShared) {
+                <label class="product-checkbox"
+                  ><input type="checkbox" formControlName="isActive" />Sẵn sàng cung cấp</label
+                >
+              }
+              <button class="ui-button primary" type="submit">
+                {{
+                  product()?.fulfillmentKind === kind.DigitalShared
+                    ? 'Lưu nội dung dùng chung'
+                    : 'Nhập nội dung riêng'
+                }}
+              </button>
+            </fieldset>
+          </form>
+        }
+        @if (store.digital(); as stock) {
+          <h4>Nội dung đã nhập</h4>
+          @for (entry of stock.items; track entry.id) {
+            <div class="product-digital-row">
+              <span
+                ><strong>{{ entry.reference }}</strong> · {{ stockLabels[entry.state] }}</span
+              >
+              <div class="product-commerce-actions">
+                @if (store.canReveal()) {
+                  <button
+                    class="ui-button small"
+                    [disabled]="store.busy()"
+                    (click)="store.reveal(entry)"
+                  >
+                    Xem nội dung
+                  </button>
+                }
+                @if (store.canDigitalUpdate() && entry.state <= 2) {
+                  <button
+                    class="ui-button small"
+                    [disabled]="store.busy() || store.digitalForm.dirty"
+                    (click)="store.setDigitalAvailability(entry)"
+                  >
+                    {{ entry.state === 1 ? 'Ngừng cung cấp' : 'Cho phép cung cấp' }}
+                  </button>
+                }
+              </div>
+            </div>
+          } @empty {
+            <p>Chưa có nội dung số.</p>
+          }
+          <div class="product-commerce-actions">
+            <button
+              class="ui-button small"
+              [disabled]="stock.pageNumber <= 1"
+              (click)="store.loadDigital(stock.pageNumber - 1)"
+            >
+              Trước</button
+            ><span>Trang {{ stock.pageNumber }} · {{ stock.total }} nội dung</span
+            ><button
+              class="ui-button small"
+              [disabled]="stock.pageNumber * stock.pageSize >= stock.total"
+              (click)="store.loadDigital(stock.pageNumber + 1)"
+            >
+              Sau
+            </button>
+          </div>
+        }
+        @if (store.secret()) {
+          <pre class="product-secret" aria-label="Nội dung số đã yêu cầu xem">{{
+            store.secret()
+          }}</pre>
+        }
+      }
+    </section>
+  }
+</section>
+<ui-confirm-dialog
+  title="Bỏ nội dung đang sửa?"
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

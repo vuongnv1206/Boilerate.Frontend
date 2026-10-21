@@ -1,23 +1,24 @@
 # Admin Orders — workspace quản trị đơn hàng
 
-Ngày bắt đầu: 2026-10-21  
-Cập nhật gần nhất: 2026-10-21  
-Trạng thái: Chờ nghiệm thu runtime  
-Khu vực phụ trách: FE  
-Hồ sơ BE: [Admin Orders](../../../Boilerate/docs/backend/features/admin-orders.md)  
-Bằng chứng FE: [verification report](../verification/2026-10-21-admin-orders.md)
+- **Ngày bắt đầu:** 2026-10-21
+- **Cập nhật:** 2026-10-21
+- **Trạng thái:** Đã triển khai và nghiệm thu FE local; chưa nghiệm thu deployment
+- **Khu vực:** FE
+- **Hồ sơ BE:** [Admin Orders](../../../Boilerate/docs/backend/features/admin-orders.md)
+- **Bằng chứng nghiệm thu:** [báo cáo kiểm chứng](../verification/2026-10-21-admin-orders.md)
 
 ## Phạm vi đã triển khai
 
 Module nằm tại `/admin/orders` và `/admin/orders/:id`, dùng cùng workspace admin:
 
-- Navigation chỉ hiện khi có `Permissions.Order.View`.
+- Navigation chỉ hiện khi có `Order.View`.
 - List gọi server-side query với `q`, `status`, `paymentStatus`, `fulfillmentStatus`, `createdFrom`, `createdTo`, `page`, `pageSize`; đổi filter reset page 1 và giữ query trong URL.
 - Cột list gồm mã đơn, người nhận, tổng tiền, payment method/status, fulfillment status, order status, ngày tạo và hết hạn.
 - Detail giữ rail/context, có header/status/action bar, inspector và snapshot OrderItem read-only.
-- Command đã nối: cancel, confirm payment, retry fulfillment. Không có `/new`, Edit, inline edit hoặc bulk action.
+- Command gồm cancel, confirm payment, retry fulfillment, dispatch vật lý từng phần và xác nhận shipment đã giao. Không có `/new`, Edit, inline edit hoặc bulk action.
 - Timeline gọi history endpoint read-only; không hiển thị raw audit JSON hoặc digital delivery content.
-- Shipping/After-sales/Renewal chỉ là section read-only/collapsed; Shipping và After-sales gọi API riêng khi có capability, lỗi/403 của section không làm hỏng toàn detail.
+- Shipping đọc shipment và các dòng đã xuất; quyền `Shipping.View`, `Shipping.Dispatch`, `Shipping.Deliver` được kiểm riêng. Dispatch dùng số còn lại, shipment version và operation ID ổn định. Giao shipment không tự xác nhận COD.
+- After-sales đọc ledger refund/return độc lập và ghi khoản hoàn thực tế hoặc hàng nhận thực tế. Đây là command append-only; FE không chuyển tiền và không sửa snapshot Order/OrderItem.
 
 ## Invariant FE
 
@@ -26,7 +27,27 @@ Module nằm tại `/admin/orders` và `/admin/orders/:id`, dùng cùng workspac
 - Không render nút Edit hoặc form chỉnh Order.
 - Mutation control kiểm capability và state hiện tại; state không hợp lệ thì disabled kèm lý do, thiếu permission thì không render.
 - Request luôn dùng version hiện tại hoặc contract command tương ứng.
-- `409 Conflict` giữ màn hiện tại, báo dữ liệu đã thay đổi và reload DTO một lần; không tự gửi lại command và không optimistic update.
+- `409 Conflict` giữ draft, tải lại dữ liệu canonical để đối chiếu và không tự gửi lại command. Khi response không xác định, retry giữ nguyên operation ID và payload.
+
+## Shipping
+
+Backend có contract `POST /api/admin/orders/{id}/shipments` và `POST /api/admin/orders/{id}/shipments/{shipmentId}/deliver`; xem [hồ sơ shipping BE](../../../Boilerate/docs/backend/features/physical-shipping.md).
+
+- Danh sách shipment hiển thị hãng/mã vận chuyển, trạng thái, thời điểm và các dòng hàng đã xuất.
+- Dispatch chỉ chọn số lượng vật lý còn lại; backend quyết định cuối về tồn, trạng thái đơn và quyền.
+- Retry sau mất response dùng operation ID và payload cũ; idempotency BE ngăn xuất hoặc giao lần hai.
+- `409` tải lại dữ liệu hiện tại và giữ draft dialog để người vận hành đối chiếu trước thao tác tiếp theo.
+- Xác nhận shipment đã giao không tự ghi nhận khoản COD.
+
+## After-sales
+
+Theo [contract hậu mãi BE](../../../Boilerate/docs/backend/features/refunds-returns.md), detail hiển thị ledger và có form `POST refunds`/`POST returns`:
+
+- Hoàn tiền cần `AfterSales.View` và `Refund.Confirm`; nhập số VND nguyên đồng không vượt số đã thu còn lại, nguồn, mã chứng từ, thời điểm và lý do.
+- Nhận hàng trả cần `AfterSales.View`, `Return.Receive`, `Shipping.View`; chỉ nhận phần đã xuất chưa nhận lại. `Inventory.Adjust` được kiểm riêng nếu nhập lại kho.
+- Đóng phần COD chưa thu chỉ được chọn ở lần nhận cuối khi đã nhận đủ toàn bộ hàng đã xuất.
+- Giữ snapshot request/operation ID sau lỗi không xác định; lỗi conflict giữ draft để đối chiếu dữ liệu mới. Lưu thành công xóa draft tương ứng.
+- Refund/return là ghi nhận việc đã làm ngoài hệ thống, không tự chuyển tiền, tạo shipment, sửa OrderItem hay hoàn tác một dịch vụ gia hạn.
 
 ## Kiến trúc source
 
@@ -41,17 +62,6 @@ Module nằm tại `/admin/orders` và `/admin/orders/:id`, dùng cùng workspac
 
 Services chỉ gọi `ApiClient`; stores sở hữu request/loading/error state; component không tự gọi API.
 
-## Trạng thái kiểm chứng
+## Kiểm chứng và phần còn lại
 
-- Prettier check: pass.
-- ESLint và architecture checks: pass, 43 boundary/screen/style checks.
-- Angular build bằng bundled Node 24.19.0: pass, tạo lazy chunks cho Orders list/detail.
-- Unit tests: 26 files, 167/167 pass.
-- Chưa chạy authenticated browser E2E với backend đang seed, chưa xác nhận Light/Dark/System bằng browser thật, và chưa đánh dấu deployment/production acceptance.
-
-## Công việc tiếp theo
-
-- Nối môi trường BE có dữ liệu seed và chạy E2E list/detail/back-forward/filter/command/409/permission.
-- Bổ sung test FE cho query parser, 409 giữ dialog draft và section-level 403 nếu contract testing yêu cầu.
-- Xác nhận Light/Dark/System, responsive workspace và empty/error/loading/retry trên browser.
-- Các action Shipping/After-sales/Renewal mutation vẫn là lát sau, không thêm vào detail lát đầu.
+Kết quả source, unit, browser desktop/tablet × Light/Dark và giới hạn môi trường được tổng hợp trong [báo cáo kiểm chứng](../verification/2026-10-21-admin-orders.md). Chưa nghiệm thu deployment hoặc các dịch vụ vận chuyển/ngân hàng bên ngoài. Xem thêm [Gia hạn thủ công](admin-renewals.md) cho mutation Renewal.
