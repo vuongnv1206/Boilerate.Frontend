@@ -18,3 +18,5 @@ export const CATALOG_PERMISSIONS = {
     update: 'Permissions.ProductType.Update',
   },
 } as const;
+
+export { ORDER_PERMISSIONS } from './order.constants';

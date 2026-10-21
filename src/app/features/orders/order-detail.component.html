@@ -1,0 +1,353 @@
+@if (store.loading()) {
+  <ui-content-state
+    kind="loading"
+    layout="page"
+    title="Đang tải đơn hàng"
+    message="Đang mở workspace đơn hàng."
+  />
+} @else if (store.error()) {
+  <ui-content-state
+    kind="error"
+    layout="page"
+    title="Không thể tải đơn hàng"
+    [message]="store.error()"
+    ><button class="ui-button" (click)="store.reload()">Tải lại</button></ui-content-state
+  >
+} @else if (store.order(); as order) {
+  <section class="order-detail-page" aria-labelledby="order-detail-title">
+    <header class="order-detail-header">
+      <div>
+        <a class="order-back-link" [routerLink]="['/admin/orders']" [queryParams]="backQuery()"
+          ><ui-icon name="arrow-left" [size]="14" /> Quay lại đơn hàng</a
+        >
+        <div class="order-title-row">
+          <h1 id="order-detail-title">{{ order.number }}</h1>
+          <ui-status-badge
+            [tone]="
+              order.status === status.Completed
+                ? 'success'
+                : order.status === status.Cancelled || order.status === status.Expired
+                  ? 'muted'
+                  : 'neutral'
+            "
+            >{{ statusLabels[order.status] }}</ui-status-badge
+          >
+        </div>
+        <p>
+          Tạo lúc {{ order.createdOn | date: 'dd/MM/yyyy HH:mm' }}
+          @if (order.expiresAt) {
+            · Hết hạn {{ order.expiresAt | date: 'dd/MM/yyyy HH:mm' }}
+          }
+          · Version {{ order.version }}
+        </p>
+      </div>
+      <div class="order-action-bar">
+        @if (canCancel()) {
+          <button
+            class="ui-button danger"
+            [disabled]="!store.canCancel() || store.actionBusy()"
+            [title]="
+              store.canCancel()
+                ? 'Hủy đơn hàng'
+                : 'Chỉ đơn chưa thanh toán và chưa dispatch mới được hủy'
+            "
+            (click)="cancelDialog.set(true)"
+          >
+            Hủy đơn
+          </button>
+        }
+        @if (canConfirmPayment()) {
+          <button
+            class="ui-button primary"
+            [disabled]="order.paymentStatus === paymentStatus.Paid || store.actionBusy()"
+            [title]="
+              order.paymentStatus === paymentStatus.Paid
+                ? 'Đơn hàng đã được thanh toán'
+                : 'Xác nhận thanh toán'
+            "
+            (click)="openPayment()"
+          >
+            Xác nhận thanh toán
+          </button>
+        }
+        @if (canFulfill()) {
+          <button
+            class="ui-button"
+            [disabled]="!store.canRetryFulfillment() || store.actionBusy()"
+            [title]="
+              store.canRetryFulfillment()
+                ? 'Thử lại fulfillment'
+                : 'Chỉ đơn Paid, chưa dispatch và cần kiểm tra mới retry được'
+            "
+            (click)="retryFulfillment()"
+          >
+            Retry fulfillment
+          </button>
+        }
+      </div>
+    </header>
+    @if (store.actionError()) {
+      <div class="order-action-message" role="alert">
+        <ui-icon name="alert" [size]="15" />{{ store.actionError() }}
+      </div>
+    }
+    <div class="order-workspace-grid">
+      <main class="order-main-column">
+        <section class="order-card">
+          <div class="order-card-heading">
+            <div>
+              <span class="eyebrow">Snapshot</span>
+              <h2>Sản phẩm trong đơn</h2>
+            </div>
+            <span class="order-readonly-note">Chỉ đọc</span>
+          </div>
+          <div class="table-scroll">
+            <table class="content-table order-items-table">
+              <thead>
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th>SKU</th>
+                  <th>Fulfillment</th>
+                  <th>Đơn giá</th>
+                  <th>SL</th>
+                  <th>Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of order.items; track item.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ item.name }}</strong
+                      ><span class="order-contact">{{
+                        item.optionDescription || 'Không có option'
+                      }}</span>
+                    </td>
+                    <td>{{ item.sku }}</td>
+                    <td>{{ item.fulfillmentKind === 1 ? 'Physical' : 'Digital' }}</td>
+                    <td>
+                      {{ item.unitPrice | currency: order.currency : 'symbol-narrow' : '1.0-0' }}
+                    </td>
+                    <td>{{ item.quantity }}</td>
+                    <td>
+                      {{
+                        item.unitPrice * item.quantity
+                          | currency: order.currency : 'symbol-narrow' : '1.0-0'
+                      }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="order-totals">
+            <span>Tạm tính</span
+            ><strong>{{
+              order.subtotal | currency: order.currency : 'symbol-narrow' : '1.0-0'
+            }}</strong
+            ><span>Phí vận chuyển</span
+            ><strong>{{
+              order.shippingAmount | currency: order.currency : 'symbol-narrow' : '1.0-0'
+            }}</strong
+            ><span class="total-label">Tổng tiền</span
+            ><strong class="total-value">{{
+              order.total | currency: order.currency : 'symbol-narrow' : '1.0-0'
+            }}</strong>
+          </div>
+        </section>
+        <section class="order-card">
+          <div class="order-card-heading">
+            <div>
+              <span class="eyebrow">Timeline</span>
+              <h2>Lịch sử đơn hàng</h2>
+            </div>
+          </div>
+          @if (store.historyLoading()) {
+            <p class="order-muted">Đang tải timeline…</p>
+          } @else if (store.historyError()) {
+            <p class="order-form-error" role="alert">{{ store.historyError() }}</p>
+            <button class="ui-button" type="button" (click)="store.reloadHistory()">
+              Tải lại timeline
+            </button>
+          } @else {
+            <ol class="order-timeline">
+              @for (entry of store.history(); track entry.id) {
+                <li>
+                  <span class="timeline-dot"></span>
+                  <div>
+                    <strong>{{ entry.safeSummary }}</strong
+                    ><span
+                      >{{ entry.actorDisplayName || 'Hệ thống' }} ·
+                      {{ entry.occurredAtUtc | date: 'dd/MM/yyyy HH:mm:ss' }}</span
+                    >
+                  </div>
+                </li>
+              } @empty {
+                <li class="order-muted">Chưa có lịch sử hiển thị.</li>
+              }
+            </ol>
+          }
+        </section>
+        <section class="order-card collapsed-section">
+          <div>
+            <span class="eyebrow">Shipping</span>
+            <h2>Vận chuyển</h2>
+            @if (!store.canViewShipping()) {
+              <p>Section bị ẩn vì thiếu quyền Shipping.View.</p>
+            } @else if (store.relatedLoading()) {
+              <p class="order-muted">Đang tải shipment…</p>
+            } @else if (store.shippingError()) {
+              <p class="order-form-error" role="alert">{{ store.shippingError() }}</p>
+              <button class="ui-button" type="button" (click)="store.reloadRelated()">
+                Tải lại shipment
+              </button>
+            } @else if (store.shipments(); as shipments) {
+              <p>
+                {{
+                  shipments.length ? shipments.length + ' shipment · chỉ đọc' : 'Chưa có shipment'
+                }}
+              </p>
+            } @else {
+              <p>Chưa có dữ liệu shipment.</p>
+            }
+          </div>
+          <ui-icon name="chevron-right" [size]="16" />
+        </section>
+        <section class="order-card collapsed-section">
+          <div>
+            <span class="eyebrow">After-sales</span>
+            <h2>Đổi trả & hoàn tiền</h2>
+            @if (!store.canViewAfterSales()) {
+              <p>Section bị ẩn vì thiếu quyền AfterSales.View.</p>
+            } @else if (store.relatedLoading()) {
+              <p class="order-muted">Đang tải after-sales…</p>
+            } @else if (store.afterSalesError()) {
+              <p class="order-form-error" role="alert">{{ store.afterSalesError() }}</p>
+              <button class="ui-button" type="button" (click)="store.reloadRelated()">
+                Tải lại after-sales
+              </button>
+            } @else if (store.afterSales(); as afterSales) {
+              <p>
+                Đã hoàn
+                {{
+                  afterSales.refundedAmount | currency: order.currency : 'symbol-narrow' : '1.0-0'
+                }}
+                · chỉ đọc
+              </p>
+            } @else {
+              <p>Chưa có dữ liệu after-sales.</p>
+            }
+          </div>
+          <ui-icon name="chevron-right" [size]="16" />
+        </section>
+        <section class="order-card collapsed-section">
+          <div>
+            <span class="eyebrow">Renewal</span>
+            <h2>Gia hạn</h2>
+            <p>Summary read-only; action renewal chưa mở trong lát đầu.</p>
+          </div>
+          <ui-icon name="chevron-right" [size]="16" />
+        </section>
+      </main>
+      <aside class="order-inspector">
+        <section class="inspector-card">
+          <span class="eyebrow">Người nhận</span>
+          <h2>{{ order.recipientName }}</h2>
+          <dl>
+            <dt>Email</dt>
+            <dd>{{ order.email }}</dd>
+            <dt>Số điện thoại</dt>
+            <dd>{{ order.phone }}</dd>
+            <dt>Địa chỉ</dt>
+            <dd>{{ order.shippingAddress || 'Không có địa chỉ giao hàng' }}</dd>
+          </dl>
+        </section>
+        <section class="inspector-card">
+          <span class="eyebrow">Trạng thái</span>
+          <dl>
+            <dt>Phương thức</dt>
+            <dd>{{ paymentMethodLabels[order.paymentMethod] }}</dd>
+            <dt>Thanh toán</dt>
+            <dd>{{ paymentStatusLabels[order.paymentStatus] }}</dd>
+            <dt>Fulfillment</dt>
+            <dd>{{ fulfillmentStatusLabels[order.fulfillmentStatus] }}</dd>
+            <dt>Version</dt>
+            <dd class="monospace">{{ order.version }}</dd>
+          </dl>
+        </section>
+        <section class="inspector-card">
+          <span class="eyebrow">Bất biến</span>
+          <p class="order-muted">
+            Order và OrderItem là snapshot sau checkout. Không có chỉnh sửa trực tiếp.
+          </p>
+        </section>
+      </aside>
+    </div>
+  </section>
+}
+<p-dialog
+  header="Hủy đơn hàng"
+  [visible]="cancelDialog()"
+  (visibleChange)="cancelDialog.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '420px', maxWidth: '92vw' }"
+  ><p>Đơn hàng sẽ chuyển sang trạng thái đã hủy và snapshot vẫn được giữ nguyên.</p>
+  <div class="dialog-actions">
+    <button class="ui-button" (click)="cancelDialog.set(false)">Đóng</button
+    ><button class="ui-button danger" [disabled]="store.actionBusy()" (click)="confirmCancel()">
+      Xác nhận hủy
+    </button>
+  </div></p-dialog
+>
+<p-dialog
+  header="Xác nhận thanh toán"
+  [visible]="paymentDialog()"
+  (visibleChange)="paymentDialog.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '520px', maxWidth: '92vw' }"
+  ><div class="order-form-grid">
+    <label
+      >Reference<input
+        pInputText
+        [ngModel]="paymentReference()"
+        (ngModelChange)="paymentReference.set($event)" /></label
+    ><label
+      >Amount<input
+        pInputText
+        type="number"
+        [ngModel]="paymentAmount()"
+        (ngModelChange)="paymentAmount.set(+$event)" /></label
+    ><label
+      >Currency<input
+        pInputText
+        [ngModel]="paymentCurrency()"
+        (ngModelChange)="paymentCurrency.set($event)" /></label
+    ><label
+      >Received time<input
+        type="datetime-local"
+        [ngModel]="paymentReceivedAt()"
+        (ngModelChange)="paymentReceivedAt.set($event)" /></label
+    ><label
+      >Source<select [ngModel]="paymentSource()" (ngModelChange)="paymentSource.set($event)">
+        <option value="ManualBankTransfer">Manual bank transfer</option>
+        <option value="ManualCOD">Manual COD</option>
+      </select></label
+    >
+  </div>
+  @if (store.actionError()) {
+    <p class="order-form-error">{{ store.actionError() }}</p>
+  }
+  <div class="dialog-actions">
+    <button class="ui-button" (click)="paymentDialog.set(false)">Đóng</button
+    ><button
+      class="ui-button primary"
+      [disabled]="store.actionBusy() || !paymentReference().trim() || !paymentReceivedAt()"
+      (click)="submitPayment()"
+    >
+      {{ store.actionBusy() ? 'Đang gửi…' : 'Xác nhận' }}
+    </button>
+  </div></p-dialog
+>

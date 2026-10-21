@@ -1,5 +1,6 @@
 import { WorkspaceCollectionLink } from '@models/navigation.model';
 import { CATALOG_PERMISSIONS } from './permission.constants';
+import { ORDER_PERMISSIONS } from './order.constants';
 
 export const COLLECTION_LINKS = [
   {
@@ -22,5 +23,12 @@ export const COLLECTION_LINKS = [
     icon: 'sliders',
     path: '/admin/collections/product-types',
     permission: CATALOG_PERMISSIONS.productType.view,
+  },
+  {
+    key: 'orders',
+    label: 'Đơn hàng',
+    icon: 'shopping-bag',
+    path: '/admin/orders',
+    permission: ORDER_PERMISSIONS.view,
   },
 ] as const satisfies readonly (WorkspaceCollectionLink & { readonly permission: string })[];

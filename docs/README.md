@@ -8,6 +8,7 @@
 | Folder, naming, component/store/service | [Quy chuẩn codebase và triển khai FE](coding-rules.md)                                                                    |
 | Tokens và style dùng chung              | [Quy tắc SCSS](scss-rules.md)                                                                                             |
 | Danh sách và thêm/sửa Catalog qua API   | [Collections](features/live-admin-collections.md)                                                                         |
+| Quản trị đơn hàng theo workspace        | [Admin Orders](features/admin-orders.md)                                                                                  |
 | Đăng nhập, khôi phục phiên và đăng xuất | [Giữ phiên](features/persistent-session.md)                                                                               |
 | Các tính năng đã triển khai theo mốc    | [Lịch sử tính năng](history/README.md)                                                                                    |
 | Bằng chứng tích hợp theo phiên bản      | [Nền tích hợp hiện tại](verification/2026-10-21-codebase-foundation.md); các báo cáo mốc cũ được dẫn từ feature tương ứng |

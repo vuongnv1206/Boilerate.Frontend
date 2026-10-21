@@ -30,6 +30,10 @@ export const routes: Routes = [
           ),
       },
       {
+        path: '',
+        loadChildren: () => import('./features/orders/orders.routes').then((m) => m.ORDER_ROUTES),
+      },
+      {
         path: 'forbidden',
         loadChildren: () =>
           import('./features/access-denied/access-denied.routes').then(
