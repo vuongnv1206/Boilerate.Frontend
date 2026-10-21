@@ -6,7 +6,7 @@ import { ESLint } from 'eslint';
 
 const cwd = fileURLToPath(new URL('..', import.meta.url));
 const eslint = new ESLint({ cwd });
-const screen = 'src/app/features/collections/categories/categories.ts';
+const screen = 'src/app/features/collections/categories/categories.component.ts';
 const probes = [
   [
     'core rejects feature',
@@ -18,7 +18,7 @@ const probes = [
   [
     'core rejects layout',
     'src/app/core/probe.ts',
-    "import '@layout/admin-shell/admin-shell';",
+    "import '@layout/admin-shell/admin-shell.component';",
     false,
   ],
   [
@@ -40,7 +40,12 @@ const probes = [
     false,
   ],
   ['shared UI rejects HTTP', 'src/app/shared/ui/probe.ts', "import '@angular/common/http';", false],
-  ['shared UI accepts sibling', 'src/app/shared/ui/probe.ts', "import './icon/icon';", true],
+  [
+    'shared UI accepts sibling',
+    'src/app/shared/ui/probe.ts',
+    "import './icon/icon.component';",
+    true,
+  ],
   [
     'app accepts routes',
     'src/app/probe.ts',
@@ -63,7 +68,7 @@ const probes = [
   [
     'routes accept lazy screen',
     'src/app/features/collections/collections.routes.ts',
-    "void import('./categories/categories');",
+    "void import('./categories/categories.component');",
     true,
   ],
   ['screen accepts store', screen, "import '@stores/categories.store';", true],
@@ -104,6 +109,14 @@ const probes = [
     "import '@features/collections/categories/categories';",
     false,
   ],
+  ['utility rejects store', 'src/app/utils/probe.ts', "import '@stores/categories.store';", false],
+  [
+    'store rejects router',
+    'src/app/stores/probe.ts',
+    "import {Router} from '@angular/router';",
+    false,
+  ],
+  ['utility accepts sibling', 'src/app/utils/probe.ts', "import './text.util';", true],
   ['model rejects store', 'src/app/models/probe.ts', "import '@stores/categories.store';", false],
   ['form rejects store', 'src/app/forms/probe.ts', "import '@stores/category-io.store';", false],
   ['component enum is outside the screen', screen, "export enum Status { Draft = 'draft' }", false],
@@ -133,6 +146,39 @@ const probes = [
     true,
   ],
 ];
+probes.push(
+  ['utility rejects DI', 'src/app/utils/probe.ts', "import {inject} from '@angular/core';", false],
+  [
+    'utility rejects storage',
+    'src/app/utils/probe.ts',
+    "export const read = () => localStorage.getItem('q');",
+    false,
+  ],
+  [
+    'shared UI rejects auth',
+    'src/app/shared/ui/probe.ts',
+    "import '@core/auth/auth-session';",
+    false,
+  ],
+  [
+    'model rejects view',
+    'src/app/models/probe.ts',
+    "import '@features/collections/categories/categories';",
+    false,
+  ],
+  [
+    'screen rejects eager change detection',
+    screen,
+    "import {Component,ChangeDetectionStrategy} from '@angular/core'; @Component({selector:'app-test',template:'',changeDetection:ChangeDetectionStrategy.Eager}) export class Test {}",
+    false,
+  ],
+  [
+    'screen rejects UI selector',
+    screen,
+    "import {Component,ChangeDetectionStrategy} from '@angular/core'; @Component({selector:'ui-test',template:'',changeDetection:ChangeDetectionStrategy.OnPush}) export class Test {}",
+    false,
+  ],
+);
 for (const [name, filePath, code, allowed] of probes) {
   const results = await eslint.lintText(code, { filePath });
   const errors = results
@@ -141,6 +187,9 @@ for (const [name, filePath, code, allowed] of probes) {
       (message) =>
         message.ruleId?.startsWith('boundaries/') ||
         message.ruleId === 'no-restricted-syntax' ||
+        message.ruleId === 'no-restricted-globals' ||
+        message.ruleId === '@angular-eslint/prefer-on-push-component-change-detection' ||
+        message.ruleId === '@angular-eslint/component-selector' ||
         message.ruleId === '@typescript-eslint/member-ordering' ||
         message.fatal,
     );
@@ -153,26 +202,72 @@ function files(directory) {
     return entry.isDirectory() ? files(file) : [file];
   });
 }
-const collectionFiles = files(path.join(cwd, 'src/app/features/collections'));
-assert.equal(
-  collectionFiles.filter((file) => file.endsWith('.scss') || file.endsWith('.spec.ts')).length,
-  0,
-);
-assert.equal(
-  collectionFiles.filter(
-    (file) => file.endsWith('.ts') && fs.readFileSync(file, 'utf8').includes('@Component('),
-  ).length,
-  6,
-);
-for (const folder of ['constants', 'enums', 'models', 'services', 'stores', 'forms', 'guards']) {
+for (const folder of [
+  'constants',
+  'enums',
+  'models',
+  'services',
+  'stores',
+  'forms',
+  'guards',
+  'utils',
+]) {
   assert.ok(fs.existsSync(path.join(cwd, 'src/app', folder)), `Missing shared folder: ${folder}`);
   assert.ok(
     !fs.existsSync(path.join(cwd, 'src/app/features/collections', folder)),
     `Move ${folder} beside features`,
   );
 }
+for (const file of files(path.join(cwd, 'src/app'))) {
+  if (!file.endsWith('.ts') || file.endsWith('.spec.ts')) continue;
+  assert.match(
+    path.basename(file),
+    /^[a-z0-9]+(?:[.-][a-z0-9]+)*\.ts$/u,
+    `Use kebab-case: ${file}`,
+  );
+  const source = fs.readFileSync(file, 'utf8');
+  if (source.includes('@Component({')) {
+    assert.match(
+      path.basename(file),
+      /\.component\.ts$/u,
+      `Component source must end with .component.ts: ${file}`,
+    );
+    const templateUrl = source.match(/templateUrl:\s*['"]([^'"]+)['"]/u)?.[1];
+    if (templateUrl) {
+      assert.match(
+        templateUrl,
+        /\.component\.html$/u,
+        `External component template must end with .component.html: ${file}`,
+      );
+    }
+    assert.ok(
+      !fs.existsSync(file.replace(/\.ts$/u, '.spec.ts')),
+      `Component tests belong in src/tests/components: ${file}`,
+    );
+    assert.ok(
+      !fs.existsSync(file.replace(/\.ts$/u, '.scss')),
+      `Use the shared SCSS boundary: ${file}`,
+    );
+  }
+}
+for (const [folder, suffix] of Object.entries({
+  constants: 'constants',
+  enums: 'enum',
+  models: '(?:dto|model)',
+  services: 'service',
+  stores: 'store',
+  guards: 'guard',
+  utils: 'util',
+})) {
+  for (const file of files(path.join(cwd, 'src/app', folder))) {
+    if (!file.endsWith('.spec.ts'))
+      assert.match(file, new RegExp(`\\.${suffix}\\.ts$`, 'u'), `Wrong role suffix: ${file}`);
+  }
+}
 const angular = JSON.parse(fs.readFileSync(path.join(cwd, 'angular.json'), 'utf8'));
 const defaults = angular.projects['boilerate-admin'].schematics['@schematics/angular:component'];
 assert.equal(defaults.style, 'none');
 assert.equal(defaults.skipTests, true);
+assert.equal(defaults.type, 'component');
+assert.equal(defaults.addTypeToClassName, false);
 console.log(`Architecture: ${probes.length} import checks and screen/style rules passed.`);

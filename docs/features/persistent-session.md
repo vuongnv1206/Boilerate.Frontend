@@ -1,14 +1,28 @@
-# Giữ phiên đăng nhập — 21/10/2026
+# Giữ phiên đăng nhập
 
-Mục tiêu: reload ở màn quản trị vẫn giữ đăng nhập và URL hiện tại. Giữ cấu trúc component/store/service đã thống nhất; không thêm màn hoặc tầng trung gian.
+FE đã triển khai khôi phục đăng nhập và URL quản trị khi tải lại trang. [Báo cáo của mốc source](../verification/2026-10-21-persistent-session.md) ghi riêng kiểm tra tự động và QA API thật; BE sibling đã đồng bộ `9e5b410`, có các endpoint browser session tương ứng.
 
-Trạng thái: đã triển khai, kiểm tra local và API thật; [báo cáo](../verification/2026-10-21-persistent-session.md) ghi kết quả cùng trạng thái CI sau push.
+## Hành vi
 
-1. BE bổ sung browser session trong TokensController, dùng cơ chế refresh rotation và thu hồi family hiện có. Refresh token ở cookie HttpOnly, host-only, SameSite Strict, có hạn dùng; Secure ngoài Development HTTP. Browser response chỉ trả access token và metadata. Các API token JSON hiện có tiếp tục phục vụ client cũ.
-2. FE giữ access token trong bộ nhớ. Guard chờ khôi phục phiên qua cookie rồi tải quyền trước khi mở admin. Login, refresh và logout dùng cùng origin `/api`, header chống CSRF và Web Lock để hai tab không dùng lại một refresh token.
-3. Logout thu hồi phiên từ cookie ngay cả khi access token hết hạn, xóa cookie và báo các tab khác dọn phiên. Refresh bị từ chối chuyển về login; lỗi mạng/server không xóa cookie phía BE. Không lưu token, mật khẩu hoặc quyền trong localStorage/sessionStorage.
-4. Kiểm tra unit HTTP/session/guard; browser reload URL sâu, refresh, logout, phiên bị thu hồi và hai tab; kiểm tra endpoint/cookie trên SQL Server thật. Chạy check, browser suite, commit/push và ghi nhận CI thực tế.
+- Access token và quyền ở bộ nhớ. Guard chờ refresh cookie và tải lại quyền trước khi mở admin; không lưu token, mật khẩu hoặc quyền trong localStorage/sessionStorage.
+- Các request refresh trong một tab dùng chung một lần gọi. Web Lock điều phối login/refresh/logout giữa các tab khi trình duyệt hỗ trợ; BroadcastChannel thông báo thay đổi phiên. Response phải đúng userId trước khi cho phép gửi lại request của phiên cũ.
+- Refresh 401 yêu cầu đăng nhập lại. Lỗi mạng/server có thể thử khôi phục lại; logout chưa gọi được server có nút thử lại.
+- Logout yêu cầu BE thu hồi phiên, xóa cookie và thông báo các tab khác dọn phiên; phiên đã thu hồi không được khôi phục sau reload.
 
-Hoàn tất khi reload không hiện lại form đăng nhập lúc phiên còn hợp lệ, logout không bị khôi phục khi reload, kiểm tra đạt và source đã push. Mobile/deployment vẫn ngoài mốc này.
+## Hợp đồng BE mà FE yêu cầu
 
-Tham khảo: [OWASP session](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [OWASP API CSRF headers](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#employing-custom-request-headers-for-ajaxapi), [ASP.NET Core SameSite](https://learn.microsoft.com/en-us/aspnet/core/security/samesite?view=aspnetcore-10.0).
+Các đường dẫn dưới đây tương đối với API base, mặc định `/api`; source gọi tại [AuthSession](../../src/app/core/auth/auth-session.ts).
+
+| Request                       | Dữ liệu / kết quả                                                            |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| `POST tokens/session`         | Body `{ email, password }`; trả access token và metadata, đặt refresh cookie |
+| `POST tokens/session/refresh` | Body `null`; nhận cookie, xoay refresh token và trả access token mới         |
+| `DELETE tokens/session`       | Thu hồi phiên từ cookie và xóa cookie, kể cả khi access token hết hạn        |
+
+FE gửi `withCredentials: true` và `X-Requested-With: XMLHttpRequest`. Response token gồm `userId`, `token`, `sessionId`, `accessTokenExpiresAt`. Refresh token do BE tương thích quản lý trong cookie HttpOnly, host-only, SameSite Strict, có hạn dùng và Secure ngoài Development HTTP. Production dùng HTTPS và proxy FE/API cùng origin.
+
+API JSON `tokens/get` và `tokens/refresh` của [TokensController trong sibling BE](../../../Boilerate/src/Host/Controllers/Identity/TokensController.cs) không thay thế hợp đồng trên. Các browser endpoints ở cùng controller đã có trên BE vừa pull; refresh token chỉ do cookie HttpOnly quản lý.
+
+## Giới hạn
+
+Web Locks/BroadcastChannel phục vụ đồng bộ trên trình duyệt hỗ trợ. Thời hạn cookie và thu hồi do BE quyết định. Mobile, cross-site cookie và deployment chưa được nghiệm thu.

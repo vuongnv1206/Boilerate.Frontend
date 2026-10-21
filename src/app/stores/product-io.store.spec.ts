@@ -1,12 +1,13 @@
+import { AuthSession } from '@core/auth/auth-session';
 import { createProductForm } from '@forms/product.form';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
-import { ApiError } from '../core/http/api-error';
+import { ApiError } from '@core/http/api-error';
 import { ProductsService } from '@services/products.service';
 import { ProductFulfillmentKind, ProductStatus } from '@enums/product.enum';
 import { ProductFieldType } from '@enums/product-field-type.enum';
-import { ProductTypeLookup } from '@models/product-lookups.model';
-import { ProductDto } from '@models/product.model';
+import { ProductTypeLookup } from '@models/product-lookups.dto';
+import { ProductDto } from '@models/product.dto';
 import { ProductIoStore } from '@stores/product-io.store';
 
 describe('ProductIoStore', () => {
@@ -72,7 +73,11 @@ describe('ProductIoStore', () => {
       of({ ...item, status: ProductStatus.Published, version: 'product-version-3' }),
     );
     TestBed.configureTestingModule({
-      providers: [ProductIoStore, { provide: ProductsService, useValue: service }],
+      providers: [
+        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        ProductIoStore,
+        { provide: ProductsService, useValue: service },
+      ],
     });
     store = TestBed.inject(ProductIoStore);
     store.setForm(createProductForm());
@@ -83,11 +88,23 @@ describe('ProductIoStore', () => {
     store.form.controls.name.setValue(name);
   }
 
+  it('locks a view-only product and blocks direct save and status commands', () => {
+    vi.spyOn(TestBed.inject(AuthSession), 'hasPermission').mockImplementation((permission) =>
+      permission.endsWith('.View'),
+    );
+    store.load(item.id);
+    expect(store.form.disabled).toBe(true);
+    store.save().subscribe();
+    store.changeStatus(ProductStatus.Published);
+    expect(service.edit).not.toHaveBeenCalled();
+    expect(service.changeStatus).not.toHaveBeenCalled();
+  });
+
   it('loads typed detail and saves content with both concurrency versions, preserving media', () => {
     store.load(item.id);
     changeName();
     expect(service.edit).not.toHaveBeenCalled();
-    store.save();
+    store.save().subscribe();
     expect(service.edit).toHaveBeenCalledWith({
       id: item.id,
       version: item.version,
@@ -116,7 +133,9 @@ describe('ProductIoStore', () => {
     store.form.controls.sku.setValue('DEN-01');
     store.form.controls.price.setValue(450000);
     const created = vi.fn();
-    store.save(created);
+    store.save().subscribe((saved) => {
+      if (!store.form.dirty) created(saved.id);
+    });
     expect(service.create).toHaveBeenCalledWith(
       expect.objectContaining({
         productTypeId: schema.id,
@@ -138,7 +157,7 @@ describe('ProductIoStore', () => {
         () => new ApiError({ status: 409, kind: 'conflict', message: 'conflict', fieldErrors: {} }),
       ),
     );
-    store.save();
+    store.save().subscribe();
     expect(store.error()).toContain('đã thay đổi');
     expect(store.form.controls.name.value).toBe('Tên đang nhập');
     expect(store.form.dirty).toBe(true);
@@ -154,7 +173,9 @@ describe('ProductIoStore', () => {
     changeName('Sản phẩm mới');
     store.form.controls.sku.setValue('NEW-01');
     const created = vi.fn();
-    store.save(created);
+    store.save().subscribe((saved) => {
+      if (!store.form.dirty) created(saved.id);
+    });
     changeName('Nội dung mới hơn');
     pending.next(item);
     pending.complete();
@@ -163,7 +184,9 @@ describe('ProductIoStore', () => {
     expect(store.form.controls.name.value).toBe('Nội dung mới hơn');
     expect(store.form.dirty).toBe(true);
 
-    store.save(created);
+    store.save().subscribe((saved) => {
+      if (!store.form.dirty) created(saved.id);
+    });
 
     expect(service.create).toHaveBeenCalledTimes(1);
     expect(service.edit).toHaveBeenCalledWith(
@@ -190,7 +213,7 @@ describe('ProductIoStore', () => {
           }),
       ),
     );
-    store.save();
+    store.save().subscribe();
     expect(store.form.controls.name.errors?.['server']).toEqual(['Tên không hợp lệ']);
     expect(store.form.controls.name.value).toBe('Tên đang nhập');
     expect(store.hasUnsavedChanges()).toBe(true);
@@ -201,8 +224,8 @@ describe('ProductIoStore', () => {
     service.edit.mockReturnValue(pending);
     store.load(item.id);
     changeName('Phiên bản gửi');
-    store.save();
-    store.save();
+    store.save().subscribe();
+    store.save().subscribe();
     expect(service.edit).toHaveBeenCalledTimes(1);
     changeName('Thay đổi mới hơn');
     pending.next({ ...item, name: 'Phiên bản gửi', version: 'new-version' });
@@ -228,7 +251,7 @@ describe('ProductIoStore', () => {
     changeName();
     store.changeStatus(ProductStatus.Published);
     expect(service.changeStatus).not.toHaveBeenCalled();
-    store.save();
+    store.save().subscribe();
     store.changeStatus(ProductStatus.Published);
     expect(service.changeStatus).toHaveBeenCalledWith({
       id: item.id,
@@ -262,7 +285,7 @@ describe('ProductIoStore', () => {
     changeName();
     store.form.controls.sku.setValue('SKU');
     store.form.controls.fields.controls['material']?.setValue('   ');
-    store.save();
+    store.save().subscribe();
     expect(service.create).not.toHaveBeenCalled();
     expect(store.form.controls.fields.controls['material']?.hasError('required')).toBe(true);
   });
@@ -273,5 +296,44 @@ describe('ProductIoStore', () => {
     store.load(item.id);
     TestBed.resetTestingModule();
     expect(pending.observed).toBe(false);
+  });
+  it('maps a dynamic field from its submitted index to its id and summarizes unknown errors', () => {
+    const definition = {
+      id: 'field-number',
+      code: 'WEIGHT',
+      label: 'Trọng lượng',
+      dataType: ProductFieldType.Number,
+      isActive: true,
+      isRequired: false,
+      isFilterable: false,
+      sortOrder: 0,
+      helpText: null,
+      choices: [],
+    };
+    service.productType.mockReturnValue(of({ ...schema, fields: [definition] }));
+    store.load(item.id);
+    store.form.controls.fields.controls['field-number']?.setValue(0);
+    changeName();
+    service.edit.mockReturnValue(
+      throwError(
+        () =>
+          new ApiError({
+            status: 422,
+            kind: 'validation',
+            message: 'Invalid',
+            fieldErrors: {
+              'Content.Fields[0].NumberValue': ['Giá trị không hợp lệ'],
+              Unrecognized: ['Cần kiểm tra dữ liệu liên quan'],
+            },
+          }),
+      ),
+    );
+    store.save().subscribe();
+    expect(store.form.controls.fields.controls['field-number']?.errors?.['server']).toEqual([
+      'Giá trị không hợp lệ',
+    ]);
+    expect(store.summary()).toEqual(['Cần kiểm tra dữ liệu liên quan']);
+    expect(store.form.controls.fields.controls['field-number']?.value).toBe(0);
+    expect(store.form.dirty).toBe(true);
   });
 });

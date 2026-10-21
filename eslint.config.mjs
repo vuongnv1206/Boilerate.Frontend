@@ -5,7 +5,7 @@ import boundaries from 'eslint-plugin-boundaries';
 import { fileURLToPath } from 'node:url';
 
 const dataTypes = ['constants', 'enums', 'models'];
-const commonTypes = [...dataTypes, 'forms', 'services', 'stores', 'guards'];
+const commonTypes = [...dataTypes, 'forms', 'services', 'stores', 'guards', 'utils'];
 const sameFeature = ['feature', { feature: '${from.feature}' }];
 
 export default tseslint.config(
@@ -24,9 +24,10 @@ export default tseslint.config(
       'boundaries/flag-as-external': { unresolvableAlias: false },
       'boundaries/dependency-nodes': ['import', 'dynamic-import', 'export', 'require'],
       'boundaries/elements': [
+        { type: 'test', pattern: 'src/tests/**/*.ts', mode: 'file' },
         {
           type: 'test',
-          pattern: 'src/app/{features,stores,services,forms}/**/*.spec.ts',
+          pattern: 'src/app/{features,stores,services,forms,guards,utils}/**/*.spec.ts',
           mode: 'file',
         },
         {
@@ -52,6 +53,7 @@ export default tseslint.config(
       'import/resolver': { typescript: { project: './tsconfig.json', alwaysTryTypes: true } },
     },
     rules: {
+      '@angular-eslint/prefer-on-push-component-change-detection': 'error',
       'boundaries/no-unknown-files': 'error',
       'boundaries/no-unknown': 'error',
       'boundaries/element-types': [
@@ -62,7 +64,7 @@ export default tseslint.config(
             { from: 'bootstrap', allow: ['composition', 'core'] },
             {
               from: 'composition',
-              allow: ['composition', 'core', 'layout', ...dataTypes, 'feature-entry'],
+              allow: ['composition', 'core', 'layout', ...dataTypes, 'guards', 'feature-entry'],
             },
             { from: 'core', allow: ['core', 'http-transport', ...dataTypes] },
             { from: 'http-transport', allow: ['core', 'http-transport'] },
@@ -83,6 +85,7 @@ export default tseslint.config(
                 ...dataTypes,
                 'forms',
                 'stores',
+                'utils',
               ],
             },
             {
@@ -90,10 +93,11 @@ export default tseslint.config(
               allow: ['core', 'shared-forms', 'stores', 'services', 'forms', ...dataTypes],
             },
             { from: 'services', allow: ['core', 'http-transport', 'services', ...dataTypes] },
-            { from: 'forms', allow: ['forms', 'shared-forms', ...dataTypes] },
+            { from: 'forms', allow: ['forms', 'utils', 'shared-forms', ...dataTypes] },
             { from: 'models', allow: ['models', 'enums'] },
             { from: 'constants', allow: dataTypes },
             { from: 'enums', allow: ['enums'] },
+            { from: 'utils', allow: ['utils', ...dataTypes] },
             { from: 'guards', allow: ['core', 'guards', ...dataTypes] },
             {
               from: 'test',
@@ -103,6 +107,8 @@ export default tseslint.config(
                 'shared-ui',
                 'shared-forms',
                 'feature',
+                'composition',
+                'layout',
                 ...commonTypes,
               ],
             },
@@ -114,8 +120,13 @@ export default tseslint.config(
         {
           default: 'allow',
           rules: [
+            { from: 'utils', disallow: ['@angular/**', 'rxjs'] },
             {
-              from: ['feature', 'stores', 'forms', 'models', 'shared-ui'],
+              from: ['stores', 'utils', 'services', 'models', 'forms', 'shared-ui'],
+              disallow: ['@angular/router'],
+            },
+            {
+              from: ['feature', 'stores', 'forms', 'models', 'shared-ui', 'utils'],
               disallow: [['@angular/common', { path: '/http{,/**}' }]],
               message: 'Call the store/service. HTTP belongs to ApiClient and API services.',
             },
@@ -153,6 +164,45 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    files: ['src/app/utils/**/*.ts', 'src/app/models/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        'window',
+        'document',
+        'localStorage',
+        'sessionStorage',
+        'navigator',
+        'fetch',
+      ],
+    },
+  },
+  {
+    files: ['src/app/features/**/*.ts', 'src/app/layout/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      '@angular-eslint/component-selector': [
+        'error',
+        { type: 'element', prefix: 'app', style: 'kebab-case' },
+      ],
+    },
+  },
+  {
+    files: ['src/app/shared/ui/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      '@angular-eslint/component-selector': [
+        'error',
+        { type: 'element', prefix: 'ui', style: 'kebab-case' },
+      ],
+    },
+  },
+  {
+    files: ['**/*.spec.ts'],
+    rules: { '@angular-eslint/prefer-on-push-component-change-detection': 'off' },
   },
   {
     files: ['src/**/*.html'],

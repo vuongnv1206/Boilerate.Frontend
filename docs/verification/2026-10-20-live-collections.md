@@ -1,27 +1,18 @@
-# Kiểm tra collections API — 20/10/2026
+# Kiểm chứng Collections API — 20/10/2026
 
-Môi trường: Windows, Node24.19.0, Angular22.2.3, PrimeNG22.1.2, Chromium theo Playwright1.64.1. BE .NET10.0.402, SQL Server instance `.` và database riêng `BoilerateDevelopment`.
+Kết quả đã lưu cho FE `8ac71e00a8a62196d4b71addec6b148489982859`. Đây là bằng chứng của mốc tích hợp, không xác nhận khả năng chạy với checkout BE hiện tại; xem [yêu cầu API](../features/live-admin-collections.md).
 
-## Đã kiểm tra
+Môi trường: Windows, Node 24.19.0, Angular 22.2.3, PrimeNG 22.1.2, Chromium theo Playwright 1.64.1. QA API thật dùng BE .NET 10.0.402 và SQL Server database `BoilerateDevelopment`; báo cáo gốc ghi mốc BE seed `59a838d`, trước mốc đồng bộ BE `9e5b410`; xem báo cáo nền tích hợp cho source mới.
 
-- TypeScript/Angular strict templates và production build đạt sau khi gộp component.
-- `npm run check` đạt: format, lint, 34 kiểm tra import cùng quy tắc folder/style, 141 unit tests / 22 files và production build. Initial bundle 548,88 kB; tập trung HTTP, auth, store, form và phần nền đang dùng.
-- 24 browser tests desktop 1440×900/tablet 1024×768, light/dark đạt ở lượt cuối sau các sửa lỗi. Đã kiểm tra style thực tế của heading form ở cả dev và production; tạo lại 4 ảnh editor bằng `--update-snapshots=all` để phản ánh căn trái mới, sau đó chạy lại toàn bộ web suite không cập nhật ảnh: 24/24 đạt.
-- API fixtures của browser suite chỉ ở e2e/helpers; app source dùng API thật. Browser kiểm login, search, pagination/selection, create/publish/reopen, dirty guard, save409 giữ nội dung, category/type create/edit, panel/theme và select/date/dialog/drawer/tooltip/toast.
-- QA trực tiếp tại localhost4200 → proxy → BE5000: login thật; danh sách 14 sản phẩm, 6 danh mục, 2 loại; sửa sản phẩm và reload thấy dữ liệu giữ trong SQL Server; sửa category/type và đưa lại tên cũ. Không có browser page errors. Bằng chứng local bị ignore tại `artifacts/live-api/result.json` và ảnh cùng folder.
-- Seed JSON chạy CLI giữ 14 sản phẩm có sẵn; provider tests kiểm dữ liệu đã chỉnh không bị ghi đè. Chi tiết BE tại [báo cáo seed](../../../Boilerate/docs/backend/verification/2026-10-20-development-seeding.md).
-- Rà soát cuối sửa retry danh sách về đúng trang và điều hướng sau khi nhập tiếp trong lúc tạo sản phẩm. Có unit test cho hai tình huống này. Bỏ số đếm thuộc tính ở bảng loại sản phẩm vì API danh sách chưa cung cấp số lượng thực tế.
+| Phạm vi                  | Kết quả đã ghi nhận                                                                                                                                |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run check`          | Format, lint, 34 kiểm tra quy tắc, 141 unit tests / 22 files và production build đạt                                                               |
+| Browser dùng API fixture | 24/24 đạt trên desktop 1440×900 và tablet 1024×768, light/dark; login, search/page/selection, create/edit/status, dirty guard, lỗi 409 và overlays |
+| QA với SQL Server thật   | Login, sửa sản phẩm và reload giữ dữ liệu; sửa/khôi phục tên category/type; không có page errors                                                   |
+| CI FE                    | [Run 39461384076](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39461384076) đạt check/build và 24 browser tests                  |
 
-## Giới hạn
+Browser fixture không chứng minh dữ liệu SQL Server. Raw QA local được ghi tại `artifacts/live-api/result.json` và ảnh cùng folder, bị ignore; report/trace CI gắn với run trên.
 
-Mobile tối ưu sau. Token chỉ giữ trong tab, reload phải đăng nhập lại. BE kiểm quyền; chưa nghiệm thu UI cho từng vai trò. SKU/giá/tồn của sản phẩm đã có đang chỉ xem. Chưa nghiệm thu deployment. PrimeUI vẫn có thể hiện cảnh báo license của vendor; không coi đó là lỗi đã được xử lý hoặc giấu nó.
+Tái chạy kiểm tra tự động theo [README](../../README.md#kiểm-tra). QA dữ liệu thật cần BE khớp DTO/endpoint và tài khoản riêng; không dùng credentials trong fixture.
 
-## Chạy lại
-
-Chọn Node theo `.node-version`, cài theo lockfile với npm 12.2.0, đặt `PRIMEUI_LICENSE_KEY` rỗng và `API_BASE_URL=/api`, rồi chạy `npm run check`, `npx playwright install chromium`, `npm run test:e2e`. Browser suite dùng API fixture, không cần BE hoặc SQL Server trên CI. QA lưu dữ liệu thật cần BE5000 và tài khoản local như README; không đưa credentials vào fixture.
-
-## CI đã đạt
-
-Source `8ac71e00a8a62196d4b71addec6b148489982859` đã push lên `main`. [Run 39461384076](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39461384076) hoàn tất thành công: cài dependency từ lockfile, format/lint, 34 kiểm tra import và quy tắc màn/style, 141 unit tests / 22 files, production build và 24 browser tests (2,8 phút, không retry hoặc bỏ qua). Report/trace được lưu làm artifact của run.
-
-CI dùng Windows, Node 24.19.0, API fixture và license rỗng; không dùng SQL Server hay credentials local. Bằng chứng lưu SQL Server là lượt QA local đã ghi ở trên. Commit tài liệu sau source này dùng `[skip ci]`; không thay source hoặc baseline đã kiểm tra. CI cũ trong các báo cáo content demo giữ làm lịch sử.
+Giới hạn: chưa nghiệm thu mobile, UI theo từng vai trò, deployment hoặc license. SKU/giá/tồn của sản phẩm đã có chỉ xem. Cơ chế phiên của mốc này đã được thay bởi [giữ phiên khi reload](../features/persistent-session.md).

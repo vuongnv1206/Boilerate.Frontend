@@ -1,7 +1,7 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { registerLocaleData } from '@angular/common';
 import localeVi from '@angular/common/locales/vi';
-import { App } from './app/app';
+import { App } from './app/app.component';
 import { createAppConfig } from './app/app.config';
 import { readRuntimeConfig } from './app/core/config/runtime-config';
 

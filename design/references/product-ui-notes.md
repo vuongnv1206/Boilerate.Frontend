@@ -20,4 +20,4 @@ Feedback follows the action immediately and remains short. Use motion to clarify
 
 ## Review
 
-Try the actual workflow before polishing isolated pixels: select a row, open the editor, enter long Vietnamese content, trigger validation, save the demo and return to the list. Then verify the same workflow in the other theme and with the keyboard. Any untested behavior stays explicitly pending.
+Try the actual workflow before polishing isolated pixels: select a row, open the editor, enter long Vietnamese content, trigger validation, save through the API and return to the list. Then verify the same workflow in the other theme and with the keyboard. Any untested behavior stays explicitly pending.

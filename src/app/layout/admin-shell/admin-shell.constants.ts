@@ -1,4 +1,4 @@
-import type { ThemeMode } from '../../core/theme/theme-controller';
+import type { ThemeMode } from '@core/theme/theme-controller';
 
 export const ADMIN_LAYOUT = {
   mobileQuery: '(max-width: 760px)',

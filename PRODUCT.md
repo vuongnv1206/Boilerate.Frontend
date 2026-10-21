@@ -4,9 +4,9 @@
 
 ## Mốc hiện tại
 
-Triển khai nền giao diện theo 5 step đã duyệt: tham chiếu và quy chuẩn → workspace → theme/control → list/editor demo → motion và kiểm chứng. [Hồ sơ và tiến độ chính thức](../Boilerate/docs/frontend/features/admin-ui-foundation.md).
+FE có nền workspace, lựa chọn System/Light/Dark, panel co giãn và Gallery thử control. [Collections](docs/features/live-admin-collections.md) có danh sách và màn thêm/sửa sản phẩm, danh mục, loại sản phẩm qua API. [Giữ phiên](docs/features/persistent-session.md) khôi phục đăng nhập/URL khi reload bằng cookie HttpOnly; access token ở bộ nhớ.
 
-Mốc mới đã được người dùng duyệt ngày 20/10: collections gọi API thật trên SQL Server local, có đăng nhập và lưu dữ liệu sau khi nhận phản hồi server. Mỗi phần có màn danh sách và màn thêm/sửa `-io`. Gallery vẫn dùng dữ liệu minh họa để thử control. Theme và panel là tùy chọn trình duyệt. Theo yêu cầu ngày 21/10, phiên được khôi phục khi reload bằng cookie HttpOnly; access token giữ trong bộ nhớ.
+Yêu cầu tích hợp được dẫn từ [README](README.md); phạm vi kiểm chứng theo từng phiên bản nằm ở tài liệu feature. Các mốc đã triển khai ở [lịch sử tính năng](docs/history/README.md).
 
 ## Nguyên tắc sản phẩm
 
@@ -19,7 +19,7 @@ Mốc mới đã được người dùng duyệt ngày 20/10: collections gọi 
 
 ## Mốc sau
 
-Sau mốc collections local: UI chi tiết theo quyền, quản trị nhân viên, vận hành đơn, storefront và deployment. Mobile tối ưu sau; hiện ưu tiên desktop/tablet. Nghiệp vụ chung giữ một nguồn ở [docs/shared](../Boilerate/docs/shared/README.md), API ở [docs/backend](../Boilerate/docs/backend/README.md).
+Ưu tiên desktop/tablet. UI Collections đã khóa thao tác theo quyền BE và giữ query khi quay lại danh sách. Các phần chưa nghiệm thu gồm quản trị nhân viên, vận hành đơn, storefront và deployment; đây là hướng tiếp theo, chưa phải kế hoạch triển khai đã chốt. Mobile tối ưu sau, gồm lỗi tooltip Gallery mất hiển thị khi focus/scroll đã được ghi nhận ở mốc kiểm tra cũ.
 
 ## Tiêu chí đánh giá trải nghiệm
 

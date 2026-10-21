@@ -9,7 +9,14 @@
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",
-      "schematics": { "@schematics/angular:component": { "style": "none", "skipTests": true } },
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "none",
+          "skipTests": true,
+          "type": "component",
+          "addTypeToClassName": false
+        }
+      },
       "architect": {
         "build": {
           "builder": "@angular/build:application",

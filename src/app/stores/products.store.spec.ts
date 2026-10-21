@@ -1,8 +1,9 @@
+import { AuthSession } from '@core/auth/auth-session';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { ProductsService } from '@services/products.service';
 import { ProductStatus } from '@enums/product.enum';
-import { ProductPage } from '@models/product.model';
+import { ProductPage } from '@models/product.dto';
 import { ProductsStore } from '@stores/products.store';
 
 describe('ProductsStore', () => {
@@ -13,34 +14,31 @@ describe('ProductsStore', () => {
   beforeEach(() => {
     service.search.mockReset().mockReturnValue(of(first));
     TestBed.configureTestingModule({
-      providers: [ProductsStore, { provide: ProductsService, useValue: service }],
+      providers: [
+        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        ProductsStore,
+        { provide: ProductsService, useValue: service },
+      ],
     });
     store = TestBed.inject(ProductsStore);
   });
-  afterEach(() => vi.useRealTimers());
 
   it('cancels a stale search when the filter changes', () => {
     const slow = new Subject<ProductPage>();
     service.search.mockReturnValueOnce(slow).mockReturnValueOnce(of({ ...first, total: 3 }));
     store.load();
     expect(slow.observed).toBe(true);
-    store.setStatus(ProductStatus.Published);
+    store.applyQuery({ q: '', status: ProductStatus.Published, page: 1, pageSize: 10 });
     expect(slow.observed).toBe(false);
     expect(store.page().total).toBe(3);
     expect(store.loading()).toBe(false);
     expect(service.search).toHaveBeenLastCalledWith({ pageNumber: 1, pageSize: 10, status: 2 });
   });
 
-  it('debounces typing and retains one-based server pagination', () => {
-    vi.useFakeTimers();
-    store.load();
-    store.setQuery('g');
-    store.setQuery('ghế');
-    vi.advanceTimersByTime(249);
-    expect(service.search).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(1);
+  it('applies parsed URL query and keeps one-based pagination', () => {
+    store.applyQuery({ q: 'ghế', status: null, page: 1, pageSize: 10 });
     expect(service.search).toHaveBeenLastCalledWith({ pageNumber: 1, pageSize: 10, search: 'ghế' });
-    store.setPage(2);
+    store.applyQuery({ q: 'ghế', status: null, page: 2, pageSize: 10 });
     expect(service.search).toHaveBeenLastCalledWith({ pageNumber: 2, pageSize: 10, search: 'ghế' });
   });
 
@@ -63,12 +61,10 @@ describe('ProductsStore', () => {
   });
 
   it('retries the requested first page after a search fails on a later page', () => {
-    vi.useFakeTimers();
     service.search.mockReturnValueOnce(of({ ...first, pageNumber: 3 }));
     store.load();
     service.search.mockReturnValueOnce(throwError(() => new Error('offline')));
-    store.setQuery('ghế');
-    vi.advanceTimersByTime(250);
+    store.applyQuery({ q: 'ghế', status: null, page: 1, pageSize: 10 });
     expect(store.page().pageNumber).toBe(3);
     store.load();
     expect(service.search).toHaveBeenLastCalledWith({ pageNumber: 1, pageSize: 10, search: 'ghế' });

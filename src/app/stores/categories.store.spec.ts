@@ -1,3 +1,4 @@
+import { AuthSession } from '@core/auth/auth-session';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -20,21 +21,33 @@ describe('CategoriesStore', () => {
     };
     const service = { getAll: vi.fn(() => of([category])), delete: vi.fn(() => of(false)) };
     TestBed.configureTestingModule({
-      providers: [CategoriesStore, { provide: CategoriesService, useValue: service }],
+      providers: [
+        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        CategoriesStore,
+        { provide: CategoriesService, useValue: service },
+      ],
     });
     const store = TestBed.inject(CategoriesStore);
     const done = vi.fn();
     store.load();
-    store.search('sơ mi');
+    store.applyQuery({ q: 'sơ mi', page: 1 });
     expect(store.rows()).toEqual([category]);
-    store.delete(category, done);
+    store.delete(category).subscribe((deleted) => {
+      if (deleted) done();
+    });
     expect(store.items()).toHaveLength(1);
     expect(done).not.toHaveBeenCalled();
     service.delete.mockReturnValue(of(true));
-    store.delete(category, done);
+    store.delete(category).subscribe((deleted) => {
+      if (deleted) done();
+    });
     expect(store.items()).toHaveLength(0);
     expect(store.page()).toBe(1);
     expect(done).toHaveBeenCalledOnce();
     expect(service.delete).toHaveBeenLastCalledWith('one', 'v1');
+    vi.spyOn(TestBed.inject(AuthSession), 'hasPermission').mockReturnValue(false);
+    const readonlyStore = TestBed.runInInjectionContext(() => new CategoriesStore());
+    readonlyStore.delete(category).subscribe();
+    expect(service.delete).toHaveBeenCalledTimes(2);
   });
 });

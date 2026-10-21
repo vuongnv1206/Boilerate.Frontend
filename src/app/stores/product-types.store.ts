@@ -1,15 +1,24 @@
+import { ListQuery } from '@models/list-query.model';
+import { AuthSession } from '@core/auth/auth-session';
+import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
-import { ApiError } from '../core/http/api-error';
+import { ApiError } from '@core/http/api-error';
 import { PRODUCT_TYPE_PAGE_SIZE } from '@constants/product-type.constants';
 import { ProductTypesService } from '@services/product-types.service';
 import { ProductTypeDto } from '@models/product-type.dto';
 
 @Injectable()
 export class ProductTypesStore {
+  private readonly session = inject(AuthSession);
+  readonly canCreate = computed(() =>
+    this.session.hasPermission(CATALOG_PERMISSIONS.productType.create),
+  );
   private readonly service = inject(ProductTypesService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly loadedState = signal(false);
+  readonly loaded = this.loadedState.asReadonly();
   private readonly records = signal<readonly ProductTypeDto[]>([]);
   private readonly queryState = signal('');
   private readonly pageState = signal(1);
@@ -39,6 +48,10 @@ export class ProductTypesStore {
   constructor() {
     this.destroyRef.onDestroy(() => this.loadSubscription?.unsubscribe());
   }
+  applyQuery(query: ListQuery): void {
+    this.queryState.set(query.q);
+    this.pageState.set(query.page);
+  }
   load(): void {
     this.loadSubscription?.unsubscribe();
     this.loadingState.set(true);
@@ -49,7 +62,8 @@ export class ProductTypesStore {
       .subscribe({
         next: (items) => {
           this.records.set(items);
-          this.setPage(this.page());
+          this.loadedState.set(true);
+
           this.loadingState.set(false);
         },
         error: (error: unknown) => {
@@ -59,12 +73,5 @@ export class ProductTypesStore {
           );
         },
       });
-  }
-  search(query: string): void {
-    this.queryState.set(query);
-    this.pageState.set(1);
-  }
-  setPage(page: number): void {
-    this.pageState.set(Math.max(1, Math.min(page, this.totalPages())));
   }
 }

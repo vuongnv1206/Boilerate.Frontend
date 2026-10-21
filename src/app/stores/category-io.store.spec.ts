@@ -1,8 +1,9 @@
+import { AuthSession } from '@core/auth/auth-session';
 import { createCategoryForm } from '@forms/category.form';
 import { TestBed } from '@angular/core/testing';
-import { Subject, of } from 'rxjs';
+import { Subject, firstValueFrom, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError } from '../core/http/api-error';
+import { ApiError } from '@core/http/api-error';
 import { CategoriesService } from '@services/categories.service';
 import { CategoryDto } from '@models/category.dto';
 import { CategoryIoStore } from '@stores/category-io.store';
@@ -27,7 +28,11 @@ describe('CategoryIoStore', () => {
   beforeEach(() => {
     service = { getAll: vi.fn(() => of([category])), create: vi.fn(), update: vi.fn() };
     TestBed.configureTestingModule({
-      providers: [CategoryIoStore, { provide: CategoriesService, useValue: service }],
+      providers: [
+        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        CategoryIoStore,
+        { provide: CategoriesService, useValue: service },
+      ],
     });
     store = TestBed.inject(CategoryIoStore);
     store.setForm(createCategoryForm());
@@ -52,13 +57,13 @@ describe('CategoryIoStore', () => {
     expect(store.ready()).toBe(false);
     expect(store.error()).toContain('Không tìm thấy');
     store.form.patchValue({ name: 'Tên', slug: 'ten' });
-    expect(await store.save()).toBeNull();
+    expect(await firstValueFrom(store.save(), { defaultValue: null })).toBeNull();
     expect(service.create).not.toHaveBeenCalled();
   });
   it('rejects whitespace names and noninteger sort order before calling the service', async () => {
     store.load('new');
     store.form.patchValue({ name: '  ', slug: 'valid', sortOrder: 1.5 });
-    expect(await store.save()).toBeNull();
+    expect(await firstValueFrom(store.save(), { defaultValue: null })).toBeNull();
     expect(store.form.controls.name.touched).toBe(true);
     expect(service.create).not.toHaveBeenCalled();
   });
@@ -68,7 +73,7 @@ describe('CategoryIoStore', () => {
     store.load('parent');
     store.form.controls.name.setValue('Đang chỉnh');
     store.form.markAsDirty();
-    const saving = store.save();
+    const saving = firstValueFrom(store.save(), { defaultValue: null });
     response.error(
       new ApiError({
         kind: 'conflict',
@@ -90,8 +95,8 @@ describe('CategoryIoStore', () => {
     store.load('parent');
     store.form.controls.name.setValue('Gửi đi');
     store.form.markAsDirty();
-    const pending = store.save();
-    expect(await store.save()).toBeNull();
+    const pending = firstValueFrom(store.save(), { defaultValue: null });
+    expect(await firstValueFrom(store.save(), { defaultValue: null })).toBeNull();
     store.form.controls.name.setValue('Chỉnh tiếp');
     response.next({ ...category, name: 'Gửi đi', version: 'v2' });
     response.complete();
@@ -110,5 +115,25 @@ describe('CategoryIoStore', () => {
     store.load('second');
     old.next([category]);
     expect(store.record()?.id).toBe('second');
+  });
+  it('locks a view-only form and rejects a direct save without calling the service', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        CategoryIoStore,
+        { provide: CategoriesService, useValue: service },
+        {
+          provide: AuthSession,
+          useValue: { hasPermission: (permission: string) => permission.endsWith('.View') },
+        },
+      ],
+    });
+    const readonlyStore = TestBed.inject(CategoryIoStore);
+    readonlyStore.setForm(createCategoryForm());
+    readonlyStore.load('parent');
+    expect(readonlyStore.form.disabled).toBe(true);
+    readonlyStore.save().subscribe();
+    expect(service.update).not.toHaveBeenCalled();
+    expect(service.create).not.toHaveBeenCalled();
   });
 });

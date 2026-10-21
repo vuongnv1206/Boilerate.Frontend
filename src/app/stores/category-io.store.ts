@@ -1,15 +1,37 @@
 import { CategoryForm } from '@forms/category.form';
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription, firstValueFrom } from 'rxjs';
-import { ApiError } from '../core/http/api-error';
-import { applyServerErrors, clearServerErrors } from '../shared/forms/apply-server-errors';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  Subscription,
+  catchError,
+  defer,
+  filter,
+  finalize,
+  takeUntil,
+  tap,
+} from 'rxjs';
+import { AuthSession } from '@core/auth/auth-session';
+import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
+import { ApiError } from '@core/http/api-error';
+import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
 import { CategoriesService } from '@services/categories.service';
 import { categoryFormValue, categoryRequest } from '@forms/category.form';
 import { CategoryDto } from '@models/category.dto';
 
 @Injectable()
 export class CategoryIoStore {
+  private readonly session = inject(AuthSession);
+  private readonly cancelWrites = new Subject<void>();
+  private readonly summaryState = signal<readonly string[]>([]);
+  readonly summary = this.summaryState.asReadonly();
+  readonly canWrite = computed(() =>
+    this.session.hasPermission(
+      this.record() ? CATALOG_PERMISSIONS.category.update : CATALOG_PERMISSIONS.category.create,
+    ),
+  );
   private readonly service = inject(CategoriesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recordState = signal<CategoryDto | null>(null);
@@ -45,8 +67,13 @@ export class CategoryIoStore {
   });
 
   constructor() {
+    effect(() => {
+      this.canWrite();
+      this.applyAccess();
+    });
     this.destroyRef.onDestroy(() => {
       this.generation++;
+      this.cancelWrites.next();
       this.loadSubscription?.unsubscribe();
     });
   }
@@ -58,9 +85,11 @@ export class CategoryIoStore {
   setForm(form: CategoryForm): void {
     if (this.currentForm) throw new Error('The editor form is already set.');
     this.currentForm = form;
+    this.applyAccess();
 
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.revision++;
+      this.summaryState.set([]);
       this.savedState.set(false);
       clearServerErrors(this.form);
     });
@@ -68,6 +97,8 @@ export class CategoryIoStore {
 
   load(id: string): void {
     this.currentId = id;
+    this.cancelWrites.next();
+    this.summaryState.set([]);
     this.readyState.set(false);
     const generation = ++this.generation;
     this.loadSubscription?.unsubscribe();
@@ -93,6 +124,7 @@ export class CategoryIoStore {
           this.recordState.set(item ?? null);
           this.form.reset(categoryFormValue(item), { emitEvent: false });
           this.readyState.set(true);
+          this.applyAccess();
         },
         error: (error: unknown) => {
           this.loadingState.set(false);
@@ -105,44 +137,60 @@ export class CategoryIoStore {
   retry(): void {
     this.load(this.currentId);
   }
-  async save(): Promise<CategoryDto | null> {
-    if (this.saving() || this.loading() || !this.ready()) return null;
-    clearServerErrors(this.form);
-    if (this.form.invalid) {
+  save(): Observable<CategoryDto> {
+    return defer(() => {
+      if (!this.canWrite() || this.saving() || this.loading() || !this.ready()) return EMPTY;
+      clearServerErrors(this.form);
+      this.summaryState.set([]);
       this.form.markAllAsTouched();
-      return null;
-    }
-    const generation = this.generation;
-    const revision = this.revision;
-    const request = categoryRequest(this.form, this.record());
-    this.savingState.set(true);
-    this.errorState.set('');
-    this.savedState.set(false);
-    try {
-      const result = await firstValueFrom(
-        (request.id ? this.service.update(request.id, request) : this.service.create(request)).pipe(
-          takeUntilDestroyed(this.destroyRef),
-        ),
+      if (this.form.invalid) return EMPTY;
+      const generation = this.generation;
+      const revision = this.revision;
+      this.savingState.set(true);
+      this.errorState.set('');
+      this.savedState.set(false);
+      const request = categoryRequest(this.form, this.record());
+      const operation = request.id
+        ? this.service.update(request.id, request)
+        : this.service.create(request);
+      return operation.pipe(
+        takeUntil(this.cancelWrites),
+        takeUntilDestroyed(this.destroyRef),
+        filter(() => generation === this.generation),
+        tap((result) => {
+          this.recordState.set(result);
+          if (revision === this.revision)
+            this.form.reset(categoryFormValue(result), { emitEvent: false });
+          this.savedState.set(revision === this.revision);
+        }),
+        catchError((error: unknown) => {
+          if (generation !== this.generation) return EMPTY;
+          if (error instanceof ApiError) {
+            this.summaryState.set(
+              applyServerErrors(this.form, error.fieldErrors).flatMap((issue) => issue.messages),
+            );
+            this.errorState.set(
+              error.status === 409
+                ? 'Dữ liệu đã thay đổi. Nội dung đang nhập được giữ lại; tải lại để đối chiếu trước khi lưu tiếp.'
+                : error.message,
+            );
+          } else this.errorState.set('Chưa lưu được dữ liệu. Nội dung đang nhập được giữ lại.');
+          return EMPTY;
+        }),
+        finalize(() => {
+          if (generation === this.generation) {
+            this.savingState.set(false);
+            this.applyAccess();
+          }
+        }),
       );
-      if (generation !== this.generation) return null;
-      this.recordState.set(result);
-      if (revision === this.revision)
-        this.form.reset(categoryFormValue(result), { emitEvent: false });
-      this.savedState.set(revision === this.revision);
-      return result;
-    } catch (error: unknown) {
-      if (generation !== this.generation) return null;
-      if (error instanceof ApiError) {
-        applyServerErrors(this.form, error.fieldErrors);
-        this.errorState.set(
-          error.status === 409
-            ? 'Danh mục đã được người khác cập nhật. Nội dung đang nhập được giữ lại; tải lại khi sẵn sàng đối chiếu.'
-            : error.message,
-        );
-      } else this.errorState.set('Chưa lưu được danh mục. Nội dung đang nhập được giữ lại.');
-      return null;
-    } finally {
-      if (generation === this.generation) this.savingState.set(false);
-    }
+    });
+  }
+
+  private applyAccess(): void {
+    if (!this.currentForm) return;
+    if (this.canWrite()) {
+      if (this.currentForm.disabled) this.currentForm.enable({ emitEvent: false });
+    } else if (this.currentForm.enabled) this.currentForm.disable({ emitEvent: false });
   }
 }

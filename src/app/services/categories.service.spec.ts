@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { provideRuntimeConfig } from '../core/config/runtime-config.token';
+import { provideRuntimeConfig } from '@core/config/runtime-config.token';
 import { CategoriesService } from '@services/categories.service';
 import { SaveCategoryRequest } from '@models/category.dto';
 

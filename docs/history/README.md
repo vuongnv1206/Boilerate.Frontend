@@ -1,42 +1,19 @@
-# Lịch sử codebase FE
+# Lịch sử tính năng
 
-Các bản ghi dưới đây thuộc repo FE độc lập. Lịch sử UI trước khi tách Git vẫn được dẫn từ tài liệu workspace BE; việc nhập baseline không tái tạo commit phát triển cũ.
+Chỉ ghi các khả năng đã triển khai theo mốc. Chi tiết sửa code tra trong Git; cách ghi tài liệu theo [quy tắc docs](../README.md#quy-tắc-duy-trì-docs).
 
-- [Nhập source theo nhóm](2026-10-20-import.md).
-- [Ranh giới kiến trúc và navigation DI](2026-10-20-boundaries.md).
-- [Runtime, HTTP và forms](2026-10-20-http.md).
-- [Theme và shared presentation](2026-10-20-theme.md).
-- [Kiểm tra tự động và CI](2026-10-20-quality.md).
-- [Ổn định nền scroll trong ảnh overlay CI](2026-10-20-ci-snapshot-scroll.md).
-- [Content data và HTTP transport](2026-10-20-content-data.md).
-- [Feature content và quy chuẩn source](2026-10-20-content-architecture.md).
-- [Browser regression sau refactor](2026-10-20-content-verification.md).
-- [Ưu tiên web và hoãn mobile](2026-10-20-web-scope.md).
-- [Phiên API trong bộ nhớ và refresh](2026-10-20-api-session.md).
-- [Collections API và source đơn giản](2026-10-20-live-collections.md).
-- [Giữ phiên khi reload](2026-10-21-persistent-session.md).
-- [Kiểm chứng feature content](../verification/2026-10-20-content-architecture.md).
-- [Báo cáo kiểm chứng tích hợp](../verification/2026-10-20-codebase.md).
+## 21/10/2026 — Quyền Catalog và khôi phục trạng thái danh sách
 
-Baseline trước refactor feature đã có CI đạt trên source `dd7fd71`: [run 39417291346](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39417291346), gồm 93 unit tests và 24 browser tests. Kết quả đó không thay thế việc kiểm tra source mới; các bản ghi content ở trên ghi phạm vi và kiểm chứng mới.
+Menu/route/thao tác theo quyền BE, editor chỉ xem khi thiếu quyền sửa và trang từ chối truy cập khi không có nhóm được xem. Query danh sách giữ qua editor/Back; save, lỗi validation/403/409 và xác nhận rời màn giữ draft đúng vòng đời. Xem [Collections](../features/live-admin-collections.md).
 
-Refactor feature và web gate đã có [CI mới 39441412958](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39441412958) đạt trên `9f6e371`: 46 probes, 145 unit tests và 20 browser tests desktop/tablet. Mobile hoãn theo yêu cầu người dùng, không coi lỗi tooltip cũ đã sửa. [Audit package seed 1.0.1](../reference-audits/template-seeding-1.0.1.md) ghi đề xuất cho mốc nối API, chưa thực hiện database writes.
+## 21/10/2026 — Giữ đăng nhập khi tải lại trang
 
-## Các commit đã có
+FE khôi phục phiên và URL quản trị qua refresh cookie HttpOnly, có thử lại khi lỗi tạm thời và đồng bộ đăng xuất giữa các tab. Access token và quyền giữ trong bộ nhớ. Cần BE hỗ trợ browser session; xem [hành vi và hợp đồng](../features/persistent-session.md).
 
-| Commit    | Nhóm thay đổi                                     |
-| --------- | ------------------------------------------------- |
-| `aec2069` | Bootstrap/tooling                                 |
-| `735a390` | Theme/shared primitives baseline                  |
-| `c97a719` | Workspace/content demo baseline                   |
-| `111e7fe` | Gallery baseline                                  |
-| `9b0b3df` | Ranh giới feature/layout                          |
-| `6cbf259` | Runtime/HTTP/forms                                |
-| `1af8c45` | Theme tokens/shared presentation                  |
-| `6ebf64b` | Browser regression và CI                          |
-| `21663ef` | Tài liệu kiến trúc và quy chuẩn checkout          |
-| `dd7fd71` | Chuẩn hóa nền scroll của ảnh overlay; CI cuối đạt |
-| `b70f9be` | Phiên API trong bộ nhớ và refresh                 |
-| `8ac71e0` | Collections API, 6 màn đơn giản và SCSS chung     |
+## 20/10/2026 — Quản lý Collections qua API
 
-Source collections `8ac71e0` đã có [CI 39461384076](https://github.com/vuongnv1206/Boilerate.Frontend/actions/runs/39461384076) đạt: 141 unit tests, 24 browser tests desktop/tablet và production build. [Báo cáo API thật](../verification/2026-10-20-live-collections.md) ghi riêng QA SQL Server local và phần mobile/deployment chưa nghiệm thu.
+Thay danh sách/editor demo bằng màn sản phẩm, danh mục và loại sản phẩm: tải dữ liệu, thêm/sửa, phản hồi lưu từ server, giữ nội dung khi lỗi và xác nhận trước khi bỏ thay đổi. Hỗ trợ tìm kiếm/phân trang sản phẩm, đổi trạng thái và xóa danh mục có version. Xem [phạm vi Collections](../features/live-admin-collections.md).
+
+## 20/10/2026 — Nền giao diện quản trị
+
+Có workspace gồm rail, panel điều hướng co giãn và editor với inspector; lựa chọn System/Light/Dark được nhớ giữa các lần mở. Gallery cho thử control, trạng thái và overlay bằng bàn phím. Xem [quy chuẩn giao diện](../../DESIGN.md); bộ Collections demo ở mốc này đã được thay bằng API ở mốc trên.

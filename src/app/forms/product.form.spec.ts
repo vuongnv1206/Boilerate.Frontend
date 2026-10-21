@@ -1,7 +1,7 @@
 import { ProductFulfillmentKind, ProductStatus } from '@enums/product.enum';
 import { ProductFieldType } from '@enums/product-field-type.enum';
-import { ProductTypeLookup } from '@models/product-lookups.model';
-import { ProductDto } from '@models/product.model';
+import { ProductTypeLookup } from '@models/product-lookups.dto';
+import { ProductDto } from '@models/product.dto';
 import {
   configureProductFields,
   createProductForm,

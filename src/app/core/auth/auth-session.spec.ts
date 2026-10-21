@@ -8,7 +8,7 @@ import { apiErrorInterceptor } from '../http/api-error.interceptor';
 import { SKIP_AUTH } from './auth-context';
 import { AuthSession } from './auth-session';
 import { authInterceptor } from './auth.interceptor';
-import { TokenResponse } from './auth.models';
+import { TokenResponse } from './auth.dto';
 
 const tokens: TokenResponse = {
   userId: 'first-user',
@@ -59,6 +59,16 @@ describe('AuthSession and API authentication', () => {
     expect(session.signedIn()).toBe(true);
     expect(session.hasPermission('Permissions.Product.View')).toBe(true);
     expect(session.hasPermission('Permissions.Product.Create')).toBe(false);
+  });
+
+  it('rejects malformed permission responses without granting access', () => {
+    const restored = vi.fn();
+    session.restore().subscribe(restored);
+    requests.expectOne('/api/tokens/session/refresh').flush(tokens);
+    requests.expectOne('/api/personal/permissions').flush({ grants: ['Permissions.Product.View'] });
+    expect(restored).toHaveBeenCalledWith(false);
+    expect(session.signedIn()).toBe(false);
+    expect(session.hasPermission('Permissions.Product.View')).toBe(false);
   });
 
   it('restores once for concurrent guards and waits for fresh permissions', () => {

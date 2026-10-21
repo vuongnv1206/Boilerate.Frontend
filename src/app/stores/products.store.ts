@@ -1,18 +1,23 @@
+import { ProductListQuery } from '@models/list-query.model';
+import { AuthSession } from '@core/auth/auth-session';
+import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
-import { ApiError } from '../core/http/api-error';
-import { PRODUCT_PAGE_SIZES, PRODUCT_SEARCH_DELAY_MS } from '@constants/product.constants';
+import { Subject, catchError, of, switchMap } from 'rxjs';
+import { ApiError } from '@core/http/api-error';
 import { ProductsService } from '@services/products.service';
 import { ProductStatus } from '@enums/product.enum';
-import { ProductPage, ProductSearch } from '@models/product.model';
+import { ProductPage, ProductSearch } from '@models/product.dto';
 
 /** Page-owned search state. A changed request cancels the preceding read. */
 @Injectable()
 export class ProductsStore {
+  private readonly session = inject(AuthSession);
+  readonly canCreate = computed(() =>
+    this.session.hasPermission(CATALOG_PERMISSIONS.product.create),
+  );
   private readonly service = inject(ProductsService);
   private readonly requests = new Subject<ProductSearch>();
-  private readonly queries = new Subject<string>();
   private readonly pageState = signal<ProductPage>({
     items: [],
     total: 0,
@@ -25,6 +30,8 @@ export class ProductsStore {
   private readonly errorState = signal('');
   private readonly selectionState = signal<ReadonlySet<string>>(new Set());
   private requestedPage = 1;
+  private readonly correctionState = signal<number | null>(null);
+  readonly queryCorrection = this.correctionState.asReadonly();
   readonly page = this.pageState.asReadonly();
   readonly query = this.queryState.asReadonly();
   readonly status = this.statusState.asReadonly();
@@ -69,41 +76,29 @@ export class ProductsStore {
       .subscribe((page) => {
         this.loadingState.set(false);
         if (!page) return;
+        const lastPage = Math.max(1, Math.ceil(page.total / page.pageSize));
+        if (this.requestedPage > lastPage) {
+          this.correctionState.set(lastPage);
+          return;
+        }
         this.pageState.set(page);
         this.selectionState.set(new Set());
       });
-    this.queries
-      .pipe(debounceTime(PRODUCT_SEARCH_DELAY_MS), takeUntilDestroyed(destroyRef))
-      .subscribe(() => this.request(1));
     destroyRef.onDestroy(() => {
       this.requests.complete();
-      this.queries.complete();
     });
+  }
+
+  applyQuery(query: ProductListQuery): void {
+    this.queryState.set(query.q);
+    this.statusState.set(query.status);
+    this.pageState.update((page) => ({ ...page, pageSize: query.pageSize }));
+    this.correctionState.set(null);
+    this.request(query.page);
   }
 
   load(): void {
     this.request(this.requestedPage);
-  }
-
-  setQuery(query: string): void {
-    this.queryState.set(query);
-    this.queries.next(query);
-  }
-
-  setStatus(status: ProductStatus | null): void {
-    this.statusState.set(status);
-    this.request(1);
-  }
-
-  setPage(page: number): void {
-    if (!Number.isInteger(page) || page < 1 || page > this.pageCount()) return;
-    this.request(page);
-  }
-
-  setPageSize(size: number): void {
-    if (!PRODUCT_PAGE_SIZES.some((value) => value === size)) return;
-    this.pageState.update((page) => ({ ...page, pageSize: size }));
-    this.request(1);
   }
 
   toggle(id: string): void {
@@ -122,12 +117,6 @@ export class ProductsStore {
 
   clearSelection(): void {
     this.selectionState.set(new Set());
-  }
-
-  resetFilters(): void {
-    this.queryState.set('');
-    this.statusState.set(null);
-    this.request(1);
   }
 
   private request(pageNumber: number): void {

@@ -1,12 +1,6 @@
 import { InjectionToken, Signal } from '@angular/core';
-
-export interface WorkspaceCollectionLink {
-  readonly key: string;
-  readonly label: string;
-  readonly icon: string;
-  readonly path: string;
-  readonly count?: number;
-}
+import { WorkspaceCollectionLink } from '@models/navigation.model';
+export type { WorkspaceCollectionLink } from '@models/navigation.model';
 
 /** Presentation contract consumed by the shell; feature data stays with its owner. */
 export interface WorkspaceNavigation {

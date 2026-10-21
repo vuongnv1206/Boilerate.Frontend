@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { provideWorkspaceNavigation } from './app.providers';
 import { authGuard } from './core/auth/auth.guard';
+import { adminHomeGuard } from '@guards/permission.guard';
 
 export const routes: Routes = [
   {
@@ -11,7 +12,8 @@ export const routes: Routes = [
     path: 'admin',
     canActivate: [authGuard],
     providers: [provideWorkspaceNavigation()],
-    loadComponent: () => import('./layout/admin-shell/admin-shell').then((m) => m.AdminShell),
+    loadComponent: () =>
+      import('./layout/admin-shell/admin-shell.component').then((m) => m.AdminShell),
     children: [
       {
         path: 'controls',
@@ -27,9 +29,24 @@ export const routes: Routes = [
             (module) => module.COLLECTIONS_ROUTES,
           ),
       },
-      { path: '', pathMatch: 'full', redirectTo: 'collections/products' },
+      {
+        path: 'forbidden',
+        loadChildren: () =>
+          import('./features/access-denied/access-denied.routes').then(
+            (m) => m.ACCESS_DENIED_ROUTES,
+          ),
+      },
+      {
+        path: '',
+        pathMatch: 'full',
+        canActivate: [adminHomeGuard],
+        loadChildren: () =>
+          import('./features/access-denied/access-denied.routes').then(
+            (m) => m.ACCESS_DENIED_ROUTES,
+          ),
+      },
     ],
   },
-  { path: '', pathMatch: 'full', redirectTo: 'admin/collections/products' },
-  { path: '**', redirectTo: 'admin/collections/products' },
+  { path: '', pathMatch: 'full', redirectTo: 'admin' },
+  { path: '**', redirectTo: 'admin' },
 ];

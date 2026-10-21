@@ -1,25 +1,55 @@
-import { ProductForm } from '@models/product-form.model';
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { ProductForm } from '@forms/product-form.model';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, Subscription, forkJoin, map, of, switchMap, take } from 'rxjs';
-import { ApiError } from '../core/http/api-error';
-import { applyServerErrors, clearServerErrors } from '../shared/forms/apply-server-errors';
-import { PRODUCT_FIELD_ALIASES } from '@constants/product.constants';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  Subscription,
+  catchError,
+  defer,
+  filter,
+  finalize,
+  forkJoin,
+  map,
+  of,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+} from 'rxjs';
+import { AuthSession } from '@core/auth/auth-session';
+import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
+import { ApiError } from '@core/http/api-error';
+import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
 import { ProductsService } from '@services/products.service';
 import { ProductStatus } from '@enums/product.enum';
 import {
   configureProductFields,
   initializeProductForm,
   productSlug,
+  productFieldAliases,
   setProductIdentityReadonly,
   toProductContent,
 } from '@forms/product.form';
-import { ProductCategoryLookup, ProductTypeLookup } from '@models/product-lookups.model';
-import { CreateProduct, ProductDto } from '@models/product.model';
+import { ProductCategoryLookup, ProductTypeLookup } from '@models/product-lookups.dto';
+import { CreateProduct, ProductDto } from '@models/product.dto';
 
 /** Owns editor I/O and its form. All writes are explicit and optimistic-versioned. */
 @Injectable()
 export class ProductIoStore {
+  private readonly session = inject(AuthSession);
+  private readonly cancelWrites = new Subject<void>();
+  private readonly summaryState = signal<readonly string[]>([]);
+  readonly summary = this.summaryState.asReadonly();
+  readonly canWrite = computed(() =>
+    this.session.hasPermission(
+      this.item() ? CATALOG_PERMISSIONS.product.update : CATALOG_PERMISSIONS.product.create,
+    ),
+  );
+  readonly canPublish = computed(() =>
+    this.session.hasPermission(CATALOG_PERMISSIONS.product.publish),
+  );
   private readonly service = inject(ProductsService);
   private readonly destroyRef = inject(DestroyRef);
   private currentForm: ProductForm | null = null;
@@ -64,9 +94,12 @@ export class ProductIoStore {
   private generation = 0;
   private revision = 0;
   private autoSlug = true;
-  private pendingCreateNavigation = false;
 
   constructor() {
+    effect(() => {
+      this.canWrite();
+      this.applyAccess();
+    });
     this.destroyRef.onDestroy(() => {
       this.generation++;
       this.cancelRequests();
@@ -81,6 +114,7 @@ export class ProductIoStore {
   setForm(form: ProductForm): void {
     if (this.currentForm) throw new Error('The editor form is already set.');
     this.currentForm = form;
+    this.applyAccess();
 
     this.form.controls.slug.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.autoSlug = false;
@@ -93,6 +127,8 @@ export class ProductIoStore {
       });
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.revision++;
+      this.summaryState.set([]);
+      clearServerErrors(this.form);
       this.dirtyState.set(this.form.dirty);
       this.noticeState.set('');
     });
@@ -118,7 +154,7 @@ export class ProductIoStore {
     this.itemState.set(null);
     this.schemaState.set(null);
     this.autoSlug = !id;
-    this.pendingCreateNavigation = !id;
+    this.summaryState.set([]);
     this.revision = 0;
     initializeProductForm(this.form, null);
     this.loadSubscription = forkJoin({
@@ -156,6 +192,7 @@ export class ProductIoStore {
             this.form.controls.productTypeId.setValue(schema.id, { emitEvent: false });
             configureProductFields(this.form, schema, item?.fields);
           }
+          this.applyAccess();
           this.form.markAsPristine();
           this.loadingState.set(false);
           this.loadedState.set(true);
@@ -170,77 +207,88 @@ export class ProductIoStore {
       });
   }
 
-  save(afterCreate?: (id: string) => void): void {
-    if (this.busy() || this.loading() || this.schemaLoading()) return;
-    clearServerErrors(this.form);
-    this.form.markAllAsTouched();
-    const schema = this.schema();
-    if (this.form.invalid || !schema) {
-      this.errorState.set('Kiểm tra các trường được đánh dấu trước khi lưu.');
-      return;
-    }
-    const item = this.item();
-    const content = toProductContent(this.form, schema, item);
-    const raw = this.form.getRawValue();
-    const request: Observable<ProductDto> = item
-      ? this.service.edit({
-          id: item.id,
-          version: item.version,
-          productTypeVersion: schema.version,
-          content,
-        })
-      : this.service.create({
-          productTypeId: schema.id,
-          productTypeVersion: schema.version,
-          content,
-          options: [],
-          variants: [
-            { sku: raw.sku.trim(), price: raw.price ?? 0, compareAtPrice: null, options: {} },
-          ],
-          fulfillmentKind: raw.fulfillmentKind,
-        } satisfies CreateProduct);
-    const generation = this.generation;
-    const revision = this.revision;
-    this.busyState.set(true);
-    setProductIdentityReadonly(this.form, true);
-    this.errorState.set('');
-    this.noticeState.set('');
-    this.writeSubscription = request.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (saved) => {
-        if (generation !== this.generation) return;
-        this.itemState.set(saved);
-        this.busyState.set(false);
-        this.autoSlug = false;
-        if (revision === this.revision) {
-          initializeProductForm(this.form, saved);
-          configureProductFields(this.form, schema, saved.fields);
-          this.form.markAsPristine();
-          this.dirtyState.set(false);
-          this.noticeState.set('Đã lưu sản phẩm.');
-        } else {
-          this.form.markAsDirty();
-          this.dirtyState.set(true);
-          this.noticeState.set('Đã lưu phiên bản trước. Thay đổi mới chưa được lưu.');
-        }
-        if (this.pendingCreateNavigation && revision === this.revision && afterCreate) {
-          this.pendingCreateNavigation = false;
-          afterCreate(saved.id);
-        }
-      },
-      error: (error: unknown) => {
-        if (generation !== this.generation) return;
-        this.busyState.set(false);
-        if (!this.item()) setProductIdentityReadonly(this.form, false);
-        if (error instanceof ApiError)
-          applyServerErrors(this.form, error.fieldErrors, PRODUCT_FIELD_ALIASES);
-        this.setError(error, 'Không thể lưu sản phẩm. Nội dung đang sửa vẫn được giữ lại.');
-      },
+  save(): Observable<ProductDto> {
+    return defer(() => {
+      if (!this.canWrite() || this.busy() || this.loading() || this.schemaLoading()) return EMPTY;
+      clearServerErrors(this.form);
+      this.summaryState.set([]);
+      this.form.markAllAsTouched();
+      const schema = this.schema();
+      if (this.form.invalid || !schema) {
+        this.errorState.set('Kiểm tra các trường được đánh dấu trước khi lưu.');
+        return EMPTY;
+      }
+      const item = this.item();
+      const content = toProductContent(this.form, schema, item);
+      const raw = this.form.getRawValue();
+      const request: Observable<ProductDto> = item
+        ? this.service.edit({
+            id: item.id,
+            version: item.version,
+            productTypeVersion: schema.version,
+            content,
+          })
+        : this.service.create({
+            productTypeId: schema.id,
+            productTypeVersion: schema.version,
+            content,
+            options: [],
+            variants: [
+              { sku: raw.sku.trim(), price: raw.price ?? 0, compareAtPrice: null, options: {} },
+            ],
+            fulfillmentKind: raw.fulfillmentKind,
+          } satisfies CreateProduct);
+      const aliases = productFieldAliases(content.fields);
+      const generation = this.generation;
+      const revision = this.revision;
+      this.busyState.set(true);
+      setProductIdentityReadonly(this.form, true);
+      this.errorState.set('');
+      this.noticeState.set('');
+      return request.pipe(
+        take(1),
+        takeUntil(this.cancelWrites),
+        takeUntilDestroyed(this.destroyRef),
+        filter(() => generation === this.generation),
+        tap((saved) => {
+          this.itemState.set(saved);
+          this.autoSlug = false;
+          if (revision === this.revision) {
+            initializeProductForm(this.form, saved);
+            configureProductFields(this.form, schema, saved.fields);
+            this.form.markAsPristine();
+            this.dirtyState.set(false);
+            this.noticeState.set('Đã lưu sản phẩm.');
+          } else {
+            this.form.markAsDirty();
+            this.dirtyState.set(true);
+            this.noticeState.set('Đã lưu phiên bản trước. Thay đổi mới chưa được lưu.');
+          }
+        }),
+        catchError((error: unknown) => {
+          if (generation !== this.generation) return EMPTY;
+          if (error instanceof ApiError)
+            this.summaryState.set(
+              applyServerErrors(this.form, error.fieldErrors, aliases).flatMap(
+                (issue) => issue.messages,
+              ),
+            );
+          this.setError(error, 'Không thể lưu sản phẩm. Nội dung đang sửa vẫn được giữ lại.');
+          return EMPTY;
+        }),
+        finalize(() => {
+          if (generation === this.generation) {
+            this.busyState.set(false);
+            this.applyAccess();
+          }
+        }),
+      );
     });
   }
 
   changeStatus(status: ProductStatus): void {
     const item = this.item();
-    if (!item || this.busy() || this.form.dirty) return;
+    if (!this.canPublish() || !item || this.busy() || this.form.dirty) return;
     const generation = this.generation;
     this.busyState.set(true);
     this.errorState.set('');
@@ -304,7 +352,21 @@ export class ProductIoStore {
     );
   }
 
+  private applyAccess(): void {
+    if (!this.currentForm) return;
+    if (!this.canWrite()) {
+      if (this.currentForm.enabled) this.currentForm.disable({ emitEvent: false });
+    } else {
+      if (this.currentForm.disabled) this.currentForm.enable({ emitEvent: false });
+      setProductIdentityReadonly(this.currentForm, !!this.item() || this.busy());
+      for (const field of this.schema()?.fields ?? [])
+        if (!field.isActive)
+          this.currentForm.controls.fields.controls[field.id]?.disable({ emitEvent: false });
+    }
+  }
+
   private cancelRequests(): void {
+    this.cancelWrites.next();
     this.loadSubscription?.unsubscribe();
     this.schemaSubscription?.unsubscribe();
     this.writeSubscription?.unsubscribe();

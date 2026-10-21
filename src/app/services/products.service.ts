@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiClient } from '../core/http/api-client';
-import { ProductCategoryLookup, ProductTypeLookup } from '@models/product-lookups.model';
+import { ApiClient } from '@core/http/api-client';
+import { ProductCategoryLookup, ProductTypeLookup } from '@models/product-lookups.dto';
 import {
   ChangeProductStatus,
   CreateProduct,
@@ -9,7 +9,7 @@ import {
   ProductDto,
   ProductPage,
   ProductSearch,
-} from '@models/product.model';
+} from '@models/product.dto';
 
 /** Catalog endpoint adapter. No UI state, retries, fake records or guessed DTOs. */
 @Injectable()

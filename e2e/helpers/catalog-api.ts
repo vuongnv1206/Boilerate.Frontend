@@ -93,6 +93,8 @@ export interface CatalogApi {
   productTypes: ProductType[];
   rejectNextProductSave(): void;
   revokeSession(): void;
+  setPermissions(grants: readonly string[]): void;
+  failNextProductSave(status: number, errors?: Record<string, string[]>): void;
 }
 
 export const FIRST_PRODUCT_ID = '30000000-0000-0000-0000-000000000001';
@@ -143,6 +145,7 @@ function slug(name: string): string {
 async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
   let version = 1;
   let rejectSave = false;
+  let saveFailure: { status: number; errors?: Record<string, string[]> } | null = null;
   let sessionActive = false;
   let refreshVersion = 0;
   let refreshCookie = '';
@@ -205,6 +208,12 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
     fulfillmentKind: 1,
   }));
   const api: CatalogApi = {
+    setPermissions: (grants) => {
+      permissions = [...grants];
+    },
+    failNextProductSave: (status, errors) => {
+      saveFailure = { status, errors };
+    },
     requests: [],
     unexpectedRequests: [],
     products,
@@ -217,7 +226,7 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
       sessionActive = false;
     },
   };
-  const permissions = [
+  let permissions = [
     'Product.View',
     'Product.Create',
     'Product.Update',
@@ -316,6 +325,20 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
     }
     if (!sessionActive || authorization !== 'Bearer browser-test-access-token')
       return reply(route, { status: 401, title: 'Unauthorized' }, 401);
+    if (saveFailure && method === 'PUT' && path.startsWith('products/')) {
+      const failure = saveFailure;
+      saveFailure = null;
+      return reply(
+        route,
+        {
+          status: failure.status,
+          title: 'Save rejected',
+          detail: 'Không thể lưu bản ghi.',
+          errors: failure.errors,
+        },
+        failure.status,
+      );
+    }
     if (path === 'personal/permissions' && method === 'GET') return reply(route, permissions);
     if (path === 'products/search' && method === 'POST') {
       const pageNumber = Number(body?.['pageNumber'] ?? 1);

@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { RUNTIME_CONFIG } from '../core/config/runtime-config.token';
+import { RUNTIME_CONFIG } from '@core/config/runtime-config.token';
 import { ProductStatus } from '@enums/product.enum';
 import { ProductsService } from '@services/products.service';
 

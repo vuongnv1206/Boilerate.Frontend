@@ -1,0 +1,59 @@
+<main class="login-page">
+  <form class="login-card" [formGroup]="form" (ngSubmit)="signIn()">
+    <span class="brand">b<span>®</span></span>
+    <p class="eyebrow">BOILERATE ADMIN</p>
+    <h1>Đăng nhập workspace</h1>
+    <p class="intro">Dùng tài khoản quản trị đã được tạo trong hệ thống.</p>
+    <div class="field">
+      <label for="login-email">Email</label>
+      <input
+        pInputText
+        id="login-email"
+        type="email"
+        autocomplete="username"
+        formControlName="email"
+        [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+        aria-describedby="email-error"
+      />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <small id="email-error" class="field-error">Nhập email hợp lệ.</small>
+      }
+    </div>
+    <div class="field">
+      <label for="login-password">Mật khẩu</label>
+      <input
+        pInputText
+        id="login-password"
+        type="password"
+        autocomplete="current-password"
+        formControlName="password"
+        [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+        aria-describedby="password-error"
+      />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <small id="password-error" class="field-error">Nhập mật khẩu.</small>
+      }
+    </div>
+    @if (store.error()) {
+      <p class="login-error" role="alert">{{ store.error() }}</p>
+    }
+    @if (store.logoutFailed()) {
+      <p-button
+        type="button"
+        label="Thử đăng xuất lại"
+        [disabled]="store.saving()"
+        (onClick)="retrySignOut()"
+      />
+    }
+    @if (store.canRestore()) {
+      <p-button type="button" label="Thử lại" [disabled]="store.saving()" (onClick)="restore()" />
+    }
+    <p-button
+      type="submit"
+      label="Đăng nhập"
+      [loading]="store.saving()"
+      [disabled]="store.saving()"
+    />
+    <p class="session-note">Anh có thể tiếp tục làm việc sau khi tải lại trang.</p>
+  </form>
+</main>

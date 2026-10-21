@@ -1,8 +1,9 @@
+import { AuthSession } from '@core/auth/auth-session';
 import { createProductTypeForm } from '@forms/product-type.form';
 import { TestBed } from '@angular/core/testing';
-import { Subject, of } from 'rxjs';
+import { Subject, firstValueFrom, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError } from '../core/http/api-error';
+import { ApiError } from '@core/http/api-error';
 import { ProductTypesService } from '@services/product-types.service';
 import { ProductFieldType } from '@enums/product-field-type.enum';
 import { ProductTypeDto } from '@models/product-type.dto';
@@ -41,12 +42,31 @@ describe('ProductTypeIoStore', () => {
   beforeEach(() => {
     service = { getById: vi.fn(() => of(productType)), create: vi.fn(), update: vi.fn() };
     TestBed.configureTestingModule({
-      providers: [ProductTypeIoStore, { provide: ProductTypesService, useValue: service }],
+      providers: [
+        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        ProductTypeIoStore,
+        { provide: ProductTypesService, useValue: service },
+      ],
     });
     store = TestBed.inject(ProductTypeIoStore);
     store.setForm(createProductTypeForm());
   });
   afterEach(() => TestBed.resetTestingModule());
+
+  it('locks a view-only type and rejects direct writes and schema changes', () => {
+    vi.spyOn(TestBed.inject(AuthSession), 'hasPermission').mockImplementation((permission) =>
+      permission.endsWith('.View'),
+    );
+    store.load('type-1');
+    expect(store.form.disabled).toBe(true);
+    store.addField();
+    store.addChoice(0);
+    store.save().subscribe();
+    expect(store.form.controls.fields.length).toBe(1);
+    expect(store.form.controls.fields.at(0).controls.choices.length).toBe(1);
+    expect(service.update).not.toHaveBeenCalled();
+    expect(service.create).not.toHaveBeenCalled();
+  });
 
   it('creates a type with a correctly typed optional choice field', async () => {
     store.load('new');
@@ -57,7 +77,7 @@ describe('ProductTypeIoStore', () => {
     store.addChoice(0);
     field.controls.choices.at(0).patchValue({ code: 'RED', label: 'Đỏ' });
     service.create.mockReturnValue(of({ ...productType, code: 'CLOTHING' }));
-    expect(await store.save()).not.toBeNull();
+    expect(await firstValueFrom(store.save(), { defaultValue: null })).not.toBeNull();
     expect(service.create).toHaveBeenCalledWith({
       code: 'CLOTHING',
       name: 'Quần áo',
@@ -80,7 +100,7 @@ describe('ProductTypeIoStore', () => {
     store.form.controls.name.setValue('Áo mới');
     store.form.markAsDirty();
     service.update.mockReturnValue(of({ ...productType, name: 'Áo mới', version: 'v2' }));
-    await store.save();
+    await firstValueFrom(store.save(), { defaultValue: null });
     expect(service.update).toHaveBeenCalledWith('type-1', {
       id: 'type-1',
       version: 'v1',
@@ -114,7 +134,7 @@ describe('ProductTypeIoStore', () => {
       isRequired: true,
     });
     service.update.mockReturnValue(of(productType));
-    await store.save();
+    await firstValueFrom(store.save(), { defaultValue: null });
     expect(service.update.mock.calls[0]?.[1].addFields).toEqual([
       {
         code: 'WEIGHT',
@@ -134,7 +154,7 @@ describe('ProductTypeIoStore', () => {
     store.addField();
     store.form.controls.fields.at(0).patchValue({ code: 'COLOR', label: 'Màu' });
     store.form.controls.fields.at(1).patchValue({ code: 'color', label: 'Màu khác' });
-    expect(await store.save()).toBeNull();
+    expect(await firstValueFrom(store.save(), { defaultValue: null })).toBeNull();
     expect(store.form.controls.fields.hasError('duplicateCodes')).toBe(true);
     expect(service.create).not.toHaveBeenCalled();
   });
@@ -144,7 +164,7 @@ describe('ProductTypeIoStore', () => {
     store.form.markAsDirty();
     const response = new Subject<ProductTypeDto>();
     service.update.mockReturnValue(response);
-    const saving = store.save();
+    const saving = firstValueFrom(store.save(), { defaultValue: null });
     response.error(
       new ApiError({ kind: 'conflict', status: 409, message: 'Conflict', fieldErrors: {} }),
     );
@@ -175,7 +195,7 @@ describe('ProductTypeIoStore', () => {
     field.controls.choices.at(0).patchValue({ code: 'COTTON', label: 'Cotton' });
     const response = new Subject<ProductTypeDto>();
     service.create.mockReturnValue(response);
-    const saving = store.save();
+    const saving = firstValueFrom(store.save(), { defaultValue: null });
     store.form.controls.name.setValue('Tên vừa nhập');
     response.next(productType);
     response.complete();
@@ -186,7 +206,7 @@ describe('ProductTypeIoStore', () => {
     expect(field.controls.id.value).toBe('field-1');
     expect(field.controls.choices.at(0).controls.id.value).toBe('choice-1');
     service.update.mockReturnValue(of({ ...productType, version: 'v2' }));
-    await store.save();
+    await firstValueFrom(store.save(), { defaultValue: null });
     expect(service.update.mock.calls[0]?.[1].addFields).toEqual([]);
     expect(service.update.mock.calls[0]?.[1].fields[0].addChoices).toEqual([]);
     expect(service.update.mock.calls[0]?.[1].fields[0].choices[0].id).toBe('choice-1');

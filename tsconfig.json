@@ -26,7 +26,8 @@
       "@services/*": ["./src/app/services/*"],
       "@stores/*": ["./src/app/stores/*"],
       "@forms/*": ["./src/app/forms/*"],
-      "@guards/*": ["./src/app/guards/*"]
+      "@guards/*": ["./src/app/guards/*"],
+      "@utils/*": ["./src/app/utils/*"]
     },
     "lib": ["ES2022", "dom"]
   },

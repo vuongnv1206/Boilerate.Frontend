@@ -1,15 +1,27 @@
+import { ListQuery } from '@models/list-query.model';
+import { AuthSession } from '@core/auth/auth-session';
+import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription } from 'rxjs';
-import { ApiError } from '../core/http/api-error';
+import { EMPTY, Observable, Subscription, catchError, defer, finalize, take, tap } from 'rxjs';
+import { ApiError } from '@core/http/api-error';
 import { CATEGORY_PAGE_SIZE } from '@constants/category.constants';
 import { CategoriesService } from '@services/categories.service';
 import { CategoryDto } from '@models/category.dto';
 
 @Injectable()
 export class CategoriesStore {
+  private readonly session = inject(AuthSession);
+  readonly canCreate = computed(() =>
+    this.session.hasPermission(CATALOG_PERMISSIONS.category.create),
+  );
+  readonly canDelete = computed(() =>
+    this.session.hasPermission(CATALOG_PERMISSIONS.category.delete),
+  );
   private readonly service = inject(CategoriesService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly loadedState = signal(false);
+  readonly loaded = this.loadedState.asReadonly();
   private readonly records = signal<readonly CategoryDto[]>([]);
   private readonly queryState = signal('');
   private readonly pageState = signal(1);
@@ -43,6 +55,10 @@ export class CategoriesStore {
   constructor() {
     this.destroyRef.onDestroy(() => this.loadSubscription?.unsubscribe());
   }
+  applyQuery(query: ListQuery): void {
+    this.queryState.set(query.q);
+    this.pageState.set(query.page);
+  }
   load(): void {
     this.loadSubscription?.unsubscribe();
     this.loadingState.set(true);
@@ -53,7 +69,8 @@ export class CategoriesStore {
       .subscribe({
         next: (items) => {
           this.records.set(items);
-          this.setPage(this.page());
+          this.loadedState.set(true);
+
           this.loadingState.set(false);
         },
         error: (error: unknown) => {
@@ -62,41 +79,34 @@ export class CategoriesStore {
         },
       });
   }
-  search(query: string): void {
-    this.queryState.set(query);
-    this.pageState.set(1);
-  }
-  setPage(page: number): void {
-    this.pageState.set(Math.max(1, Math.min(page, this.totalPages())));
-  }
+
   parentName(parentId: string | null): string {
     return this.items().find((item) => item.id === parentId)?.name ?? '—';
   }
-  delete(category: CategoryDto, done: () => void): void {
-    if (this.deleting()) return;
-    this.deletingState.set(true);
-    this.errorState.set('');
-    this.noticeState.set('');
-    this.service
-      .delete(category.id, category.version)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (deleted) => {
-          this.deletingState.set(false);
+  delete(category: CategoryDto): Observable<boolean> {
+    return defer(() => {
+      if (!this.canDelete() || this.deleting()) return EMPTY;
+      this.deletingState.set(true);
+      this.errorState.set('');
+      this.noticeState.set('');
+      return this.service.delete(category.id, category.version).pipe(
+        take(1),
+        takeUntilDestroyed(this.destroyRef),
+        tap((deleted) => {
           if (!deleted) {
             this.errorState.set('Máy chủ chưa xác nhận xóa danh mục.');
             return;
           }
           this.records.update((records) => records.filter((item) => item.id !== category.id));
-          this.setPage(this.page());
           this.noticeState.set('Đã xóa danh mục.');
-          done();
-        },
-        error: (error: unknown) => {
-          this.deletingState.set(false);
+        }),
+        catchError((error: unknown) => {
           this.errorState.set(this.errorMessage(error));
-        },
-      });
+          return EMPTY;
+        }),
+        finalize(() => this.deletingState.set(false)),
+      );
+    });
   }
   private errorMessage(error: unknown): string {
     if (error instanceof ApiError && error.status === 409)

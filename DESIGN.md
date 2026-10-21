@@ -1,6 +1,6 @@
 # Boilerate Admin — Webflow workspace reference
 
-Cập nhật: 2026-10-20. Áp dụng cho nền UI quản trị và các màn mẫu. [Product intent](PRODUCT.md), [nguồn tham chiếu](design/references/README.md) và [feature plan](../Boilerate/docs/frontend/features/admin-ui-foundation.md) có vai trò riêng; tài liệu này là chuẩn thị giác.
+Áp dụng cho nền UI quản trị và các màn Collections. [PRODUCT.md](PRODUCT.md) giữ phạm vi, [tài liệu tính năng](docs/README.md) giữ hành vi và [nguồn tham chiếu](design/references/README.md) giữ provenance; tài liệu này là chuẩn thị giác.
 
 ## 1. Định hướng và độ tin cậy của tham chiếu
 
@@ -14,15 +14,15 @@ GetDesign Webflow trong thư viện local phân tích website marketing. Chỉ d
 
 ## 2. Workspace và tỷ lệ
 
-| Vùng | Baseline | Hành vi |
-|---|---|---|
-| Icon rail | 44px | Full-height; logo dự án, action icon có tooltip; trạng thái active rõ |
-| Topbar | 44px | Mỏng, tên workspace và ngữ cảnh; action ngắn gọn phía phải |
-| Panel ngữ cảnh | 240px, min 200px, max 320px | Điều hướng theo nhóm; kéo mép phải để resize; thu gọn và nhớ kích thước |
-| Toolbar vùng chính | Khoảng 48px, tăng khi cần wrap | Tiêu đề, search/filter và action của màn hiện tại |
-| Inspector | 280px | Bên phải editor; nhóm trạng thái và metadata; cuộn độc lập khi cần |
-| Control | 30px chuẩn desktop | Form, toolbar và bảng dùng cùng nhịp; textarea/đa dòng tự mở rộng |
-| Bảng | Header 34px; dòng 62px cho fixture hai dòng (68px từ viewport 1500px) | Thumbnail 36px; tên chính 13px, metadata 11px; viền ngang mảnh; số căn phải |
+| Vùng               | Baseline                                                              | Hành vi                                                                     |
+| ------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Icon rail          | 44px                                                                  | Full-height; logo dự án, action icon có tooltip; trạng thái active rõ       |
+| Topbar             | 44px                                                                  | Mỏng, tên workspace và ngữ cảnh; action ngắn gọn phía phải                  |
+| Panel ngữ cảnh     | 240px, min 200px, max 320px                                           | Điều hướng theo nhóm; kéo mép phải để resize; thu gọn và nhớ kích thước     |
+| Toolbar vùng chính | Khoảng 48px, tăng khi cần wrap                                        | Tiêu đề, search/filter và action của màn hiện tại                           |
+| Inspector          | 280px                                                                 | Bên phải editor; nhóm trạng thái và metadata; cuộn độc lập khi cần          |
+| Control            | 30px chuẩn desktop                                                    | Form, toolbar và bảng dùng cùng nhịp; textarea/đa dòng tự mở rộng           |
+| Bảng               | Header 34px; dòng 62px cho fixture hai dòng (68px từ viewport 1500px) | Thumbnail 36px; tên chính 13px, metadata 11px; viền ngang mảnh; số căn phải |
 
 Shell chiếm viewport, tránh scroll cả document trên desktop. Panel và phần nội dung cuộn trong vùng sở hữu; header/toolbar giữ ổn định. List dùng hết vùng chính, không bọc trong card lớn. Editor dùng form nhóm trường ở giữa và inspector bên phải, vẫn giữ điều hướng workspace.
 
@@ -42,18 +42,18 @@ Resize có pointer capture/cleanup; giới hạn min/max và bảo vệ khi stor
 
 Ba lớp: **primitive → semantic → component**. Primitive định nghĩa thang neutral, blue và semantic status; semantic đặt tên theo vai trò; component map vào PrimeNG preset và UI riêng. Light/Dark thay semantic values, không đổi cấu trúc màn.
 
-| Vai trò | Light baseline | Dark baseline |
-|---|---|---|
-| Canvas | `#f7f7f8` | `#1b1b1d` |
-| Surface/panel | `#ffffff` | `#242426` |
-| Surface nhô/hover | `#efeff1` | `#2e2e31` |
-| Text chính | `#242427` | `#eeeeef` |
-| Text phụ | `#5e5e65` | `#b4b4bd` |
-| Text muted | `#73737b` | `#96969f` |
-| Border phân vùng | `#dedee3` | `#39393e` |
-| Border input cần nhận biết | `#92929b` | `#73737d` |
-| Accent/selection | Webflow-like blue `#146ef5` | `#77a8ff` |
-| Chữ trên accent | `#ffffff` | `#081a36` |
+| Vai trò                    | Light baseline              | Dark baseline |
+| -------------------------- | --------------------------- | ------------- |
+| Canvas                     | `#f7f7f8`                   | `#1b1b1d`     |
+| Surface/panel              | `#ffffff`                   | `#242426`     |
+| Surface nhô/hover          | `#efeff1`                   | `#2e2e31`     |
+| Text chính                 | `#242427`                   | `#eeeeef`     |
+| Text phụ                   | `#5e5e65`                   | `#b4b4bd`     |
+| Text muted                 | `#73737b`                   | `#96969f`     |
+| Border phân vùng           | `#dedee3`                   | `#39393e`     |
+| Border input cần nhận biết | `#92929b`                   | `#73737d`     |
+| Accent/selection           | Webflow-like blue `#146ef5` | `#77a8ff`     |
+| Chữ trên accent            | `#ffffff`                   | `#081a36`     |
 
 Bảng đồng bộ tokens triển khai, có thể tinh chỉnh qua kiểm tra. Màu nhấn dùng cho primary action, active selection và focus. Status có cả chữ/icon, không chỉ chấm màu. Primary button dùng `on-accent` theo theme: text trắng trong Light, text xanh rất đậm trong Dark để giữ tương phản.
 
@@ -65,21 +65,21 @@ Target: chữ thường 4.5:1, chữ lớn 3:1; focus/icon/border cần thiết 
 
 PrimeNG cung cấp hành vi; preset của dự án quyết định diện mạo. Dùng chung token cho button, input/textarea, number, select/multiselect, checkbox, switch, date picker, table/pagination, tabs, dialog/drawer, tooltip, toast/message và upload khi có trong gallery.
 
-| Trạng thái | Quy tắc |
-|---|---|
-| Default/hover/active | Viền và nền thay nhẹ; geometry ổn định; primary action giữ màu nhấn |
-| Focus | Ring 2px rõ, không bị vùng overflow cắt; keyboard không phụ thuộc hover |
-| Disabled | Vẫn đọc được; không nhận thao tác; không chỉ giả lập bằng CSS |
-| Readonly | Giá trị vẫn chọn/copy được khi control hỗ trợ; khác disabled |
-| Invalid | Viền semantic danger + thông báo ngay dưới trường; `aria-invalid` và `aria-describedby` |
-| Loading | Cấm submit lặp, giữ nhãn ngữ cảnh; skeleton cho vùng dữ liệu nếu cần |
-| Selected | Nền tint và indicator rõ; checkbox/bảng có tên truy cập |
+| Trạng thái           | Quy tắc                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| Default/hover/active | Viền và nền thay nhẹ; geometry ổn định; primary action giữ màu nhấn                     |
+| Focus                | Ring 2px rõ, không bị vùng overflow cắt; keyboard không phụ thuộc hover                 |
+| Disabled             | Vẫn đọc được; không nhận thao tác; không chỉ giả lập bằng CSS                           |
+| Readonly             | Giá trị vẫn chọn/copy được khi control hỗ trợ; khác disabled                            |
+| Invalid              | Viền semantic danger + thông báo ngay dưới trường; `aria-invalid` và `aria-describedby` |
+| Loading              | Cấm submit lặp, giữ nhãn ngữ cảnh; skeleton cho vùng dữ liệu nếu cần                    |
+| Selected             | Nền tint và indicator rõ; checkbox/bảng có tên truy cập                                 |
 
 Mỗi trường có visible label. Placeholder chỉ gợi ý. Overlay có tên, Escape, focus trap/return theo hành vi PrimeNG; dropdown không bị bảng/panel clip. Tabs có key navigation và selected state. Error/toast không lấy focus đột ngột; trạng thái lưu dùng vùng thông báo phù hợp.
 
 Control gallery phải cho thử trạng thái thay vì chỉ vẽ ảnh. Giữ gallery như công cụ review nội bộ, tách khỏi Catalog demo qua route riêng.
 
-## 6. Hai màn mẫu và ngôn ngữ UI
+## 6. Danh sách, editor và ngôn ngữ UI
 
 Danh sách: breadcrumb/tiêu đề, search tiếng Việt, filter trạng thái, chọn dòng, count và pagination. Cột tên có link mở editor; checkbox không vô tình mở dòng. Không có kết quả thì giữ query/filter và cho cách xóa bộ lọc.
 
@@ -89,20 +89,20 @@ Copy dùng tiếng Việt tự nhiên, ngắn gọn; tên nút là động từ 
 
 ## 7. Motion
 
-| Token | Thời lượng | Dùng cho |
-|---|---|---|
-| Fast | 120ms | Hover, press, màu/viền, trạng thái nhỏ |
-| Normal | 180ms | Theme, tab, popover, phản hồi lưu |
-| Panel | 240ms | Drawer, panel mở/đóng |
+| Token  | Thời lượng | Dùng cho                               |
+| ------ | ---------- | -------------------------------------- |
+| Fast   | 120ms      | Hover, press, màu/viền, trạng thái nhỏ |
+| Normal | 180ms      | Theme, tab, popover, phản hồi lưu      |
+| Panel  | 240ms      | Drawer, panel mở/đóng                  |
 
 Easing chuẩn `cubic-bezier(0.2, 0, 0, 1)` cho enter; exit ngắn hơn hoặc bằng enter. Ưu tiên opacity/transform. Không animate width khi người dùng đang kéo separator, tránh lag giữa pointer và panel. Không stagger hàng dữ liệu hay chạy animation trang lúc người dùng cần nhập.
 
-Animation bình thường **bật mặc định** theo yêu cầu mới nhất của người dùng ngày 20/10; không thêm switch giảm chuyển động hoặc yêu cầu người dùng đổi OS để nghiệm thu mốc này. CSS `prefers-reduced-motion: reduce` vẫn là fallback accessibility, rút ngắn chuyển động khi hệ điều hành yêu cầu; focus, loading label và save feedback vẫn hiểu được. OS-emulated reduced-motion QA được hoãn và không chặn step 5. MotionSites là nguồn cảm hứng chuyển động, không quyết định stack Angular hoặc thêm thư viện nặng. Chưa có benchmark motion đo từ nguồn đó.
+Animation bình thường **bật mặc định**; không thêm switch giảm chuyển động hoặc yêu cầu người dùng đổi OS để nghiệm thu. CSS `prefers-reduced-motion: reduce` vẫn là fallback accessibility, rút ngắn chuyển động khi hệ điều hành yêu cầu; focus, loading label và save feedback vẫn hiểu được. OS-emulated reduced-motion QA đang hoãn. MotionSites là nguồn cảm hứng chuyển động, không quyết định stack Angular hoặc thêm thư viện nặng. Chưa có benchmark motion đo từ nguồn đó.
 
 ## 8. Review trước khi mở rộng màn
 
 - Soát list, editor và ít nhất một overlay ở Light/Dark cùng viewport desktop 1440×900 và tablet 1024×768. Mobile hoãn theo yêu cầu hiện tại.
-- Kiểm tra panel resize/collapse/reload, theme reload/system change, search/filter/page/selection, dirty/save demo và validation.
+- Kiểm tra panel resize/collapse/reload, theme reload/system change, search/filter/page/selection, dirty/save và validation.
 - Dùng bàn phím mở/đóng overlay và quay lại focus; kiểm tra tiếng Việt dài và normal motion đang bật. Giữ fallback reduced motion trong CSS; không yêu cầu OS-QA ở mốc này theo lựa chọn người dùng.
 - Chụp ảnh bản dựng sau khi tương tác ổn định; soát tỷ lệ, alignment, contrast và các vùng scroll. Ảnh Webflow công khai có thể khác phiên bản/viewport: ghi rõ nguồn và giới hạn so sánh.
-- Báo cáo kết quả thực sự chạy và khoảng trống trong docs FE. Nghiệm thu thiết kế với người dùng và nghiệm thu deployment là trạng thái riêng.
+- Báo cáo kết quả thực sự chạy và khoảng trống trong bàn giao; chỉ giữ bằng chứng lâu dài khi cần theo [quy tắc docs](docs/README.md#quy-tắc-duy-trì-docs). Nghiệm thu thiết kế với người dùng và nghiệm thu deployment là trạng thái riêng.

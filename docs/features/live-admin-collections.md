@@ -1,17 +1,37 @@
-# Admin API và feature theo route — 2026-10-20
+# Quản lý Collections
 
-Trạng thái: đã triển khai và kiểm tra local; CI được ghi riêng tại [báo cáo](../verification/2026-10-20-live-collections.md). [Điều phối](../../../Boilerate/docs/shared/features/local-admin-integration.md). Người dùng yêu cầu code thật, ICustomSeeder thực chạy và tổ chức source tìm được theo route.
+FE đã có sáu màn danh sách và thêm/sửa, gọi API qua service. [Báo cáo tích hợp hiện tại](../verification/2026-10-21-codebase-foundation.md) lưu bằng chứng của mốc source đã kiểm tra; khả năng chạy với BE phụ thuộc đúng phiên bản hợp đồng dưới đây.
 
-Route `admin/collections` dùng `features/collections/collections.routes.ts`. Theo yêu cầu mới của người dùng: `categories/categories.ts` là component danh sách; `categories/category-io/category-io.ts` là màn thêm/sửa. Bên trong folder component chỉ có file của nó và component con riêng. Products và product-types làm tương tự. Không dùng tầng `pages` hoặc `components` bao quanh mỗi màn.
+## Phạm vi hiện tại
 
-Quyết định mới nhất của người dùng: `constants`, `enums`, `models`, `services`, `stores`, `forms`, `guards` nằm trong `src/app`, ngang cấp `features`. Tên file chỉ rõ chức năng, ví dụ `category.constants.ts`, `categories.service.ts`, `category-io.store.ts`; có alias import tương ứng. Các màn dùng chung được mà không đi vào thư mục riêng của nhau. Các component dùng chung toàn ứng dụng vẫn ở `shared/ui`.
+| Màn dưới `/admin/collections` | Khả năng                                                                                                        |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `products`                    | Tìm kiếm, phân trang, chọn dòng, xem/tạo/sửa sản phẩm và đổi trạng thái; SKU/giá/tồn của sản phẩm đã có chỉ xem |
+| `categories`                  | Danh sách, tạo/sửa và xóa kèm version                                                                           |
+| `product-types`               | Danh sách, xem/tạo/sửa loại sản phẩm và schema thuộc tính; chưa có thao tác xóa                                 |
 
-Quyết định cuối: collections chỉ giữ đúng 6 component màn hình, không có component con toolbar/table/form/inspector/fields. Màn `-io` khai báo form và chứa HTML form; store nhận form đó. Các hàm tạo typed form, validation/mapping thuần giữ ngoài màn. Phần dùng chung toàn ứng dụng tiếp tục ở `shared/ui`.
+Mỗi phần có route `new` và `:id` cho màn thêm/sửa. Lưu chỉ báo thành công sau phản hồi server; lỗi/409 giữ nội dung đang nhập. Dirty guard xác nhận trước khi rời màn. Gallery là khu thử control riêng, không cung cấp dữ liệu cho Collections.
 
-Không tạo `.scss`/`.spec.ts` mặc định cho mỗi component. Bố cục list/editor/form/inspector dùng SCSS chung trong `src/styles/admin`; control dùng preset/tokens PrimeNG. Chỉ giữ test cho HTTP, store, form có luật riêng và hành trình browser. Style riêng chỉ thêm khi có nhu cầu riêng rõ ràng.
+## Hợp đồng API mà FE sử dụng
 
-Thứ tự: seed/BE local → phiên đăng nhập + API config/proxy → từng feature typed DTO/service/store/form → thay route/navigation cũ và bỏ code demo không dùng → web unit/build/browser + live SQL Server roundtrip. Root giữ routes/providers/boundaries/global styles để tránh sửa chồng. Mobile hoãn; localhost:4200 giữ nguyên.
+- [ProductsService](../../src/app/services/products.service.ts): `POST products/search`, `POST products`, `GET/PUT products/{id}` và `POST products/{id}/status`. Lookup lấy từ `GET categories`, `GET product-types` và `GET product-types/{id}`.
+- [CategoriesService](../../src/app/services/categories.service.ts): `GET/POST categories`, `PUT/DELETE categories/{id}`; DELETE gửi version trong query.
+- [ProductTypesService](../../src/app/services/product-types.service.ts): `GET/POST product-types`, `GET/PUT product-types/{id}`.
+- Catalog pagination dùng `items/total/pageNumber/pageSize`, trang bắt đầu từ 1. Product/type version và các giá trị enum/field phải theo DTO của service; không dùng DTO demo hoặc pagination Identity để thay thế.
+- Đăng nhập và refresh theo [hợp đồng browser session](persistent-session.md). Interceptor chỉ gắn bearer trong API base, retry tối đa một lần sau refresh nếu vẫn cùng user; không tự retry mutation sau lỗi mạng hoặc 409.
 
-Phiên local đã được nâng ở [mốc giữ phiên ngày 21/10](persistent-session.md): refresh cookie HttpOnly, access token trong bộ nhớ, reload khôi phục và tải quyền lại. Không nhúng password vào FE hoặc runtime public config. Interceptor chỉ gắn bearer vào API base, refresh có serialize, retry tối đa một lần nếu refresh thành công và vẫn cùng userId; không retry mutation sau lỗi mạng/409. Catalog dùng items/total/pageNumber/pageSize khác Identity pagination.
+BE sibling đã fast-forward tới `9e5b410`, có Catalog và browser session tương ứng. Contract đã được đối chiếu controller, DTO, validators và permission manifest; API public giữ nguyên.
 
-Điều kiện hoàn tất: đăng nhập bằng BE thật, list/detail/edit phản ánh dữ liệu SQL Server, seed chạy lại ổn định, route/folder tương ứng, các kiểm tra web đạt. UI giữ Webflow/tokens/normal motion. Phần nào chưa đủ API không giả là đã lưu thành công.
+## Source và giới hạn
+
+[Routes](../../src/app/features/collections/collections.routes.ts) trỏ trực tiếp tới danh sách và màn `-io`. Cấu trúc component/store/service theo [coding rules](../coding-rules.md), style theo [SCSS chung](../scss-rules.md); không duy trì một bộ quy tắc riêng cho feature.
+
+BE quyết định authorization cuối cùng. FE đã có route/menu/action/store permission checks, editor chỉ xem khi thiếu quyền sửa và trang từ chối truy cập. Chỉnh giá/tồn/SKU của sản phẩm đã có, tối ưu mobile và deployment chưa thuộc mốc này.
+
+## Quyền và trạng thái danh sách
+
+Product dùng View/Create/Update/Publish; Category dùng View/Create/Update/Delete; ProductType dùng View/Create/Update, đều có tiền tố `Permissions.` theo BE. Route new kiểm Create, list và :id kiểm View; menu lọc View. Nút ghi và store kiểm đúng quyền từng action. Editor thiếu Update khóa controls; không cấp quyền fallback khi permission rỗng/lỗi. `/admin` chọn nhóm đầu được View hoặc `/admin/forbidden`; vẫn đăng xuất được. Product lookup chịu cả quyền Category/ProductType ở BE, bị từ chối sẽ báo lỗi load.
+
+Products giữ `q`, `status`, `page`, `pageSize` trong URL; Categories và ProductTypes giữ `q`, `page`. Query sai về mặc định; page vượt tổng được sửa về trang cuối một lần. Đổi filter về trang 1. Mở editor/Back giữ query; browser Back/Forward phục hồi từ URL. Đổi nhóm bắt đầu state riêng; selection chỉ tồn tại trong màn.
+
+Save trả Observable chỉ phát DTO khi thành công. Tránh submit lặp, dùng version và request generation/revision; giữ chỉnh sửa mới khi response cũ về. Validation có lỗi field và summary cho lỗi chưa map; thuộc tính động map theo snapshot request và ID. Lỗi mạng/403/409 giữ draft, không tự retry mutation. Ba editor dùng chung confirmation UI/controller, hủy pending khi destroy và chặn rời lúc đang lưu.

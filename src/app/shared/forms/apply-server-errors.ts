@@ -33,7 +33,13 @@ export function applyServerErrors(
   const unmapped: UnmappedServerError[] = [];
   for (const [field, messages] of Object.entries(errors)) {
     if (!messages.length) continue;
-    const path = Object.hasOwn(fieldAliases, field) ? (fieldAliases[field] ?? field) : field;
+    const normalize = (value: string): string =>
+      value
+        .replace(/^\$\./u, '')
+        .replace(/\[(\d+)\]/gu, '.$1')
+        .toLowerCase();
+    const alias = Object.keys(fieldAliases).find((key) => normalize(key) === normalize(field));
+    const path = alias ? (fieldAliases[alias] ?? field) : field;
     const control = findControl(form, path);
     if (!control) {
       unmapped.push({ field, messages });

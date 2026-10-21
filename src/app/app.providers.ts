@@ -1,13 +1,20 @@
-import { Provider, signal } from '@angular/core';
+import { Provider, computed, inject } from '@angular/core';
+import { AuthSession } from './core/auth/auth-session';
 import { WORKSPACE_NAVIGATION } from './core/navigation/workspace-navigation';
-import { COLLECTION_LINKS } from './app.navigation';
+import { COLLECTION_LINKS } from '@constants/navigation.constants';
 
-/** The application composition layer is the only place wiring features into chrome. */
 export function provideWorkspaceNavigation(): Provider[] {
   return [
     {
       provide: WORKSPACE_NAVIGATION,
-      useFactory: () => ({ collections: signal(COLLECTION_LINKS).asReadonly() }),
+      useFactory: () => {
+        const session = inject(AuthSession);
+        return {
+          collections: computed(() =>
+            COLLECTION_LINKS.filter((link) => session.hasPermission(link.permission)),
+          ),
+        };
+      },
     },
   ];
 }

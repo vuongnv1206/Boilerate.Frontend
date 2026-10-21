@@ -1,19 +1,21 @@
+import { slugify } from '@utils/text.util';
 import { FormControl, FormRecord, FormBuilder, ValidatorFn, Validators } from '@angular/forms';
 import {
   PRODUCT_LIMITS,
+  PRODUCT_FIELD_ALIASES,
   PRODUCT_SKU_PATTERN,
   PRODUCT_SLUG_PATTERN,
 } from '@constants/product.constants';
 import { ProductFulfillmentKind } from '@enums/product.enum';
 import { ProductFieldType } from '@enums/product-field-type.enum';
-import { ProductFieldControlValue, ProductForm } from '@models/product-form.model';
-import { ProductFieldDefinition, ProductTypeLookup } from '@models/product-lookups.model';
+import { ProductFieldControlValue, ProductForm } from '@forms/product-form.model';
+import { ProductFieldDefinition, ProductTypeLookup } from '@models/product-lookups.dto';
 import {
   ProductContent,
   ProductDto,
   ProductFieldInput,
   ProductFieldValue,
-} from '@models/product.model';
+} from '@models/product.dto';
 
 const trimmedRequired: ValidatorFn = (control) =>
   typeof control.value === 'string' && control.value.trim() ? null : { required: true };
@@ -145,15 +147,7 @@ export function toProductContent(
 }
 
 export function productSlug(name: string): string {
-  return name
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/gu, '')
-    .replace(/[đĐ]/gu, 'd')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/gu, '-')
-    .replace(/^-+|-+$/gu, '')
-    .slice(0, PRODUCT_LIMITS.slug);
+  return slugify(name).slice(0, PRODUCT_LIMITS.slug);
 }
 
 function fieldControlValue(
@@ -212,3 +206,34 @@ const fieldNumber: ValidatorFn = (control) => {
     ? null
     : { fieldNumber: true };
 };
+
+/** Use the submitted order, never the current schema index, to map a server field path. */
+export function productFieldAliases(
+  fields: readonly ProductFieldInput[],
+): Readonly<Record<string, string>> {
+  const aliases: Record<string, string> = { ...PRODUCT_FIELD_ALIASES };
+  fields.forEach((field, index) => {
+    for (const prefix of ['Content.Fields', 'content.fields', 'Fields', 'fields']) {
+      const target = `fields.${field.fieldDefinitionId}`;
+      aliases[`${prefix}[${index}]`] = target;
+      for (const name of [
+        'TextValue',
+        'NumberValue',
+        'BooleanValue',
+        'DateValue',
+        'ChoiceId',
+        'FieldDefinitionId',
+        'textValue',
+        'numberValue',
+        'booleanValue',
+        'dateValue',
+        'choiceId',
+        'fieldDefinitionId',
+      ]) {
+        aliases[`${prefix}[${index}].${name}`] = target;
+        aliases[`${prefix}.${index}.${name}`] = target;
+      }
+    }
+  });
+  return aliases;
+}

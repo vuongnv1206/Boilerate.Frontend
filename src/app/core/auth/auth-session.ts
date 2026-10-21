@@ -19,7 +19,7 @@ import {
 import { ApiClient, ApiRequestOptions } from '../http/api-client';
 import { normalizeApiError } from '../http/normalize-api-error';
 import { SKIP_AUTH } from './auth-context';
-import { LoginRequest, TokenResponse } from './auth.models';
+import { LoginRequest, TokenResponse } from './auth.dto';
 
 /** The refresh cookie belongs to the server. Access tokens stay in memory. */
 @Injectable({ providedIn: 'root' })
@@ -173,6 +173,13 @@ export class AuthSession {
     return this.api.get<string[]>('personal/permissions').pipe(
       tap((permissions) => {
         this.checkVersion(version);
+        if (
+          !Array.isArray(permissions) ||
+          !permissions.every((permission) => typeof permission === 'string')
+        ) {
+          this.grantedPermissions.set([]);
+          throw new Error('Không tải được danh sách quyền hợp lệ.');
+        }
         this.grantedPermissions.set(permissions);
         this.ready.set(true);
         this.restoreFailure.set('');

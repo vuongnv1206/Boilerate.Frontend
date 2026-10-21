@@ -219,3 +219,73 @@ function uniqueCodes(control: AbstractControl): ValidationErrors | null {
     .filter(Boolean);
   return new Set(codes).size === codes.length ? null : { duplicateCodes: true };
 }
+
+/** Capture submitted groups by control identity; resolve current paths only when errors arrive. */
+export function productTypeErrorAliases(
+  form: ProductTypeForm,
+  editing: boolean,
+): () => Readonly<Record<string, string>> {
+  const entries: {
+    source: string;
+    field: ProductFieldForm;
+    member: string;
+    choice?: ProductChoiceForm;
+    choiceMember?: string;
+  }[] = [];
+  const groups = editing
+    ? ([
+        ['fields', form.controls.fields.controls.filter((field) => !!field.controls.id.value)],
+        ['addFields', form.controls.fields.controls.filter((field) => !field.controls.id.value)],
+      ] as const)
+    : ([['fields', [...form.controls.fields.controls]]] as const);
+  for (const [group, fields] of groups)
+    fields.forEach((field, index) => {
+      entries.push({ source: `${group}[${index}]`, field, member: '' });
+      for (const member of Object.keys(field.controls))
+        entries.push({ source: `${group}[${index}].${member}`, field, member });
+      const choiceGroups =
+        editing && group === 'fields'
+          ? ([
+              [
+                'choices',
+                field.controls.choices.controls.filter((choice) => !!choice.controls.id.value),
+              ],
+              [
+                'addChoices',
+                field.controls.choices.controls.filter((choice) => !choice.controls.id.value),
+              ],
+            ] as const)
+          : ([['choices', [...field.controls.choices.controls]]] as const);
+      for (const [choiceGroup, choices] of choiceGroups)
+        choices.forEach((choice, choiceIndex) => {
+          entries.push({
+            source: `${group}[${index}].${choiceGroup}[${choiceIndex}]`,
+            field,
+            member: 'choices',
+            choice,
+          });
+          for (const choiceMember of Object.keys(choice.controls))
+            entries.push({
+              source: `${group}[${index}].${choiceGroup}[${choiceIndex}].${choiceMember}`,
+              field,
+              member: 'choices',
+              choice,
+              choiceMember,
+            });
+        });
+    });
+  return () =>
+    Object.fromEntries(
+      entries.map((entry) => {
+        const index = form.controls.fields.controls.indexOf(entry.field);
+        const choiceIndex = entry.choice
+          ? entry.field.controls.choices.controls.indexOf(entry.choice)
+          : -1;
+        const target =
+          index < 0 || (entry.choice && choiceIndex < 0)
+            ? '__unmapped__'
+            : `fields.${index}${entry.member ? `.${entry.member}` : ''}${entry.choice ? `.${choiceIndex}${entry.choiceMember ? `.${entry.choiceMember}` : ''}` : ''}`;
+        return [entry.source, target];
+      }),
+    );
+}

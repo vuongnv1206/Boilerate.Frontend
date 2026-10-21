@@ -1,3 +1,4 @@
+import { AuthSession } from './core/auth/auth-session';
 import { EnvironmentInjector, createEnvironmentInjector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -8,6 +9,9 @@ describe('Admin route composition', () => {
   afterEach(() => TestBed.resetTestingModule());
 
   it('creates an admin-scoped navigation session rather than a root feature singleton', () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: AuthSession, useValue: { hasPermission: () => true } }],
+    });
     const parent = TestBed.inject(EnvironmentInjector);
     const firstAdmin = createEnvironmentInjector(provideWorkspaceNavigation(), parent);
     const secondAdmin = createEnvironmentInjector(provideWorkspaceNavigation(), parent);
