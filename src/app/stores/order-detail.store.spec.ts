@@ -57,7 +57,7 @@ describe('OrderDetailStore', () => {
     confirmPayment: ReturnType<typeof vi.fn>;
     retryFulfillment: ReturnType<typeof vi.fn>;
   };
-  let auth: { hasPermission: ReturnType<typeof vi.fn> };
+  let auth: { can: ReturnType<typeof vi.fn> };
   let store: OrderDetailStore;
 
   beforeEach(() => {
@@ -70,7 +70,7 @@ describe('OrderDetailStore', () => {
       confirmPayment: vi.fn(() => of(makeOrder({ paymentStatus: OrderPaymentStatus.Paid }))),
       retryFulfillment: vi.fn(() => of(makeOrder({ version: 'v2' }))),
     };
-    auth = { hasPermission: vi.fn(() => true) };
+    auth = { can: vi.fn(() => true) };
     TestBed.configureTestingModule({
       providers: [
         { provide: AuthSession, useValue: auth },
@@ -82,6 +82,34 @@ describe('OrderDetailStore', () => {
   });
 
   afterEach(() => TestBed.resetTestingModule());
+
+  it('rejects direct commands without their independent Function–Action permission', () => {
+    store.load('order-a');
+    auth.can.mockReturnValue(false);
+    store.cancel();
+    store.confirmPayment({
+      version: 'v1',
+      operationId: 'operation',
+      reference: 'reference',
+      amount: 100,
+      currency: 'VND',
+      receivedAtUtc: '2026-10-21T00:00:00Z',
+      source: 'ManualBankTransfer',
+    });
+    service.get.mockReturnValueOnce(
+      of(
+        makeOrder({
+          paymentStatus: OrderPaymentStatus.Paid,
+          fulfillmentStatus: OrderFulfillmentStatus.NeedsReview,
+        }),
+      ),
+    );
+    store.load('order-a');
+    store.retryFulfillment();
+    expect(service.cancel).not.toHaveBeenCalled();
+    expect(service.confirmPayment).not.toHaveBeenCalled();
+    expect(service.retryFulfillment).not.toHaveBeenCalled();
+  });
 
   it('gates cancel and retry actions with payment and physical dispatch state', () => {
     service.get.mockReturnValueOnce(of(makeOrder()));

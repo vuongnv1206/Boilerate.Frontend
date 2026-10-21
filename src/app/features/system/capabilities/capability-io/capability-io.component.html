@@ -1,0 +1,142 @@
+<section class="editor-page" aria-labelledby="capability-heading">
+  <nav class="editor-breadcrumb" aria-label="Điều hướng chức năng">
+    <a [routerLink]="['/admin/system', store.kind()]" queryParamsHandling="preserve"
+      ><ui-icon name="arrow-left" [size]="14" />{{
+        store.kind() === 'functions' ? 'Chức năng' : 'Hành động'
+      }}</a
+    ><span>/</span><span>{{ store.record()?.name || 'Thêm mới' }}</span>
+  </nav>
+  <header class="editor-toolbar">
+    <div>
+      <h1 id="capability-heading">
+        {{ store.record() ? 'Chỉnh sửa' : 'Thêm' }}
+        {{ store.kind() === 'functions' ? 'chức năng' : 'hành động' }}
+      </h1>
+      <p class="editor-save-status">Quản lý danh mục và trạng thái sử dụng.</p>
+    </div>
+    <a
+      class="ui-button"
+      [routerLink]="['/admin/system', store.kind()]"
+      queryParamsHandling="preserve"
+      >Quay lại</a
+    >
+  </header>
+  @if (store.error()) {
+    <div class="editor-notice" role="alert">
+      {{ store.error()
+      }}<button class="ui-button" (click)="retry()" [disabled]="store.saving()">Tải lại</button>
+    </div>
+  }
+  @if (store.notice()) {
+    <div class="editor-notice" role="status">{{ store.notice() }}</div>
+  }
+  @if (store.loading()) {
+    <ui-content-state kind="loading" title="Đang tải danh mục" layout="page" />
+  } @else if (store.ready()) {
+    <div class="editor-body">
+      <main class="editor-main">
+        <form class="editor-form" [formGroup]="form" (ngSubmit)="saveInfo()" novalidate>
+          <section class="form-section">
+            <h2>Thông tin chung</h2>
+            <fieldset class="save-lock" [disabled]="store.saving() || !store.canWrite()">
+              <div class="field">
+                <label for="capability-code">Mã *</label
+                ><input
+                  pInputText
+                  id="capability-code"
+                  formControlName="code"
+                  maxlength="100"
+                  aria-describedby="capability-code-help"
+                /><small id="capability-code-help"
+                  >Chữ không dấu, số, dấu gạch ngang hoặc gạch dưới; tối đa 100 ký tự. Mã không đổi
+                  sau khi tạo.</small
+                >
+              </div>
+              <div class="field">
+                <label for="capability-name">Tên *</label
+                ><input pInputText id="capability-name" formControlName="name" maxlength="100" />
+              </div>
+              @if (store.kind() === 'functions') {
+                <div class="field">
+                  <label for="capability-group">Nhóm chức năng *</label
+                  ><select id="capability-group" class="system-select" formControlName="groupId">
+                    @for (group of store.groups(); track group.id) {
+                      <option [value]="group.id">{{ group.name }}</option>
+                    }
+                  </select>
+                </div>
+              }
+              <label class="system-check-row"
+                ><input type="checkbox" formControlName="isActive" />Đang hoạt động</label
+              >
+            </fieldset>
+            @if (form.invalid && form.touched) {
+              <p class="system-error" role="alert">Nhập mã, tên và nhóm hợp lệ trước khi lưu.</p>
+            }
+            <button
+              class="ui-button primary"
+              type="submit"
+              [disabled]="store.saving() || !store.canWrite()"
+            >
+              {{ store.saving() ? 'Đang lưu…' : 'Lưu thông tin' }}
+            </button>
+          </section>
+        </form>
+        @if (store.kind() === 'functions') {
+          <section class="form-section system-action-config">
+            <h2>Hành động của chức năng</h2>
+            <p>Chỉ các hành động được cấu hình tại đây mới có thể gán cho vai trò.</p>
+            @if (!store.record()) {
+              <p class="system-muted">Lưu chức năng trước khi cấu hình hành động.</p>
+            } @else {
+              <div class="permission-actions">
+                @for (action of store.actions(); track action.id) {
+                  <label
+                    class="permission-action"
+                    [class.selected]="store.selected().has(action.id)"
+                    ><input
+                      #actionInput
+                      type="checkbox"
+                      [checked]="store.selected().has(action.id)"
+                      [disabled]="!store.canWrite() || store.saving() || !store.selectable(action)"
+                      (change)="store.toggleAction(action, actionInput.checked)"
+                    /><span
+                      >{{ action.name }}
+                      @if (!action.isActive) {
+                        <small>Vô hiệu hóa</small>
+                      }
+                    </span></label
+                  >
+                }
+              </div>
+              <button
+                class="ui-button primary"
+                (click)="saveActions()"
+                [disabled]="!store.canWrite() || store.saving() || !store.actionsDirty()"
+              >
+                Lưu cấu hình hành động
+              </button>
+            }
+          </section>
+        }
+      </main>
+      <aside class="editor-inspector">
+        <section class="inspector-section">
+          <h2>Danh mục phân quyền</h2>
+          <p>
+            Mã liên kết với các chức năng đang được ứng dụng sử dụng. Việc thêm danh mục không tự
+            tạo màn hình hoặc thao tác mới.
+          </p>
+          @if (!store.canWrite()) {
+            <p>Đang ở chế độ chỉ xem.</p>
+          }
+        </section>
+      </aside>
+    </div>
+  }
+</section>
+<ui-confirm-dialog
+  title="Bỏ thay đổi danh mục?"
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

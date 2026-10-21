@@ -15,7 +15,7 @@ describe('ProductsStore', () => {
     service.search.mockReset().mockReturnValue(of(first));
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        { provide: AuthSession, useValue: { can: () => true } },
         ProductsStore,
         { provide: ProductsService, useValue: service },
       ],

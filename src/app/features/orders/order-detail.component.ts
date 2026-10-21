@@ -29,7 +29,6 @@ import {
   ORDER_FULFILLMENT_STATUS_LABELS,
   ORDER_PAYMENT_METHOD_LABELS,
   ORDER_PAYMENT_STATUS_LABELS,
-  ORDER_PERMISSIONS,
   ORDER_STATUS_LABELS,
 } from '@constants/order.constants';
 import { orderListQueryParams, readOrderListQuery } from '@utils/order-query.util';
@@ -91,15 +90,15 @@ export class OrderDetail implements OnInit {
   }
 
   canCancel(): boolean {
-    return this.session.hasPermission(ORDER_PERMISSIONS.cancel);
+    return this.session.can('Order', 'Cancel');
   }
 
   canConfirmPayment(): boolean {
-    return this.session.hasPermission(ORDER_PERMISSIONS.confirmPayment);
+    return this.session.can('Payment', 'Confirm');
   }
 
   canFulfill(): boolean {
-    return this.session.hasPermission(ORDER_PERMISSIONS.fulfill);
+    return this.session.can('Order', 'Fulfill');
   }
 
   ngOnInit(): void {
@@ -131,6 +130,7 @@ export class OrderDetail implements OnInit {
   }
 
   submitPayment(): void {
+    if (!this.canConfirmPayment()) return;
     const order = this.store.order();
     if (!order || !this.paymentReference().trim() || !this.paymentReceivedAt()) return;
     const request: ConfirmPaymentRequest = {
@@ -147,11 +147,13 @@ export class OrderDetail implements OnInit {
   }
 
   confirmCancel(): void {
+    if (!this.canCancel()) return;
     this.cancelDialog.set(false);
     this.store.cancel();
   }
 
   retryFulfillment(): void {
+    if (!this.canFulfill()) return;
     this.store.retryFulfillment();
   }
 

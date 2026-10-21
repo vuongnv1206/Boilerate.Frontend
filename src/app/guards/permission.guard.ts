@@ -2,13 +2,17 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
-import { COLLECTION_LINKS } from '@constants/navigation.constants';
+import { COLLECTION_LINKS, SYSTEM_LINKS } from '@constants/navigation.constants';
 
 export const permissionGuard: CanActivateFn = (route) => {
   const session = inject(AuthSession);
   const router = inject(Router);
   const permission: unknown = route.data['permission'];
-  return typeof permission === 'string' && session.hasPermission(permission)
+  const requirement =
+    permission && typeof permission === 'object' ? (permission as Record<string, unknown>) : {};
+  return typeof requirement['functionCode'] === 'string' &&
+    typeof requirement['actionCode'] === 'string' &&
+    session.can(requirement['functionCode'], requirement['actionCode'])
     ? true
     : router.createUrlTree(['/admin/forbidden']);
 };
@@ -22,10 +26,14 @@ export const adminHomeGuard: CanActivateFn = () => {
       map((signedIn) =>
         router.createUrlTree([
           signedIn
-            ? (COLLECTION_LINKS.find((link) => session.hasPermission(link.permission))?.path ??
-              '/admin/forbidden')
+            ? ([...COLLECTION_LINKS, ...(session.isCentralAdmin() ? SYSTEM_LINKS : [])].find(
+                (link) => session.can(link.permission.functionCode, link.permission.actionCode),
+              )?.path ?? '/admin/forbidden')
             : '/login',
         ]),
       ),
     );
 };
+
+export const centralAdminGuard: CanActivateFn = () =>
+  inject(AuthSession).isCentralAdmin() ? true : inject(Router).createUrlTree(['/admin/forbidden']);

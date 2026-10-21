@@ -74,7 +74,7 @@ describe('ProductIoStore', () => {
     );
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        { provide: AuthSession, useValue: { can: () => true } },
         ProductIoStore,
         { provide: ProductsService, useValue: service },
       ],
@@ -89,8 +89,8 @@ describe('ProductIoStore', () => {
   }
 
   it('locks a view-only product and blocks direct save and status commands', () => {
-    vi.spyOn(TestBed.inject(AuthSession), 'hasPermission').mockImplementation((permission) =>
-      permission.endsWith('.View'),
+    vi.spyOn(TestBed.inject(AuthSession), 'can').mockImplementation(
+      (_functionCode, actionCode) => actionCode === 'View',
     );
     store.load(item.id);
     expect(store.form.disabled).toBe(true);

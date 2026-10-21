@@ -10,7 +10,7 @@ describe('Admin route composition', () => {
 
   it('creates an admin-scoped navigation session rather than a root feature singleton', () => {
     TestBed.configureTestingModule({
-      providers: [{ provide: AuthSession, useValue: { hasPermission: () => true } }],
+      providers: [{ provide: AuthSession, useValue: { can: () => true } }],
     });
     const parent = TestBed.inject(EnvironmentInjector);
     const firstAdmin = createEnvironmentInjector(provideWorkspaceNavigation(), parent);

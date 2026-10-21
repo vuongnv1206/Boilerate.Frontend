@@ -19,7 +19,6 @@ import {
   tap,
 } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
-import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { ApiError } from '@core/http/api-error';
 import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
 import { ProductsService } from '@services/products.service';
@@ -43,13 +42,9 @@ export class ProductIoStore {
   private readonly summaryState = signal<readonly string[]>([]);
   readonly summary = this.summaryState.asReadonly();
   readonly canWrite = computed(() =>
-    this.session.hasPermission(
-      this.item() ? CATALOG_PERMISSIONS.product.update : CATALOG_PERMISSIONS.product.create,
-    ),
+    this.session.can('Product', this.item() ? 'Update' : 'Create'),
   );
-  readonly canPublish = computed(() =>
-    this.session.hasPermission(CATALOG_PERMISSIONS.product.publish),
-  );
+  readonly canPublish = computed(() => this.session.can('Product', 'Publish'));
   private readonly service = inject(ProductsService);
   private readonly destroyRef = inject(DestroyRef);
   private currentForm: ProductForm | null = null;

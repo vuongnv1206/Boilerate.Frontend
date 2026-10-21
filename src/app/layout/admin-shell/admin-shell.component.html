@@ -9,20 +9,17 @@
   [style.--sidebar-width]="sidebarWidth() + 'px'"
 >
   <nav class="icon-rail" aria-label="Không gian làm việc" [attr.inert]="mobileOpen() ? '' : null">
-    <a
-      class="brand-mark"
-      routerLink="/admin/collections/products"
-      aria-label="Boilerate — trang nội dung"
+    <a class="brand-mark" routerLink="/admin" aria-label="Boilerate — trang nội dung"
       >b<span>®</span></a
     >
     <div class="rail-top">
       <a
         routerLink="/admin/collections/products"
         class="rail-button"
-        [class.active]="!isGallery()"
+        [class.active]="!isGallery() && !isSystem()"
         title="Quản lý nội dung"
         aria-label="Quản lý nội dung"
-        [attr.aria-current]="!isGallery() ? 'page' : null"
+        [attr.aria-current]="!isGallery() && !isSystem() ? 'page' : null"
         ><ui-icon name="layers" [size]="19"
       /></a>
       <a
@@ -69,7 +66,12 @@
       <span class="demo-label">API</span>
     </div>
     <nav class="workspace-modes" aria-label="Chế độ làm việc">
-      <a routerLink="/admin/collections/products" [class.active]="!isGallery()">CMS</a>
+      <a routerLink="/admin/collections/products" [class.active]="!isGallery() && !isSystem()"
+        >CMS</a
+      >
+      @if (navigation.system().length) {
+        <a [routerLink]="navigation.system()[0]?.path" [class.active]="isSystem()">Hệ thống</a>
+      }
       <a routerLink="/admin/controls" [class.active]="isGallery()">UI Kit</a>
     </nav>
     <div class="workspace-tools">
@@ -115,7 +117,7 @@
     [cdkTrapFocus]="mobileOpen()"
   >
     <div class="context-title">
-      <span>{{ isGallery() ? 'Design system' : 'CMS' }}</span
+      <span>{{ isGallery() ? 'Design system' : isSystem() ? 'Hệ thống' : 'CMS' }}</span
       ><button
         class="icon-button"
         title="Thu gọn bảng điều hướng"
@@ -154,6 +156,17 @@
         }
       </nav>
       <div class="nav-divider"></div>
+      @if (navigation.system().length) {
+        <div class="nav-heading"><span>QUẢN TRỊ HỆ THỐNG</span></div>
+        <nav class="collection-nav" aria-label="Quản trị hệ thống">
+          @for (link of navigation.system(); track link.key) {
+            <a [routerLink]="link.path" routerLinkActive="selected"
+              ><ui-icon [name]="link.icon" [size]="16" /><span>{{ link.label }}</span></a
+            >
+          }
+        </nav>
+        <div class="nav-divider"></div>
+      }
       <div class="nav-heading"><span>WORKSPACE</span></div>
       <nav class="collection-nav" aria-label="Công cụ workspace">
         <a routerLink="/admin/controls" routerLinkActive="selected"

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 const paths: Readonly<Record<string, readonly string[]>> = {
+  user: ['M20 21v-2a7 7 0 0 0-14 0v2', 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z'],
   database: ['M4 6c0-2 16-2 16 0s-16 2-16 0v12c0 2 16 2 16 0V6', 'M4 12c0 2 16 2 16 0'],
   box: ['m12 3 9 5-9 5-9-5 9-5Z', 'm3 8 0 9 9 5 9-5V8', 'M12 13v9', 'm7 5 9 5'],
   layers: ['m12 3 10 6-10 6L2 9l10-6Z', 'm2 13 10 6 10-6', 'm2 17 10 6 10-6'],

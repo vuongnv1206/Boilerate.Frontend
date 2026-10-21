@@ -26,6 +26,8 @@ Dev server: [http://localhost:4200/admin](http://localhost:4200/admin). Với BE
 
 FE không kèm tài khoản, connection database hoặc lệnh seed. Cấu hình riêng và credentials giữ ngoài Git; dùng hướng dẫn của đúng phiên bản BE.
 
+[Quản trị hệ thống](docs/features/system-administration.md) có Vai trò và phân quyền, Người dùng, Chức năng và Hành động tại `/admin/system`. Màn quyền theo nhóm lấy danh mục từ API; FE dùng chung `AuthSession.can`, không duy trì constant từng permission. Cần BE có migration `GroupedAuthorization` và `personal/authorization`; triển khai BE trước FE. Runtime đợt này chỉ kiểm chứng SQL Server theo lựa chọn của người dùng.
+
 ## PrimeUI license
 
 License key được giữ trong cấu hình local bị ignore; không đặt key thật trong `.env.example`. Khi chưa có key hợp lệ, PrimeUI có thể hiển thị cảnh báo/watermark của vendor. Việc có một giá trị cấu hình không xác nhận license đã được nghiệm thu. Có thể đặt trong shell trước khi khởi động:

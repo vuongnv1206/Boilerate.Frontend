@@ -1,0 +1,103 @@
+<section class="editor-page" aria-labelledby="user-heading">
+  <nav class="editor-breadcrumb" aria-label="Điều hướng người dùng">
+    <a routerLink="/admin/system/users" queryParamsHandling="preserve"
+      ><ui-icon name="arrow-left" [size]="14" />Người dùng</a
+    ><span>/</span><span>Vai trò được gán</span>
+  </nav>
+  <header class="editor-toolbar">
+    <div>
+      <h1 id="user-heading">Phân quyền người dùng</h1>
+      <p class="editor-save-status">Quản lý các vai trò của tài khoản hiện có.</p>
+    </div>
+    <a class="ui-button" routerLink="/admin/system/users" queryParamsHandling="preserve"
+      >Quay lại</a
+    >
+  </header>
+  @if (store.error()) {
+    <div class="editor-notice" role="alert">
+      {{ store.error()
+      }}<button class="ui-button" (click)="retry()" [disabled]="store.saving()">Tải lại</button>
+    </div>
+  }
+  @if (store.notice()) {
+    <div class="editor-notice" role="status">{{ store.notice() }}</div>
+  }
+  @if (store.loading()) {
+    <ui-content-state kind="loading" title="Đang tải người dùng" layout="page" />
+  } @else if (store.ready()) {
+    @if (store.record(); as user) {
+      <div class="editor-body">
+        <main class="editor-main">
+          <section class="form-section">
+            <h2>Thông tin tài khoản</h2>
+            <dl class="system-user-details">
+              <div>
+                <dt>Họ tên</dt>
+                <dd>{{ user.firstName }} {{ user.lastName }}</dd>
+              </div>
+              <div>
+                <dt>Tên đăng nhập</dt>
+                <dd>{{ user.userName || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>{{ user.email || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Trạng thái</dt>
+                <dd>{{ user.isActive ? 'Hoạt động' : 'Vô hiệu hóa' }}</dd>
+              </div>
+            </dl>
+          </section>
+          <section class="form-section">
+            <h2>Vai trò được gán</h2>
+            <p>Quyền hiệu lực là tổng các quyền được cấp qua những vai trò này.</p>
+            <div class="system-user-roles">
+              @for (role of store.roles(); track role.roleId) {
+                <label
+                  class="permission-action"
+                  [class.selected]="store.selected().has(role.roleId)"
+                  ><input
+                    #roleInput
+                    type="checkbox"
+                    [checked]="store.selected().has(role.roleId)"
+                    [disabled]="!store.canWrite() || store.saving()"
+                    (change)="store.toggle(role.roleId, roleInput.checked)"
+                  /><span
+                    >{{ role.roleName }}
+                    @if (role.description) {
+                      <small>{{ role.description }}</small>
+                    }
+                  </span></label
+                >
+              } @empty {
+                <p class="system-muted">Chưa có vai trò.</p>
+              }
+            </div>
+            <button
+              class="ui-button primary"
+              (click)="save()"
+              [disabled]="!store.canWrite() || store.saving() || !store.dirty()"
+            >
+              {{ store.saving() ? 'Đang lưu…' : 'Lưu vai trò' }}
+            </button>
+          </section>
+        </main>
+        <aside class="editor-inspector">
+          <section class="inspector-section">
+            <h2>Quyền truy cập</h2>
+            <p>
+              Quản trị viên hoạt động cuối cùng được máy chủ bảo vệ. Tài khoản vô hiệu hóa không
+              được truy cập dù vẫn còn vai trò được gán.
+            </p>
+          </section>
+        </aside>
+      </div>
+    }
+  }
+</section>
+<ui-confirm-dialog
+  title="Bỏ thay đổi vai trò người dùng?"
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

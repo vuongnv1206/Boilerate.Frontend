@@ -1,0 +1,248 @@
+<section class="editor-page" aria-labelledby="role-heading">
+  <nav class="editor-breadcrumb" aria-label="Điều hướng vai trò">
+    <a routerLink="/admin/system/roles" queryParamsHandling="preserve"
+      ><ui-icon name="arrow-left" [size]="14" />Vai trò và phân quyền</a
+    ><span>/</span><span>{{ store.record()?.name || 'Vai trò mới' }}</span>
+  </nav>
+  <header class="editor-toolbar">
+    <div>
+      <h1 id="role-heading">{{ store.record() ? 'Chỉnh sửa vai trò' : 'Thêm vai trò' }}</h1>
+      <p class="editor-save-status">
+        {{ store.record()?.name || 'Tạo vai trò trước khi cấu hình quyền truy cập.' }}
+      </p>
+    </div>
+    <a class="ui-button" routerLink="/admin/system/roles" queryParamsHandling="preserve"
+      >Quay lại</a
+    >
+  </header>
+  @if (store.error()) {
+    <div class="editor-notice" role="alert">
+      {{ store.error()
+      }}<button class="ui-button" (click)="retry()" [disabled]="store.saving()">Tải lại</button>
+    </div>
+  }
+  @if (store.notice()) {
+    <div class="editor-notice" role="status">{{ store.notice() }}</div>
+  }
+  @if (store.loading()) {
+    <ui-content-state kind="loading" title="Đang tải vai trò" layout="page" />
+  } @else if (store.ready()) {
+    <div class="system-role-body">
+      <nav class="system-section-nav" aria-label="Nội dung vai trò">
+        <button
+          [class.selected]="section() === 'info'"
+          [attr.aria-current]="section() === 'info' ? 'page' : null"
+          (click)="section.set('info')"
+        >
+          <ui-icon name="file" [size]="16" />Thông tin chung</button
+        ><button
+          [class.selected]="section() === 'permissions'"
+          [attr.aria-current]="section() === 'permissions' ? 'page' : null"
+          [disabled]="!store.record()"
+          (click)="section.set('permissions')"
+        >
+          <ui-icon name="settings" [size]="16" />Phân quyền truy cập
+          @if (store.permissionsDirty()) {
+            <span class="system-dirty-dot" aria-label="Có thay đổi chưa lưu"></span>
+          }
+        </button>
+      </nav>
+      <div class="system-role-content">
+        @if (section() === 'info') {
+          <form
+            class="editor-form system-info-form"
+            [formGroup]="form"
+            (ngSubmit)="saveInfo()"
+            novalidate
+          >
+            <section class="form-section">
+              <h2>Thông tin chung</h2>
+              <p>Tên và mô tả giúp nhận biết trách nhiệm của nhóm người dùng.</p>
+              <fieldset class="save-lock" [disabled]="!store.canWrite() || store.saving()">
+                <div class="field">
+                  <label for="role-name">Tên vai trò *</label
+                  ><input
+                    pInputText
+                    id="role-name"
+                    formControlName="name"
+                    maxlength="256"
+                    [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched"
+                    aria-describedby="role-name-help"
+                  /><small id="role-name-help"
+                    >Tên bắt buộc, tối đa 256 ký tự. Vai trò hệ thống được máy chủ bảo vệ.</small
+                  >
+                </div>
+                <div class="field">
+                  <label for="role-description">Mô tả</label
+                  ><textarea
+                    pTextarea
+                    id="role-description"
+                    formControlName="description"
+                    rows="4"
+                  ></textarea>
+                </div>
+              </fieldset>
+              @if (form.invalid && form.touched) {
+                <p class="system-error" role="alert">Nhập tên vai trò hợp lệ trước khi lưu.</p>
+              }
+              <button
+                type="submit"
+                class="ui-button primary"
+                [disabled]="!store.canWrite() || store.saving()"
+              >
+                {{ store.saving() ? 'Đang lưu…' : 'Lưu thông tin' }}
+              </button>
+            </section>
+          </form>
+        } @else {
+          <section class="permission-panel" aria-labelledby="permissions-heading">
+            <div class="permission-panel-heading">
+              <div>
+                <p class="system-eyebrow">PHÂN QUYỀN TRUY CẬP</p>
+                <h2 id="permissions-heading">Màn hình và chức năng</h2>
+                <p>Chọn các thao tác vai trò được phép thực hiện.</p>
+              </div>
+              <button
+                class="ui-button primary"
+                (click)="savePermissions()"
+                [disabled]="!store.canWrite() || store.saving() || !store.permissionsDirty()"
+              >
+                {{ store.saving() ? 'Đang lưu…' : 'Lưu quyền truy cập' }}
+              </button>
+            </div>
+            <div class="permission-search">
+              <label for="permission-search" class="sr-only">Tìm kiếm chức năng</label
+              ><ui-icon name="search" [size]="16" /><input
+                pInputText
+                id="permission-search"
+                #permissionSearch
+                [value]="store.keyword()"
+                (input)="store.keyword.set(permissionSearch.value)"
+                placeholder="Tìm kiếm theo tên hoặc mã chức năng…"
+              /><button
+                class="ui-button"
+                (click)="store.expandAll(true)"
+                aria-label="Mở tất cả nhóm"
+              >
+                <ui-icon name="chevron-down" [size]="14" /></button
+              ><button
+                class="ui-button"
+                (click)="store.expandAll(false)"
+                aria-label="Thu gọn tất cả nhóm"
+              >
+                <ui-icon name="chevron-up" [size]="14" />
+              </button>
+            </div>
+            <p class="permission-scope">
+              {{
+                store.keyword().trim()
+                  ? 'Chọn nhanh chỉ áp dụng trong kết quả lọc đang hiển thị.'
+                  : 'Chọn nhanh áp dụng cho các chức năng trong nhóm.'
+              }}
+              Quyền được cấp độc lập.
+            </p>
+            @for (group of store.groups(); track group.id) {
+              <section class="permission-group">
+                <button
+                  class="permission-group-heading"
+                  (click)="store.toggleGroup(group.id)"
+                  [attr.aria-expanded]="!store.collapsed().has(group.id)"
+                  [attr.aria-controls]="'permission-group-' + group.id"
+                >
+                  <ui-icon
+                    [name]="store.collapsed().has(group.id) ? 'chevron-right' : 'chevron-down'"
+                    [size]="14"
+                  /><strong>{{ group.name }}</strong
+                  ><span>Đã chọn {{ group.count }}/{{ group.total }}</span>
+                </button>
+                @if (!store.collapsed().has(group.id)) {
+                  <div class="permission-group-content" [id]="'permission-group-' + group.id">
+                    <div class="permission-bulk">
+                      <p>
+                        CHỌN NHANH
+                        {{ store.keyword().trim() ? 'TRONG KẾT QUẢ LỌC' : 'CHO CẢ NHÓM' }}
+                      </p>
+                      <div class="permission-actions">
+                        @for (action of group.actions; track action.id) {
+                          <label
+                            class="permission-action"
+                            [class.selected]="
+                              store.bulkState(group.functions, action.id) !== 'none'
+                            "
+                            ><input
+                              #bulkInput
+                              type="checkbox"
+                              [checked]="store.bulkState(group.functions, action.id) === 'all'"
+                              [indeterminate]="
+                                store.bulkState(group.functions, action.id) === 'some'
+                              "
+                              [disabled]="!store.canWrite() || store.saving()"
+                              (change)="
+                                store.toggleBulk(group.functions, action.id, bulkInput.checked)
+                              "
+                              [attr.aria-label]="action.name + ' trong nhóm ' + group.name"
+                            /><span>{{ action.name }}</span></label
+                          >
+                        }
+                      </div>
+                    </div>
+                    @for (fn of group.functions; track fn.id) {
+                      <div class="permission-function">
+                        <div class="permission-function-heading">
+                          <strong>{{ fn.name }}</strong
+                          ><code>{{ fn.code }}</code>
+                          @if (!fn.isActive) {
+                            <span class="system-muted">Vô hiệu hóa</span>
+                          }
+                        </div>
+                        <div class="permission-actions">
+                          @for (action of fn.actionDtos; track action.id) {
+                            <label
+                              class="permission-action"
+                              [class.selected]="store.checked(fn.id, action.id)"
+                              [class.inactive]="!fn.isActive || !action.isActive"
+                              ><input
+                                #permissionInput
+                                type="checkbox"
+                                [checked]="store.checked(fn.id, action.id)"
+                                [disabled]="
+                                  !store.canWrite() ||
+                                  store.saving() ||
+                                  !store.selectable(fn, action)
+                                "
+                                (change)="store.toggle(fn, action, permissionInput.checked)"
+                                [attr.aria-label]="action.name + ' — ' + fn.name"
+                              /><span
+                                >{{ action.name }}
+                                @if (!fn.isActive || !action.isActive) {
+                                  <small>Chưa có hiệu lực</small>
+                                }
+                              </span></label
+                            >
+                          } @empty {
+                            <p class="system-muted">Chưa cấu hình hành động.</p>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </section>
+            } @empty {
+              <ui-content-state
+                kind="empty"
+                title="Không có chức năng phù hợp"
+                message="Thử từ khóa khác hoặc kiểm tra danh mục chức năng."
+              />
+            }
+          </section>
+        }
+      </div>
+    </div>
+  }
+</section>
+<ui-confirm-dialog
+  title="Bỏ thay đổi vai trò?"
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

@@ -14,7 +14,6 @@ import {
   ShipmentSummary,
 } from '@models/order.dto';
 import { AuthSession } from '@core/auth/auth-session';
-import { ORDER_PERMISSIONS } from '@constants/order.constants';
 
 @Injectable()
 export class OrderDetailStore {
@@ -51,12 +50,8 @@ export class OrderDetailStore {
   readonly relatedLoading = this.relatedLoadingState.asReadonly();
   readonly shippingError = this.shippingErrorState.asReadonly();
   readonly afterSalesError = this.afterSalesErrorState.asReadonly();
-  readonly canViewShipping = computed(() =>
-    this.session.hasPermission(ORDER_PERMISSIONS.shippingView),
-  );
-  readonly canViewAfterSales = computed(() =>
-    this.session.hasPermission(ORDER_PERMISSIONS.afterSalesView),
-  );
+  readonly canViewShipping = computed(() => this.session.can('Shipping', 'View'));
+  readonly canViewAfterSales = computed(() => this.session.can('AfterSales', 'View'));
   readonly shipments = this.shipmentsState.asReadonly();
   readonly afterSales = this.afterSalesState.asReadonly();
   readonly canCancel = computed(() => {
@@ -142,19 +137,19 @@ export class OrderDetailStore {
 
   cancel(): void {
     const order = this.order();
-    if (!order || !this.canCancel()) return;
+    if (!order || !this.session.can('Order', 'Cancel') || !this.canCancel()) return;
     this.mutate(this.service.cancel(order.id, order.version), order.id);
   }
 
   confirmPayment(request: ConfirmPaymentRequest): void {
     const order = this.order();
-    if (!order) return;
+    if (!order || !this.session.can('Payment', 'Confirm')) return;
     this.mutate(this.service.confirmPayment(order.id, request), order.id);
   }
 
   retryFulfillment(): void {
     const order = this.order();
-    if (!order || !this.canRetryFulfillment()) return;
+    if (!order || !this.session.can('Order', 'Fulfill') || !this.canRetryFulfillment()) return;
     this.mutate(this.service.retryFulfillment(order.id, order.version), order.id);
   }
 

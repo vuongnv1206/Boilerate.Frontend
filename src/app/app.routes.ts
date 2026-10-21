@@ -16,6 +16,19 @@ export const routes: Routes = [
       import('./layout/admin-shell/admin-shell.component').then((m) => m.AdminShell),
     children: [
       {
+        path: '',
+        pathMatch: 'full',
+        canActivate: [adminHomeGuard],
+        loadChildren: () =>
+          import('./features/access-denied/access-denied.routes').then(
+            (m) => m.ACCESS_DENIED_ROUTES,
+          ),
+      },
+      {
+        path: 'system',
+        loadChildren: () => import('./features/system/system.routes').then((m) => m.SYSTEM_ROUTES),
+      },
+      {
         path: 'controls',
         loadChildren: () =>
           import('./features/control-gallery/control-gallery.routes').then(
@@ -35,15 +48,6 @@ export const routes: Routes = [
       },
       {
         path: 'forbidden',
-        loadChildren: () =>
-          import('./features/access-denied/access-denied.routes').then(
-            (m) => m.ACCESS_DENIED_ROUTES,
-          ),
-      },
-      {
-        path: '',
-        pathMatch: 'full',
-        canActivate: [adminHomeGuard],
         loadChildren: () =>
           import('./features/access-denied/access-denied.routes').then(
             (m) => m.ACCESS_DENIED_ROUTES,

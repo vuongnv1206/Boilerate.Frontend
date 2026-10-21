@@ -14,7 +14,6 @@ import {
   tap,
 } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
-import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { ApiError } from '@core/http/api-error';
 import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
 import { PRODUCT_TYPE_LIMITS } from '@constants/product-type.constants';
@@ -38,11 +37,7 @@ export class ProductTypeIoStore {
   private readonly summaryState = signal<readonly string[]>([]);
   readonly summary = this.summaryState.asReadonly();
   readonly canWrite = computed(() =>
-    this.session.hasPermission(
-      this.record()
-        ? CATALOG_PERMISSIONS.productType.update
-        : CATALOG_PERMISSIONS.productType.create,
-    ),
+    this.session.can('ProductType', this.record() ? 'Update' : 'Create'),
   );
   private readonly service = inject(ProductTypesService);
   private readonly destroyRef = inject(DestroyRef);

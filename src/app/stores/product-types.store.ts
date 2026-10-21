@@ -1,6 +1,5 @@
 import { ListQuery } from '@models/list-query.model';
 import { AuthSession } from '@core/auth/auth-session';
-import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
@@ -12,9 +11,7 @@ import { ProductTypeDto } from '@models/product-type.dto';
 @Injectable()
 export class ProductTypesStore {
   private readonly session = inject(AuthSession);
-  readonly canCreate = computed(() =>
-    this.session.hasPermission(CATALOG_PERMISSIONS.productType.create),
-  );
+  readonly canCreate = computed(() => this.session.can('ProductType', 'Create'));
   private readonly service = inject(ProductTypesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly loadedState = signal(false);

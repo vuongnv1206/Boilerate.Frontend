@@ -340,6 +340,8 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
       );
     }
     if (path === 'personal/permissions' && method === 'GET') return reply(route, permissions);
+    if (path === 'personal/authorization' && method === 'GET')
+      return reply(route, { permissions, isCentralAdmin: false });
     if (path === 'products/search' && method === 'POST') {
       const pageNumber = Number(body?.['pageNumber'] ?? 1);
       const pageSize = Number(body?.['pageSize'] ?? 10);

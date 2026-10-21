@@ -22,7 +22,7 @@ describe('CategoriesStore', () => {
     const service = { getAll: vi.fn(() => of([category])), delete: vi.fn(() => of(false)) };
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        { provide: AuthSession, useValue: { can: () => true } },
         CategoriesStore,
         { provide: CategoriesService, useValue: service },
       ],
@@ -45,7 +45,7 @@ describe('CategoriesStore', () => {
     expect(store.page()).toBe(1);
     expect(done).toHaveBeenCalledOnce();
     expect(service.delete).toHaveBeenLastCalledWith('one', 'v1');
-    vi.spyOn(TestBed.inject(AuthSession), 'hasPermission').mockReturnValue(false);
+    vi.spyOn(TestBed.inject(AuthSession), 'can').mockReturnValue(false);
     const readonlyStore = TestBed.runInInjectionContext(() => new CategoriesStore());
     readonlyStore.delete(category).subscribe();
     expect(service.delete).toHaveBeenCalledTimes(2);

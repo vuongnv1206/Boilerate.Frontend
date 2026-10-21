@@ -30,6 +30,11 @@ export class AuthSession {
   private readonly tokens = signal<TokenResponse | null>(null);
   private readonly ready = signal(false);
   private readonly grantedPermissions = signal<readonly string[]>([]);
+  private readonly centralAdmin = signal(false);
+  private readonly permissionIndex = computed(
+    () => new Set(this.grantedPermissions().map((p) => p.toUpperCase())),
+  );
+  private authorizationRequest: Observable<void> | null = null;
   private readonly restoreFailure = signal('');
   private readonly logoutFailure = signal(false);
   private readonly channel = this.document.defaultView?.BroadcastChannel
@@ -42,12 +47,19 @@ export class AuthSession {
   readonly accessToken = computed(() => this.tokens()?.token ?? null);
   readonly signedIn = computed(() => this.ready() && this.tokens() !== null);
   readonly permissions = this.grantedPermissions.asReadonly();
+  readonly isCentralAdmin = this.centralAdmin.asReadonly();
   readonly restoreError = this.restoreFailure.asReadonly();
   readonly logoutFailed = this.logoutFailure.asReadonly();
 
   constructor() {
     if (this.channel) {
       this.channel.onmessage = (event: MessageEvent<unknown>) => {
+        if (event.data === 'authorization-changed') {
+          this.reloadAuthorization()
+            .pipe(catchError(() => of(undefined)))
+            .subscribe();
+          return;
+        }
         if (event.data !== 'login' && event.data !== 'logout') return;
         const returnUrl = this.router.url;
         this.clear();
@@ -91,7 +103,6 @@ export class AuthSession {
     if (this.restoreRequest) return this.restoreRequest;
     const version = this.sessionVersion;
     const request = this.refresh().pipe(
-      switchMap(() => this.loadPermissions(version)),
       map(() => true),
       catchError((error: unknown) => {
         if (version === this.sessionVersion) {
@@ -124,6 +135,7 @@ export class AuthSession {
           map((response) => response.token),
         );
     }).pipe(
+      switchMap((token) => this.loadPermissions(version).pipe(map(() => token))),
       finalize(() => {
         if (this.refreshRequest === request) this.refreshRequest = null;
       }),
@@ -154,14 +166,39 @@ export class AuthSession {
     this.tokens.set(null);
     this.ready.set(false);
     this.grantedPermissions.set([]);
+    this.centralAdmin.set(false);
+    this.authorizationRequest = null;
     this.restoreFailure.set('');
     this.logoutFailure.set(false);
     this.refreshRequest = null;
     this.restoreRequest = null;
   }
 
-  hasPermission(permission: string): boolean {
-    return this.grantedPermissions().includes(permission);
+  can(functionCode: string, actionCode: string): boolean {
+    const codePattern = /^[a-z0-9_-]{1,100}$/iu;
+    return (
+      codePattern.test(functionCode) &&
+      codePattern.test(actionCode) &&
+      this.permissionIndex().has(`Permissions.${functionCode}.${actionCode}`.toUpperCase())
+    );
+  }
+
+  reloadAuthorization(): Observable<void> {
+    if (!this.accessToken()) return of(undefined);
+    if (this.authorizationRequest) return this.authorizationRequest;
+    const request = this.loadPermissions(this.sessionVersion).pipe(
+      finalize(() => {
+        if (this.authorizationRequest === request) this.authorizationRequest = null;
+      }),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+    this.authorizationRequest = request;
+    return request;
+  }
+
+  authorizationChanged(): Observable<void> {
+    this.channel?.postMessage('authorization-changed');
+    return this.reloadAuthorization();
   }
 
   getVersion(): number {
@@ -170,22 +207,45 @@ export class AuthSession {
 
   private loadPermissions(version: number): Observable<void> {
     this.checkVersion(version);
-    return this.api.get<string[]>('personal/permissions').pipe(
-      tap((permissions) => {
-        this.checkVersion(version);
-        if (
-          !Array.isArray(permissions) ||
-          !permissions.every((permission) => typeof permission === 'string')
-        ) {
-          this.grantedPermissions.set([]);
-          throw new Error('Không tải được danh sách quyền hợp lệ.');
-        }
-        this.grantedPermissions.set(permissions);
-        this.ready.set(true);
-        this.restoreFailure.set('');
-      }),
-      map(() => undefined),
-    );
+    return this.api
+      .get<unknown>('personal/authorization', {
+        context: new HttpContext().set(SKIP_AUTH, true),
+        headers: { Authorization: `Bearer ${this.accessToken()}` },
+      })
+      .pipe(
+        tap((response) => {
+          this.checkVersion(version);
+          const context =
+            response && typeof response === 'object' && !Array.isArray(response)
+              ? (response as Record<string, unknown>)
+              : {};
+          const permissions = context['permissions'];
+          if (
+            !Array.isArray(permissions) ||
+            !permissions.every(
+              (permission) =>
+                typeof permission === 'string' &&
+                /^Permissions\.[a-z0-9_-]{1,100}\.[a-z0-9_-]{1,100}$/iu.test(permission),
+            ) ||
+            typeof context['isCentralAdmin'] !== 'boolean'
+          ) {
+            this.grantedPermissions.set([]);
+            throw new Error('Không tải được danh sách quyền hợp lệ.');
+          }
+          this.grantedPermissions.set(permissions);
+          this.centralAdmin.set(context['isCentralAdmin']);
+          this.ready.set(true);
+          this.restoreFailure.set('');
+        }),
+        map(() => undefined),
+        catchError((error: unknown) => {
+          if (version === this.sessionVersion) {
+            this.grantedPermissions.set([]);
+            this.centralAdmin.set(false);
+          }
+          return throwError(() => error);
+        }),
+      );
   }
 
   private setTokens(tokens: TokenResponse, version: number, expectedUserId?: string): void {

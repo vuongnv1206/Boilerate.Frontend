@@ -5,16 +5,6 @@ import {
   OrderStatus,
 } from '@models/order.dto';
 
-export const ORDER_PERMISSIONS = {
-  view: 'Permissions.Order.View',
-  cancel: 'Permissions.Order.Cancel',
-  fulfill: 'Permissions.Order.Fulfill',
-  confirmPayment: 'Permissions.Payment.Confirm',
-  shippingView: 'Permissions.Shipping.View',
-  afterSalesView: 'Permissions.AfterSales.View',
-  renewalView: 'Permissions.Renewal.View',
-} as const;
-
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.PendingPayment]: 'Chờ thanh toán',
   [OrderStatus.AwaitingProcessing]: 'Chờ xử lý',

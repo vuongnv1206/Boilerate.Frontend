@@ -34,3 +34,5 @@ Dev `http://localhost:4200`, proxy `/api/**` sang BE `http://localhost:5000`. `w
 Error interceptor chuẩn hóa response trong API base thành ApiError (status/kind, safe message, traceId, field errors); không giữ raw response/headers/stack. Auth interceptor xử lý 401 và coordinated refresh; [browser session](features/persistent-session.md) sở hữu contract. `applyServerErrors` nhận cấu trúc lỗi từ caller, không phụ thuộc core HTTP.
 
 [Collections](features/live-admin-collections.md) ghi quyền/query/API hiện tại. BE sibling đã pull tới `9e5b410` có Catalog và browser session tương ứng. [Mục lục docs](README.md) phân biệt contract, feature history và evidence; mobile/deployment chưa thuộc mốc web hiện tại.
+
+Nhóm `/admin/system` có danh sách và editor cho vai trò, chức năng/hành động và gán vai trò người dùng. `SystemAdministrationService` sở hữu endpoints; store được cấp theo màn. Navigation DI có `collections` và `system`, lọc bằng `AuthSession.can` và CentralAdmin từ API. Nhóm chức năng và nhãn action thuộc BE; xem [Quản trị hệ thống](features/system-administration.md).

@@ -29,7 +29,7 @@ describe('CategoryIoStore', () => {
     service = { getAll: vi.fn(() => of([category])), create: vi.fn(), update: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        { provide: AuthSession, useValue: { can: () => true } },
         CategoryIoStore,
         { provide: CategoriesService, useValue: service },
       ],
@@ -124,7 +124,7 @@ describe('CategoryIoStore', () => {
         { provide: CategoriesService, useValue: service },
         {
           provide: AuthSession,
-          useValue: { hasPermission: (permission: string) => permission.endsWith('.View') },
+          useValue: { can: (_functionCode: string, actionCode: string) => actionCode === 'View' },
         },
       ],
     });

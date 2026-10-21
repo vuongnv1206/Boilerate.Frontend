@@ -6,7 +6,7 @@ import { catchError, switchMap, throwError } from 'rxjs';
 import { RUNTIME_CONFIG } from '../config/runtime-config.token';
 import { isApiRequestUrl } from '../http/api-url';
 import { normalizeApiError } from '../http/normalize-api-error';
-import { SKIP_AUTH } from './auth-context';
+import { SKIP_AUTH, SKIP_AUTHORIZATION_REFRESH } from './auth-context';
 import { AuthSession } from './auth-session';
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
@@ -27,6 +27,15 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     : request;
   return next(authorized).pipe(
     catchError((error: unknown) => {
+      if (
+        normalizeApiError(error).status === 403 &&
+        !request.context.get(SKIP_AUTHORIZATION_REFRESH)
+      ) {
+        return session.reloadAuthorization().pipe(
+          catchError(() => throwError(() => error)),
+          switchMap(() => throwError(() => error)),
+        );
+      }
       if (
         !(error instanceof HttpErrorResponse) ||
         error.status !== 401 ||

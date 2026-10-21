@@ -9,3 +9,8 @@ export interface TokenResponse {
   readonly sessionId: string;
   readonly accessTokenExpiresAt: string;
 }
+
+export interface AuthorizationContext {
+  readonly permissions: readonly string[];
+  readonly isCentralAdmin: boolean;
+}

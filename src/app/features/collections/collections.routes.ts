@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { permissionGuard } from '@guards/permission.guard';
-import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { unsavedChangesGuard } from '@guards/unsaved-changes.guard';
 import { CategoriesService } from '@services/categories.service';
 import { ProductTypesService } from '@services/product-types.service';
@@ -15,14 +14,14 @@ export const COLLECTIONS_ROUTES: Routes = [
       {
         path: '',
         canActivate: [permissionGuard],
-        data: { permission: CATALOG_PERMISSIONS.product.view },
+        data: { permission: { functionCode: 'Product', actionCode: 'View' } },
         pathMatch: 'full',
         loadComponent: () => import('./products/products.component').then((m) => m.Products),
       },
       {
         path: 'new',
         canActivate: [permissionGuard],
-        data: { permission: CATALOG_PERMISSIONS.product.create },
+        data: { permission: { functionCode: 'Product', actionCode: 'Create' } },
         loadComponent: () =>
           import('./products/product-io/product-io.component').then((m) => m.ProductIo),
         canDeactivate: [unsavedChangesGuard],
@@ -30,7 +29,7 @@ export const COLLECTIONS_ROUTES: Routes = [
       {
         path: ':id',
         canActivate: [permissionGuard],
-        data: { permission: CATALOG_PERMISSIONS.product.view },
+        data: { permission: { functionCode: 'Product', actionCode: 'View' } },
         loadComponent: () =>
           import('./products/product-io/product-io.component').then((m) => m.ProductIo),
         canDeactivate: [unsavedChangesGuard],
@@ -44,14 +43,14 @@ export const COLLECTIONS_ROUTES: Routes = [
       {
         path: '',
         canActivate: [permissionGuard],
-        data: { permission: CATALOG_PERMISSIONS.category.view },
+        data: { permission: { functionCode: 'Category', actionCode: 'View' } },
         pathMatch: 'full',
         loadComponent: () => import('./categories/categories.component').then((m) => m.Categories),
       },
       {
         path: 'new',
         canActivate: [permissionGuard],
-        data: { permission: CATALOG_PERMISSIONS.category.create },
+        data: { permission: { functionCode: 'Category', actionCode: 'Create' } },
         loadComponent: () =>
           import('./categories/category-io/category-io.component').then((m) => m.CategoryIo),
         canDeactivate: [unsavedChangesGuard],
@@ -59,7 +58,7 @@ export const COLLECTIONS_ROUTES: Routes = [
       {
         path: ':id',
         canActivate: [permissionGuard],
-        data: { permission: CATALOG_PERMISSIONS.category.view },
+        data: { permission: { functionCode: 'Category', actionCode: 'View' } },
         loadComponent: () =>
           import('./categories/category-io/category-io.component').then((m) => m.CategoryIo),
         canDeactivate: [unsavedChangesGuard],
@@ -73,7 +72,7 @@ export const COLLECTIONS_ROUTES: Routes = [
       {
         path: '',
         canActivate: [permissionGuard],
-        data: { permission: CATALOG_PERMISSIONS.productType.view },
+        data: { permission: { functionCode: 'ProductType', actionCode: 'View' } },
         pathMatch: 'full',
         loadComponent: () =>
           import('./product-types/product-types.component').then((m) => m.ProductTypes),
@@ -81,7 +80,7 @@ export const COLLECTIONS_ROUTES: Routes = [
       {
         path: 'new',
         canActivate: [permissionGuard],
-        data: { permission: CATALOG_PERMISSIONS.productType.create },
+        data: { permission: { functionCode: 'ProductType', actionCode: 'Create' } },
         loadComponent: () =>
           import('./product-types/product-type-io/product-type-io.component').then(
             (m) => m.ProductTypeIo,
@@ -91,7 +90,7 @@ export const COLLECTIONS_ROUTES: Routes = [
       {
         path: ':id',
         canActivate: [permissionGuard],
-        data: { permission: CATALOG_PERMISSIONS.productType.view },
+        data: { permission: { functionCode: 'ProductType', actionCode: 'View' } },
         loadComponent: () =>
           import('./product-types/product-type-io/product-type-io.component').then(
             (m) => m.ProductTypeIo,

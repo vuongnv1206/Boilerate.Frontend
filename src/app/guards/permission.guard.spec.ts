@@ -11,7 +11,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { AuthSession } from '@core/auth/auth-session';
 import { WORKSPACE_NAVIGATION } from '@core/navigation/workspace-navigation';
 import { provideWorkspaceNavigation } from '@app/app.providers';
-import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { adminHomeGuard, permissionGuard } from './permission.guard';
 
 describe('Route and navigation permissions', () => {
@@ -24,20 +23,22 @@ describe('Route and navigation permissions', () => {
         {
           provide: AuthSession,
           useValue: {
-            hasPermission: (permission: string) => granted().includes(permission),
+            can: (functionCode: string, actionCode: string) =>
+              granted().includes(`Permissions.${functionCode}.${actionCode}`),
             restore: () => of(true),
+            isCentralAdmin: () => false,
           },
         },
       ],
     });
   }
   it('denies missing grants and a direct create URL even when list access exists', () => {
-    granted.set([CATALOG_PERMISSIONS.category.view]);
+    granted.set(['Permissions.Category.View']);
     configure();
     const denied = TestBed.runInInjectionContext(() =>
       permissionGuard(
         Object.assign(new ActivatedRouteSnapshot(), {
-          data: { permission: CATALOG_PERMISSIONS.category.create },
+          data: { permission: { functionCode: 'Category', actionCode: 'Create' } },
         }),
         {} as RouterStateSnapshot,
       ),
@@ -46,7 +47,7 @@ describe('Route and navigation permissions', () => {
     const allowed = TestBed.runInInjectionContext(() =>
       permissionGuard(
         Object.assign(new ActivatedRouteSnapshot(), {
-          data: { permission: CATALOG_PERMISSIONS.category.view },
+          data: { permission: { functionCode: 'Category', actionCode: 'View' } },
         }),
         {} as RouterStateSnapshot,
       ),
@@ -54,7 +55,7 @@ describe('Route and navigation permissions', () => {
     expect(allowed).toBe(true);
   });
   it('chooses the first permitted list, updates the menu after grants change and handles no access', async () => {
-    granted.set([CATALOG_PERMISSIONS.category.view]);
+    granted.set(['Permissions.Category.View']);
     configure();
     const child = createEnvironmentInjector(
       provideWorkspaceNavigation(),

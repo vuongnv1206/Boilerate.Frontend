@@ -1,6 +1,5 @@
 import { ListQuery } from '@models/list-query.model';
 import { AuthSession } from '@core/auth/auth-session';
-import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, Subscription, catchError, defer, finalize, take, tap } from 'rxjs';
@@ -12,12 +11,8 @@ import { CategoryDto } from '@models/category.dto';
 @Injectable()
 export class CategoriesStore {
   private readonly session = inject(AuthSession);
-  readonly canCreate = computed(() =>
-    this.session.hasPermission(CATALOG_PERMISSIONS.category.create),
-  );
-  readonly canDelete = computed(() =>
-    this.session.hasPermission(CATALOG_PERMISSIONS.category.delete),
-  );
+  readonly canCreate = computed(() => this.session.can('Category', 'Create'));
+  readonly canDelete = computed(() => this.session.can('Category', 'Delete'));
   private readonly service = inject(CategoriesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly loadedState = signal(false);

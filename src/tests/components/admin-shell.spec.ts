@@ -56,10 +56,10 @@ describe('Workspace navigation accessibility', () => {
       imports: [AdminShell],
       providers: [
         provideRouter([]),
-        { provide: WORKSPACE_NAVIGATION, useValue: { collections } },
+        { provide: WORKSPACE_NAVIGATION, useValue: { collections, system: signal([]) } },
         {
           provide: AuthSession,
-          useValue: { hasPermission: () => true, signOut: () => of(undefined) },
+          useValue: { can: () => true, signOut: () => of(undefined) },
         },
       ],
     });

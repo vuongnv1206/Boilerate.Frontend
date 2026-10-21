@@ -40,6 +40,13 @@ export class ApiClient {
     return this.request<T>('DELETE', resource, options);
   }
 
+  text(method: ApiMethod, resource: string, body: unknown): Observable<string> {
+    return this.http.request(method, apiUrl(this.config.apiBaseUrl, resource), {
+      body,
+      responseType: 'text',
+    });
+  }
+
   request<T>(
     method: ApiMethod,
     resource: string,

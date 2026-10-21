@@ -14,7 +14,6 @@ import {
   tap,
 } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
-import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { ApiError } from '@core/http/api-error';
 import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
 import { CategoriesService } from '@services/categories.service';
@@ -28,9 +27,7 @@ export class CategoryIoStore {
   private readonly summaryState = signal<readonly string[]>([]);
   readonly summary = this.summaryState.asReadonly();
   readonly canWrite = computed(() =>
-    this.session.hasPermission(
-      this.record() ? CATALOG_PERMISSIONS.category.update : CATALOG_PERMISSIONS.category.create,
-    ),
+    this.session.can('Category', this.record() ? 'Update' : 'Create'),
   );
   private readonly service = inject(CategoriesService);
   private readonly destroyRef = inject(DestroyRef);

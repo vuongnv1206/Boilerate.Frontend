@@ -29,7 +29,6 @@ import { WORKSPACE_NAVIGATION } from '@core/navigation/workspace-navigation';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { focusWhenVisible } from '@shared/ui/focus-when-visible';
 import { ADMIN_LAYOUT, ADMIN_THEME_OPTIONS } from './admin-shell.constants';
-import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { AuthSession } from '@core/auth/auth-session';
 
 function preference(key: string, fallback: string): string {
@@ -52,9 +51,7 @@ export class AdminShell {
   readonly navigation = inject(WORKSPACE_NAVIGATION);
   private readonly router = inject(Router);
   private readonly session = inject(AuthSession);
-  readonly canCreateProduct = computed(() =>
-    this.session.hasPermission(CATALOG_PERMISSIONS.product.create),
-  );
+  readonly canCreateProduct = computed(() => this.session.can('Product', 'Create'));
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly panelToggle = viewChild<ElementRef<HTMLButtonElement>>('panelToggle');
@@ -64,6 +61,7 @@ export class AdminShell {
   readonly isMobile = signal(this.mobileQuery.matches);
   readonly currentUrl = signal(this.router.url);
   readonly isGallery = computed(() => this.currentUrl().includes('/controls'));
+  readonly isSystem = computed(() => this.currentUrl().includes('/system'));
   readonly sidebarWidth = signal(
     Math.min(
       ADMIN_LAYOUT.panelMax,

@@ -153,7 +153,9 @@ Auth/session ở core: access token/quyền trong bộ nhớ, refresh bằng Htt
 | Category    | `Permissions.Category.View/Create/Update/Delete` |
 | ProductType | `Permissions.ProductType.View/Create/Update`     |
 
-Các chuỗi trên là các permission riêng (dấu `/` chỉ viết tắt trong bảng). Dùng `CATALOG_PERMISSIONS` làm nguồn trong source. Guard list/editor view kiểm View; route new kiểm Create. Menu chỉ hiện nhóm có View. `/admin` chọn nhóm đầu tiên được xem; không có nhóm thì `/admin/forbidden`, vẫn có logout. Không dựng menu giả đầy đủ khi chưa lấy quyền.
+Các chuỗi trên là các permission riêng (dấu `/` chỉ viết tắt trong bảng). Source dùng `AuthSession.can(functionCode, actionCode)`; không chép danh mục tổ hợp quyền thành constant FE. Route/navigation khai báo `{ functionCode, actionCode }`, bộ kiểm chung đối chiếu không phân biệt hoa/thường với quyền BE trả. Guard list/editor view kiểm View; route new kiểm Create. Menu chỉ hiện nhóm có View. `/admin` chọn mục đầu tiên được phép trong Collections rồi Quản trị hệ thống; không có mục thì `/admin/forbidden`, vẫn có logout.
+
+`personal/authorization` trả `permissions` và `isCentralAdmin` từ database; quyền quản trị hệ thống yêu cầu đồng thời CentralAdmin và Function–Action. Không suy membership từ token hoặc permission string. Làm mới ngữ cảnh sau refresh token, thay đổi ACL và lỗi 403; không replay mutation 403 hay bỏ draft. Nhóm/chức năng/action/nhãn trên [màn quản trị](features/system-administration.md) lấy từ API, không giả bộ CRUD cố định, không tự thêm View khi chọn quyền khác.
 
 Người có View thiếu Update vẫn được mở `:id` để đọc: disabled controls thật và nút ghi bị khóa. Tạo mới kiểm Create, sửa kiểm Update, đổi status kiểm Publish, xóa category kiểm Delete. UI và handler/store đều kiểm; không chỉ ẩn nút. Lookup Products còn chịu quyền riêng Category/ProductType ở BE: nếu bị từ chối, báo lỗi load rõ ràng, không giả lookup rỗng hoặc cấp thêm quyền. BE luôn là nơi thực thi authorization cuối cùng.
 

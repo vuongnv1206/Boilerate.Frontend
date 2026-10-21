@@ -5,6 +5,7 @@ FE đã triển khai khôi phục đăng nhập và URL quản trị khi tải l
 ## Hành vi
 
 - Access token và quyền ở bộ nhớ. Guard chờ refresh cookie và tải lại quyền trước khi mở admin; không lưu token, mật khẩu hoặc quyền trong localStorage/sessionStorage.
+- Quyền hiện tại tải qua `GET personal/authorization` gồm `permissions` và `isCentralAdmin`; `GET personal/permissions` được BE giữ cho client cũ. Ngữ cảnh được tải lại sau token refresh, thay đổi ACL và 403; 403 không phát lại thao tác ghi.
 - Các request refresh trong một tab dùng chung một lần gọi. Web Lock điều phối login/refresh/logout giữa các tab khi trình duyệt hỗ trợ; BroadcastChannel thông báo thay đổi phiên. Response phải đúng userId trước khi cho phép gửi lại request của phiên cũ.
 - Refresh 401 yêu cầu đăng nhập lại. Lỗi mạng/server có thể thử khôi phục lại; logout chưa gọi được server có nút thử lại.
 - Logout yêu cầu BE thu hồi phiên, xóa cookie và thông báo các tab khác dọn phiên; phiên đã thu hồi không được khôi phục sau reload.

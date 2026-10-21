@@ -1,6 +1,5 @@
 import { ProductListQuery } from '@models/list-query.model';
 import { AuthSession } from '@core/auth/auth-session';
-import { CATALOG_PERMISSIONS } from '@constants/permission.constants';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, of, switchMap } from 'rxjs';
@@ -13,9 +12,7 @@ import { ProductPage, ProductSearch } from '@models/product.dto';
 @Injectable()
 export class ProductsStore {
   private readonly session = inject(AuthSession);
-  readonly canCreate = computed(() =>
-    this.session.hasPermission(CATALOG_PERMISSIONS.product.create),
-  );
+  readonly canCreate = computed(() => this.session.can('Product', 'Create'));
   private readonly service = inject(ProductsService);
   private readonly requests = new Subject<ProductSearch>();
   private readonly pageState = signal<ProductPage>({

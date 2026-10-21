@@ -90,7 +90,7 @@ export default tseslint.config(
             },
             {
               from: 'stores',
-              allow: ['core', 'shared-forms', 'stores', 'services', 'forms', ...dataTypes],
+              allow: ['core', 'shared-forms', 'stores', 'services', 'forms', 'utils', ...dataTypes],
             },
             { from: 'services', allow: ['core', 'http-transport', 'services', ...dataTypes] },
             { from: 'forms', allow: ['forms', 'utils', 'shared-forms', ...dataTypes] },

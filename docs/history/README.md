@@ -2,6 +2,10 @@
 
 Chỉ ghi các khả năng đã triển khai theo mốc. Chi tiết sửa code tra trong Git; cách ghi tài liệu theo [quy tắc docs](../README.md#quy-tắc-duy-trì-docs).
 
+## 21/10/2026 — Quản trị phân quyền theo nhóm
+
+Có màn vai trò với danh mục nhóm/chức năng/action từ API, chọn nhanh theo kết quả lọc, quản lý danh mục và gán vai trò cho tài khoản hiện có. Menu/route/thao tác dùng chung checker Function–Action và trạng thái CentralAdmin từ BE. Xem [Quản trị hệ thống](../features/system-administration.md) và bằng chứng tích hợp được dẫn tại đó; runtime đợt này chỉ SQL Server.
+
 ## 21/10/2026 — Quyền Catalog và khôi phục trạng thái danh sách
 
 Menu/route/thao tác theo quyền BE, editor chỉ xem khi thiếu quyền sửa và trang từ chối truy cập khi không có nhóm được xem. Query danh sách giữ qua editor/Back; save, lỗi validation/403/409 và xác nhận rời màn giữ draft đúng vòng đời. Xem [Collections](../features/live-admin-collections.md).

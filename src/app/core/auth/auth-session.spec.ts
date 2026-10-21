@@ -49,26 +49,53 @@ describe('AuthSession and API authentication', () => {
     expect(login.request.headers.get('X-Requested-With')).toBe('XMLHttpRequest');
     expect(login.request.withCredentials).toBe(true);
     login.flush(tokens);
-    const permissions = requests.expectOne('/api/personal/permissions');
+    const permissions = requests.expectOne('/api/personal/authorization');
     expect(permissions.request.headers.get('Authorization')).toBe('Bearer first-access');
-    permissions.flush(['Permissions.Product.View']);
+    permissions.flush({ permissions: ['Permissions.Product.View'], isCentralAdmin: false });
   }
+
+  it('normalizes codes and takes central administrator status only from the authorization response', () => {
+    signIn();
+    expect(session.can('product', 'VIEW')).toBe(true);
+    expect(session.can('Product.View', 'View')).toBe(false);
+    expect(session.isCentralAdmin()).toBe(false);
+    session.reloadAuthorization().subscribe();
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({ permissions: ['Permissions.Custom.APPROVE'], isCentralAdmin: true });
+    expect(session.can('custom', 'approve')).toBe(true);
+    expect(session.can('Product', 'View')).toBe(false);
+    expect(session.isCentralAdmin()).toBe(true);
+  });
+
+  it('fails closed on a malformed authorization refresh and keeps the authenticated draft session', () => {
+    signIn();
+    session.reloadAuthorization().subscribe({ error: () => undefined });
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({ permissions: ['Permissions.Product.View'], isCentralAdmin: 'true' });
+    expect(session.can('Product', 'View')).toBe(false);
+    expect(session.isCentralAdmin()).toBe(false);
+    expect(session.signedIn()).toBe(true);
+  });
 
   it('signs in through the BE endpoints and reads the actual permissions', () => {
     signIn();
     expect(session.signedIn()).toBe(true);
-    expect(session.hasPermission('Permissions.Product.View')).toBe(true);
-    expect(session.hasPermission('Permissions.Product.Create')).toBe(false);
+    expect(session.can('Product', 'View')).toBe(true);
+    expect(session.can('Product', 'Create')).toBe(false);
   });
 
   it('rejects malformed permission responses without granting access', () => {
     const restored = vi.fn();
     session.restore().subscribe(restored);
     requests.expectOne('/api/tokens/session/refresh').flush(tokens);
-    requests.expectOne('/api/personal/permissions').flush({ grants: ['Permissions.Product.View'] });
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({ grants: ['Permissions.Product.View'] });
     expect(restored).toHaveBeenCalledWith(false);
     expect(session.signedIn()).toBe(false);
-    expect(session.hasPermission('Permissions.Product.View')).toBe(false);
+    expect(session.can('Product', 'View')).toBe(false);
   });
 
   it('restores once for concurrent guards and waits for fresh permissions', () => {
@@ -83,7 +110,9 @@ describe('AuthSession and API authentication', () => {
     refresh.flush(tokens);
     expect(session.signedIn()).toBe(false);
     expect(first).not.toHaveBeenCalled();
-    requests.expectOne('/api/personal/permissions').flush(['Permissions.Product.View']);
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({ permissions: ['Permissions.Product.View'], isCentralAdmin: false });
     expect(first).toHaveBeenCalledWith(true);
     expect(second).toHaveBeenCalledWith(true);
     expect(session.signedIn()).toBe(true);
@@ -101,7 +130,7 @@ describe('AuthSession and API authentication', () => {
     expect(session.signedIn()).toBe(false);
     expect(session.accessToken()).toBeNull();
     expect(session.restoreError()).toBe('');
-    requests.expectNone('/api/personal/permissions');
+    requests.expectNone('/api/personal/authorization');
   });
 
   it('reports restore outages and can retry instead of treating the cookie as revoked', () => {
@@ -112,7 +141,9 @@ describe('AuthSession and API authentication', () => {
     expect(session.restoreError()).not.toBe('');
     session.restore().subscribe();
     requests.expectOne('/api/tokens/session/refresh').flush(tokens);
-    requests.expectOne('/api/personal/permissions').flush([]);
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({ permissions: [], isCentralAdmin: false });
     expect(session.signedIn()).toBe(true);
     expect(session.restoreError()).toBe('');
   });
@@ -132,32 +163,21 @@ describe('AuthSession and API authentication', () => {
     expect(session.restoreError()).toBe('');
   });
 
-  it.each(['refresh', 'permissions'])(
-    'keeps restore retry available after a %s outage following a 401',
-    (stage) => {
-      session.restore().subscribe();
-      requests.expectOne('/api/tokens/session/refresh').flush(tokens);
-      requests
-        .expectOne('/api/personal/permissions')
-        .flush({}, { status: 401, statusText: 'Unauthorized' });
-      const refresh = requests.expectOne('/api/tokens/session/refresh');
-      if (stage === 'refresh') {
-        refresh.flush({}, { status: 503, statusText: 'Unavailable' });
-      } else {
-        refresh.flush({ ...tokens, token: 'next-access' });
-        requests
-          .expectOne('/api/personal/permissions')
-          .flush({}, { status: 503, statusText: 'Unavailable' });
-      }
-      expect(session.signedIn()).toBe(false);
-      expect(session.restoreError()).not.toBe('');
-      expect(TestBed.inject(Router).navigate).not.toHaveBeenCalled();
-      session.restore().subscribe();
-      requests.expectOne('/api/tokens/session/refresh').flush(tokens);
-      requests.expectOne('/api/personal/permissions').flush([]);
-      expect(session.signedIn()).toBe(true);
-    },
-  );
+  it('denies a failed authorization restore and lets the user restore again', () => {
+    session.restore().subscribe();
+    requests.expectOne('/api/tokens/session/refresh').flush(tokens);
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({}, { status: 503, statusText: 'Unavailable' });
+    expect(session.signedIn()).toBe(false);
+    expect(session.restoreError()).not.toBe('');
+    session.restore().subscribe();
+    requests.expectOne('/api/tokens/session/refresh').flush(tokens);
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({ permissions: [], isCentralAdmin: false });
+    expect(session.signedIn()).toBe(true);
+  });
 
   it('sends one refresh for concurrent 401 responses, then retries with the new token', () => {
     signIn();
@@ -171,10 +191,13 @@ describe('AuthSession and API authentication', () => {
     expect(refresh.request.body).toBeNull();
     expect(refresh.request.headers.has('Authorization')).toBe(false);
     refresh.flush({ ...tokens, token: 'next-access' });
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({ permissions: ['Permissions.Product.View'], isCentralAdmin: false });
     for (const url of ['/api/categories', '/api/product-types']) {
       const retry = requests.expectOne(url);
       expect(retry.request.headers.get('Authorization')).toBe('Bearer next-access');
-      retry.flush([]);
+      retry.flush({ permissions: [], isCentralAdmin: false });
     }
     expect(first).toHaveBeenCalledOnce();
     expect(second).toHaveBeenCalledOnce();
@@ -216,6 +239,9 @@ describe('AuthSession and API authentication', () => {
     const forbidden = vi.fn();
     http.post('/api/products', {}).subscribe({ error: forbidden });
     requests.expectOne('/api/products').flush({}, { status: 403, statusText: 'Forbidden' });
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({ permissions: [], isCentralAdmin: false });
     requests.expectNone('/api/tokens/session/refresh');
     expect(session.signedIn()).toBe(true);
     http.get('/api/categories').subscribe({ error: () => undefined });
@@ -240,7 +266,9 @@ describe('AuthSession and API authentication', () => {
       token: 'second-user',
       sessionId: 'second-session',
     });
-    requests.expectOne('/api/personal/permissions').flush(['Permissions.Product.View']);
+    requests
+      .expectOne('/api/personal/authorization')
+      .flush({ permissions: ['Permissions.Product.View'], isCentralAdmin: false });
     oldWrite.flush({}, { status: 401, statusText: 'Unauthorized' });
     requests.expectNone('/api/products');
     requests.expectNone('/api/tokens/session/refresh');
@@ -270,7 +298,7 @@ describe('AuthSession and API authentication', () => {
       .signIn({ email: 'admin@example.test', password: 'test password' })
       .subscribe();
     requests.expectOne('/api/tokens/session').flush(tokens);
-    const permissions = requests.expectOne('/api/personal/permissions');
+    const permissions = requests.expectOne('/api/personal/authorization');
     expect(session.signedIn()).toBe(false);
     login.unsubscribe();
     expect(permissions.cancelled).toBe(true);

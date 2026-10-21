@@ -1,0 +1,279 @@
+<section class="collection-page" aria-labelledby="system-list-heading">
+  <nav class="collection-breadcrumb" aria-label="Điều hướng">
+    <a routerLink="/admin">Quản trị</a><span>/</span><strong>Hệ thống</strong>
+  </nav>
+  <header class="collection-heading">
+    <div class="heading-copy">
+      <div class="title-row">
+        <h1 id="system-list-heading">{{ store.section().title }}</h1>
+        <span>{{ store.total() }}</span>
+      </div>
+      <p>Quản lý truy cập và tổ chức chức năng của cửa hàng.</p>
+    </div>
+    <div class="heading-actions">
+      @if (store.kind() === 'functions') {
+        <button class="ui-button" (click)="openGroups()">
+          <ui-icon name="folder" [size]="14" />Quản lý nhóm
+        </button>
+      }
+      @if (store.canCreate()) {
+        <a class="ui-button primary" [routerLink]="['new']" queryParamsHandling="preserve"
+          ><ui-icon name="plus" [size]="14" />Thêm {{ store.section().singular }}</a
+        >
+      }
+    </div>
+  </header>
+  <div class="system-list-toolbar">
+    <label for="system-search">Tìm kiếm</label
+    ><input
+      pInputText
+      id="system-search"
+      #searchInput
+      [value]="searchTerm()"
+      (keydown.enter)="search(searchInput.value)"
+      placeholder="Nhập tên hoặc mã"
+    /><button class="ui-button" (click)="search(searchInput.value)">Tìm</button
+    ><button
+      class="ui-button"
+      (click)="store.reload()"
+      [disabled]="store.loading() || store.saving()"
+    >
+      Tải lại
+    </button>
+  </div>
+  @if (store.error()) {
+    <div class="collection-notice error-notice" role="alert">{{ store.error() }}</div>
+  }
+  @if (store.notice()) {
+    <div class="collection-notice" role="status">{{ store.notice() }}</div>
+  }
+  @if (store.loading()) {
+    <ui-content-state kind="loading" title="Đang tải danh sách" layout="page" />
+  } @else if (!store.rows().length) {
+    <ui-content-state
+      kind="empty"
+      title="Không có kết quả"
+      message="Thử từ khóa khác hoặc thêm dữ liệu khi có quyền."
+      layout="page"
+    />
+  } @else {
+    <div
+      class="table-scroll system-table"
+      role="region"
+      [attr.aria-label]="store.section().title"
+      tabindex="0"
+    >
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Tên</th>
+            @if (store.kind() === 'users') {
+              <th>Email</th>
+            } @else if (store.kind() !== 'roles') {
+              <th>Mã</th>
+            }
+            @if (store.kind() === 'functions') {
+              <th>Nhóm</th>
+            }
+            <th>{{ store.kind() === 'roles' ? 'Mô tả' : 'Trạng thái' }}</th>
+            <th class="action-column">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of store.rows(); track row.id) {
+            <tr>
+              <td>
+                <a class="item-title" [routerLink]="[row.id]" queryParamsHandling="preserve">{{
+                  row.name
+                }}</a>
+              </td>
+              @if (store.kind() === 'users') {
+                <td>{{ row.email || '—' }}</td>
+              } @else if (store.kind() !== 'roles') {
+                <td>
+                  <code>{{ row.code }}</code>
+                </td>
+              }
+              @if (store.kind() === 'functions') {
+                <td>{{ store.groupName(row.groupId) }}</td>
+              }
+              <td>
+                {{
+                  store.kind() === 'roles'
+                    ? row.description || '—'
+                    : row.isActive
+                      ? 'Hoạt động'
+                      : 'Vô hiệu hóa'
+                }}
+              </td>
+              <td>
+                <div class="system-row-actions">
+                  <a class="ui-button" [routerLink]="[row.id]" queryParamsHandling="preserve">{{
+                    store.canUpdate() ? 'Chỉnh sửa' : 'Xem'
+                  }}</a>
+                  @if (store.canDeleteRow(row)) {
+                    <button
+                      class="ui-button danger"
+                      (click)="deleteTarget.set(row)"
+                      [disabled]="store.saving()"
+                      [attr.aria-label]="'Xóa ' + row.name"
+                    >
+                      <ui-icon name="trash" [size]="14" />
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <footer class="collection-footer">
+    <span>{{ store.total() }} bản ghi</span>
+    <div class="collection-pagination">
+      <button
+        class="ui-button"
+        [disabled]="store.page() <= 1 || store.loading()"
+        (click)="setPage(store.page() - 1)"
+      >
+        Trước</button
+      ><span>Trang {{ store.page() }} / {{ store.pageCount() }}</span
+      ><button
+        class="ui-button"
+        [disabled]="store.page() >= store.pageCount() || store.loading()"
+        (click)="setPage(store.page() + 1)"
+      >
+        Sau
+      </button>
+    </div>
+  </footer>
+</section>
+<p-dialog
+  header="Nhóm chức năng"
+  [visible]="groupOpen()"
+  (visibleChange)="!$event && closeGroups()"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!store.saving()"
+  [closeOnEscape]="!store.saving()"
+  [style]="{ width: '780px', maxWidth: '94vw' }"
+>
+  <div class="system-group-manager">
+    <div class="system-group-list">
+      <button
+        class="ui-button"
+        (click)="chooseGroup(null)"
+        [disabled]="!store.canCreate() || store.saving()"
+      >
+        Thêm nhóm
+      </button>
+      @for (group of store.groups(); track group.id) {
+        <button
+          class="system-group-choice"
+          [class.selected]="group.id === groupTarget()?.id"
+          (click)="chooseGroup(group)"
+          [disabled]="store.saving()"
+        >
+          {{ group.name }}<small>{{ group.code }}</small>
+        </button>
+      }
+    </div>
+    <form class="system-group-form" [formGroup]="groupForm" (ngSubmit)="saveGroup()" novalidate>
+      <fieldset
+        class="save-lock"
+        [disabled]="store.saving() || (groupTarget() ? !store.canUpdate() : !store.canCreate())"
+      >
+        <div class="field">
+          <label for="group-code">Mã nhóm *</label
+          ><input
+            pInputText
+            id="group-code"
+            formControlName="code"
+            maxlength="100"
+            aria-describedby="group-code-help"
+          /><small id="group-code-help"
+            >Chữ không dấu, số, dấu gạch ngang hoặc gạch dưới. Mã không đổi sau khi tạo.</small
+          >
+        </div>
+        <div class="field">
+          <label for="group-name">Tên nhóm *</label
+          ><input pInputText id="group-name" formControlName="name" maxlength="100" />
+        </div>
+        <div class="field">
+          <label for="group-order">Thứ tự *</label
+          ><input
+            pInputText
+            id="group-order"
+            type="number"
+            min="0"
+            step="1"
+            formControlName="sortOrder"
+          />
+        </div>
+        @if (groupForm.invalid && groupForm.touched) {
+          <p class="system-error" role="alert">
+            Nhập mã, tên nhóm hợp lệ và thứ tự là số nguyên không âm.
+          </p>
+        }
+        <div class="system-row-actions">
+          <button type="submit" class="ui-button primary">Lưu nhóm</button>
+          @if (groupTarget(); as group) {
+            @if (store.canDelete()) {
+              <button type="button" class="ui-button danger" (click)="deleteGroupTarget.set(group)">
+                Xóa nhóm
+              </button>
+            }
+          }
+        </div>
+      </fieldset>
+    </form>
+  </div>
+  @if (store.error()) {
+    <p class="system-error" role="alert">
+      {{ store.error() }} Nhóm mặc định hoặc còn chức năng không thể xóa.
+    </p>
+  }
+  <ng-template #footer
+    ><button class="ui-button" (click)="closeGroups()" [disabled]="store.saving()">
+      Đóng
+    </button></ng-template
+  >
+</p-dialog>
+<p-dialog
+  header="Xác nhận xóa"
+  [visible]="!!deleteTarget() || !!deleteGroupTarget()"
+  (visibleChange)="!$event && closeDelete()"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!store.saving()"
+  [closeOnEscape]="!store.saving()"
+  [style]="{ width: '430px', maxWidth: '94vw' }"
+  ><p class="collection-dialog-copy">
+    Xóa “{{ deleteTarget()?.name || deleteGroupTarget()?.name }}”? Dữ liệu đang được sử dụng sẽ được
+    máy chủ bảo vệ.
+  </p>
+  @if (store.error()) {
+    <p role="alert" class="system-error">{{ store.error() }}</p>
+  }
+  <ng-template #footer
+    ><button
+      class="ui-button"
+      (click)="deleteTarget.set(null); deleteGroupTarget.set(null)"
+      [disabled]="store.saving()"
+    >
+      Hủy</button
+    ><button class="ui-button danger" (click)="delete()" [disabled]="store.saving()">
+      Xóa
+    </button></ng-template
+  ></p-dialog
+>
+<ui-confirm-dialog
+  title="Bỏ thay đổi nhóm?"
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

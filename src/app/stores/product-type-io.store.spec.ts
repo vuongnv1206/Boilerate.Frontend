@@ -43,7 +43,7 @@ describe('ProductTypeIoStore', () => {
     service = { getById: vi.fn(() => of(productType)), create: vi.fn(), update: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthSession, useValue: { hasPermission: () => true } },
+        { provide: AuthSession, useValue: { can: () => true } },
         ProductTypeIoStore,
         { provide: ProductTypesService, useValue: service },
       ],
@@ -54,8 +54,8 @@ describe('ProductTypeIoStore', () => {
   afterEach(() => TestBed.resetTestingModule());
 
   it('locks a view-only type and rejects direct writes and schema changes', () => {
-    vi.spyOn(TestBed.inject(AuthSession), 'hasPermission').mockImplementation((permission) =>
-      permission.endsWith('.View'),
+    vi.spyOn(TestBed.inject(AuthSession), 'can').mockImplementation(
+      (_functionCode, actionCode) => actionCode === 'View',
     );
     store.load('type-1');
     expect(store.form.disabled).toBe(true);
