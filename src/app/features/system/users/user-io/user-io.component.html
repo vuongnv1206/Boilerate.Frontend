@@ -2,16 +2,58 @@
   <nav class="editor-breadcrumb" aria-label="Điều hướng người dùng">
     <a routerLink="/admin/system/users" queryParamsHandling="preserve"
       ><ui-icon name="arrow-left" [size]="14" />Người dùng</a
-    ><span>/</span><span>Vai trò được gán</span>
+    ><span>/</span
+    ><span>{{
+      store.record()?.userName ||
+        (store.created() ? 'Tài khoản đã tạo' : store.isNew() ? 'Người dùng mới' : 'Tài khoản')
+    }}</span>
   </nav>
   <header class="editor-toolbar">
     <div>
-      <h1 id="user-heading">Phân quyền người dùng</h1>
-      <p class="editor-save-status">Quản lý các vai trò của tài khoản hiện có.</p>
+      <h1 id="user-heading">
+        {{
+          store.created()
+            ? 'Tạo người dùng thành công'
+            : store.isNew()
+              ? 'Thêm người dùng'
+              : 'Quản lý người dùng'
+        }}
+      </h1>
+      <p class="editor-save-status">
+        @if (store.record(); as user) {
+          {{ user.firstName }} {{ user.lastName }} · {{ user.email }}
+        } @else {
+          Tạo tài khoản, cập nhật hồ sơ và phân quyền truy cập.
+        }
+      </p>
     </div>
-    <a class="ui-button" routerLink="/admin/system/users" queryParamsHandling="preserve"
-      >Quay lại</a
-    >
+    <div class="system-row-actions">
+      @if (store.record(); as user) {
+        <button
+          type="button"
+          class="ui-button"
+          (click)="actionTarget.set('password-reset')"
+          [disabled]="!store.canUpdate() || store.saving() || !user.emailConfirmed"
+          [attr.title]="
+            user.emailConfirmed ? null : 'Email cần được xác nhận trước khi gửi liên kết.'
+          "
+        >
+          Gửi link đặt lại mật khẩu
+        </button>
+        <button
+          type="button"
+          class="ui-button"
+          [class.danger]="user.isActive"
+          (click)="actionTarget.set('status')"
+          [disabled]="!store.canUpdate() || store.saving() || store.profileDirty()"
+        >
+          {{ user.isActive ? 'Vô hiệu hóa' : 'Kích hoạt' }} tài khoản
+        </button>
+      }
+      <a class="ui-button" routerLink="/admin/system/users" queryParamsHandling="preserve"
+        >Quay lại</a
+      >
+    </div>
   </header>
   @if (store.error()) {
     <div class="editor-notice" role="alert">
@@ -25,79 +67,288 @@
   @if (store.loading()) {
     <ui-content-state kind="loading" title="Đang tải người dùng" layout="page" />
   } @else if (store.ready()) {
-    @if (store.record(); as user) {
-      <div class="editor-body">
-        <main class="editor-main">
-          <section class="form-section">
-            <h2>Thông tin tài khoản</h2>
-            <dl class="system-user-details">
-              <div>
-                <dt>Họ tên</dt>
-                <dd>{{ user.firstName }} {{ user.lastName }}</dd>
-              </div>
-              <div>
-                <dt>Tên đăng nhập</dt>
-                <dd>{{ user.userName || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Email</dt>
-                <dd>{{ user.email || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Trạng thái</dt>
-                <dd>{{ user.isActive ? 'Hoạt động' : 'Vô hiệu hóa' }}</dd>
-              </div>
-            </dl>
-          </section>
-          <section class="form-section">
-            <h2>Vai trò được gán</h2>
-            <p>Quyền hiệu lực là tổng các quyền được cấp qua những vai trò này.</p>
-            <div class="system-user-roles">
-              @for (role of store.roles(); track role.roleId) {
-                <label
-                  class="permission-action"
-                  [class.selected]="store.selected().has(role.roleId)"
-                  ><input
-                    #roleInput
-                    type="checkbox"
-                    [checked]="store.selected().has(role.roleId)"
-                    [disabled]="!store.canWrite() || store.saving()"
-                    (change)="store.toggle(role.roleId, roleInput.checked)"
-                  /><span
-                    >{{ role.roleName }}
-                    @if (role.description) {
-                      <small>{{ role.description }}</small>
-                    }
-                  </span></label
-                >
-              } @empty {
-                <p class="system-muted">Chưa có vai trò.</p>
-              }
-            </div>
-            <button
+    <div class="system-role-body system-user-body">
+      <nav class="system-section-nav" aria-label="Nội dung người dùng">
+        <button
+          [class.selected]="section() === 'profile'"
+          [attr.aria-current]="section() === 'profile' ? 'page' : null"
+          (click)="section.set('profile')"
+        >
+          <ui-icon name="file" [size]="16" />Thông tin tài khoản
+          @if (store.profileDirty()) {
+            <span class="system-dirty-dot" aria-label="Có thay đổi chưa lưu"></span>
+          }
+        </button>
+        <button
+          [class.selected]="section() === 'roles'"
+          [attr.aria-current]="section() === 'roles' ? 'page' : null"
+          [disabled]="store.isNew()"
+          (click)="section.set('roles')"
+        >
+          <ui-icon name="settings" [size]="16" />Vai trò được gán
+          @if (store.rolesDirty()) {
+            <span class="system-dirty-dot" aria-label="Có thay đổi chưa lưu"></span>
+          }
+        </button>
+      </nav>
+      <div class="system-role-content">
+        @if (store.created()) {
+          <section class="form-section system-user-created" role="status">
+            <h2>Tài khoản đã được tạo</h2>
+            <p>{{ store.notice() }}</p>
+            <a
               class="ui-button primary"
-              (click)="save()"
-              [disabled]="!store.canWrite() || store.saving() || !store.dirty()"
+              routerLink="/admin/system/users"
+              queryParamsHandling="preserve"
             >
-              {{ store.saving() ? 'Đang lưu…' : 'Lưu vai trò' }}
-            </button>
+              Quay lại danh sách người dùng
+            </a>
           </section>
-        </main>
-        <aside class="editor-inspector">
-          <section class="inspector-section">
-            <h2>Quyền truy cập</h2>
-            <p>
-              Quản trị viên hoạt động cuối cùng được máy chủ bảo vệ. Tài khoản vô hiệu hóa không
-              được truy cập dù vẫn còn vai trò được gán.
-            </p>
-          </section>
-        </aside>
+        } @else if (section() === 'profile') {
+          <form
+            class="editor-form system-info-form"
+            [formGroup]="form"
+            (ngSubmit)="save()"
+            novalidate
+          >
+            <section class="form-section">
+              <h2>Thông tin tài khoản</h2>
+              <p>Thông tin liên hệ và trạng thái của tài khoản người dùng.</p>
+              @if (store.record(); as user) {
+                <dl class="system-user-details">
+                  <div>
+                    <dt>Tên đăng nhập</dt>
+                    <dd>{{ user.userName || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Trạng thái</dt>
+                    <dd>{{ user.isActive ? 'Hoạt động' : 'Vô hiệu hóa' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Xác nhận email</dt>
+                    <dd>{{ user.emailConfirmed ? 'Đã xác nhận' : 'Chưa xác nhận' }}</dd>
+                  </div>
+                </dl>
+              }
+              <fieldset class="save-lock" [disabled]="!store.canWrite() || store.saving()">
+                <div class="field-row">
+                  <div class="field">
+                    <label for="user-first-name">Họ *</label>
+                    <input
+                      pInputText
+                      id="user-first-name"
+                      formControlName="firstName"
+                      maxlength="75"
+                      autocomplete="given-name"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="user-last-name">Tên *</label>
+                    <input
+                      pInputText
+                      id="user-last-name"
+                      formControlName="lastName"
+                      maxlength="75"
+                      autocomplete="family-name"
+                    />
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="user-email">Email *</label>
+                    <input
+                      pInputText
+                      id="user-email"
+                      type="email"
+                      formControlName="email"
+                      autocomplete="email"
+                    />
+                    @if (store.record()) {
+                      <small>Email không thể đổi tại đây vì cần quy trình xác nhận riêng.</small>
+                    }
+                  </div>
+                  <div class="field">
+                    <label for="user-phone">Số điện thoại</label>
+                    <input
+                      pInputText
+                      id="user-phone"
+                      type="tel"
+                      formControlName="phoneNumber"
+                      autocomplete="tel"
+                    />
+                  </div>
+                </div>
+                @if (store.isNew()) {
+                  <div class="field">
+                    <label for="user-username">Tên đăng nhập *</label>
+                    <input
+                      pInputText
+                      id="user-username"
+                      formControlName="userName"
+                      minlength="6"
+                      autocomplete="username"
+                    />
+                    <small>Tối thiểu 6 ký tự.</small>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label for="user-password">Mật khẩu ban đầu *</label>
+                      <input
+                        pInputText
+                        id="user-password"
+                        type="password"
+                        formControlName="password"
+                        minlength="9"
+                        autocomplete="new-password"
+                      />
+                      <small>Tối thiểu 9 ký tự.</small>
+                    </div>
+                    <div class="field">
+                      <label for="user-confirm-password">Nhập lại mật khẩu *</label>
+                      <input
+                        pInputText
+                        id="user-confirm-password"
+                        type="password"
+                        formControlName="confirmPassword"
+                        autocomplete="new-password"
+                      />
+                    </div>
+                  </div>
+                  @if (form.hasError('passwordMismatch') && form.controls.confirmPassword.touched) {
+                    <p class="system-error" role="alert">Mật khẩu nhập lại chưa khớp.</p>
+                  }
+                } @else {
+                  @if (store.record()?.imageUrl) {
+                    <div class="field">
+                      <label for="user-delete-image">Ảnh đại diện hiện tại</label>
+                      <label class="check-field" for="user-delete-image">
+                        <input
+                          id="user-delete-image"
+                          type="checkbox"
+                          formControlName="deleteCurrentImage"
+                        />
+                        Xóa ảnh đại diện hiện tại
+                      </label>
+                    </div>
+                  }
+                  <div class="field">
+                    <label for="user-image">Ảnh đại diện mới</label>
+                    <input
+                      id="user-image"
+                      type="file"
+                      accept="image/*"
+                      #imagePicker
+                      (change)="chooseImage(imagePicker.files?.item(0) ?? null)"
+                    />
+                    @if (store.image(); as image) {
+                      <small>Đã chọn: {{ image.name }}</small>
+                    }
+                  </div>
+                }
+              </fieldset>
+              @if (form.invalid && form.touched) {
+                <p class="system-error" role="alert">
+                  Kiểm tra các trường bắt buộc, định dạng email và mật khẩu trước khi lưu.
+                </p>
+              }
+              <button
+                type="submit"
+                class="ui-button primary"
+                [disabled]="!store.canWrite() || store.saving() || !store.profileDirty()"
+              >
+                {{ store.saving() ? 'Đang lưu…' : store.isNew() ? 'Tạo người dùng' : 'Lưu hồ sơ' }}
+              </button>
+            </section>
+          </form>
+        } @else if (store.record(); as user) {
+          <div class="editor-body">
+            <main class="editor-main">
+              <section class="form-section">
+                <h2>Vai trò được gán</h2>
+                <p>Quyền hiệu lực là tổng các quyền được cấp qua những vai trò này.</p>
+                <div class="system-user-roles">
+                  @for (role of store.roles(); track role.roleId) {
+                    <label
+                      class="permission-action"
+                      [class.selected]="store.selected().has(role.roleId)"
+                      ><input
+                        #roleInput
+                        type="checkbox"
+                        [checked]="store.selected().has(role.roleId)"
+                        [disabled]="!store.canUpdate() || store.saving()"
+                        (change)="store.toggle(role.roleId, roleInput.checked)"
+                      /><span
+                        >{{ role.roleName }}
+                        @if (role.description) {
+                          <small>{{ role.description }}</small>
+                        }
+                      </span></label
+                    >
+                  } @empty {
+                    <p class="system-muted">Chưa có vai trò.</p>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="ui-button primary"
+                  (click)="saveRoles()"
+                  [disabled]="!store.canUpdate() || store.saving() || !store.rolesDirty()"
+                >
+                  {{ store.saving() ? 'Đang lưu…' : 'Lưu vai trò' }}
+                </button>
+              </section>
+            </main>
+            <aside class="editor-inspector">
+              <section class="inspector-section">
+                <h2>Quyền truy cập</h2>
+                <p>
+                  Tài khoản đang quản lý: {{ user.userName }}. Quản trị viên hoạt động cuối cùng
+                  được máy chủ bảo vệ. Tài khoản vô hiệu hóa không truy cập được dù còn vai trò.
+                </p>
+              </section>
+            </aside>
+          </div>
+        }
       </div>
-    }
+    </div>
   }
 </section>
+
+<p-dialog
+  header="Xác nhận thao tác"
+  [visible]="!!actionTarget()"
+  (visibleChange)="!$event && actionTarget.set(null)"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '450px', maxWidth: '94vw' }"
+>
+  @if (actionTarget() === 'status') {
+    <p class="collection-dialog-copy">
+      {{ store.record()?.isActive ? 'Vô hiệu hóa' : 'Kích hoạt' }} tài khoản
+      <strong>{{ store.record()?.userName }}</strong
+      >? Thay đổi trạng thái sẽ áp dụng ngay.
+    </p>
+  } @else {
+    <p class="collection-dialog-copy">
+      Gửi email chứa liên kết đặt lại mật khẩu đến
+      <strong>{{ store.record()?.email }}</strong
+      >?
+    </p>
+  }
+  <ng-template #footer>
+    <button class="ui-button" (click)="actionTarget.set(null)" [disabled]="store.saving()">
+      Hủy
+    </button>
+    <button class="ui-button primary" (click)="runAction()" [disabled]="store.saving()">
+      {{ store.saving() ? 'Đang xử lý…' : 'Xác nhận' }}
+    </button>
+  </ng-template>
+</p-dialog>
+
 <ui-confirm-dialog
-  title="Bỏ thay đổi vai trò người dùng?"
+  title="Bỏ thay đổi người dùng?"
   [visible]="confirmation.visible()"
   (answered)="confirmation.answer($event)"
 />

@@ -27,17 +27,13 @@ const lists: Routes = (['roles', 'users', 'functions', 'actions'] as const).flat
         loadComponent: () =>
           import('./system-list/system-list.component').then((m) => m.SystemList),
       },
-      ...(kind === 'users'
-        ? []
-        : [
-            {
-              path: `${kind}/new`,
-              data: { kind, permission: { ...permission, actionCode: 'Create' } },
-              canActivate: [centralAdminGuard, permissionGuard],
-              canDeactivate: [unsavedChangesGuard],
-              loadComponent: editor,
-            },
-          ]),
+      {
+        path: `${kind}/new`,
+        data: { kind, permission: { ...permission, actionCode: 'Create' } },
+        canActivate: [centralAdminGuard, permissionGuard],
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: editor,
+      },
       {
         path: `${kind}/:id`,
         data: { kind, permission },

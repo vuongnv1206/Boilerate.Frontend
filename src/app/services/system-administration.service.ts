@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiClient } from '@core/http/api-client';
 import {
+  CreateUserRequest,
   CapabilityDto,
   CapabilityRequest,
   FunctionDto,
@@ -11,6 +12,7 @@ import {
   RoleDto,
   RoleRequest,
   SystemUserDto,
+  UpdateUserRequest,
   UserPageDto,
   UserRoleDto,
 } from '@models/system.dto';
@@ -102,5 +104,29 @@ export class SystemAdministrationService {
   }
   saveUserRoles(id: string, version: string, roleIds: readonly string[]): Observable<string> {
     return this.api.text('PUT', `users/${encodeURIComponent(id)}/roles`, { version, roleIds });
+  }
+  createUser(request: CreateUserRequest): Observable<string> {
+    return this.api.post('users/create', request);
+  }
+  updateUser(id: string, request: UpdateUserRequest): Observable<void> {
+    const form = new FormData();
+    form.append('Version', request.version);
+    form.append('FirstName', request.firstName);
+    form.append('LastName', request.lastName);
+    form.append('Email', request.email);
+    if (request.phoneNumber) form.append('PhoneNumber', request.phoneNumber);
+    if (request.image) form.append('Image', request.image, request.image.name);
+    if (request.deleteCurrentImage) form.append('DeleteCurrentImage', 'true');
+    return this.api.put(`users/${encodeURIComponent(id)}`, form);
+  }
+  toggleUserStatus(id: string, version: string, activateUser: boolean): Observable<void> {
+    return this.api.post(`users/${encodeURIComponent(id)}/toggle-status`, {
+      userId: id,
+      version,
+      activateUser,
+    });
+  }
+  requestUserPasswordReset(id: string): Observable<string> {
+    return this.api.post(`users/${encodeURIComponent(id)}/password-reset`, null);
   }
 }

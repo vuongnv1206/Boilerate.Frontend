@@ -10,7 +10,7 @@ AuthSession.can(functionCode, actionCode) kiểm quyền không phân biệt hoa
 
 Quản trị hệ thống có Vai trò, Người dùng, Chức năng, Hành động; nhóm quản lý trong dialog của Chức năng. Vai trò có Thông tin chung và Phân quyền truy cập; dữ liệu nhóm/chức năng/action từ API. Chọn nhanh chỉ áp dụng các chức năng đang hiển thị, hỗ trợ indeterminate; tìm kiếm không làm mất lựa chọn. Bộ đếm dùng cặp hợp lệ. Inactive đã gán hiện rõ, cho giữ/gỡ, không cấp mới. Không tự thêm View.
 
-Thông tin và cấu hình quyền/action lưu riêng theo transaction BE; tạo trước khi gán. Lấy version trước lựa chọn và đọc lại sau ghi. Lỗi 400/403/409 giữ draft; không replay mutation. Dùng dirty guard và beforeunload. Người dùng chỉ xem tài khoản và gán vai trò, không tạo/sửa hồ sơ/trạng thái.
+Thông tin và cấu hình quyền/action lưu riêng theo transaction BE; tạo trước khi gán. Lấy version trước lựa chọn và đọc lại sau ghi. Lỗi 400/403/409 giữ draft; không replay mutation. Dùng dirty guard và beforeunload. Quản lý người dùng hỗ trợ tìm kiếm/phân trang, tạo tài khoản (mật khẩu ban đầu), sửa họ tên/số điện thoại/ảnh, xem email và tên đăng nhập không đổi, bật/tắt trạng thái, gửi email đặt lại mật khẩu và gán vai trò. Không xóa cứng tài khoản để giữ lịch sử; thao tác khóa sẽ thu hồi phiên đang hoạt động. BE bảo vệ các thao tác bằng CentralAdmin cùng quyền User.Create/User.Update; tự bảo vệ quản trị viên hoạt động cuối cùng. Link reset chỉ được gửi khi email đã xác nhận và password recovery được bật.
 
 ## Kiểm chứng
 

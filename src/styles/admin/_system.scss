@@ -22,6 +22,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
   }
   .system-role-body {
     display: grid;
@@ -350,12 +351,20 @@
 }
 @media (max-width: 760px) {
   .system-screen {
+    .editor-toolbar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .editor-toolbar .system-row-actions {
+      justify-content: flex-start;
+    }
     .system-role-body {
       display: flex;
       flex-direction: column;
     }
     .system-section-nav {
       flex-direction: row;
+      overflow-x: auto;
       padding: 14px 16px;
       border-right: 0;
       border-bottom: 1px solid var(--border);
@@ -366,6 +375,9 @@
     .system-list-toolbar {
       padding: 0 20px 16px;
       flex-wrap: wrap;
+    }
+    .system-user-details div {
+      grid-template-columns: 115px minmax(0, 1fr);
     }
     .permission-actions {
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));

@@ -1,4 +1,4 @@
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 
 const requiredName = (length: number) => [
   Validators.required,
@@ -34,4 +34,44 @@ export function createFunctionGroupForm() {
       validators: [Validators.required, Validators.min(0), Validators.pattern(/^\d+$/u)],
     }),
   });
+}
+
+const matchingPasswords: ValidatorFn = (control: AbstractControl) => {
+  const password = control.get('password')?.value;
+  const confirmPassword = control.get('confirmPassword')?.value;
+  return password === confirmPassword ? null : { passwordMismatch: true };
+};
+
+export function createUserForm() {
+  return new FormGroup(
+    {
+      firstName: new FormControl('', {
+        nonNullable: true,
+        validators: requiredName(75),
+      }),
+      lastName: new FormControl('', {
+        nonNullable: true,
+        validators: requiredName(75),
+      }),
+      email: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required, Validators.email],
+      }),
+      userName: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required, Validators.minLength(6)],
+      }),
+      phoneNumber: new FormControl('', { nonNullable: true }),
+      password: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required, Validators.minLength(9)],
+      }),
+      confirmPassword: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
+      deleteCurrentImage: new FormControl(false, { nonNullable: true }),
+    },
+    { validators: matchingPasswords },
+  );
 }

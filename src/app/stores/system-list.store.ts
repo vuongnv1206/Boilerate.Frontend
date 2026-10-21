@@ -38,7 +38,7 @@ export class SystemListStore {
   private readonly pageState = signal(1);
   readonly kind = this.kindState.asReadonly();
   readonly section = computed(() => SYSTEM_SECTIONS[this.kind()]);
-  readonly canCreate = computed(() => this.kind() !== 'users' && this.allowed('Create'));
+  readonly canCreate = computed(() => this.allowed('Create'));
   readonly canUpdate = computed(() => this.allowed('Update'));
   readonly canDelete = computed(() => this.kind() !== 'users' && this.allowed('Delete'));
   readonly groups = this.groupsState.asReadonly();
