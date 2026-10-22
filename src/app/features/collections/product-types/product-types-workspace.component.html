@@ -1,0 +1,113 @@
+<div class="product-types-workspace" [class.product-type-editor-open]="editorId() !== null">
+  @if (editorId() !== null && store.canView()) {
+    <button
+      class="ui-button product-type-items-toggle"
+      type="button"
+      (click)="panelOpen.set(!panelOpen())"
+      [attr.aria-expanded]="panelOpen()"
+      aria-controls="product-type-items"
+    >
+      <ui-icon name="panel-left" [size]="14" />Danh sách loại sản phẩm
+    </button>
+    @if (panelOpen()) {
+      <button
+        class="product-type-items-backdrop"
+        type="button"
+        aria-label="Đóng danh sách loại sản phẩm"
+        (click)="panelOpen.set(false)"
+      ></button>
+    }
+    <aside
+      class="product-type-items"
+      [class.product-type-items-open]="panelOpen()"
+      id="product-type-items"
+      aria-label="Chuyển loại sản phẩm"
+      tabindex="-1"
+      [attr.role]="panelOpen() ? 'dialog' : null"
+      [attr.aria-modal]="panelOpen() ? true : null"
+      [cdkTrapFocus]="panelOpen()"
+      [cdkTrapFocusAutoCapture]="panelOpen()"
+      (keydown.escape)="panelOpen.set(false)"
+    >
+      <header>
+        <a
+          routerLink="/admin/collections/product-types"
+          [queryParams]="routeQuery()"
+          (click)="panelOpen.set(false)"
+          >Loại sản phẩm <span>{{ store.items().length }}</span></a
+        >
+        @if (store.canCreate()) {
+          <a
+            class="icon-button"
+            routerLink="/admin/collections/product-types/new"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            aria-label="Thêm loại sản phẩm"
+            ><ui-icon name="plus" [size]="14"
+          /></a>
+        }
+      </header>
+      <label class="product-type-item-search">
+        <span class="sr-only">Tìm trong loại sản phẩm</span>
+        <input
+          type="search"
+          [value]="store.query()"
+          #itemSearch
+          (input)="search(itemSearch.value)"
+          placeholder="Tìm loại sản phẩm…"
+        />
+      </label>
+      @if (store.loading()) {
+        <p class="product-type-items-message" role="status">Đang tải loại sản phẩm…</p>
+      }
+      @if (store.error()) {
+        <div class="product-type-items-message" role="alert">
+          {{ store.error() }}
+          <button class="ui-button" type="button" (click)="store.load()">Thử lại</button>
+        </div>
+      }
+      <nav class="product-type-items-list" aria-label="Loại sản phẩm trong bộ lọc">
+        @for (item of store.rows(); track item.id) {
+          <a
+            [routerLink]="['/admin/collections/product-types', item.id]"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            [attr.aria-current]="editorId() === item.id ? 'page' : null"
+            [title]="item.name"
+          >
+            <ui-icon name="layers" [size]="14" />
+            <span>{{ item.name }}</span>
+            <small>{{ item.isActive ? 'Bật' : 'Tắt' }}</small>
+          </a>
+        } @empty {
+          @if (!store.loading() && !store.error()) {
+            <p class="product-type-items-message">Không có loại sản phẩm trong bộ lọc.</p>
+          }
+        }
+      </nav>
+      <footer>
+        <button
+          class="icon-button"
+          type="button"
+          aria-label="Trang loại sản phẩm trước"
+          [disabled]="store.page() <= 1 || store.loading()"
+          (click)="setPage(store.page() - 1)"
+        >
+          <ui-icon name="chevron-left" [size]="14" /></button
+        ><span>{{ store.page() }} / {{ store.totalPages() }}</span
+        ><button
+          class="icon-button"
+          type="button"
+          aria-label="Trang loại sản phẩm sau"
+          [disabled]="store.page() >= store.totalPages() || store.loading()"
+          (click)="setPage(store.page() + 1)"
+        >
+          <ui-icon name="chevron-right" [size]="14" />
+        </button>
+      </footer>
+    </aside>
+  }
+  <div class="product-types-workspace-content" [attr.inert]="panelOpen() ? '' : null">
+    <router-outlet />
+  </div>
+</div>

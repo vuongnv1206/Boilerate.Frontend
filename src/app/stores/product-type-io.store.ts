@@ -10,6 +10,7 @@ import {
   defer,
   filter,
   finalize,
+  map,
   takeUntil,
   tap,
 } from 'rxjs';
@@ -23,12 +24,15 @@ import {
   createChoiceForm,
   createFieldForm,
   createProductTypeRequest,
+  duplicateProductTypeRequest,
   editProductTypeRequest,
   resetProductTypeForm,
   productTypeErrorAliases,
   synchronizeProductTypeIdentity,
 } from '@forms/product-type.form';
 import { ProductTypeDto } from '@models/product-type.dto';
+import { ProductPage, ProductSummary } from '@models/product.dto';
+import { ProductsService } from '@services/products.service';
 
 @Injectable()
 export class ProductTypeIoStore {
@@ -39,7 +43,10 @@ export class ProductTypeIoStore {
   readonly canWrite = computed(() =>
     this.session.can('ProductType', this.record() ? 'Update' : 'Create'),
   );
+  readonly canCreate = computed(() => this.session.can('ProductType', 'Create'));
+  readonly canViewProducts = computed(() => this.session.can('Product', 'View'));
   private readonly service = inject(ProductTypesService);
+  private readonly productsService = inject(ProductsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recordState = signal<ProductTypeDto | null>(null);
   private readonly loadingState = signal(false);
@@ -47,7 +54,11 @@ export class ProductTypeIoStore {
   private readonly readyState = signal(false);
   private readonly errorState = signal('');
   private readonly savedState = signal(false);
+  private readonly linkedProductsState = signal<ProductPage | null>(null);
+  private readonly productLoadingState = signal(false);
+  private readonly productErrorState = signal('');
   private loadSubscription?: Subscription;
+  private productSubscription?: Subscription;
   private generation = 0;
   private revision = 0;
   private currentId = 'new';
@@ -59,6 +70,12 @@ export class ProductTypeIoStore {
   readonly ready = this.readyState.asReadonly();
   readonly error = this.errorState.asReadonly();
   readonly saved = this.savedState.asReadonly();
+  readonly linkedProducts = computed<readonly ProductSummary[]>(
+    () => this.linkedProductsState()?.items ?? [],
+  );
+  readonly linkedProductCount = computed(() => this.linkedProductsState()?.total ?? 0);
+  readonly productLoading = this.productLoadingState.asReadonly();
+  readonly productError = this.productErrorState.asReadonly();
 
   constructor() {
     effect(() => {
@@ -69,6 +86,7 @@ export class ProductTypeIoStore {
       this.generation++;
       this.cancelWrites.next();
       this.loadSubscription?.unsubscribe();
+      this.productSubscription?.unsubscribe();
     });
   }
   get form(): ProductTypeForm {
@@ -95,6 +113,10 @@ export class ProductTypeIoStore {
     this.summaryState.set([]);
     const generation = ++this.generation;
     this.loadSubscription?.unsubscribe();
+    this.productSubscription?.unsubscribe();
+    this.linkedProductsState.set(null);
+    this.productLoadingState.set(false);
+    this.productErrorState.set('');
     this.loadingState.set(false);
     this.readyState.set(false);
     this.errorState.set('');
@@ -116,6 +138,7 @@ export class ProductTypeIoStore {
           if (generation !== this.generation) return;
           this.recordState.set(record);
           resetProductTypeForm(this.form, record);
+          this.loadLinkedProducts(record.id, generation);
           this.readyState.set(true);
           this.applyAccess();
           this.loadingState.set(false);
@@ -130,6 +153,10 @@ export class ProductTypeIoStore {
   }
   retry(): void {
     this.load(this.currentId);
+  }
+  retryProducts(): void {
+    const record = this.record();
+    if (record) this.loadLinkedProducts(record.id, this.generation);
   }
   addField(): void {
     if (
@@ -195,6 +222,7 @@ export class ProductTypeIoStore {
         filter(() => generation === this.generation),
         tap((record) => {
           this.recordState.set(record);
+          this.loadLinkedProducts(record.id, generation);
           if (revision === this.revision) resetProductTypeForm(this.form, record);
           else synchronizeProductTypeIdentity(this.form, record);
           this.savedState.set(revision === this.revision);
@@ -223,6 +251,68 @@ export class ProductTypeIoStore {
         }),
       );
     });
+  }
+
+  duplicate(): Observable<ProductTypeDto> {
+    return defer(() => {
+      const record = this.record();
+      if (!record || !this.canCreate() || this.saving() || this.loading()) return EMPTY;
+      const generation = this.generation;
+      this.savingState.set(true);
+      this.errorState.set('');
+      this.savedState.set(false);
+      return this.service.create(duplicateProductTypeRequest(record)).pipe(
+        takeUntil(this.cancelWrites),
+        takeUntilDestroyed(this.destroyRef),
+        filter(() => generation === this.generation),
+        catchError((error: unknown) => {
+          if (generation !== this.generation) return EMPTY;
+          this.errorState.set(
+            error instanceof ApiError
+              ? error.message
+              : 'Chưa nhân bản được loại sản phẩm. Vui lòng thử lại.',
+          );
+          return EMPTY;
+        }),
+        finalize(() => {
+          if (generation === this.generation) this.savingState.set(false);
+        }),
+      );
+    });
+  }
+
+  private loadLinkedProducts(id: string, generation: number): void {
+    this.productSubscription?.unsubscribe();
+    this.linkedProductsState.set(null);
+    this.productErrorState.set('');
+    if (!this.canViewProducts()) return;
+    this.productLoadingState.set(true);
+    this.productSubscription = this.productsService
+      .search({
+        pageNumber: 1,
+        pageSize: 8,
+        productTypeId: id,
+        sortBy: 'modified',
+        sortDirection: 'desc',
+      })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        map((page) => ({ id, generation, page })),
+      )
+      .subscribe({
+        next: ({ id: responseId, generation: responseGeneration, page }) => {
+          if (responseGeneration !== this.generation || this.record()?.id !== responseId) return;
+          this.linkedProductsState.set(page);
+          this.productLoadingState.set(false);
+        },
+        error: (error: unknown) => {
+          if (generation !== this.generation || this.record()?.id !== id) return;
+          this.productLoadingState.set(false);
+          this.productErrorState.set(
+            error instanceof ApiError ? error.message : 'Không thể tải sản phẩm của loại này.',
+          );
+        },
+      });
   }
 
   private applyAccess(): void {

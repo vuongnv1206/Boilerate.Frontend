@@ -2,6 +2,10 @@
 
 Chỉ ghi các khả năng đã triển khai theo mốc. Chi tiết sửa code tra trong Git; cách ghi tài liệu theo [quy tắc docs](../README.md#quy-tắc-duy-trì-docs).
 
+## 22/10/2026 — Workspace cho loại sản phẩm và đơn hàng
+
+Loại sản phẩm giữ rail cạnh schema editor, xem danh sách sản phẩm liên quan và sao chép schema với identity mới. Chi tiết đơn giữ list/search/filter cạnh snapshot và lệnh vận hành, không mở quyền sửa OrderItem. Xem [Collections](../features/live-admin-collections.md) và [Admin Orders](../features/admin-orders.md). Production build đạt; browser review đã xem type list/editor và order list ở local; không chạy test, và detail đơn chưa được xem vì dữ liệu local hiện không có đơn.
+
 ## 22/10/2026 — Editor danh mục theo Webflow
 
 Editor có Basic info, chọn sản phẩm bằng chip, Item details thêm Parent category, Activity và thao tác cuối trang; API lưu membership theo Product.Version và rollback batch khi conflict. Xem [Collections](../features/live-admin-collections.md). Production build đạt; API HTTP/browser E2E chưa chạy.

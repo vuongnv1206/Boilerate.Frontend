@@ -1,8 +1,8 @@
 # Admin Orders — workspace quản trị đơn hàng
 
 - **Ngày bắt đầu:** 2026-10-21
-- **Cập nhật:** 2026-10-21
-- **Trạng thái:** Đã triển khai và nghiệm thu FE local; chưa nghiệm thu deployment
+- **Cập nhật:** 2026-10-22
+- **Trạng thái:** Nghiệp vụ đơn hàng đã nghiệm thu FE local; workspace rail vừa được mở rộng, chưa nghiệm thu lại hoặc nghiệm thu deployment
 - **Khu vực:** FE
 - **Hồ sơ BE:** [Admin Orders](../../../Boilerate/docs/backend/features/admin-orders.md)
 - **Bằng chứng nghiệm thu:** [báo cáo kiểm chứng](../verification/2026-10-21-admin-orders.md)
@@ -19,6 +19,12 @@ Module nằm tại `/admin/orders` và `/admin/orders/:id`, dùng cùng workspac
 - Timeline gọi history endpoint read-only; không hiển thị raw audit JSON hoặc digital delivery content.
 - Shipping đọc shipment và các dòng đã xuất; quyền `Shipping.View`, `Shipping.Dispatch`, `Shipping.Deliver` được kiểm riêng. Dispatch dùng số còn lại, shipment version và operation ID ổn định. Giao shipment không tự xác nhận COD.
 - After-sales đọc ledger refund/return độc lập và ghi khoản hoàn thực tế hoặc hàng nhận thực tế. Đây là command append-only; FE không chuyển tiền và không sửa snapshot Order/OrderItem.
+
+## List rail cạnh chi tiết
+
+Khi mở một đơn, workspace giữ trang, filter và từ khóa hiện tại ở rail để chuyển sang đơn khác mà không rời ngữ cảnh. Rail hiển thị mã, người nhận, trạng thái, tổng tiền và ngày tạo; tìm kiếm/phân trang cập nhật query trên URL. Sau command thành công, nếu đơn còn trong trang đang xem, summary ở rail nhận trạng thái mới từ response của detail.
+
+Trên tablet, rail chuyển thành panel overlay có focus trap và nút mở rõ ràng. Snapshot Order/OrderItem trong detail vẫn chỉ đọc; không có tạo/sửa/xóa đơn hoặc bulk action.
 
 ## Invariant FE
 

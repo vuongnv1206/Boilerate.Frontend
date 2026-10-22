@@ -26,6 +26,8 @@ export interface ProductTypeDto {
   readonly name: string;
   readonly isActive: boolean;
   readonly fields: readonly ProductFieldDefinitionDto[];
+  readonly createdOn?: string;
+  readonly lastModifiedOn?: string | null;
 }
 export interface ChoiceInput {
   readonly code: string;

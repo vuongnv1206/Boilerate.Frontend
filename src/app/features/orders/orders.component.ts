@@ -1,12 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  OnInit,
-  effect,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -33,11 +26,7 @@ import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_OPTIONS,
 } from '@constants/order.constants';
-import {
-  orderListQueryParams,
-  readOrderListQuery,
-  sameOrderQueryParams,
-} from '@utils/order-query.util';
+import { orderListQueryParams, readOrderListQuery } from '@utils/order-query.util';
 
 @Component({
   selector: 'app-orders',
@@ -53,7 +42,6 @@ import {
     InputText,
     Select,
   ],
-  providers: [OrdersStore],
   templateUrl: './orders.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -75,22 +63,7 @@ export class Orders implements OnInit {
   readonly fulfillmentStatus = OrderFulfillmentStatus;
   private readonly typing = new Subject<string>();
 
-  constructor() {
-    effect(() => {
-      const page = this.store.queryCorrection();
-      if (page !== null) this.update({ ...this.query(), page }, true);
-    });
-  }
-
   ngOnInit(): void {
-    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      const query = readOrderListQuery(params);
-      if (!sameOrderQueryParams(params, orderListQueryParams(query))) {
-        this.update(query, true);
-        return;
-      }
-      this.store.applyQuery(query);
-    });
     this.typing.pipe(debounceTime(260), takeUntilDestroyed(this.destroyRef)).subscribe((q) => {
       this.update({ ...this.query(), q, page: 1 });
     });

@@ -7,6 +7,7 @@ export const ORDER_ROUTES: Routes = [
   {
     path: 'orders',
     providers: [OrdersService],
+    loadComponent: () => import('./orders-workspace.component').then((m) => m.OrdersWorkspace),
     children: [
       {
         path: '',

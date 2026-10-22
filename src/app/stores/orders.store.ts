@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, of, switchMap } from 'rxjs';
 import { ApiError } from '@core/http/api-error';
 import { OrdersService } from '@services/orders.service';
-import { OrderListQuery, OrderPage } from '@models/order.dto';
+import { OrderDto, OrderListQuery, OrderPage } from '@models/order.dto';
 
 @Injectable()
 export class OrdersStore {
@@ -85,5 +85,34 @@ export class OrdersStore {
 
   load(): void {
     this.requests.next(this.query());
+  }
+
+  updateVisibleOrder(order: OrderDto): void {
+    this.pageState.update((page) => {
+      if (!page.items.some((item) => item.id === order.id)) return page;
+      return {
+        ...page,
+        items: page.items.map((item) =>
+          item.id === order.id
+            ? {
+                ...item,
+                number: order.number,
+                status: order.status,
+                paymentMethod: order.paymentMethod,
+                total: order.total,
+                currency: order.currency,
+                createdOn: order.createdOn,
+                expiresAt: order.expiresAt,
+                paymentStatus: order.paymentStatus,
+                fulfillmentStatus: order.fulfillmentStatus,
+                paidAtUtc: order.paidAtUtc,
+                recipientName: order.recipientName,
+                email: order.email,
+                phone: order.phone,
+              }
+            : item,
+        ),
+      };
+    });
   }
 }

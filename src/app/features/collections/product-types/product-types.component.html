@@ -1,7 +1,7 @@
-<section class="collection-page" aria-labelledby="product-types-heading">
+<section class="collection-page product-type-list-page" aria-labelledby="product-types-heading">
   <header class="catalog-list-toolbar">
     <h1 id="product-types-heading">
-      Loại sản phẩm <span>{{ store.items().length }}</span>
+      Loại sản phẩm <span>{{ store.filtered().length }}</span>
     </h1>
     <label class="search-field"
       ><span class="sr-only">Tìm loại sản phẩm</span
@@ -47,7 +47,7 @@
         <thead>
           <tr>
             <th scope="col">Tên loại sản phẩm</th>
-
+            <th scope="col">Mã</th>
             <th scope="col">Trạng thái</th>
           </tr>
         </thead>
@@ -57,8 +57,14 @@
               <td>
                 <a [routerLink]="[item.id]" [queryParams]="routeQuery()">{{ item.name }}</a>
               </td>
-
-              <td>{{ item.isActive ? 'Hoạt động' : 'Đã tắt' }}</td>
+              <td>
+                <code>{{ item.code }}</code>
+              </td>
+              <td>
+                <span class="product-type-status" [class.inactive]="!item.isActive">
+                  <span aria-hidden="true"></span>{{ item.isActive ? 'Hoạt động' : 'Đã tắt' }}
+                </span>
+              </td>
             </tr>
           }
         </tbody>
@@ -66,7 +72,7 @@
     }
   </div>
   <footer class="collection-footer">
-    <span>{{ store.filtered().length }} loại sản phẩm</span>
+    <span>{{ store.filtered().length }} loại sản phẩm trong kết quả</span>
     <div class="pagination">
       <button class="ui-button" [disabled]="store.page() === 1" (click)="setPage(store.page() - 1)">
         Trước</button

@@ -9,6 +9,7 @@ export const PRODUCT_TYPE_LIMITS = {
   choices: 200,
 } as const;
 export const PRODUCT_TYPE_PAGE_SIZE = 20;
+export const PRODUCT_TYPE_SEARCH_DELAY_MS = 260;
 export const PRODUCT_TYPE_CODE_PATTERN = /^[a-zA-Z0-9._-]+$/u;
 export const PRODUCT_FIELD_TYPE_OPTIONS = [
   { value: ProductFieldType.Text, label: 'Văn bản' },

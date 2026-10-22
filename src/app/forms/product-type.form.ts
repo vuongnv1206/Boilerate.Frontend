@@ -130,6 +130,30 @@ export function createProductTypeRequest(form: ProductTypeForm): CreateProductTy
   const value = form.getRawValue();
   return { code: value.code.trim(), name: value.name.trim(), fields: value.fields.map(fieldInput) };
 }
+
+/** Build an independent type with the same visible schema and fresh internal codes. */
+export function duplicateProductTypeRequest(type: ProductTypeDto): CreateProductTypeRequest {
+  const suffix = ' (Bản sao)';
+  const name = `${type.name.slice(0, PRODUCT_TYPE_LIMITS.name - suffix.length)}${suffix}`;
+  const code = (prefix: string) => `${prefix}_${crypto.randomUUID().replaceAll('-', '')}`;
+  return {
+    code: code('TYPE'),
+    name,
+    fields: type.fields
+      .filter((field) => field.isActive)
+      .map((field) => ({
+        code: code('FIELD'),
+        dataType: field.dataType,
+        label: field.label,
+        helpText: field.helpText,
+        isRequired: field.isRequired,
+        isFilterable: field.isFilterable,
+        choices: field.choices
+          .filter((choice) => choice.isActive)
+          .map((choice) => ({ code: code('VALUE'), label: choice.label })),
+      })),
+  };
+}
 /** Keep server-assigned ids when a newer draft must remain on screen after saving. */
 export function synchronizeProductTypeIdentity(form: ProductTypeForm, type: ProductTypeDto): void {
   for (const field of form.controls.fields.controls) {

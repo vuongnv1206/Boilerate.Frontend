@@ -1,12 +1,21 @@
-<section class="editor-page" aria-labelledby="product-type-heading">
-  <nav class="editor-breadcrumb" aria-label="Điều hướng loại sản phẩm">
-    <a routerLink="/admin/collections/product-types" queryParamsHandling="preserve"
-      ><ui-icon name="arrow-left" [size]="14" />Loại sản phẩm</a
-    ><span>/</span><span>{{ store.record()?.name || 'Loại sản phẩm mới' }}</span>
-  </nav>
-  <header class="editor-toolbar">
-    <div>
+<section class="editor-page product-type-editor-workspace" aria-labelledby="product-type-heading">
+  <header class="editor-toolbar product-type-editor-toolbar">
+    <a
+      class="product-type-editor-back"
+      routerLink="/admin/collections/product-types"
+      queryParamsHandling="preserve"
+      aria-label="Quay lại danh sách loại sản phẩm"
+    >
+      <ui-icon name="arrow-left" [size]="14" />
+    </a>
+    <div class="product-type-editor-title">
       <h1 id="product-type-heading">{{ store.record()?.name || 'Thêm loại sản phẩm' }}</h1>
+      @if (store.record()) {
+        <span class="product-type-publish-state" [class.inactive]="!form.controls.isActive.value">
+          <span aria-hidden="true"></span
+          >{{ form.controls.isActive.value ? 'Hoạt động' : 'Đã tắt' }}
+        </span>
+      }
       <p class="editor-save-status" aria-live="polite">
         {{
           store.saving()
@@ -18,17 +27,12 @@
       </p>
     </div>
     <div class="editor-actions">
-      <a
-        class="ui-button"
-        routerLink="/admin/collections/product-types"
-        queryParamsHandling="preserve"
-        >Quay lại</a
-      ><button
+      <button
         class="ui-button primary"
         (click)="save()"
         [disabled]="!store.canWrite() || store.loading() || store.saving() || !store.ready()"
       >
-        {{ store.saving() ? 'Đang lưu…' : 'Lưu loại sản phẩm' }}
+        {{ store.saving() ? 'Đang lưu…' : 'Lưu' }}
       </button>
     </div>
   </header>
@@ -46,13 +50,13 @@
   @if (store.loading()) {
     <ui-content-state kind="loading" title="Đang tải loại sản phẩm" layout="page" />
   } @else if (store.ready()) {
-    <div class="editor-body">
-      <main class="editor-main">
+    <div class="product-type-editor-body">
+      <main class="product-type-editor-main">
         <form class="editor-form" [formGroup]="form" novalidate>
           <fieldset class="save-lock" [disabled]="store.saving() || !store.canWrite()">
-            <section class="form-section">
-              <h2>Thông tin loại sản phẩm</h2>
-              <p>Mỗi loại định nghĩa bộ thuộc tính riêng cho sản phẩm.</p>
+            <section class="form-section product-type-basic-section">
+              <h2>Thông tin cơ bản</h2>
+              <p>Mỗi loại sản phẩm định nghĩa bộ thuộc tính dùng khi tạo sản phẩm.</p>
 
               <div class="field">
                 <label for="product-type-name">Tên loại *</label
@@ -74,6 +78,13 @@
                         : 'Tên dễ nhận biết khi tạo sản phẩm.')
                   }}</ui-field-message
                 >
+              </div>
+              <div class="field product-type-code-field">
+                <label for="product-type-code">Mã hệ thống</label>
+                <output id="product-type-code">{{ form.controls.code.value }}</output>
+                <ui-field-message tone="help">
+                  Mã được tạo tự động và dùng để nhận diện loại sản phẩm trong hệ thống.
+                </ui-field-message>
               </div>
               @if (!!store.record()) {
                 <label class="check-field" for="product-type-active"
@@ -319,20 +330,104 @@
             </section>
           </fieldset>
         </form>
+        <section class="product-type-linked-products" aria-labelledby="product-type-products-title">
+          <div class="product-type-section-heading">
+            <div>
+              <h2 id="product-type-products-title">Sản phẩm</h2>
+              <p>Sản phẩm được chọn loại khi tạo và giữ nguyên snapshot schema đã dùng.</p>
+            </div>
+            @if (store.record() && store.canViewProducts()) {
+              <a
+                class="ui-button"
+                routerLink="/admin/collections/products"
+                [queryParams]="{ productTypeId: store.record()!.id }"
+                >Mở danh sách</a
+              >
+            }
+          </div>
+          @if (!store.record()) {
+            <p class="product-type-linked-message">
+              Lưu loại sản phẩm để xem các sản phẩm liên quan.
+            </p>
+          } @else if (!store.canViewProducts()) {
+            <p class="product-type-linked-message">
+              Cần quyền Product.View để xem sản phẩm liên quan.
+            </p>
+          } @else if (store.productLoading()) {
+            <p class="product-type-linked-message" role="status">Đang tải sản phẩm…</p>
+          } @else if (store.productError()) {
+            <p class="product-type-linked-error" role="alert">
+              {{ store.productError() }}
+              <button class="ui-button" type="button" (click)="retryProducts()">Tải lại</button>
+            </p>
+          } @else {
+            <div class="product-type-linked-list">
+              @for (product of store.linkedProducts(); track product.id) {
+                <a
+                  [routerLink]="['/admin/collections/products', product.id]"
+                  [queryParams]="{ productTypeId: store.record()!.id }"
+                  [title]="product.name"
+                >
+                  <span>{{ product.name }}</span>
+                  <small>{{ product.slug }}</small>
+                </a>
+              } @empty {
+                <p class="product-type-linked-message">Chưa có sản phẩm thuộc loại này.</p>
+              }
+            </div>
+            @if (store.linkedProductCount() > store.linkedProducts().length) {
+              <p class="product-type-linked-message">
+                Hiển thị {{ store.linkedProducts().length }} trong
+                {{ store.linkedProductCount() }} sản phẩm.
+              </p>
+            }
+          }
+        </section>
+        <section class="product-type-item-details" aria-labelledby="product-type-details-title">
+          <h2 id="product-type-details-title">Thông tin bản ghi</h2>
+          <dl>
+            <div>
+              <dt>Trạng thái</dt>
+              <dd>{{ form.controls.isActive.value ? 'Hoạt động' : 'Đã tắt' }}</dd>
+            </div>
+            <div>
+              <dt>Số thuộc tính</dt>
+              <dd>{{ form.controls.fields.length }}</dd>
+            </div>
+            <div>
+              <dt>ID</dt>
+              <dd>{{ store.record()?.id || 'Chưa tạo' }}</dd>
+            </div>
+          </dl>
+          <p>Kiểu dữ liệu của thuộc tính đã tạo được giữ nguyên để bảo toàn dữ liệu sản phẩm.</p>
+        </section>
+        @if (store.record(); as record) {
+          <section class="product-type-activity" aria-labelledby="product-type-activity-title">
+            <h2 id="product-type-activity-title">Hoạt động</h2>
+            @if (record.lastModifiedOn || record.createdOn) {
+              <p>
+                Cập nhật gần nhất
+                {{ record.lastModifiedOn || record.createdOn | date: 'd/M/yyyy, HH:mm' }}
+              </p>
+            }
+            @if (record.createdOn) {
+              <p>Tạo lúc {{ record.createdOn | date: 'd/M/yyyy, HH:mm' }}</p>
+            }
+          </section>
+        }
+        @if (store.record() && store.canCreate()) {
+          <footer class="product-type-editor-footer">
+            <button
+              class="ui-button"
+              type="button"
+              (click)="duplicate()"
+              [disabled]="store.saving() || store.loading()"
+            >
+              Sao chép loại sản phẩm
+            </button>
+          </footer>
+        }
       </main>
-      <aside class="editor-inspector">
-        <h2>Thông tin bản ghi</h2>
-        <dl>
-          <dt>Trạng thái</dt>
-          <dd>{{ form.controls.isActive.value ? 'Hoạt động' : 'Đã tắt' }}</dd>
-          <dt>ID</dt>
-          <dd>{{ store.record()?.id || 'Chưa tạo' }}</dd>
-        </dl>
-        <p>
-          Kiểu dữ liệu của thuộc tính đã tạo được giữ nguyên. Các thay đổi được máy chủ kiểm tra
-          cùng phiên bản bản ghi khi lưu.
-        </p>
-      </aside>
     </div>
   }
 </section>

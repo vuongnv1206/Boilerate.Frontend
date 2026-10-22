@@ -22,6 +22,7 @@ import { ConfirmDialog } from '@shared/ui/confirm-dialog/confirm-dialog.componen
 import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation';
 import { AuthSession } from '@core/auth/auth-session';
 import { OrderDetailStore } from '@stores/order-detail.store';
+import { OrdersStore } from '@stores/orders.store';
 import {
   ConfirmPaymentRequest,
   ConfirmRefundRequest,
@@ -71,6 +72,7 @@ export class OrderDetail implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly session = inject(AuthSession);
   readonly store = inject(OrderDetailStore);
+  private readonly orders = inject(OrdersStore);
   readonly confirmation = inject(LeaveConfirmation);
   readonly cancelDialog = signal(false);
   readonly paymentDialog = signal(false);
@@ -119,6 +121,7 @@ export class OrderDetail implements OnInit {
   constructor() {
     effect(() => {
       const order = this.store.order();
+      if (order) this.orders.updateVisibleOrder(order);
       if (
         this.paymentDialog() &&
         this.paymentSubmitted() &&

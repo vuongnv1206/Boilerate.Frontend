@@ -9,6 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { distinctUntilChanged, map } from 'rxjs';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog/confirm-dialog.component';
 import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation';
@@ -23,12 +24,14 @@ import { PRODUCT_FIELD_TYPE_OPTIONS, PRODUCT_TYPE_LIMITS } from '@constants/prod
 import { ProductFieldType } from '@enums/product-field-type.enum';
 import { createProductTypeForm } from '@forms/product-type.form';
 import { ProductTypeIoStore } from '@stores/product-type-io.store';
+import { ProductTypesStore } from '@stores/product-types.store';
 
 @Component({
   selector: 'app-product-type-io',
   host: { class: 'collection-screen' },
   imports: [
     RouterLink,
+    DatePipe,
     ConfirmDialog,
     FormErrorSummary,
     ContentState,
@@ -46,6 +49,7 @@ export class ProductTypeIo implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   readonly store = inject(ProductTypeIoStore);
+  private readonly listStore = inject(ProductTypesStore);
   readonly form = createProductTypeForm();
   readonly limits = PRODUCT_TYPE_LIMITS;
   readonly fieldTypes = PRODUCT_FIELD_TYPE_OPTIONS;
@@ -69,6 +73,7 @@ export class ProductTypeIo implements OnInit {
       .save()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((saved) => {
+        this.listStore.upsert(saved);
         if (wasNew && !this.form.dirty)
           void this.router.navigate(['/admin/collections/product-types', saved.id], {
             replaceUrl: true,
@@ -78,6 +83,23 @@ export class ProductTypeIo implements OnInit {
   }
   async retry(): Promise<void> {
     if (await this.confirmLeave()) this.store.retry();
+  }
+  async duplicate(): Promise<void> {
+    const record = this.store.record();
+    if (!record || !this.store.canCreate() || this.store.saving()) return;
+    if (!(await this.confirmLeave())) return;
+    this.store
+      .duplicate()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((copy) => {
+        this.listStore.upsert(copy);
+        void this.router.navigate(['/admin/collections/product-types', copy.id], {
+          queryParamsHandling: 'preserve',
+        });
+      });
+  }
+  retryProducts(): void {
+    this.store.retryProducts();
   }
   confirmLeave(): boolean | Promise<boolean> {
     return this.confirmation.request(this.form.dirty, this.store.saving());

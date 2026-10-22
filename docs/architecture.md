@@ -10,7 +10,8 @@ Angular 22.2.3, PrimeNG 22.1.2 và strict TypeScript/templates. Cách viết và
 | `core/auth`                | Browser session, token/quyền trong bộ nhớ, refresh/logout coordination, auth guard/interceptor             |
 | `core/theme`               | System/Light/Dark, preset và root theme                                                                    |
 | `layout/admin-shell`       | Rail, context panel, topbar, resize/collapse, theme và logout                                              |
-| `features/collections`     | Sáu màn: products/category/product types list và `-io`                                                     |
+| `features/collections`     | Products/category/product types list và editor cùng workspace rail                                         |
+| `features/orders`          | Workspace đơn hàng với list rail, filter URL và detail lifecycle                                           |
 | `features/auth`            | Login, form do component sở hữu                                                                            |
 | `features/access-denied`   | `/admin/forbidden`                                                                                         |
 | `features/control-gallery` | Preview controls/overlays PrimeNG                                                                          |
@@ -25,7 +26,7 @@ Angular 22.2.3, PrimeNG 22.1.2 và strict TypeScript/templates. Cách viết và
 | `shared/ui`                | Icon, field message, content state, status badge, error summary, confirm dialog/controller và focus helper |
 | `src/tests/components`     | Kiểm thử component/confirmation tập trung                                                                  |
 
-Routes `/admin/collections/products`, `/categories`, `/product-types` có list, `new`, `:id`. `/admin` chờ session, chọn danh sách đầu tiên được View; không có quyền đến forbidden. Navigation là DI contract từ core, app composition nối permission constants với shell. Query danh sách nằm trong URL và được mang theo editor; selection chỉ sống ở list store.
+Routes `/admin/collections/products`, `/categories`, `/product-types` có list, `new`, `:id`; `/admin/orders` có list và `:id`. Collections và orders giữ list state ở workspace cha khi chuyển qua detail. `/admin` chờ session, chọn danh sách đầu tiên được View; không có quyền đến forbidden. Navigation là DI contract từ core, app composition nối permission constants với shell. Query danh sách nằm trong URL và được mang theo editor; selection chỉ sống ở list store.
 
 Editor tạo form, giao cho store đúng một lần trước load. Store giữ bản canonical/version và revision; service gọi ApiClient. Save Observable chỉ phát DTO thành công. Shared LeaveConfirmation được cung cấp theo editor, dùng chung UI và hủy quyết định còn chờ khi destroy. Các ranh giới được ESLint và architecture probes kiểm.
 

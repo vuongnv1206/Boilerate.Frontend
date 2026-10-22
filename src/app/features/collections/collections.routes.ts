@@ -71,7 +71,11 @@ export const COLLECTIONS_ROUTES: Routes = [
   },
   {
     path: 'product-types',
-    providers: [ProductTypesService],
+    providers: [ProductTypesService, ProductsService],
+    loadComponent: () =>
+      import('./product-types/product-types-workspace.component').then(
+        (m) => m.ProductTypesWorkspace,
+      ),
     children: [
       {
         path: '',

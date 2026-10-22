@@ -20,7 +20,7 @@ Tiêu chí: giữ ID biến thể/tổ hợp không đổi, SKU chỉ là nội 
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `products`                    | Tìm kiếm, phân trang, xem/tạo/sửa sản phẩm; tạo options/SKU, sửa giá/trạng thái/mặc định SKU, nhãn/thứ tự lựa chọn; điều chỉnh tồn vật lý và nhập nội dung số |
 | `categories`                  | Danh sách phân cấp, tìm kiếm, cùng ngữ cảnh rail/editor, tạo/sửa/xóa kèm version; xem sản phẩm được liên kết qua bộ lọc danh mục                              |
-| `product-types`               | Danh sách, xem/tạo/sửa loại sản phẩm và schema thuộc tính; chưa có thao tác xóa                                                                               |
+| `product-types`               | Workspace list/rail và editor schema; xem sản phẩm liên quan, tạo/sửa, tắt hoặc nhân bản loại; chưa có thao tác xóa                                           |
 
 Mỗi phần có route `new` và `:id` cho màn thêm/sửa. Lưu chỉ báo thành công sau phản hồi server; lỗi/409 giữ nội dung đang nhập. Dirty guard xác nhận trước khi rời màn. Gallery là khu thử control riêng, không cung cấp dữ liệu cho Collections.
 
@@ -31,6 +31,12 @@ Editor theo ảnh Webflow có Basic info (Name, Slug, preview path, Description)
 Danh sách/rail giữ phân cấp, tìm kiếm và số sản phẩm. Product membership được tìm bằng `ProductsService.search`; editor hydrate toàn bộ sản phẩm đã liên kết để giữ chip qua trang kết quả. Lưu danh mục trước, sau đó gửi delta tới `PUT /api/categories/{id}/products`; mỗi delta mang Product.Version, giữ nguyên các Category khác, giới hạn1.000 delta/lần và rollback cả batch nếu có conflict. Category dùng `Category.Update/Create`; search yêu cầu `Product.View`, gán/bỏ cần `Product.Update`. Nếu category-save thành công nhưng batch liên kết thất bại, trường danh mục đã lưu, chip chưa lưu vẫn ở form và lỗi yêu cầu đối chiếu.
 
 Archive/tắt đặt `IsActive=false`; xóa dùng Category.Delete và BE từ chối nếu còn product/child; duplicate sinh slug mới và sao chép các link đang tải. Activity hiển thị thời điểm tạo/cập nhật từ audit fields. Product permission không thay Category permission.
+
+### Loại sản phẩm trong workspace
+
+List và editor dùng chung rail phẳng, tìm kiếm/phân trang giữ trong URL. Editor theo Basic info, mã hệ thống chỉ đọc, schema thuộc tính hiện có, sản phẩm liên quan, Item details và Activity. Sản phẩm liên quan chỉ đọc vì loại/schema được cố định cho sản phẩm đã tạo; CTA mở Products với `productTypeId`. Tải danh sách cần `Product.View`, không cấp thêm quyền khi thiếu.
+
+Sao chép tạo ngay một loại mới với mã loại/field/choice mới, tên có hậu tố “(Bản sao)” và chỉ sao chép field/lựa chọn đang hoạt động. Sản phẩm không được sao chép. Tắt loại lưu qua `ProductType.Update`; xóa chưa được API hỗ trợ. Schema vẫn dùng `ProductType.Create/Update` và version hiện có.
 
 Source workspace/editor đã có và production build đạt với Node24.19.0; BE Host build riêng thành công. Chưa chạy API HTTP/browser E2E hoặc nghiệm thu runtime của endpoint mới. Build solution ban đầu vướng DLL bị tiến trình Boilerate.Host đang chạy khóa; tiến trình không bị dừng, Host build được xác nhận vào thư mục temp riêng.
 

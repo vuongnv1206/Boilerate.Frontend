@@ -11,6 +11,7 @@ import { ProductTypeDto } from '@models/product-type.dto';
 @Injectable()
 export class ProductTypesStore {
   private readonly session = inject(AuthSession);
+  readonly canView = computed(() => this.session.can('ProductType', 'View'));
   readonly canCreate = computed(() => this.session.can('ProductType', 'Create'));
   private readonly service = inject(ProductTypesService);
   private readonly destroyRef = inject(DestroyRef);
@@ -58,7 +59,9 @@ export class ProductTypesStore {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (items) => {
-          this.records.set(items);
+          this.records.set(
+            [...items].sort((left, right) => left.name.localeCompare(right.name, 'vi')),
+          );
           this.loadedState.set(true);
 
           this.loadingState.set(false);
@@ -70,5 +73,15 @@ export class ProductTypesStore {
           );
         },
       });
+  }
+
+  upsert(item: ProductTypeDto): void {
+    this.records.update((records) => {
+      const updated = records.some((current) => current.id === item.id)
+        ? records.map((current) => (current.id === item.id ? item : current))
+        : [...records, item];
+      return updated.sort((left, right) => left.name.localeCompare(right.name, 'vi'));
+    });
+    this.loadedState.set(true);
   }
 }

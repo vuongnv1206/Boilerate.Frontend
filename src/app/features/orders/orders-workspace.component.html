@@ -1,0 +1,108 @@
+<div class="orders-workspace" [class.order-detail-open]="editorId() !== null">
+  @if (editorId() !== null) {
+    <button
+      class="ui-button order-items-toggle"
+      type="button"
+      (click)="panelOpen.set(!panelOpen())"
+      [attr.aria-expanded]="panelOpen()"
+      aria-controls="order-items"
+    >
+      <ui-icon name="panel-left" [size]="14" />Danh sách đơn hàng
+    </button>
+    @if (panelOpen()) {
+      <button
+        class="order-items-backdrop"
+        type="button"
+        aria-label="Đóng danh sách đơn hàng"
+        (click)="panelOpen.set(false)"
+      ></button>
+    }
+    <aside
+      class="order-items"
+      [class.order-items-open]="panelOpen()"
+      id="order-items"
+      aria-label="Chuyển đơn hàng"
+      tabindex="-1"
+      [attr.role]="panelOpen() ? 'dialog' : null"
+      [attr.aria-modal]="panelOpen() ? true : null"
+      [cdkTrapFocus]="panelOpen()"
+      [cdkTrapFocusAutoCapture]="panelOpen()"
+      (keydown.escape)="panelOpen.set(false)"
+    >
+      <header>
+        <a routerLink="/admin/orders" [queryParams]="routeQuery()" (click)="panelOpen.set(false)"
+          >Đơn hàng <span>{{ store.page().total }}</span></a
+        >
+      </header>
+      <label class="order-item-search">
+        <span class="sr-only">Tìm trong đơn hàng</span>
+        <input
+          type="search"
+          [value]="store.query().q"
+          #itemSearch
+          (input)="search(itemSearch.value)"
+          placeholder="Mã đơn, email, điện thoại…"
+        />
+      </label>
+      @if (store.loading()) {
+        <p class="order-items-message" role="status">Đang tải đơn hàng…</p>
+      }
+      @if (store.error()) {
+        <div class="order-items-message" role="alert">
+          {{ store.error() }}
+          <button class="ui-button" type="button" (click)="store.load()">Thử lại</button>
+        </div>
+      }
+      <nav class="order-items-list" aria-label="Đơn hàng trong bộ lọc">
+        @for (item of store.page().items; track item.id) {
+          <a
+            [routerLink]="['/admin/orders', item.id]"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            [attr.aria-current]="editorId() === item.id ? 'page' : null"
+            [title]="item.recipientName + ' · ' + item.email"
+          >
+            <span class="order-item-line">
+              <strong>{{ item.number }}</strong>
+              <ui-status-badge [tone]="statusTone(item.status)">
+                {{ statusLabels[item.status] }}
+              </ui-status-badge>
+            </span>
+            <span class="order-item-customer">{{ item.recipientName }}</span>
+            <small>
+              {{ item.total | currency: item.currency : 'symbol-narrow' : '1.0-0' }}
+              · {{ item.createdOn | date: 'd/M/yy' }}
+            </small>
+          </a>
+        } @empty {
+          @if (!store.loading() && !store.error()) {
+            <p class="order-items-message">Không có đơn trong trang hiện tại.</p>
+          }
+        }
+      </nav>
+      <footer>
+        <button
+          class="icon-button"
+          type="button"
+          aria-label="Trang đơn hàng trước"
+          [disabled]="store.page().pageNumber <= 1 || store.loading()"
+          (click)="setPage(store.page().pageNumber - 1)"
+        >
+          <ui-icon name="chevron-left" [size]="14" /></button
+        ><span>{{ store.page().pageNumber }} / {{ store.pageCount() }}</span
+        ><button
+          class="icon-button"
+          type="button"
+          aria-label="Trang đơn hàng sau"
+          [disabled]="store.page().pageNumber >= store.pageCount() || store.loading()"
+          (click)="setPage(store.page().pageNumber + 1)"
+        >
+          <ui-icon name="chevron-right" [size]="14" />
+        </button>
+      </footer>
+    </aside>
+  }
+  <div class="orders-workspace-content" [attr.inert]="panelOpen() ? '' : null">
+    <router-outlet />
+  </div>
+</div>
