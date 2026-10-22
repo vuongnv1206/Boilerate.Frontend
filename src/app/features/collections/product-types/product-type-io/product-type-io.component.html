@@ -53,30 +53,7 @@
             <section class="form-section">
               <h2>Thông tin loại sản phẩm</h2>
               <p>Mỗi loại định nghĩa bộ thuộc tính riêng cho sản phẩm.</p>
-              <div class="field">
-                <label for="product-type-code">Mã loại *</label
-                ><input
-                  pInputText
-                  id="product-type-code"
-                  formControlName="code"
-                  [readOnly]="!!store.record()"
-                  [maxlength]="limits.code"
-                  [attr.aria-invalid]="invalid('code')"
-                  aria-describedby="product-type-code-help"
-                />
-                <ui-field-message
-                  id="product-type-code-help"
-                  [tone]="invalid('code') ? 'error' : 'help'"
-                  >{{
-                    serverError('code') ||
-                      (invalid('code')
-                        ? 'Nhập mã bằng chữ không dấu, số, dấu chấm, gạch ngang hoặc gạch dưới.'
-                        : !!store.record()
-                          ? 'Mã loại được giữ cố định sau khi tạo.'
-                          : 'Tối đa 100 ký tự, ví dụ: CLOTHING.')
-                  }}</ui-field-message
-                >
-              </div>
+
               <div class="field">
                 <label for="product-type-name">Tên loại *</label
                 ><input
@@ -110,8 +87,8 @@
                 <div>
                   <h2>Thuộc tính sản phẩm</h2>
                   <p>
-                    Định nghĩa tối đa {{ limits.fields }} thuộc tính. Mã, kiểu dữ liệu và yêu cầu
-                    bắt buộc của thuộc tính đã tạo được giữ cố định.
+                    Định nghĩa tối đa {{ limits.fields }} thuộc tính. Kiểu dữ liệu và yêu cầu bắt
+                    buộc của thuộc tính đã tạo được giữ cố định.
                   </p>
                 </div>
                 <button
@@ -141,9 +118,7 @@
                   <fieldset class="schema-field" [formGroupName]="fieldIndex">
                     <legend>{{ field.controls.label.value || 'Thuộc tính mới' }}</legend>
                     <ui-field-message tone="error">{{
-                      validation(field.controls.code)
-                        ? 'Mã thuộc tính: ' + validation(field.controls.code)
-                        : ''
+                      validation(field.controls.code) ? validation(field.controls.code) : ''
                     }}</ui-field-message>
                     <ui-field-message tone="error">{{
                       validation(field.controls.label)
@@ -163,16 +138,6 @@
                       <ui-field-message tone="error">{{ message }}</ui-field-message>
                     }
                     <div class="field-row">
-                      <div class="field">
-                        <label [for]="'field-code-' + fieldIndex">Mã thuộc tính *</label
-                        ><input
-                          pInputText
-                          [id]="'field-code-' + fieldIndex"
-                          formControlName="code"
-                          [readOnly]="!!field.controls.id.value"
-                          [maxlength]="limits.code"
-                        />
-                      </div>
                       <div class="field">
                         <label [for]="'field-type-' + fieldIndex">Kiểu dữ liệu</label>
                         @if (field.controls.id.value) {
@@ -267,19 +232,6 @@
                         ) {
                           <div class="choice-row" [formGroupName]="choiceIndex">
                             <div class="field">
-                              <label [for]="'choice-code-' + fieldIndex + '-' + choiceIndex"
-                                >Mã *</label
-                              ><input
-                                pInputText
-                                [id]="'choice-code-' + fieldIndex + '-' + choiceIndex"
-                                formControlName="code"
-                                [readOnly]="!!choice.controls.id.value"
-                                [maxlength]="limits.code"
-                              /><ui-field-message tone="error">{{
-                                validation(choice.controls.code)
-                              }}</ui-field-message>
-                            </div>
-                            <div class="field">
                               <label [for]="'choice-label-' + fieldIndex + '-' + choiceIndex"
                                 >Nhãn *</label
                               ><input
@@ -344,8 +296,7 @@
                     }
                     @if (field.invalid && (field.touched || field.dirty)) {
                       <ui-field-message tone="error"
-                        >Kiểm tra mã, nhãn, thứ tự và các lựa chọn của thuộc tính
-                        này.</ui-field-message
+                        >Kiểm tra nhãn và các lựa chọn của thuộc tính này.</ui-field-message
                       >
                     }
                     @if (!field.controls.id.value) {
@@ -378,8 +329,8 @@
           <dd>{{ store.record()?.id || 'Chưa tạo' }}</dd>
         </dl>
         <p>
-          Mã và kiểu dữ liệu của thuộc tính đã tạo được giữ nguyên. Các thay đổi được máy chủ kiểm
-          tra cùng phiên bản bản ghi khi lưu.
+          Kiểu dữ liệu của thuộc tính đã tạo được giữ nguyên. Các thay đổi được máy chủ kiểm tra
+          cùng phiên bản bản ghi khi lưu.
         </p>
       </aside>
     </div>

@@ -35,7 +35,6 @@ import { createProductForm } from '@forms/product.form';
 import { ProductCommerce } from '../product-commerce/product-commerce.component';
 import { ProductIoStore } from '@stores/product-io.store';
 import { ProductsStore } from '@stores/products.store';
-import { ProductMedia as ProductMediaComponent } from '../product-media/product-media.component';
 import { ProductMedia } from '@models/product.dto';
 import { createProductMediaForm } from '@forms/product.form';
 
@@ -56,7 +55,6 @@ import { createProductMediaForm } from '@forms/product.form';
     Textarea,
     FieldMessage,
     ProductCommerce,
-    ProductMediaComponent,
   ],
   providers: [ProductIoStore],
   templateUrl: './product-io.component.html',
@@ -72,6 +70,7 @@ export class ProductIo implements OnInit {
   readonly commerceDraft = signal(false);
   readonly mediaBusy = signal(false);
   readonly leaveVisible = signal(false);
+  readonly deleteVisible = signal(false);
   private leaveResolve: ((value: boolean) => void) | null = null;
   readonly commerce = viewChild(ProductCommerce);
   private readonly products = inject(ProductsStore, { optional: true });
@@ -117,6 +116,18 @@ export class ProductIo implements OnInit {
             queryParams: { duplicateFrom: null },
             queryParamsHandling: 'merge',
           });
+      });
+  }
+
+  deleteProduct(): void {
+    this.store
+      .deleteProduct()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.deleteVisible.set(false);
+        this.form.markAsPristine();
+        this.products?.load();
+        void this.router.navigate(['/admin/collections/products']);
       });
   }
 
@@ -180,6 +191,7 @@ export class ProductIo implements OnInit {
   private prepareSave(): boolean {
     if (this.commerceBusy() || this.mediaBusy()) return false;
     const commerce = this.commerce();
+    if (commerce && !commerce.finishOption()) return false;
     if (commerce?.expanded()) commerce.applyRow();
     return !commerce?.expanded() && !commerce?.store.hasDraft();
   }

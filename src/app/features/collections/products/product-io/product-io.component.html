@@ -22,76 +22,23 @@
       </div>
     </div>
     <div class="editor-actions">
-      @if (store.item(); as item) {
-        @if (store.canPublish() && item.status !== status.Published) {
-          <button
-            class="ui-button"
-            [disabled]="
-              store.busy() || store.dirty() || commerceBusy() || commerceDraft() || mediaBusy()
-            "
-            (click)="store.changeStatus(status.Published)"
-          >
-            <ui-icon name="globe" [size]="13" />Xuất bản
-          </button>
-        }
-        @if (store.canPublish() && item.status === status.Published) {
-          <button
-            class="ui-button"
-            [disabled]="
-              store.busy() || store.dirty() || commerceBusy() || commerceDraft() || mediaBusy()
-            "
-            (click)="store.changeStatus(status.Draft)"
-          >
-            Về bản nháp
-          </button>
-        }
-        @if (store.canPublish() && item.status !== status.Archived) {
-          <button
-            class="ui-button"
-            [disabled]="
-              store.busy() || store.dirty() || commerceBusy() || commerceDraft() || mediaBusy()
-            "
-            (click)="store.changeStatus(status.Archived)"
-          >
-            Lưu trữ
-          </button>
-        }
-      }
-      @if (store.item(); as item) {
-        @if (store.canCreate()) {
-          <a
-            class="ui-button"
-            routerLink="/admin/collections/products/new"
-            [queryParams]="{ duplicateFrom: item.id }"
-            queryParamsHandling="merge"
-            >Nhân bản</a
-          >
-        }
-      }
-      @if (form.dirty) {
-        <button
-          class="ui-button"
-          [disabled]="store.busy() || commerceBusy() || mediaBusy()"
-          (click)="discardChanges()"
-        >
-          Bỏ thay đổi
-        </button>
-      }
-      <button
+      <span class="wf-status">{{
+        store.dirty() ? 'Chưa lưu' : store.item() ? statuses[store.item()!.status] : 'Bản nháp'
+      }}</span
+      ><button
         class="ui-button primary"
         [disabled]="
           !store.canWrite() ||
-          commerceBusy() ||
-          mediaBusy() ||
-          commerce()?.store?.hasDraft() ||
           store.busy() ||
           store.loading() ||
           store.schemaLoading() ||
-          !store.schema()
+          !store.schema() ||
+          commerceBusy() ||
+          mediaBusy()
         "
         (click)="save()"
       >
-        <ui-icon name="check" [size]="13" />{{ store.busy() ? 'Đang lưu…' : 'Lưu thay đổi' }}
+        {{ store.busy() ? 'Đang lưu…' : 'Lưu' }}
       </button>
     </div>
   </header>
@@ -137,16 +84,42 @@
           <form class="editor-form" [formGroup]="form" (submit)="$event.preventDefault()">
             <fieldset
               class="product-content-fieldset"
-              [disabled]="commerceDraft() || commerceBusy() || mediaBusy() || store.busy()"
+              [disabled]="commerceBusy() || mediaBusy() || store.busy()"
             >
               <section class="form-section" aria-labelledby="product-content-title">
                 <div class="section-heading">
                   <ui-icon name="file" [size]="15" />
-                  <h2 id="product-content-title">Nội dung</h2>
+                  <h2 id="product-content-title">Thông tin cơ bản</h2>
                 </div>
                 <p class="section-description">
                   Thông tin hiển thị của sản phẩm. Thay đổi chỉ được ghi nhận khi bấm lưu.
                 </p>
+                <div class="field">
+                  <label class="field-label" for="product-type"
+                    >Loại sản phẩm <span class="required">*</span></label
+                  ><p-select
+                    inputId="product-type"
+                    formControlName="productTypeId"
+                    [options]="typeOptions()"
+                    optionLabel="name"
+                    optionValue="id"
+                    appendTo="body"
+                    aria-describedby="product-type-error"
+                  /><ui-field-message id="product-type-error" tone="error">{{
+                    error(form.controls.productTypeId)
+                  }}</ui-field-message>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="product-fulfillment">Cách cung cấp</label
+                  ><p-select
+                    inputId="product-fulfillment"
+                    formControlName="fulfillmentKind"
+                    [options]="fulfillmentOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    appendTo="body"
+                  />
+                </div>
                 <div class="field">
                   <label class="field-label" for="product-name"
                     >Tên sản phẩm <span class="required">*</span></label
@@ -186,37 +159,12 @@
                     pTextarea
                     id="product-description"
                     formControlName="description"
-                    rows="5"
+                    rows="3"
                     [maxLength]="limits.description"
                     aria-describedby="product-description-error"
                   ></textarea
                   ><ui-field-message id="product-description-error" tone="error">{{
                     error(form.controls.description)
-                  }}</ui-field-message>
-                </div>
-              </section>
-              <section class="form-section" aria-labelledby="product-classification-title">
-                <div class="section-heading">
-                  <ui-icon name="tag" [size]="15" />
-                  <h2 id="product-classification-title">Phân loại</h2>
-                </div>
-                <p class="section-description">
-                  Loại sản phẩm xác định bộ thuộc tính. Sản phẩm đã tạo giữ nguyên loại và cách cung
-                  cấp.
-                </p>
-                <div class="field">
-                  <label class="field-label" for="product-type"
-                    >Loại sản phẩm <span class="required">*</span></label
-                  ><p-select
-                    inputId="product-type"
-                    formControlName="productTypeId"
-                    [options]="typeOptions()"
-                    optionLabel="name"
-                    optionValue="id"
-                    appendTo="body"
-                    aria-describedby="product-type-error"
-                  /><ui-field-message id="product-type-error" tone="error">{{
-                    error(form.controls.productTypeId)
                   }}</ui-field-message>
                 </div>
                 <div class="field">
@@ -235,143 +183,9 @@
                     error(form.controls.categoryIds)
                   }}</ui-field-message>
                 </div>
-                <div class="field">
-                  <label class="field-label" for="product-fulfillment">Cách cung cấp</label
-                  ><p-select
-                    inputId="product-fulfillment"
-                    formControlName="fulfillmentKind"
-                    [options]="fulfillmentOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    appendTo="body"
-                  />
-                </div>
               </section>
-              @if (store.isNew()) {
-                <section class="form-section">
-                  <h2>SKU đơn</h2>
-                  <div class="fields-row">
-                    <div class="field">
-                      <label class="field-label" for="product-sku">Mã SKU *</label
-                      ><input pInputText id="product-sku" formControlName="sku" /><ui-field-message
-                        tone="error"
-                        >{{ error(form.controls.sku) }}</ui-field-message
-                      >
-                    </div>
-                    <div class="field">
-                      <label class="field-label" for="product-price">Giá VND</label
-                      ><input
-                        pInputText
-                        id="product-price"
-                        type="number"
-                        min="0"
-                        step="1"
-                        formControlName="price"
-                      /><ui-field-message tone="error">{{
-                        error(form.controls.price)
-                      }}</ui-field-message>
-                    </div>
-                  </div>
-                </section>
-              }
-              @if (store.schemaLoading()) {
-                <p class="section-description" role="status">Đang tải thuộc tính…</p>
-              }
-              @if (store.visibleFields().length) {
-                <section class="form-section" aria-labelledby="product-fields-title">
-                  <div class="section-heading">
-                    <ui-icon name="sliders" [size]="15" />
-                    <h2 id="product-fields-title">Thuộc tính sản phẩm</h2>
-                  </div>
-                  <p class="section-description">Các trường do loại sản phẩm quy định.</p>
-                  @for (field of store.visibleFields(); track field.id) {
-                    @if (form.controls.fields.controls[field.id]; as control) {
-                      <div class="field">
-                        <label class="field-label" [for]="'product-field-' + field.id"
-                          >{{ field.label }}
-                          @if (field.isRequired) {
-                            <span class="required">*</span>
-                          }
-                          @if (!field.isActive) {
-                            <span class="inactive">Ngừng sử dụng</span>
-                          }
-                        </label>
-                        @switch (field.dataType) {
-                          @case (fieldType.Text) {
-                            <input
-                              pInputText
-                              [id]="'product-field-' + field.id"
-                              [formControl]="control"
-                              [attr.aria-describedby]="'product-field-error-' + field.id"
-                            />
-                          }
-                          @case (fieldType.Number) {
-                            <input
-                              pInputText
-                              type="number"
-                              step="0.0001"
-                              [id]="'product-field-' + field.id"
-                              [formControl]="control"
-                              [attr.aria-describedby]="'product-field-error-' + field.id"
-                            />
-                          }
-                          @case (fieldType.Boolean) {
-                            <input
-                              type="checkbox"
-                              [id]="'product-field-' + field.id"
-                              [formControl]="control"
-                              [attr.aria-describedby]="'product-field-error-' + field.id"
-                            />
-                          }
-                          @case (fieldType.Date) {
-                            <input
-                              pInputText
-                              type="date"
-                              [id]="'product-field-' + field.id"
-                              [formControl]="control"
-                              [attr.aria-describedby]="'product-field-error-' + field.id"
-                            />
-                          }
-                          @case (fieldType.Choice) {
-                            <select
-                              [id]="'product-field-' + field.id"
-                              [formControl]="control"
-                              [attr.aria-describedby]="'product-field-error-' + field.id"
-                            >
-                              <option [ngValue]="null">Chọn giá trị</option>
-                              @for (choice of field.choices; track choice.id) {
-                                <option [value]="choice.id" [disabled]="!choice.isActive">
-                                  {{ choice.label }}
-                                </option>
-                              }
-                            </select>
-                          }
-                        }
-                        @if (field.helpText) {
-                          <ui-field-message>{{ field.helpText }}</ui-field-message>
-                        }
-                        <ui-field-message [id]="'product-field-error-' + field.id" tone="error">{{
-                          error(control)
-                        }}</ui-field-message>
-                      </div>
-                    }
-                  }
-                </section>
-              }
-              <p class="form-end">
-                <ui-icon name="info" [size]="14" />Nội dung, lựa chọn, ảnh và giá SKU được lưu cùng
-                một lần. Trạng thái xuất bản là thao tác riêng.
-              </p>
             </fieldset>
           </form>
-          <app-product-media
-            [media]="form.controls.media.getRawValue()"
-            [disabled]="
-              !store.canWrite() || store.busy() || commerceBusy() || commerceDraft() || mediaBusy()
-            "
-            (mediaChange)="mediaChanged($event)"
-            (busyChange)="mediaBusy.set($event)"
-          />
           <app-product-commerce
             [product]="store.item()"
             [form]="form"
@@ -381,31 +195,162 @@
             (busyChange)="commerceBusy.set($event)"
             (draftChange)="commerceDraft.set($event)"
           />
+          <fieldset
+            class="product-content-fieldset"
+            [disabled]="commerceBusy() || mediaBusy() || store.busy()"
+          >
+            @if (store.schemaLoading()) {
+              <p class="section-description" role="status">Đang tải thuộc tính…</p>
+            }
+            @if (store.visibleFields().length) {
+              <section
+                class="form-section product-attributes-section"
+                aria-labelledby="product-fields-title"
+              >
+                <div class="section-heading">
+                  <ui-icon name="sliders" [size]="15" />
+                  <h2 id="product-fields-title">Thuộc tính sản phẩm</h2>
+                </div>
+                <p class="section-description">Các trường do loại sản phẩm quy định.</p>
+                @for (field of store.visibleFields(); track field.id) {
+                  @if (form.controls.fields.controls[field.id]; as control) {
+                    <div class="field">
+                      <label class="field-label" [for]="'product-field-' + field.id"
+                        >{{ field.label }}
+                        @if (field.isRequired) {
+                          <span class="required">*</span>
+                        }
+                        @if (!field.isActive) {
+                          <span class="inactive">Ngừng sử dụng</span>
+                        }
+                      </label>
+                      @switch (field.dataType) {
+                        @case (fieldType.Text) {
+                          <input
+                            pInputText
+                            [id]="'product-field-' + field.id"
+                            [formControl]="control"
+                            [attr.aria-describedby]="'product-field-error-' + field.id"
+                          />
+                        }
+                        @case (fieldType.Number) {
+                          <input
+                            pInputText
+                            type="number"
+                            step="0.0001"
+                            [id]="'product-field-' + field.id"
+                            [formControl]="control"
+                            [attr.aria-describedby]="'product-field-error-' + field.id"
+                          />
+                        }
+                        @case (fieldType.Boolean) {
+                          <input
+                            type="checkbox"
+                            [id]="'product-field-' + field.id"
+                            [formControl]="control"
+                            [attr.aria-describedby]="'product-field-error-' + field.id"
+                          />
+                        }
+                        @case (fieldType.Date) {
+                          <input
+                            pInputText
+                            type="date"
+                            [id]="'product-field-' + field.id"
+                            [formControl]="control"
+                            [attr.aria-describedby]="'product-field-error-' + field.id"
+                          />
+                        }
+                        @case (fieldType.Choice) {
+                          <select
+                            [id]="'product-field-' + field.id"
+                            [formControl]="control"
+                            [attr.aria-describedby]="'product-field-error-' + field.id"
+                          >
+                            <option [ngValue]="null">Chọn giá trị</option>
+                            @for (choice of field.choices; track choice.id) {
+                              <option [value]="choice.id" [disabled]="!choice.isActive">
+                                {{ choice.label }}
+                              </option>
+                            }
+                          </select>
+                        }
+                      }
+                      @if (field.helpText) {
+                        <ui-field-message>{{ field.helpText }}</ui-field-message>
+                      }
+                      <ui-field-message [id]="'product-field-error-' + field.id" tone="error">{{
+                        error(control)
+                      }}</ui-field-message>
+                    </div>
+                  }
+                }
+              </section>
+            }
+          </fieldset>
           @if (store.item(); as product) {
             <section class="form-section catalog-editor-meta" aria-label="Thông tin bản ghi">
-              <h2>Thông tin bản ghi</h2>
+              <h2>Chi tiết bản ghi</h2>
               <dl>
                 <dt>Trạng thái</dt>
                 <dd>{{ statuses[product.status] }}</dd>
                 <dt>ID sản phẩm</dt>
                 <dd class="record-id">{{ product.id }}</dd>
-                <dt>Ngày tạo</dt>
-                <dd>
-                  {{
-                    product.createdOn
-                      ? (product.createdOn | date: 'dd/MM/yyyy HH:mm')
-                      : 'Chưa có dữ liệu'
-                  }}
-                </dd>
-                <dt>Cập nhật</dt>
-                <dd>
-                  {{
-                    product.modifiedOn
-                      ? (product.modifiedOn | date: 'dd/MM/yyyy HH:mm')
-                      : 'Chưa có dữ liệu'
-                  }}
-                </dd>
               </dl>
+              <h2 class="wf-activity-title">Hoạt động</h2>
+              <p>Tạo ngày {{ product.createdOn | date: 'dd/MM/yyyy HH:mm' }}</p>
+              <p>Chỉnh sửa lần cuối {{ product.modifiedOn | date: 'dd/MM/yyyy HH:mm' }}</p>
+              <div class="wf-lifecycle-actions">
+                @if (store.canPublish()) {
+                  <button
+                    class="ui-button"
+                    [disabled]="store.busy() || form.dirty"
+                    (click)="store.changeStatus(status.Archived)"
+                  >
+                    <ui-icon name="archive" [size]="13" />Lưu trữ
+                  </button>
+                }
+                @if (store.canDelete()) {
+                  <button
+                    class="ui-button"
+                    [disabled]="store.busy()"
+                    (click)="deleteVisible.set(true)"
+                  >
+                    <ui-icon name="trash" [size]="13" />Xóa
+                  </button>
+                }
+                @if (store.canCreate()) {
+                  <a
+                    class="ui-button"
+                    routerLink="/admin/collections/products/new"
+                    [queryParams]="{ duplicateFrom: product.id }"
+                    queryParamsHandling="merge"
+                    ><ui-icon name="copy" [size]="13" />Nhân bản</a
+                  >
+                }
+                @if (store.canPublish() && product.status !== status.Published) {
+                  <button
+                    class="ui-button"
+                    [disabled]="store.busy() || form.dirty"
+                    (click)="store.changeStatus(status.Published)"
+                  >
+                    Xuất bản
+                  </button>
+                }
+                @if (store.canPublish() && product.status === status.Published) {
+                  <button
+                    class="ui-button"
+                    [disabled]="store.busy() || form.dirty"
+                    (click)="store.changeStatus(status.Draft)"
+                  >
+                    Về bản nháp
+                  </button>
+                }
+                @if (form.dirty) {
+                  <button class="ui-button" [disabled]="store.busy()" (click)="discardChanges()">
+                    Bỏ thay đổi
+                  </button>
+                }
+              </div>
             </section>
           }
         </div>
@@ -442,3 +387,22 @@
     </button></ng-template
   >
 </p-dialog>
+
+<p-dialog
+  header="Xóa sản phẩm?"
+  [visible]="deleteVisible()"
+  (visibleChange)="deleteVisible.set($event)"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '420px' }"
+  ><p>Sản phẩm sẽ được gỡ khỏi catalog. Lịch sử đơn hàng và kho được giữ lại.</p>
+  <ng-template #footer
+    ><button class="ui-button" [disabled]="store.busy()" (click)="deleteVisible.set(false)">
+      Hủy</button
+    ><button class="ui-button danger" [disabled]="store.busy()" (click)="deleteProduct()">
+      Xóa sản phẩm
+    </button></ng-template
+  ></p-dialog
+>

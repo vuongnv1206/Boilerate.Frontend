@@ -7,6 +7,7 @@ import {
   createProductForm,
   initializeProductForm,
   toProductContent,
+  productConfiguration,
 } from '@forms/product.form';
 
 describe('Product form Catalog mapping', () => {
@@ -61,7 +62,21 @@ describe('Product form Catalog mapping', () => {
     status: ProductStatus.Draft,
     version: 'version',
     categoryIds: [],
-    variants: [],
+    variants: [
+      {
+        id: 'variant-1',
+        combinationKey: '',
+        currency: 'VND',
+        inStock: false,
+        sku: '',
+        price: 100,
+        compareAtPrice: null,
+        isActive: true,
+        isDefault: true,
+        imageMediaId: null,
+        selections: [],
+      },
+    ],
     options: [],
     fields: [
       {
@@ -106,5 +121,21 @@ describe('Product form Catalog mapping', () => {
     expect(number?.invalid).toBe(true);
     number?.setValue(1.1234);
     expect(number?.valid).toBe(true);
+  });
+  it('keeps default identity with empty or duplicate SKUs and does not resurrect removed images', () => {
+    const form = createProductForm();
+    const initial = item.variants[0];
+    if (!initial) throw new Error('Fixture requires a default variant');
+    const duplicateSkus: ProductDto = {
+      ...item,
+      variants: [initial, { ...initial, id: 'variant-2', isDefault: false }],
+    };
+    initializeProductForm(form, duplicateSkus);
+    const before = productConfiguration(form);
+    expect(before.defaultVariantId).toBe('variant-1');
+    expect(before.variants.map((variant) => variant.sku)).toEqual(['', '']);
+    expect(before.variants[1]?.imageMediaId).toBeNull();
+    form.controls.variants.at(0).controls.imageMediaId.setValue(null);
+    expect(toProductContent(form, schema, duplicateSkus).media).toEqual([]);
   });
 });

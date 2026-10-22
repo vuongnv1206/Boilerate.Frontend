@@ -6,7 +6,7 @@
     min-width: 0;
   }
   .product-commerce {
-    max-width: 850px;
+    max-width: none;
     margin: 0 auto;
     padding: 0 32px 32px;
   }
@@ -26,6 +26,149 @@
   .product-commerce-heading h2 {
     margin: 0;
   }
+  .catalog-option-card {
+    display: block;
+    padding: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .catalog-option-summary {
+    display: grid;
+    grid-template-columns: minmax(120px, 200px) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 12px 8px;
+    cursor: pointer;
+    color: var(--text-1);
+    font-size: 12px;
+    span {
+      color: var(--text-2);
+      overflow-wrap: anywhere;
+    }
+  }
+  .catalog-option-content {
+    padding: 4px 8px 14px;
+  }
+  .catalog-option-set-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 11px;
+    button::before {
+      content: '+';
+      margin-right: 6px;
+      font-size: 14px;
+    }
+  }
+  .catalog-variant-heading {
+    margin-top: 18px;
+    h3 {
+      margin: 0;
+    }
+    > span {
+      color: var(--text-2);
+      font-size: 12px;
+    }
+  }
+  .catalog-option-header {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    .field {
+      flex: 1;
+      max-width: 420px;
+      margin-bottom: 8px;
+    }
+  }
+  .catalog-option-values {
+    margin: 8px 0;
+    > .field-label {
+      display: block;
+      margin-bottom: 6px;
+    }
+  }
+  .catalog-value-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0;
+    margin: 0 0 8px;
+    list-style: none;
+  }
+  .catalog-value-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 3px 6px 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-1);
+  }
+  .catalog-value-chip-label {
+    max-width: 220px;
+    overflow-wrap: anywhere;
+  }
+  .catalog-value-edit {
+    min-width: 180px;
+    margin: 0;
+  }
+  .catalog-option-advanced {
+    margin-top: 8px;
+    color: var(--text-2);
+    summary {
+      width: fit-content;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .fields-row {
+      margin-top: 12px;
+    }
+  }
+  .catalog-combination-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 0;
+    p {
+      margin: 0;
+      color: var(--text-2);
+      font-size: 12px;
+    }
+  }
+  .catalog-destructive-confirm {
+    padding: 10px 12px;
+    margin: 8px 0;
+    border: 1px solid var(--warning);
+    background: var(--surface-1);
+    p {
+      margin: 0 0 8px;
+      color: var(--text-1);
+      font-size: 12px;
+    }
+    .ui-button + .ui-button {
+      margin-left: 6px;
+    }
+  }
+  .catalog-variant-grid {
+    max-height: min(60vh, 560px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    .content-table {
+      min-width: 900px;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--surface-1);
+    }
+  }
   .product-commerce-table {
     max-width: 100%;
     overflow-x: auto;
@@ -40,6 +183,28 @@
     padding: 10px 8px;
     white-space: normal;
     vertical-align: top;
+  }
+  .catalog-variant-grid .content-table th,
+  .catalog-variant-grid .content-table td {
+    white-space: nowrap;
+  }
+  .catalog-variant-grid .product-commerce-actions {
+    flex-wrap: nowrap;
+  }
+  .catalog-variant-image {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    .icon-button {
+      color: var(--text-2);
+      font-size: 16px;
+    }
+  }
+  .catalog-variant-detail .product-content-fieldset {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 0 16px;
   }
   .product-commerce-secondary {
     display: block;
@@ -109,6 +274,28 @@
   @media (max-width: 1050px) {
     .product-commerce {
       padding: 0 24px 24px;
+    }
+  }
+  @media (max-width: 760px) {
+    .catalog-option-header,
+    .catalog-combination-summary {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .catalog-option-header .field {
+      width: 100%;
+      max-width: none;
+    }
+    .catalog-option-summary {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+    .catalog-option-set-footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .catalog-variant-detail .product-content-fieldset {
+      grid-template-columns: 1fr;
     }
   }
 }

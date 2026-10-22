@@ -1,4 +1,4 @@
-import { ProductForm } from '@forms/product-form.model';
+import { ProductFieldControlValue, ProductForm } from '@forms/product-form.model';
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -20,6 +20,7 @@ import {
 } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
 import { ApiError } from '@core/http/api-error';
+import { PRODUCT_LIMITS } from '@constants/product.constants';
 import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
 import { ProductsService } from '@services/products.service';
 import { ProductStatus } from '@enums/product.enum';
@@ -32,7 +33,10 @@ import {
   setProductIdentityReadonly,
   toProductContent,
   productEditorRequest,
+  productConfiguration,
   productEditorAliases,
+  captureCatalogIdentity,
+  reconcileCatalogIdentity,
 } from '@forms/product.form';
 import { ProductCategoryLookup, ProductTypeLookup } from '@models/product-lookups.dto';
 import { CreateProduct, ProductDto } from '@models/product.dto';
@@ -48,6 +52,7 @@ export class ProductIoStore {
     this.session.can('Product', this.item() ? 'Update' : 'Create'),
   );
   readonly canPublish = computed(() => this.session.can('Product', 'Publish'));
+  readonly canDelete = computed(() => this.session.can('Product', 'Delete'));
   readonly canCreate = computed(() => this.session.can('Product', 'Create'));
   readonly canPrice = computed(() => this.session.can('Price', 'Update'));
   private readonly service = inject(ProductsService);
@@ -194,26 +199,43 @@ export class ProductIoStore {
             this.form.controls.slug.setValue(`${item.slug.slice(0, 190)}-copy`, {
               emitEvent: false,
             });
-            this.form.controls.sku.setValue(
-              `${item.variants.find((variant) => variant.isDefault)?.sku ?? 'SKU'}-COPY`,
-              { emitEvent: false },
+            const defaultRow = this.form.controls.variants.controls.find(
+              (row) => row.controls.id.value === this.form.controls.defaultVariantId.value,
             );
             for (const option of this.form.controls.options.controls) {
               option.controls.id.setValue('', { emitEvent: false });
-              for (const value of option.controls.values.controls)
+              option.controls.clientId.setValue(crypto.randomUUID(), { emitEvent: false });
+              for (const value of option.controls.values.controls) {
                 value.controls.id.setValue('', { emitEvent: false });
+                value.controls.clientId.setValue(crypto.randomUUID(), { emitEvent: false });
+              }
             }
             for (const row of this.form.controls.variants.controls) {
-              row.controls.id.setValue('', { emitEvent: false });
-              row.controls.sku.setValue(`${row.controls.sku.value.slice(0, 90)}-COPY`, {
-                emitEvent: false,
-              });
+              const copySku = row.controls.sku.value
+                ? `${row.controls.sku.value.slice(0, PRODUCT_LIMITS.sku - 5)}-COPY`
+                : '';
+              row.patchValue(
+                {
+                  id: '',
+                  clientId: crypto.randomUUID(),
+                  sku: copySku,
+                  quantity: 0,
+                  inventoryVersion: null,
+                },
+                { emitEvent: false },
+              );
               if (!this.canPrice())
                 row.patchValue({ price: null, compareAtPrice: null }, { emitEvent: false });
             }
+            if (defaultRow) {
+              this.form.controls.sku.setValue(defaultRow.controls.sku.value, { emitEvent: false });
+              this.form.controls.defaultVariantSku.setValue(defaultRow.controls.sku.value, {
+                emitEvent: false,
+              });
+            }
             if (!this.canPrice()) this.form.controls.price.setValue(null, { emitEvent: false });
-            this.form.controls.defaultVariantSku.setValue(
-              `${item.variants.find((variant) => variant.isDefault)?.sku ?? ''}-COPY`,
+            this.form.controls.defaultVariantId.setValue(
+              defaultRow?.controls.clientId.value || '',
               { emitEvent: false },
             );
           }
@@ -228,8 +250,8 @@ export class ProductIoStore {
             this.dirtyState.set(true);
             this.noticeState.set(
               this.canPrice()
-                ? 'Bản sao chưa được tạo. Kiểm tra đường dẫn, mã SKU và lưu sản phẩm mới.'
-                : 'Bản sao chưa được tạo. Giá không được sao chép vì chưa có quyền cập nhật giá; kiểm tra đường dẫn và mã SKU rồi lưu sản phẩm mới.',
+                ? 'Bản sao chưa được tạo. Kiểm tra đường dẫn rồi lưu sản phẩm mới.'
+                : 'Bản sao chưa được tạo. Giá không được sao chép vì chưa có quyền cập nhật giá; kiểm tra đường dẫn rồi lưu sản phẩm mới.',
             );
           }
           this.loadingState.set(false);
@@ -245,6 +267,27 @@ export class ProductIoStore {
       });
   }
 
+  deleteProduct(): Observable<boolean> {
+    return defer(() => {
+      const item = this.item();
+      if (!item || !this.canDelete() || this.busy()) return EMPTY;
+      this.busyState.set(true);
+      return this.service.deleteProduct(item.id, item.version).pipe(
+        tap(() => {
+          this.form.markAsPristine();
+          this.dirtyState.set(false);
+          this.busyState.set(false);
+        }),
+        catchError((error: unknown) => {
+          this.setError(error, 'Không xóa được sản phẩm.');
+          return EMPTY;
+        }),
+        finalize(() => this.busyState.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      );
+    });
+  }
+
   save(): Observable<ProductDto> {
     return defer(() => {
       if (!this.canWrite() || this.busy() || this.loading() || this.schemaLoading()) return EMPTY;
@@ -257,38 +300,7 @@ export class ProductIoStore {
         return EMPTY;
       }
       const item = this.item();
-      if (!item && this.form.controls.options.length) {
-        const options = optionInputs(this.form.controls.options.controls);
-        const variants = skuInputs(this.form.controls.variants.controls);
-        try {
-          generateSkuRows(options, '', null, []);
-        } catch (error: unknown) {
-          this.errorState.set(error instanceof Error ? error.message : 'Kiểm tra lựa chọn SKU.');
-          return EMPTY;
-        }
-        const selectionKey = (value: Readonly<Record<string, string>>) =>
-          JSON.stringify(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)));
-        if (
-          !variants.length ||
-          variants.length > 200 ||
-          new Set(variants.map((variant) => variant.sku.toUpperCase())).size !== variants.length ||
-          new Set(variants.map((variant) => selectionKey(variant.options))).size !==
-            variants.length ||
-          variants.some(
-            (variant) =>
-              Object.keys(variant.options).length !== options.length ||
-              options.some(
-                (option) =>
-                  !option.values.some((value) => value.code === variant.options[option.code]),
-              ),
-          )
-        ) {
-          this.errorState.set(
-            'Tạo lại tổ hợp sau khi sửa lựa chọn; giữ ít nhất một SKU có mã và tổ hợp riêng.',
-          );
-          return EMPTY;
-        }
-      }
+      const catalogIdentity = captureCatalogIdentity(this.form);
       const content = toProductContent(this.form, schema, item);
       const raw = this.form.getRawValue();
       const editorRequest = item
@@ -313,6 +325,7 @@ export class ProductIoStore {
                     options: {},
                   },
                 ],
+            configuration: productConfiguration(this.form, this.canPrice()),
             fulfillmentKind: raw.fulfillmentKind,
             defaultVariantSku: raw.defaultVariantSku || raw.variants[0]?.sku || raw.sku.trim(),
           } satisfies CreateProduct);
@@ -349,6 +362,7 @@ export class ProductIoStore {
             this.dirtyState.set(false);
             this.noticeState.set('Đã lưu sản phẩm.');
           } else {
+            reconcileCatalogIdentity(this.form, saved, catalogIdentity);
             this.form.markAsDirty();
             this.dirtyState.set(true);
             this.noticeState.set('Đã lưu phiên bản trước. Thay đổi mới chưa được lưu.');
@@ -455,20 +469,47 @@ export class ProductIoStore {
     const item = this.item();
     if (!item || this.busy()) return;
     const generation = this.generation;
+    const draftFields: Record<string, ProductFieldControlValue> = {};
+    for (const [id, control] of Object.entries(this.form.controls.fields.controls)) {
+      if (control.dirty) draftFields[id] = control.value;
+    }
     this.busyState.set(true);
+    this.schemaLoadingState.set(true);
+    this.errorState.set('');
     this.service
       .get(item.id)
       .pipe(
+        switchMap((saved) =>
+          this.service.productType(saved.productTypeId).pipe(map((schema) => ({ saved, schema }))),
+        ),
         take(1),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
-          if (generation === this.generation) this.busyState.set(false);
+          if (generation === this.generation) {
+            this.busyState.set(false);
+            this.schemaLoadingState.set(false);
+          }
         }),
       )
       .subscribe({
-        next: (saved) => {
+        next: ({ saved, schema }) => {
           if (generation !== this.generation) return;
           this.itemState.set(saved);
+          configureProductFields(this.form, schema, saved.fields);
+          for (const definition of schema.fields) {
+            const control = this.form.controls.fields.controls[definition.id];
+            const draftValue = draftFields[definition.id];
+            if (control && draftValue !== undefined) {
+              control.setValue(draftValue, { emitEvent: false });
+              control.markAsDirty();
+            }
+          }
+          this.form.markAsDirty();
+          this.schemaState.set(schema);
+          this.typesState.update((types) =>
+            types.map((type) => (type.id === schema.id ? schema : type)),
+          );
+          this.dirtyState.set(true);
           if (!this.canPrice()) {
             for (const row of this.form.controls.variants.controls) {
               const canonical = saved.variants.find(
@@ -487,7 +528,8 @@ export class ProductIoStore {
           );
         },
         error: (error: unknown) => {
-          if (generation === this.generation) this.setError(error, 'Không tải được phiên bản mới.');
+          if (generation === this.generation)
+            this.setError(error, 'Không tải được phiên bản mới hoặc cấu trúc loại sản phẩm.');
         },
       });
   }
@@ -546,7 +588,6 @@ export class ProductIoStore {
         }
       }
       for (const variant of this.currentForm.controls.variants.controls) {
-        if (variant.controls.id.value) variant.controls.sku.disable({ emitEvent: false });
         if (!this.canPrice()) {
           variant.controls.price.disable({ emitEvent: false });
           variant.controls.compareAtPrice.disable({ emitEvent: false });

@@ -11,7 +11,7 @@
         [value]="store.query()"
         #searchInput
         (input)="search(searchInput.value)"
-        placeholder="Tên hoặc mã loại…"
+        placeholder="Tên loại sản phẩm…"
     /></label>
     <button
       class="icon-button"
@@ -47,7 +47,7 @@
         <thead>
           <tr>
             <th scope="col">Tên loại sản phẩm</th>
-            <th scope="col">Mã loại</th>
+
             <th scope="col">Trạng thái</th>
           </tr>
         </thead>
@@ -57,7 +57,7 @@
               <td>
                 <a [routerLink]="[item.id]" [queryParams]="routeQuery()">{{ item.name }}</a>
               </td>
-              <td>{{ item.code }}</td>
+
               <td>{{ item.isActive ? 'Hoạt động' : 'Đã tắt' }}</td>
             </tr>
           }

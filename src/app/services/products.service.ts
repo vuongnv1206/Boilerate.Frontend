@@ -50,6 +50,10 @@ export class ProductsService {
     return this.api.put<ProductDto>(`products/${encodeURIComponent(request.id)}/editor`, request);
   }
 
+  deleteProduct(id: string, version: string): Observable<boolean> {
+    return this.api.delete<boolean>(`products/${encodeURIComponent(id)}`, { params: { version } });
+  }
+
   bulkStatus(request: BulkProductStatus): Observable<BulkProductStatusResult> {
     return this.api.post<BulkProductStatusResult>('products/bulk-status', request);
   }

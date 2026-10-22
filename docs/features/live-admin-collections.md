@@ -14,7 +14,7 @@ Mục tiêu là để chủ shop tạo sản phẩm nhiều lựa chọn, đặt
 
 Đã có source tạo options/SKU, editor SKU/giá/mặc định và nhãn lựa chọn, tồn vật lý theo sản phẩm cùng điều chỉnh/ledger, tồn số Unique/Shared theo quyền riêng. Unit/form/service/store và browser desktop/tablet × Light/Dark đã qua; xem [báo cáo nghiệm thu hiện tại](../verification/2026-10-21-admin-orders.md).
 
-Tiêu chí: không đổi identity SKU/tổ hợp đã tạo; dùng Product.version cho Catalog/tồn số và Inventory.version cho điều chỉnh vật lý; giữ draft sau lỗi, retry điều chỉnh giữ nguyên snapshot+operation ID; chặn các editor ghi đồng thời; không tiết lộ nội dung số khi chưa yêu cầu Reveal. Tồn vật lý dùng filter productId/variantId được bổ sung ở BE, không quét toàn kho. Giá null được phép ở bản nháp, Price.Update kiểm độc lập Product.Create/Update.
+Tiêu chí: giữ ID biến thể/tổ hợp không đổi, SKU chỉ là nội dung tùy chọn; dùng Product.version cho Catalog/tồn số và Inventory.version cho điều chỉnh vật lý; giữ draft sau lỗi, retry điều chỉnh giữ nguyên snapshot+operation ID; chặn các editor ghi đồng thời; không tiết lộ nội dung số khi chưa yêu cầu Reveal. Tồn vật lý dùng filter productId/variantId được bổ sung ở BE, không quét toàn kho. Giá null được phép ở bản nháp, Price.Update kiểm độc lập Product.Create/Update.
 
 | Màn dưới `/admin/collections` | Khả năng                                                                                                                                                      |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -32,7 +32,7 @@ Mỗi phần có route `new` và `:id` cho màn thêm/sửa. Lưu chỉ báo th�
 - Catalog pagination dùng `items/total/pageNumber/pageSize`, trang bắt đầu từ 1. Product/type version và các giá trị enum/field phải theo DTO của service; không dùng DTO demo hoặc pagination Identity để thay thế.
 - Đăng nhập và refresh theo [hợp đồng browser session](persistent-session.md). Interceptor chỉ gắn bearer trong API base, retry tối đa một lần sau refresh nếu vẫn cùng user; không tự retry mutation sau lỗi mạng hoặc 409.
 
-BE sibling đã fast-forward tới `9e5b410`, có Catalog và browser session tương ứng. Contract đã được đối chiếu controller, DTO, validators và permission manifest; API public giữ nguyên.
+Contract Catalog và browser session đã được đối chiếu với controller, DTO, validators và permission manifest. PUT editor hỗ trợ `addedOptions` tùy chọn; client cũ tiếp tục dùng được.
 
 ## Source và giới hạn
 
@@ -42,17 +42,25 @@ BE quyết định authorization cuối cùng. FE có route/menu/action/store pe
 
 ## SKU, lựa chọn và tồn
 
-Khi tạo sản phẩm, nhập SKU đơn hoặc thêm tối đa ba trục lựa chọn rồi tạo tổ hợp; tối đa 200 tổ hợp theo cấu hình Catalog mặc định. Mỗi tổ hợp có SKU, giá và giá so sánh riêng. Tạo lại giữ draft của tổ hợp không đổi; có thể bỏ các tổ hợp chưa bán. SKU đầu tiên là mặc định. Mã SKU/tổ hợp và các trục lựa chọn giữ nguyên sau tạo; chỉ thêm giá trị vào trục đã có. Product.Update cho phép chỉnh hoạt động/ảnh, chọn mặc định, sửa nhãn/thứ tự và thêm SKU cho tổ hợp còn thiếu. Price.Update kiểm độc lập: người không có quyền giá tạo SKU giá null; bản nháp được để trống giá. SKU active của sản phẩm Published phải có giá; phải chọn default khác trước khi ngừng default hiện tại.
+### Editor theo Webflow (2026-10-22)
 
-Product editor có một trình sửa SKU/tồn độc lập. Khi nội dung sản phẩm dirty, cần lưu/tải lại trước khi mở trình sửa. Khi trình sửa mở, content/status bị khóa và dirty guard bao gồm draft của cả hai vùng. Mutation dùng version mới từ server; lỗi 409 giữ draft và yêu cầu tải bản canonical để đối chiếu. Lựa chọn thay đổi trong phiên nhập phải được tạo lại tổ hợp trước khi tạo sản phẩm.
+Giữ nguyên icon rail, nav CMS và rail sản phẩm/search/phân trang. Editor dùng control24px, option32px, header34px, row53px; semantic tokens riêng cho surface/field/border/accent cả hai theme, scope trong catalog-product-editor. Chi tiết style tại DESIGN.md.
 
-Tồn vật lý hiển thị on-hand, số giữ cho đơn và khả dụng theo SKU. Inventory.View cho phép đọc số dư/ledger; Inventory.Adjust cho phép điều chỉnh delta khác không kèm lý do. Tồn mới không được nhỏ hơn số đã giữ. Mỗi yêu cầu chụp Inventory.version + operationId + delta + reason. Lỗi mạng/server chưa xác định kết quả khóa payload và rời màn cho đến khi gửi lại đúng snapshot; retry thành công không tăng/giảm lần thứ hai. Sau lỗi từ chối rõ ràng, draft được giữ để tải số dư mới rồi sửa.
+Option thu gọn tên/giá trị; mở tên bên trái, chip bên phải, Hủy/Xong/trash. Enter/Tab thêm, double-click/menu đổi tên, menu/Backspace xóa. Xong tự tạo tổ hợp; không có nút generate hoặc ô mã kỹ thuật. Ba nhóm/50 biến thể, giữ dữ liệu cũ trên50. Mã type/field/choice/option/value tự sinh, không có control nhập mã.
+
+Bảng đúng thứ tự Ảnh → các option → Số lượng → SKU → Giá → Giá so sánh, click dòng mở inline. Hoàn tác trả về snapshot lúc mở, Đóng giữ trong bản nhập chung; chỉ Lưu ghi cấu hình vào DB. Có ảnh chính/bổ sung, giá/compare, SKU tùy chọn và có thể trùng, tracking/quantity và kích thước vật lý. Default dùng ID và dấu sao. Legacy gallery chưa gán được đưa về variant mặc định khi mở; save chỉ giữ ảnh các variant còn tham chiếu, tránh ảnh đã xóa xuất hiện lại.
+
+POST/PUT gửi configuration đầy đủ bằng UUID; ID tạm mới ổn định, response map thành ID thật. Tổ hợp không đổi giữ controls/ID/nội dung; mới kế thừa default với quantity0. Xóa giá trị đã lưu bỏ tổ hợp liên quan; xóa trục tái tạo từ default, bỏ hết trục trở về đơn. Duplicate giữ SKU/ảnh/giá nhưng ID mới và tồn0. Footer chứa archive/delete/duplicate; Product.Delete là soft lifecycle, không xóa lịch sử đơn/kho.
+
+Quantity đích và tracking được lưu chung với Product/Type/Inventory version và operation ID. Không dưới số reserved; ∞ khi tắt tracking. Price.Update/Inventory.Adjust vẫn độc lập. Kho số/reveal tiếp tục endpoint riêng và không lưu nội dung bí mật ở browser storage.
+
+Đã nghiệm thu UI local trên database thật: tạo SKU trống, hai nhóm2×2, SKU trùng, giá/compare, ảnh chính/phụ, Hoàn tác/Đóng, default, tồn12/∞; lưu/reload từng nhóm. Đổi nhãn giữ nội dung. Bản sao thử đã xóa giá trị/trục/toàn bộ trục, trở về sản phẩm đơn, lưu trữ và xóa. Build/lint và hồi quy tập trung được chạy cho phiên bản này; không dùng thống kê 200/242 test của bản trước thay cho nghiệm thu UI. PostgreSQL chưa chạy migration/integration mới.
 
 Tồn số dùng DigitalInventory.View/Import/Update/Reveal, không dùng adjustment vật lý. Unique nhập từng nội dung có mã riêng; Shared thay nội dung dùng chung và trạng thái cung cấp. List chỉ metadata; Reveal mới nạp nội dung, không lưu vào browser storage, và xóa vùng hiển thị khi đóng/rời trình sửa. Reserved/Delivered không thể đổi availability. Gia hạn thủ công không có số dư kho.
 
 ## Quyền và trạng thái danh sách
 
-Product dùng View/Create/Update/Publish; Category dùng View/Create/Update/Delete; ProductType dùng View/Create/Update, đều có tiền tố `Permissions.` theo BE. Route new kiểm Create, list và :id kiểm View; menu lọc View. Nút ghi và store kiểm đúng quyền từng action. Editor thiếu Update khóa controls; không cấp quyền fallback khi permission rỗng/lỗi. `/admin` chọn nhóm đầu được View hoặc `/admin/forbidden`; vẫn đăng xuất được. Product lookup chịu cả quyền Category/ProductType ở BE, bị từ chối sẽ báo lỗi load.
+Product dùng View/Create/Update/Publish/Delete; Category dùng View/Create/Update/Delete; ProductType dùng View/Create/Update, đều có tiền tố `Permissions.` theo BE. Route new kiểm Create, list và :id kiểm View; menu lọc View. Nút ghi và store kiểm đúng quyền từng action. Editor thiếu Update khóa controls; không cấp quyền fallback khi permission rỗng/lỗi. `/admin` chọn nhóm đầu được View hoặc `/admin/forbidden`; vẫn đăng xuất được. Product lookup chịu cả quyền Category/ProductType ở BE, bị từ chối sẽ báo lỗi load.
 
 Products giữ `q`, `status`, `page`, `pageSize` trong URL; Categories và ProductTypes giữ `q`, `page`. Query sai về mặc định; page vượt tổng được sửa về trang cuối một lần. Đổi filter về trang 1. Mở editor/Back giữ query; browser Back/Forward phục hồi từ URL. Đổi nhóm bắt đầu state riêng; selection chỉ tồn tại trong màn.
 

@@ -14,6 +14,7 @@ export type ProductForm = FormGroup<{
   sku: FormControl<string>;
   price: FormControl<number | null>;
   defaultVariantSku: FormControl<string>;
+  defaultVariantId: FormControl<string>;
   media: FormArray<ProductMediaForm>;
   options: FormArray<CreateOptionForm>;
   variants: FormArray<CreateSkuForm>;

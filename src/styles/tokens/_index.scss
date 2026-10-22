@@ -54,6 +54,13 @@
   --highlight-text: var(--palette-blue-700);
   --highlight-focus-text: var(--palette-blue-700);
   --overlay-shadow: 0 4px 16px rgb(15 15 20 / 10%), 0 0 0 1px rgb(15 15 20 / 4%);
+  --editor-surface: #ffffff;
+  --editor-field-surface: #ffffff;
+  --editor-raised-surface: #efeff1;
+  --editor-border: #dedee3;
+  --editor-field-border: #b4b4be;
+  --editor-accent: #146ef5;
+  --editor-on-accent: #ffffff;
   --radius: 4px;
   --rail-width: 44px;
   --topbar-height: 44px;
@@ -107,5 +114,12 @@
   --highlight-focus: #2b4771;
   --highlight-text: #a8c8ff;
   --highlight-focus-text: var(--palette-blue-200);
+  --editor-surface: #292929;
+  --editor-field-surface: rgb(0 0 0 / 22%);
+  --editor-raised-surface: #353535;
+  --editor-border: #424242;
+  --editor-field-border: rgb(255 255 255 / 19%);
+  --editor-accent: #0076ca;
+  --editor-on-accent: #ffffff;
   --overlay-shadow: 0 8px 24px rgb(0 0 0 / 30%), 0 0 0 1px rgb(255 255 255 / 5%);
 }

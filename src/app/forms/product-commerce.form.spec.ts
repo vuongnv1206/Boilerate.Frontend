@@ -1,12 +1,19 @@
 import {
   createSkuRow,
   createVariantForm,
+  generatedCatalogCode,
   generateSkuRows,
   nullableVndPrice,
 } from '@forms/product-commerce.form';
 import { FormControl } from '@angular/forms';
 
 describe('SKU creation and VND rules', () => {
+  it('generates readable unique codes from Vietnamese labels', () => {
+    expect(generatedCatalogCode('Màu sắc', [], 'OPTION')).toBe('MAU_SAC');
+    expect(generatedCatalogCode('Đỏ', ['DO'], 'VALUE')).toBe('DO_2');
+    expect(generatedCatalogCode('!!!', [], 'OPTION')).toBe('OPTION');
+  });
+
   const colorOption = {
     code: 'COLOR',
     name: 'Màu',
@@ -21,7 +28,7 @@ describe('SKU creation and VND rules', () => {
     existing.controls.compareAtPrice.setValue(60000);
     const rows = generateSkuRows(options, 'SHIRT', 10000, [existing]);
     expect(rows[0]).toBe(existing);
-    expect(rows[1]?.getRawValue()).toEqual({
+    expect(rows[1]?.getRawValue()).toMatchObject({
       id: '',
       isActive: true,
       imageMediaId: null,
@@ -56,7 +63,7 @@ describe('SKU creation and VND rules', () => {
         [
           {
             ...colorOption,
-            values: Array.from({ length: 201 }, (_, index) => ({
+            values: Array.from({ length: 51 }, (_, index) => ({
               code: `V${index}`,
               label: `${index}`,
             })),

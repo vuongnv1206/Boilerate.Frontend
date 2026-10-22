@@ -105,6 +105,7 @@ interface ProductWrite {
     addValues: { code: string; label: string }[];
     values: { id: string; label: string; sortOrder: number }[];
   }[];
+  addedOptions?: { code: string; name: string; values: { code: string; label: string }[] }[];
   variantEdits?: {
     variantId: string;
     price: number | null;
@@ -500,7 +501,7 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
     if (path === 'personal/authorization' && method === 'GET')
       return reply(route, { permissions, isCentralAdmin: false });
     if (path === 'media' && method === 'POST') {
-      if (!can('Product', 'Update')) return forbidden(route);
+      if (!can('Product', 'Create') && !can('Product', 'Update')) return forbidden(route);
       const bytes = request.postDataBuffer();
       if (!bytes?.length || !request.headers()['content-type']?.startsWith('multipart/form-data'))
         return invalid(route, 'Chọn tệp ảnh.');
@@ -674,6 +675,29 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
               });
             }
           }
+          for (const added of input.addedOptions ?? []) {
+            const optionId = id(7, ++mediaSequence + 10_000);
+            const option: ProductOption = {
+              id: optionId,
+              code: added.code,
+              name: added.name,
+              sortOrder: options.length,
+              values: added.values.map((value, index) => ({
+                ...value,
+                id: id(8, ++mediaSequence + 10_000),
+                sortOrder: index,
+              })),
+            };
+            if (!option.values.length) return invalid(route, 'Nhóm lựa chọn cần có giá trị.');
+            options.push(option);
+            const defaultValue = option.values[0]!;
+            for (const variant of draft.variants) {
+              (variant.selections as { optionId: string; optionValueId: string }[]).push({
+                optionId,
+                optionValueId: defaultValue.id,
+              });
+            }
+          }
           for (const edit of input.variantEdits ?? []) {
             const variant = draft.variants.find((variant) => variant.id === edit.variantId);
             if (!variant) return invalid(route, 'SKU không tồn tại.');
@@ -825,5 +849,10 @@ export async function finishSignIn(page: Page): Promise<void> {
 export async function ready(page: Page, path = '/admin/collections/products'): Promise<void> {
   await page.goto(path);
   await finishSignIn(page);
-  await expect(page).toHaveURL(new RegExp(`${path}$`, 'u'));
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return `${url.pathname}${url.search}`;
+    })
+    .toBe(path);
 }

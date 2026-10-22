@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { expect, FIRST_PRODUCT_ID, ready, test } from './helpers/catalog-api';
 
 const permissions = [
@@ -25,24 +26,25 @@ test('creates multiple option combinations with individual SKU and price drafts'
   await page.locator('#product-name').fill('Áo sơ mi vận hành');
   await page.locator('#product-sku').fill('SHIRT');
   await page.locator('#product-price').fill('100000');
-  await page.getByRole('button', { name: 'Thêm lựa chọn', exact: true }).click();
-  await page.locator('#option-code-0').fill('COLOR');
+  await page.getByRole('button', { name: 'Thêm nhóm lựa chọn', exact: true }).click();
   await page.locator('#option-name-0').fill('Màu sắc');
-  await page.locator('#value-code-0-0').fill('RED');
   await page.locator('#value-label-0-0').fill('Đỏ');
+  await page.getByRole('button', { name: 'Xong', exact: true }).click();
   await page.getByRole('button', { name: 'Thêm giá trị', exact: true }).click();
-  await page.locator('#value-code-0-1').fill('BLUE');
   await page.locator('#value-label-0-1').fill('Xanh');
-  await page.getByRole('button', { name: 'Tạo / cập nhật tổ hợp SKU', exact: true }).click();
-  await page.getByRole('button', { name: 'Sửa SKU SHIRT-BLUE', exact: true }).click();
-  await page.locator('#variant-price').fill('120000');
+  await page.getByRole('button', { name: 'Xong', exact: true }).click();
+  await page.getByRole('button', { name: /Tạo hoặc cập nhật 2 biến thể/u }).click();
+  await page.getByRole('button', { name: 'Sửa SKU SHIRT-XANH', exact: true }).click();
+  await page.locator('#variant-price-1').fill('120000');
   await page.getByRole('button', { name: 'Áp dụng vào bản chỉnh sửa', exact: true }).click();
-  await page.getByRole('button', { name: 'Sửa SKU SHIRT-RED', exact: true }).click();
+  await page.getByRole('button', { name: 'Sửa SKU SHIRT-DO', exact: true }).click();
   await page.locator('#variant-sku').fill('CUSTOM-RED');
   await page.getByRole('button', { name: 'Áp dụng vào bản chỉnh sửa', exact: true }).click();
-  await page.getByRole('button', { name: 'Tạo / cập nhật tổ hợp SKU', exact: true }).click();
+  await page.getByRole('button', { name: /Tạo hoặc cập nhật 2 biến thể/u }).click();
   await expect(page.getByRole('button', { name: 'Sửa SKU CUSTOM-RED', exact: true })).toBeVisible();
-  await expect(page.locator('.catalog-variant-table')).toContainText('120.000');
+  await page.getByRole('button', { name: 'Sửa SKU SHIRT-XANH', exact: true }).click();
+  await expect(page.locator('#variant-price-1')).toHaveValue('120000');
+  await page.getByRole('button', { name: 'Áp dụng vào bản chỉnh sửa', exact: true }).click();
   expect(
     catalog.requests.some((request) => request.path === 'products' && request.method === 'POST'),
   ).toBe(false);
@@ -61,19 +63,220 @@ test('creates multiple option combinations with individual SKU and price drafts'
   expect(request?.body).toMatchObject({
     options: [
       {
-        code: 'COLOR',
+        code: 'MAU_SAC',
         name: 'Màu sắc',
         values: [
-          { code: 'RED', label: 'Đỏ' },
-          { code: 'BLUE', label: 'Xanh' },
+          { code: 'DO', label: 'Đỏ' },
+          { code: 'XANH', label: 'Xanh' },
         ],
       },
     ],
     variants: [
-      { sku: 'CUSTOM-RED', price: 100000, options: { COLOR: 'RED' } },
-      { sku: 'SHIRT-BLUE', price: 120000, options: { COLOR: 'BLUE' } },
+      { sku: 'CUSTOM-RED', price: 100000, options: { MAU_SAC: 'DO' } },
+      { sku: 'SHIRT-XANH', price: 120000, options: { MAU_SAC: 'XANH' } },
     ],
   });
+});
+
+test('creates a 2 by 2 variant matrix and edits a variant through its details', async ({
+  page,
+  catalog,
+}) => {
+  catalog.setPermissions(permissions);
+  await ready(page, '/admin/collections/products/new');
+  await page.locator('#product-name').fill('Áo thun ma trận thử nghiệm');
+  await page.locator('#product-sku').fill('TEE');
+  await page.locator('#product-price').fill('100000');
+
+  await page.getByRole('button', { name: 'Thêm nhóm lựa chọn', exact: true }).click();
+  await page.locator('#option-name-0').fill('Màu sắc');
+  await page.locator('#value-label-0-0').fill('Đỏ');
+  await page.locator('#value-label-0-0').press('Enter');
+  await page.getByRole('button', { name: 'Thêm giá trị', exact: true }).click();
+  await page.locator('#value-label-0-1').fill('Xanh');
+  await page.getByRole('button', { name: 'Xong', exact: true }).click();
+
+  await page.getByRole('button', { name: 'Thêm nhóm lựa chọn', exact: true }).click();
+  await page.locator('#option-name-1').fill('Kích cỡ');
+  await page.locator('#value-label-1-0').fill('S');
+  await page.getByRole('button', { name: 'Xong', exact: true }).click();
+  await page
+    .locator('.catalog-option-card')
+    .nth(1)
+    .getByRole('button', { name: 'Thêm giá trị', exact: true })
+    .click();
+  await page.locator('#value-label-1-1').fill('M');
+  await page.getByRole('button', { name: 'Xong', exact: true }).click();
+
+  await expect(page.locator('.catalog-combination-summary')).toContainText(
+    '2 nhóm lựa chọn · 4 tổ hợp dự kiến',
+  );
+  await page.getByRole('button', { name: 'Tạo hoặc cập nhật 4 biến thể', exact: true }).click();
+  await expect(page.locator('.catalog-variant-grid tbody tr')).toHaveCount(4);
+  await expect(page.locator('.catalog-option-card').first()).not.toHaveAttribute('open', '');
+  await expect(
+    page.locator('.catalog-option-card').first().locator('summary.catalog-option-summary'),
+  ).toContainText('Đỏ, Xanh');
+  await expect(page.locator('.catalog-variant-grid thead')).toContainText('Màu sắc');
+  await expect(page.locator('.catalog-variant-grid thead')).toContainText('Kích cỡ');
+  await page.getByRole('button', { name: 'Sửa SKU TEE-XANH-M', exact: true }).click();
+  await page.locator('#variant-price-3').fill('250000');
+  await page.locator('#variant-compare-3').fill('300000');
+  await page.getByRole('button', { name: 'Áp dụng vào bản chỉnh sửa', exact: true }).click();
+
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect
+    .poll(() =>
+      catalog.requests.some((entry) => entry.path === 'products' && entry.method === 'POST'),
+    )
+    .toBe(true);
+  const request = catalog.requests.find(
+    (entry) => entry.path === 'products' && entry.method === 'POST',
+  );
+  expect(request?.body).toMatchObject({
+    options: [
+      { code: 'MAU_SAC', values: [{ code: 'DO' }, { code: 'XANH' }] },
+      { code: 'KICH_CO', values: [{ code: 'S' }, { code: 'M' }] },
+    ],
+    variants: [
+      { sku: 'TEE-DO-S', price: 100000 },
+      { sku: 'TEE-DO-M', price: 100000 },
+      { sku: 'TEE-XANH-S', price: 100000 },
+      { sku: 'TEE-XANH-M', price: 250000, compareAtPrice: 300000 },
+    ],
+  });
+});
+
+test('adds an option axis to a saved product and keeps its original SKU identity', async ({
+  page,
+  catalog,
+}) => {
+  catalog.setPermissions(permissions);
+  const product = catalog.products.find((entry) => entry.id === FIRST_PRODUCT_ID);
+  const original = product?.variants[0];
+  if (!product || !original) throw new Error('Fixture product or SKU missing');
+  await ready(page, `/admin/collections/products/${FIRST_PRODUCT_ID}`);
+
+  await page.getByRole('button', { name: 'Thêm nhóm lựa chọn', exact: true }).click();
+  await page.locator('#option-name-0').fill('Màu sắc');
+  await page.locator('#value-label-0-0').fill('Đỏ');
+  await page.locator('#value-label-0-0').press('Enter');
+  await page.getByRole('button', { name: 'Thêm giá trị', exact: true }).click();
+  await page.locator('#value-label-0-1').fill('Xanh');
+  await page.getByRole('button', { name: 'Xong', exact: true }).click();
+  await page.getByRole('button', { name: 'Tạo hoặc cập nhật 2 biến thể', exact: true }).click();
+  const addedSku = `${original.sku}-XANH`;
+  await expect(page.locator('.catalog-variant-grid tbody tr')).toHaveCount(2);
+  await expect(
+    page.getByRole('button', { name: `Sửa SKU ${original.sku}`, exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: `Sửa SKU ${addedSku}`, exact: true }).click();
+  await page.locator('#variant-price-1').fill('790000');
+  await page.getByRole('button', { name: 'Áp dụng vào bản chỉnh sửa', exact: true }).click();
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect
+    .poll(() =>
+      catalog.requests.some((request) => request.path === `products/${FIRST_PRODUCT_ID}/editor`),
+    )
+    .toBe(true);
+
+  const request = catalog.requests.find(
+    (entry) => entry.path === `products/${FIRST_PRODUCT_ID}/editor`,
+  );
+  expect(request?.body).toMatchObject({
+    addedOptions: [
+      { code: 'MAU_SAC', name: 'Màu sắc', values: [{ code: 'DO' }, { code: 'XANH' }] },
+    ],
+    variantEdits: [{ variantId: original.id }],
+    addedVariants: [{ sku: addedSku, price: 790000, options: { MAU_SAC: 'XANH' } }],
+  });
+  expect(product.variants.find((variant) => variant.id === original.id)?.sku).toBe(original.sku);
+  expect(product.variants.find((variant) => variant.id === original.id)?.selections).toHaveLength(
+    1,
+  );
+  expect(product.variants).toHaveLength(2);
+});
+
+test('discarding an unsaved option axis keeps the saved variants in the editor draft', async ({
+  page,
+  catalog,
+}) => {
+  catalog.setPermissions(permissions);
+  const product = catalog.products.find((entry) => entry.id === FIRST_PRODUCT_ID);
+  const original = product?.variants[0];
+  if (!product || !original) throw new Error('Fixture product or SKU missing');
+  await ready(page, `/admin/collections/products/${FIRST_PRODUCT_ID}`);
+
+  await page.getByRole('button', { name: 'Thêm nhóm lựa chọn', exact: true }).click();
+  await page.locator('#option-name-0').fill('Màu sắc');
+  await page.locator('#value-label-0-0').fill('Đỏ');
+  await page.locator('#value-label-0-0').press('Enter');
+  await page.getByRole('button', { name: 'Thêm giá trị', exact: true }).click();
+  await page.locator('#value-label-0-1').fill('Xanh');
+  await page.getByRole('button', { name: 'Xong', exact: true }).click();
+  await page.getByRole('button', { name: 'Tạo hoặc cập nhật 2 biến thể', exact: true }).click();
+  await page.locator('.catalog-option-card summary.catalog-option-summary').click();
+  await page.getByRole('button', { name: 'Xóa nhóm', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('xóa 1 tổ hợp SKU chưa lưu');
+  await page.getByRole('button', { name: 'Xóa nhóm và tổ hợp', exact: true }).click();
+
+  await expect(page.locator('.catalog-option-card')).toHaveCount(0);
+  await expect(page.locator('.catalog-variant-grid tbody tr')).toHaveCount(1);
+  await expect(
+    page.getByRole('button', { name: `Sửa SKU ${original.sku}`, exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect
+    .poll(() =>
+      catalog.requests.some((request) => request.path === `products/${FIRST_PRODUCT_ID}/editor`),
+    )
+    .toBe(true);
+  const request = catalog.requests.find(
+    (entry) => entry.path === `products/${FIRST_PRODUCT_ID}/editor`,
+  );
+  expect(request?.body).toMatchObject({
+    addedOptions: [],
+    variantEdits: [{ variantId: original.id }],
+    addedVariants: [],
+  });
+  expect(product.variants).toHaveLength(1);
+});
+
+test('confirms removal of generated variants when deleting an option value or group', async ({
+  page,
+  catalog,
+}) => {
+  catalog.setPermissions(permissions);
+  await ready(page, '/admin/collections/products/new');
+  await page.locator('#product-name').fill('Sản phẩm thử xóa option');
+  await page.locator('#product-sku').fill('REMOVE');
+  await page.locator('#product-price').fill('100000');
+  await page.getByRole('button', { name: 'Thêm nhóm lựa chọn', exact: true }).click();
+  await page.locator('#option-name-0').fill('Màu sắc');
+  await page.locator('#value-label-0-0').fill('Đỏ');
+  await page.locator('#value-label-0-0').press('Enter');
+  await page.getByRole('button', { name: 'Thêm giá trị', exact: true }).click();
+  await page.locator('#value-label-0-1').fill('Xanh');
+  await page.getByRole('button', { name: 'Xong', exact: true }).click();
+  await page.getByRole('button', { name: 'Tạo hoặc cập nhật 2 biến thể', exact: true }).click();
+  await expect(page.locator('.catalog-variant-grid tbody tr')).toHaveCount(2);
+
+  await page.locator('.catalog-option-card summary').first().click();
+  await page.getByRole('button', { name: 'Xóa giá trị Xanh', exact: true }).click();
+  await page.getByRole('button', { name: 'Tạo hoặc cập nhật 1 biến thể', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('bỏ 1 biến thể');
+  await page.getByRole('button', { name: 'Cập nhật ma trận', exact: true }).click();
+  await expect(page.locator('.catalog-variant-grid tbody tr')).toHaveCount(1);
+
+  await page.locator('.catalog-option-card summary').first().click();
+  await page.getByRole('button', { name: 'Xóa nhóm', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('xóa 1 tổ hợp SKU');
+  await page.getByRole('button', { name: 'Xóa nhóm và tổ hợp', exact: true }).click();
+  await expect(page.locator('.catalog-option-card')).toHaveCount(0);
+  await expect(page.locator('.catalog-variant-grid tbody tr')).toHaveCount(1);
+  await expect(page.locator('.catalog-variant-grid tbody')).toContainText(
+    'Thêm lựa chọn rồi tạo tổ hợp SKU',
+  );
 });
 
 test('keeps a conflicted catalog draft, reloads canonical version and saves it explicitly', async ({
@@ -102,21 +305,135 @@ test('keeps a conflicted catalog draft, reloads canonical version and saves it e
     await route.fulfill({ json: product });
   });
   await ready(page, `/admin/collections/products/${FIRST_PRODUCT_ID}`);
-  const sku = product.variants[0]?.sku ?? '';
-  await page.getByRole('button', { name: `Sửa SKU ${sku}`, exact: true }).click();
-  await page.locator('#variant-price').fill('750000');
+  const firstSku = product.variants[0]?.sku;
+  if (!firstSku) throw new Error('Fixture SKU missing');
+  await page.getByRole('button', { name: `Sửa SKU ${firstSku}`, exact: true }).click();
+  await page.locator('#variant-price-0').fill('750000');
   await page.getByRole('button', { name: 'Áp dụng vào bản chỉnh sửa', exact: true }).click();
   expect(attempts).toBe(0);
   await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Dữ liệu đã thay đổi');
-  await expect(page.locator('.catalog-variant-table')).toContainText('750.000');
   await page.getByRole('button', { name: 'Tải bản mới, giữ nội dung nhập', exact: true }).click();
   await expect(page.locator('.editor-notice')).toContainText('Đã tải phiên bản mới');
-  await expect(page.locator('.catalog-variant-table')).toContainText('750.000');
+  await page.getByRole('button', { name: `Sửa SKU ${firstSku}`, exact: true }).click();
+  await expect(page.locator('#variant-price-0')).toHaveValue('750000');
   await page.screenshot({ path: testInfo.outputPath('sku-price-editor.png') });
   await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
   await expect.poll(() => product.variants[0]?.price).toBe(750000);
   expect(attempts).toBe(2);
+});
+
+test('preserves edited custom fields across repeated product-type conflicts', async ({
+  page,
+  catalog,
+}) => {
+  catalog.setPermissions(permissions);
+  const product = catalog.products.find((entry) => entry.id === FIRST_PRODUCT_ID);
+  const type = catalog.productTypes.find((entry) => entry.id === product?.productTypeId);
+  if (!product || !type) throw new Error('Catalog fixture missing');
+  const editedFieldId = '10000000-0000-0000-0000-000000000101';
+  const untouchedFieldId = '10000000-0000-0000-0000-000000000102';
+  type.fields = [
+    {
+      id: editedFieldId,
+      code: 'EDITOR_NOTE',
+      dataType: 1,
+      label: 'Ghi chú chỉnh sửa',
+      helpText: null,
+      isRequired: false,
+      isFilterable: false,
+      isActive: true,
+      sortOrder: 0,
+      choices: [],
+    },
+    {
+      id: untouchedFieldId,
+      code: 'CARE_NOTE',
+      dataType: 1,
+      label: 'Ghi chú bảo quản',
+      helpText: null,
+      isRequired: false,
+      isFilterable: false,
+      isActive: true,
+      sortOrder: 1,
+      choices: [],
+    },
+  ];
+  const fieldValue = (fieldDefinitionId: string, label: string, textValue: string) => ({
+    fieldDefinitionId,
+    fieldType: 1,
+    textValue,
+    label,
+    choiceLabel: null,
+  });
+  product.fields = [
+    fieldValue(editedFieldId, 'Ghi chú chỉnh sửa', 'Giá trị cũ đã sửa'),
+    fieldValue(untouchedFieldId, 'Ghi chú bảo quản', 'Giá trị cũ chưa sửa'),
+  ];
+  let attempts = 0;
+  await page.route(/\/api\/products\/[^/]+\/editor$/u, async (route) => {
+    const request = route.request().postDataJSON() as {
+      productTypeVersion: string;
+      content: { name: string; fields: unknown[] };
+    };
+    attempts++;
+    if (attempts === 1 || attempts === 2) {
+      if (attempts === 2) expect(request.productTypeVersion).toBe('type-version-changed');
+      type.version = attempts === 1 ? 'type-version-changed' : 'type-version-after-second-conflict';
+      product.version = `product-version-changed-${attempts}`;
+      product.fields = [
+        fieldValue(
+          editedFieldId,
+          'Ghi chú chỉnh sửa',
+          attempts === 1 ? 'Giá trị mới từ máy chủ' : 'Giá trị mới nhất từ máy chủ',
+        ),
+        fieldValue(
+          untouchedFieldId,
+          'Ghi chú bảo quản',
+          attempts === 1 ? 'Ghi chú máy chủ mới' : 'Ghi chú máy chủ mới nhất',
+        ),
+      ];
+      await route.fulfill({ status: 409, json: { status: 409, detail: 'Product type changed' } });
+      return;
+    }
+    expect(request.productTypeVersion).toBe('type-version-after-second-conflict');
+    expect(request.content.fields).toEqual(
+      expect.arrayContaining([
+        { fieldDefinitionId: editedFieldId, fieldType: 1, textValue: 'Bản nháp của tôi' },
+        {
+          fieldDefinitionId: untouchedFieldId,
+          fieldType: 1,
+          textValue: 'Ghi chú máy chủ mới nhất',
+        },
+      ]),
+    );
+    product.name = request.content.name;
+    product.version = 'saved-after-type-conflict';
+    product.modifiedOn = new Date().toISOString();
+    await route.fulfill({ json: product });
+  });
+  await ready(page, `/admin/collections/products/${FIRST_PRODUCT_ID}`);
+  await page.locator(`#product-field-${editedFieldId}`).fill('Bản nháp của tôi');
+  await page.locator('#product-name').fill('Tên giữ lại sau xung đột loại');
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Dữ liệu đã thay đổi');
+  await page.getByRole('button', { name: 'Tải bản mới, giữ nội dung nhập', exact: true }).click();
+  await expect(page.locator('.editor-notice')).toContainText('Đã tải phiên bản mới');
+  await expect(page.locator('#product-name')).toHaveValue('Tên giữ lại sau xung đột loại');
+  await expect(page.locator(`#product-field-${editedFieldId}`)).toHaveValue('Bản nháp của tôi');
+  await expect(page.locator(`#product-field-${untouchedFieldId}`)).toHaveValue(
+    'Ghi chú máy chủ mới',
+  );
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Dữ liệu đã thay đổi');
+  await page.getByRole('button', { name: 'Tải bản mới, giữ nội dung nhập', exact: true }).click();
+  await expect(page.locator(`#product-field-${editedFieldId}`)).toHaveValue('Bản nháp của tôi');
+  await expect(page.locator(`#product-field-${untouchedFieldId}`)).toHaveValue(
+    'Ghi chú máy chủ mới nhất',
+  );
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect.poll(() => product.name).toBe('Tên giữ lại sau xung đột loại');
+  expect(attempts).toBe(3);
 });
 
 test('replays the immutable stock adjustment after response loss without duplicating quantity', async ({
@@ -214,6 +531,69 @@ test('keeps existing prices read only without Price.Update and creates a draft w
   });
 });
 
+test('allows create-only users to upload and save product images', async ({ page, catalog }) => {
+  catalog.setPermissions([
+    'Permissions.Product.View',
+    'Permissions.Product.Create',
+    'Permissions.Category.View',
+    'Permissions.ProductType.View',
+  ]);
+  await ready(page, '/admin/collections/products/new');
+  const fileInput = page.locator('#product-media-upload');
+  await expect(fileInput).toBeEnabled();
+  await fileInput.setInputFiles({
+    name: 'catalog-cover.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+      'base64',
+    ),
+  });
+  await expect(page.locator('.product-media__item')).toHaveCount(1);
+  await page.locator('#product-name').fill('Ảnh sản phẩm chỉ quyền tạo');
+  await page.locator('#product-sku').fill('CREATE-ONLY-IMAGE');
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect
+    .poll(
+      () =>
+        catalog.products.find((product) => product.name === 'Ảnh sản phẩm chỉ quyền tạo')?.media,
+    )
+    .toHaveLength(1);
+  expect(
+    catalog.requests.some((request) => request.path === 'media' && request.method === 'POST'),
+  ).toBe(true);
+});
+
+test('duplicates a product without copying prices when Price.Update is unavailable', async ({
+  page,
+  catalog,
+}) => {
+  catalog.setPermissions(
+    permissions.filter((permission) => permission !== 'Permissions.Price.Update'),
+  );
+  await ready(page, `/admin/collections/products/${FIRST_PRODUCT_ID}`);
+  await page.getByRole('link', { name: 'Nhân bản', exact: true }).click();
+  await expect(page).toHaveURL(/duplicateFrom=/u);
+  await expect(page.locator('.editor-notice')).toContainText('Giá không được sao chép');
+  await expect(page.locator('#product-price')).toBeDisabled();
+  await expect(page.locator('#product-price')).toHaveValue('');
+
+  await page.locator('#product-name').fill('Bản sao không có giá');
+  await page.locator('#product-sku').fill('COPY-NO-PRICE');
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect
+    .poll(() =>
+      catalog.requests.some((request) => request.path === 'products' && request.method === 'POST'),
+    )
+    .toBe(true);
+  expect(
+    catalog.requests.find((request) => request.path === 'products' && request.method === 'POST')
+      ?.body,
+  ).toMatchObject({
+    variants: [{ sku: 'COPY-NO-PRICE', price: null, compareAtPrice: null }],
+  });
+});
+
 test('adds an option value and missing SKU, switches default and deactivates the previous default', async ({
   page,
   catalog,
@@ -233,13 +613,16 @@ test('adds an option value and missing SKU, switches default and deactivates the
   if (!first) throw new Error('Fixture SKU missing');
   first.selections = [{ optionId: 'color', optionValueId: 'red' }];
   await ready(page, `/admin/collections/products/${FIRST_PRODUCT_ID}`);
+  await page.locator('.catalog-option-card summary').first().click();
   await page.getByRole('button', { name: 'Thêm giá trị', exact: true }).click();
-  await page.locator('#value-code-0-1').fill('BLUE');
   await page.locator('#value-label-0-1').fill('Xanh');
-  await page.getByRole('button', { name: 'Tạo / cập nhật tổ hợp SKU', exact: true }).click();
-  await page.getByRole('button', { name: `Sửa SKU ${first.sku}-BLUE`, exact: true }).click();
+  await page.getByRole('button', { name: 'Xong', exact: true }).click();
+  await page.getByRole('button', { name: /Tạo hoặc cập nhật 2 biến thể/u }).click();
+  await page.getByRole('button', { name: `Sửa SKU ${first.sku}-XANH`, exact: true }).click();
+  await page.locator('#variant-price-1').fill('200000');
+  await page.getByRole('button', { name: 'Áp dụng vào bản chỉnh sửa', exact: true }).click();
+  await page.getByRole('button', { name: `Sửa SKU ${first.sku}-XANH`, exact: true }).click();
   await page.locator('#variant-sku').fill('SHIRT-BLUE');
-  await page.locator('#variant-price').fill('200000');
   await page.getByRole('button', { name: 'Áp dụng vào bản chỉnh sửa', exact: true }).click();
   await page.getByRole('button', { name: 'Đặt mặc định SHIRT-BLUE', exact: true }).click();
   await page.getByRole('button', { name: `Sửa SKU ${first.sku}`, exact: true }).click();

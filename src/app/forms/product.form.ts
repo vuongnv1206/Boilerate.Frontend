@@ -14,11 +14,11 @@ import {
   createOptionForm,
   createSkuRow,
   nullableVndPrice,
+  optionInputs,
 } from '@forms/product-commerce.form';
 import {
   PRODUCT_LIMITS,
   PRODUCT_FIELD_ALIASES,
-  PRODUCT_SKU_PATTERN,
   PRODUCT_SLUG_PATTERN,
 } from '@constants/product.constants';
 import { ProductFulfillmentKind } from '@enums/product.enum';
@@ -32,6 +32,7 @@ import {
   ProductFieldValue,
   ProductMedia,
   SaveProductEditor,
+  CatalogConfiguration,
 } from '@models/product.dto';
 
 const trimmedRequired: ValidatorFn = (control) =>
@@ -53,16 +54,10 @@ export function createProductForm(): ProductForm {
     productTypeId: ['', Validators.required],
     categoryIds: builder.control<string[]>([]),
     fulfillmentKind: builder.control(ProductFulfillmentKind.Physical),
-    sku: [
-      '',
-      [
-        trimmedRequired,
-        Validators.maxLength(PRODUCT_LIMITS.sku),
-        Validators.pattern(PRODUCT_SKU_PATTERN),
-      ],
-    ],
+    sku: ['', Validators.maxLength(PRODUCT_LIMITS.sku)],
     price: new FormControl<number | null>(0, nullableVndPrice),
     defaultVariantSku: builder.control(''),
+    defaultVariantId: builder.control(''),
     media: new FormArray<ProductMediaForm>([]),
     options: new FormArray<CreateOptionForm>([]),
     variants: new FormArray<CreateSkuForm>([]),
@@ -85,6 +80,7 @@ export function initializeProductForm(form: ProductForm, item: ProductDto | null
       sku: item?.variants.find((variant) => variant.isDefault)?.sku ?? '',
       price: item?.variants.find((variant) => variant.isDefault)?.price ?? 0,
       defaultVariantSku: item?.variants.find((variant) => variant.isDefault)?.sku ?? '',
+      defaultVariantId: item?.variants.find((variant) => variant.isDefault)?.id ?? '',
     },
     { emitEvent: false },
   );
@@ -92,6 +88,14 @@ export function initializeProductForm(form: ProductForm, item: ProductDto | null
     form.controls.media.push(createProductMediaForm(media), { emitEvent: false });
   for (const option of item?.options ?? [])
     form.controls.options.push(createOptionForm(option), { emitEvent: false });
+  const assignedMediaIds = new Set(
+    item?.variants.flatMap((variant) => [
+      variant.imageMediaId,
+      ...(variant.images ?? []).map((image) => image.mediaAssetId),
+    ]) ?? [],
+  );
+  const legacyGallery =
+    item?.media.filter((media) => !assignedMediaIds.has(media.mediaAssetId)) ?? [];
   for (const variant of item?.variants ?? []) {
     const selection: Record<string, string> = {};
     for (const selected of variant.selections) {
@@ -103,18 +107,38 @@ export function initializeProductForm(form: ProductForm, item: ProductDto | null
     row.patchValue(
       {
         id: variant.id,
+        clientId: variant.id,
+        trackInventory: variant.trackInventory ?? true,
+        quantity: variant.quantity ?? null,
+        inventoryVersion: variant.inventoryVersion ?? null,
+        images: variant.images?.length
+          ? variant.images
+          : variant.isDefault
+            ? legacyGallery.slice(variant.imageMediaId ? 0 : 1)
+            : [],
+        weight: variant.weight ?? null,
+        width: variant.width ?? null,
+        height: variant.height ?? null,
+        length: variant.length ?? null,
         compareAtPrice: variant.compareAtPrice,
         isActive: variant.isActive,
-        imageMediaId: variant.imageMediaId,
+        imageMediaId:
+          variant.imageMediaId ??
+          (variant.isDefault ? (legacyGallery[0]?.mediaAssetId ?? null) : null),
       },
       { emitEvent: false },
     );
     form.controls.variants.push(row, { emitEvent: false });
   }
+  if (!item) {
+    const row = createSkuRow('', {}, 0);
+    form.controls.variants.push(row, { emitEvent: false });
+    form.controls.defaultVariantId.setValue(row.controls.clientId.value, { emitEvent: false });
+  }
   setProductIdentityReadonly(form, !!item);
 }
 
-/** Catalog content edits cannot change SKU identity, fulfillment kind or product type. */
+/** Existing products retain their product type and fulfillment policy. Variant SKU is editable. */
 export function setProductIdentityReadonly(form: ProductForm, readonly: boolean): void {
   for (const control of [
     form.controls.productTypeId,
@@ -179,17 +203,25 @@ export function toProductContent(
       });
     }
   }
+  const referencedMedia = new Set(
+    value.variants.flatMap((variant) => [
+      variant.imageMediaId,
+      ...variant.images.map((image) => image.mediaAssetId),
+    ]),
+  );
   return {
     name: value.name.trim(),
     slug: value.slug.trim().toLowerCase(),
     description: value.description.trim() || null,
     categoryIds: value.categoryIds,
     fields,
-    media: value.media.map((media, index) => ({
-      mediaAssetId: media.mediaAssetId,
-      sortOrder: index,
-      altText: media.altText?.trim() || null,
-    })),
+    media: value.media
+      .filter((media) => referencedMedia.has(media.mediaAssetId))
+      .map((media, index) => ({
+        mediaAssetId: media.mediaAssetId,
+        sortOrder: index,
+        altText: media.altText?.trim() || null,
+      })),
   };
 }
 
@@ -213,9 +245,13 @@ export function productEditorRequest(
   const raw = form.getRawValue();
   return {
     id: item.id,
+    configuration: productConfiguration(form, allowPrice, item),
     version: item.version,
     productTypeVersion: schema.version,
     content: toProductContent(form, schema, item),
+    addedOptions: optionInputs(
+      form.controls.options.controls.filter((option) => !option.controls.id.value),
+    ),
     optionEdits: raw.options
       .filter((option) => !!option.id)
       .map((option) => ({
@@ -258,6 +294,187 @@ export function productEditorRequest(
     defaultVariantSku:
       raw.defaultVariantSku || item.variants.find((variant) => variant.isDefault)?.sku || '',
   };
+}
+
+export function productConfiguration(
+  form: ProductForm,
+  allowPrice = true,
+  original: ProductDto | null = null,
+): CatalogConfiguration {
+  const options = form.controls.options.controls;
+  const optionKey = (option: (typeof options)[number]) =>
+    option.controls.id.value || option.controls.clientId.value;
+  const variants = form.controls.variants.controls;
+  return {
+    options: options.map((option) => ({
+      id: optionKey(option),
+      name: option.controls.name.value.trim(),
+      values: option.controls.values.controls.map((value) => ({
+        id: value.controls.id.value || value.controls.clientId.value,
+        label: value.controls.label.value.trim(),
+      })),
+    })),
+    variants: variants.map((row) => {
+      const raw = row.getRawValue();
+      const canonical = original?.variants.find((variant) => variant.id === raw.id);
+      const selections: Record<string, string> = {};
+      for (const option of options) {
+        const value = option.controls.values.controls.find(
+          (value) => value.controls.code.value === raw.options[option.controls.code.value],
+        );
+        if (value)
+          selections[optionKey(option)] = value.controls.id.value || value.controls.clientId.value;
+      }
+      return {
+        ...raw,
+        id: raw.id || raw.clientId,
+        sku: raw.sku.trim(),
+        price: allowPrice ? raw.price : (canonical?.price ?? null),
+        compareAtPrice: allowPrice ? raw.compareAtPrice : (canonical?.compareAtPrice ?? null),
+        selections,
+      };
+    }),
+    defaultVariantId:
+      form.controls.defaultVariantId.value || variants[0]?.controls.clientId.value || '',
+  };
+}
+
+interface CatalogIdentitySnapshot {
+  readonly options: readonly {
+    readonly id: string;
+    readonly position: number;
+    readonly name: string;
+    readonly values: readonly {
+      readonly id: string;
+      readonly position: number;
+      readonly label: string;
+    }[];
+  }[];
+  readonly variants: readonly {
+    readonly id: string;
+    readonly selectionCodes: Readonly<Record<string, string>>;
+    readonly selections: Readonly<Record<string, string>>;
+  }[];
+}
+
+/** Keep local draft IDs aligned with server IDs when newer input was made during a save. */
+export function captureCatalogIdentity(form: ProductForm): CatalogIdentitySnapshot {
+  return {
+    options: form.controls.options.controls.map((option, position) => ({
+      id: option.controls.id.value || option.controls.clientId.value,
+      position,
+      name: option.controls.name.value.trim(),
+      values: option.controls.values.controls.map((value, valuePosition) => ({
+        id: value.controls.id.value || value.controls.clientId.value,
+        position: valuePosition,
+        label: value.controls.label.value.trim(),
+      })),
+    })),
+    variants: form.controls.variants.controls.map((variant) => {
+      const selections: Record<string, string> = {};
+      for (const option of form.controls.options.controls) {
+        const value = option.controls.values.controls.find(
+          (candidate) =>
+            candidate.controls.code.value ===
+            variant.controls.options.value[option.controls.code.value],
+        );
+        if (value)
+          selections[option.controls.id.value || option.controls.clientId.value] =
+            value.controls.id.value || value.controls.clientId.value;
+      }
+      return {
+        id: variant.controls.id.value || variant.controls.clientId.value,
+        selectionCodes: { ...variant.controls.options.value },
+        selections,
+      };
+    }),
+  };
+}
+
+export function reconcileCatalogIdentity(
+  form: ProductForm,
+  saved: ProductDto,
+  snapshot: CatalogIdentitySnapshot,
+): void {
+  for (const submitted of snapshot.options) {
+    const savedOption = saved.options.find((option) => option.sortOrder === submitted.position);
+    const currentOption = form.controls.options.controls.find(
+      (option) => (option.controls.id.value || option.controls.clientId.value) === submitted.id,
+    );
+    if (!savedOption || !currentOption) continue;
+    currentOption.patchValue(
+      { id: savedOption.id, clientId: savedOption.id, sortOrder: savedOption.sortOrder },
+      { emitEvent: false },
+    );
+    for (const submittedValue of submitted.values) {
+      const savedValue = savedOption.values.find(
+        (value) => value.sortOrder === submittedValue.position,
+      );
+      const currentValue = currentOption.controls.values.controls.find(
+        (value) => (value.controls.id.value || value.controls.clientId.value) === submittedValue.id,
+      );
+      if (savedValue && currentValue)
+        currentValue.patchValue(
+          { id: savedValue.id, clientId: savedValue.id, sortOrder: savedValue.sortOrder },
+          { emitEvent: false },
+        );
+    }
+  }
+
+  const signature = (selections: readonly (readonly [string, string])[]) =>
+    JSON.stringify([...selections].sort(([left], [right]) => left.localeCompare(right)));
+  const submittedVariants = new Map(snapshot.variants.map((variant) => [variant.id, variant]));
+  const variantsBySignature = new Map<string, ProductDto['variants'][number]>();
+  for (const variant of saved.variants) {
+    const selections: [string, string][] = [];
+    for (const selection of variant.selections) {
+      const option = saved.options.find((candidate) => candidate.id === selection.optionId);
+      const value = option?.values.find((candidate) => candidate.id === selection.optionValueId);
+      if (option && value) selections.push([option.name, value.label]);
+    }
+    variantsBySignature.set(signature(selections), variant);
+  }
+
+  const variantIds = new Map<string, string>();
+  for (const row of form.controls.variants.controls) {
+    const rowId = row.controls.id.value || row.controls.clientId.value;
+    const submitted = submittedVariants.get(rowId);
+    if (
+      !submitted ||
+      JSON.stringify(
+        Object.entries(row.controls.options.value).sort(([left], [right]) =>
+          left.localeCompare(right),
+        ),
+      ) !==
+        JSON.stringify(
+          Object.entries(submitted.selectionCodes).sort(([left], [right]) =>
+            left.localeCompare(right),
+          ),
+        )
+    )
+      continue;
+    const submittedSelectionLabels: [string, string][] = [];
+    for (const [optionId, valueId] of Object.entries(submitted.selections)) {
+      const option = snapshot.options.find((candidate) => candidate.id === optionId);
+      const value = option?.values.find((candidate) => candidate.id === valueId);
+      if (option && value) submittedSelectionLabels.push([option.name, value.label]);
+    }
+    const savedVariant = variantsBySignature.get(signature(submittedSelectionLabels));
+    if (!savedVariant) continue;
+    variantIds.set(rowId, savedVariant.id);
+    row.patchValue(
+      {
+        id: savedVariant.id,
+        clientId: savedVariant.id,
+        inventoryVersion: savedVariant.inventoryVersion ?? null,
+        inventoryOperationId: crypto.randomUUID(),
+      },
+      { emitEvent: false },
+    );
+  }
+
+  const savedDefault = variantIds.get(form.controls.defaultVariantId.value);
+  if (savedDefault) form.controls.defaultVariantId.setValue(savedDefault, { emitEvent: false });
 }
 
 /** Validation indexes refer to the submitted deltas, rather than the full grid. */

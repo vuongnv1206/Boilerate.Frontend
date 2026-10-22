@@ -20,7 +20,7 @@ GetDesign Webflow trong thư viện local phân tích website marketing. Chỉ d
 | Topbar             | 44px                                                                  | Mỏng, tên workspace và ngữ cảnh; action ngắn gọn phía phải                  |
 | Panel ngữ cảnh     | 240px, min 200px, max 320px                                           | Điều hướng theo nhóm; kéo mép phải để resize; thu gọn và nhớ kích thước     |
 | Toolbar vùng chính | Khoảng 48px, tăng khi cần wrap                                        | Tiêu đề, search/filter và action của màn hiện tại                           |
-| Rail sản phẩm      | 218px desktop; 240px overlay tablet                                      | Giữ danh sách và bộ lọc cạnh editor; tablet mở bằng panel có focus trap     |
+| Rail sản phẩm      | 218px desktop; 240px overlay tablet                                   | Giữ danh sách và bộ lọc cạnh editor; tablet mở bằng panel có focus trap     |
 | Control            | 30px chuẩn desktop                                                    | Form, toolbar và bảng dùng cùng nhịp; textarea/đa dòng tự mở rộng           |
 | Bảng               | Header 34px; dòng 62px cho fixture hai dòng (68px từ viewport 1500px) | Thumbnail 36px; tên chính 13px, metadata 11px; viền ngang mảnh; số căn phải |
 
@@ -106,3 +106,7 @@ Animation bình thường **bật mặc định**; không thêm switch giảm ch
 - Dùng bàn phím mở/đóng overlay và quay lại focus; kiểm tra tiếng Việt dài và normal motion đang bật. Giữ fallback reduced motion trong CSS; không yêu cầu OS-QA ở mốc này theo lựa chọn người dùng.
 - Chụp ảnh bản dựng sau khi tương tác ổn định; soát tỷ lệ, alignment, contrast và các vùng scroll. Ảnh Webflow công khai có thể khác phiên bản/viewport: ghi rõ nguồn và giới hạn so sánh.
 - Báo cáo kết quả thực sự chạy và khoảng trống trong bàn giao; chỉ giữ bằng chứng lâu dài khi cần theo [quy tắc docs](docs/README.md#quy-tắc-duy-trì-docs). Nghiệm thu thiết kế với người dùng và nghiệm thu deployment là trạng thái riêng.
+
+## Catalog editor Webflow (2026-10-22)
+
+Icon/CMS navigation và product rail giữ nguyên thiết kế hiện có. Chỉ editor dùng _catalog-editor.scss, import sau catalog: toolbar40px, controls24px, option32px, header34px, variant53px, font Inter11.5/16; headings13px, viền1px và góc2px. Các semantic editor tokens riêng giữ dark surface #292929, raised #353535, border #424242, field đen alpha22%; Light dùng surface/field trắng và viền tương phản theo theme. Options là chip input Hủy/Xong, variants inline Hoàn tác/Đóng, một Save chung và lifecycle ở footer. Không thêm mã nội bộ trong form hoặc đổi geometry của nav. Tablet giữ cơ chế rail overlay hiện có; editor grid co về một cột khi thiếu chiều rộng.

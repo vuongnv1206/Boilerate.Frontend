@@ -1,5 +1,10 @@
 import { AuthSession } from '@core/auth/auth-session';
 import { createProductForm } from '@forms/product.form';
+import {
+  createOptionForm,
+  createOptionValueForm,
+  createSkuRow,
+} from '@forms/product-commerce.form';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { ApiError } from '@core/http/api-error';
@@ -7,7 +12,7 @@ import { ProductsService } from '@services/products.service';
 import { ProductFulfillmentKind, ProductStatus } from '@enums/product.enum';
 import { ProductFieldType } from '@enums/product-field-type.enum';
 import { ProductTypeLookup } from '@models/product-lookups.dto';
-import { ProductDto } from '@models/product.dto';
+import { ProductDto, SaveProductEditor } from '@models/product.dto';
 import { ProductIoStore } from '@stores/product-io.store';
 
 describe('ProductIoStore', () => {
@@ -105,31 +110,39 @@ describe('ProductIoStore', () => {
     changeName();
     expect(service.saveEditor).not.toHaveBeenCalled();
     store.save().subscribe();
-    expect(service.saveEditor).toHaveBeenCalledWith({
-      id: item.id,
-      version: item.version,
-      productTypeVersion: schema.version,
-      content: {
-        name: 'Ghế mới',
-        slug: 'ghe',
-        description: 'Mô tả',
-        categoryIds: ['category-1'],
-        fields: [],
-        media: item.media,
-      },
-      optionEdits: [],
-      variantEdits: [
-        {
-          variantId: 'variant-1',
-          price: 120000,
-          compareAtPrice: null,
-          isActive: true,
-          imageMediaId: null,
+    expect(service.saveEditor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: item.id,
+        version: item.version,
+        productTypeVersion: schema.version,
+        content: {
+          name: 'Ghế mới',
+          slug: 'ghe',
+          description: 'Mô tả',
+          categoryIds: ['category-1'],
+          fields: [],
+          media: item.media,
         },
-      ],
-      addedVariants: [],
-      defaultVariantSku: 'SKU-1',
-    });
+        optionEdits: [],
+        addedOptions: [],
+        variantEdits: [
+          {
+            variantId: 'variant-1',
+            price: 120000,
+            compareAtPrice: null,
+            isActive: true,
+            imageMediaId: 'image-1',
+          },
+        ],
+        addedVariants: [],
+        defaultVariantSku: 'SKU-1',
+        configuration: expect.objectContaining({
+          defaultVariantId: 'variant-1',
+          options: [],
+          variants: [expect.objectContaining({ id: 'variant-1', imageMediaId: 'image-1' })],
+        }),
+      }),
+    );
     expect(store.item()?.version).toBe('product-version-2');
     expect(store.form.pristine).toBe(true);
     expect(store.form.controls.sku.disabled).toBe(true);
@@ -244,6 +257,211 @@ describe('ProductIoStore', () => {
     expect(store.form.controls.name.value).toBe('Thay đổi mới hơn');
     expect(store.form.dirty).toBe(true);
     expect(store.item()?.version).toBe('new-version');
+  });
+
+  it('rebases option and variant IDs when newer input is kept during a pending save', () => {
+    const originalVariant = item.variants[0];
+    if (!originalVariant) throw new Error('Expected the base product variant.');
+    const redVariant = { ...originalVariant, inventoryVersion: 'stock-red-v1', quantity: 2 };
+    const variant = (
+      id: string,
+      sku: string,
+      isDefault: boolean,
+      optionSelections: ProductDto['variants'][number]['selections'],
+      inventoryVersion: string,
+    ): ProductDto['variants'][number] => ({
+      ...redVariant,
+      id,
+      sku,
+      combinationKey: id,
+      isDefault,
+      selections: optionSelections,
+      inventoryVersion,
+    });
+    const savedProduct: ProductDto = {
+      ...item,
+      version: 'product-version-2',
+      options: [
+        {
+          id: 'option-color-server',
+          code: 'OPTION_COLOR_SERVER',
+          name: 'Màu sắc',
+          sortOrder: 0,
+          values: [
+            { id: 'value-red-server', code: 'VALUE_RED_SERVER', label: 'Đỏ', sortOrder: 0 },
+            {
+              id: 'value-blue-server',
+              code: 'VALUE_BLUE_SERVER',
+              label: 'Xanh',
+              sortOrder: 1,
+            },
+          ],
+        },
+        {
+          id: 'option-size-server',
+          code: 'OPTION_SIZE_SERVER',
+          name: 'Kích cỡ',
+          sortOrder: 1,
+          values: [
+            { id: 'value-small-server', code: 'VALUE_SMALL_SERVER', label: 'S', sortOrder: 0 },
+            { id: 'value-medium-server', code: 'VALUE_MEDIUM_SERVER', label: 'M', sortOrder: 1 },
+          ],
+        },
+      ],
+      variants: [
+        {
+          ...redVariant,
+          selections: [
+            { optionId: 'option-color-server', optionValueId: 'value-red-server' },
+            { optionId: 'option-size-server', optionValueId: 'value-small-server' },
+          ],
+          inventoryVersion: 'stock-red-v2',
+        },
+        variant(
+          'variant-red-medium',
+          'SKU-RED-M',
+          false,
+          [
+            { optionId: 'option-color-server', optionValueId: 'value-red-server' },
+            { optionId: 'option-size-server', optionValueId: 'value-medium-server' },
+          ],
+          'stock-red-medium-v1',
+        ),
+        variant(
+          'variant-blue-small',
+          'SKU-BLUE-S',
+          false,
+          [
+            { optionId: 'option-color-server', optionValueId: 'value-blue-server' },
+            { optionId: 'option-size-server', optionValueId: 'value-small-server' },
+          ],
+          'stock-blue-small-v1',
+        ),
+        variant(
+          'variant-blue-medium',
+          'SKU-BLUE-M',
+          true,
+          [
+            { optionId: 'option-color-server', optionValueId: 'value-blue-server' },
+            { optionId: 'option-size-server', optionValueId: 'value-medium-server' },
+          ],
+          'stock-blue-medium-v1',
+        ),
+      ],
+    };
+    const pending = new Subject<ProductDto>();
+    service.get.mockReturnValue(of(item));
+    service.saveEditor.mockReturnValueOnce(pending).mockReturnValue(of(savedProduct));
+    store.load(item.id);
+
+    const color = createOptionForm();
+    color.controls.name.setValue('Màu sắc');
+    color.controls.values.push(createOptionValueForm('', 'Đỏ'));
+    color.controls.values.push(createOptionValueForm('', 'Xanh'));
+    const size = createOptionForm();
+    size.controls.name.setValue('Kích cỡ');
+    size.controls.values.push(createOptionValueForm('', 'S'));
+    size.controls.values.push(createOptionValueForm('', 'M'));
+    store.form.controls.options.push(color);
+    store.form.controls.options.push(size);
+    const colorCode = color.controls.code.value;
+    const sizeCode = size.controls.code.value;
+    const redCode = color.controls.values.at(0).controls.code.value;
+    const blueCode = color.controls.values.at(1).controls.code.value;
+    const smallCode = size.controls.values.at(0).controls.code.value;
+    const mediumCode = size.controls.values.at(1).controls.code.value;
+    const localSelection = (colorValue: string, sizeValue: string) => ({
+      [colorCode]: colorValue,
+      [sizeCode]: sizeValue,
+    });
+    const redRow = store.form.controls.variants.at(0);
+    redRow.controls.options.setValue(localSelection(redCode, smallCode));
+    redRow.controls.quantity.setValue(5);
+    redRow.controls.inventoryVersion.setValue('stock-red-v1');
+    const addedRows = [
+      createSkuRow('SKU-RED-M', localSelection(redCode, mediumCode), 200000),
+      createSkuRow('SKU-BLUE-S', localSelection(blueCode, smallCode), 200000),
+      createSkuRow('SKU-BLUE-M', localSelection(blueCode, mediumCode), 200000),
+    ];
+    const defaultAddedRow = addedRows[2];
+    if (!defaultAddedRow) throw new Error('Expected the default combination row.');
+    for (const row of addedRows) store.form.controls.variants.push(row);
+    store.form.controls.defaultVariantId.setValue(defaultAddedRow.controls.clientId.value);
+    store.form.controls.defaultVariantSku.setValue('SKU-BLUE-M');
+    store.form.controls.name.setValue('Tên đã gửi');
+    store.save().subscribe();
+    const firstSave = service.saveEditor.mock.calls[0]?.[0] as SaveProductEditor | undefined;
+    const submittedInventoryOperationId = firstSave?.configuration?.variants.find(
+      (variant) => variant.id === redRow.controls.id.value,
+    )?.inventoryOperationId;
+    if (!submittedInventoryOperationId)
+      throw new Error('Expected the first save to include an inventory operation ID.');
+
+    store.form.controls.name.setValue('Tên mới hơn');
+    pending.next(savedProduct);
+    pending.complete();
+
+    expect(store.form.controls.name.value).toBe('Tên mới hơn');
+    expect(color.controls.id.value).toBe('option-color-server');
+    expect(color.controls.values.at(0).controls.id.value).toBe('value-red-server');
+    expect(color.controls.values.at(1).controls.id.value).toBe('value-blue-server');
+    expect(size.controls.id.value).toBe('option-size-server');
+    expect(size.controls.values.at(0).controls.id.value).toBe('value-small-server');
+    expect(size.controls.values.at(1).controls.id.value).toBe('value-medium-server');
+    expect([color.controls.sortOrder.value, size.controls.sortOrder.value]).toEqual([0, 1]);
+    expect(color.controls.values.controls.map((value) => value.controls.sortOrder.value)).toEqual([
+      0, 1,
+    ]);
+    expect(size.controls.values.controls.map((value) => value.controls.sortOrder.value)).toEqual([
+      0, 1,
+    ]);
+    expect(redRow.controls.id.value).toBe('variant-1');
+    expect(addedRows.map((row) => row.controls.id.value)).toEqual([
+      'variant-red-medium',
+      'variant-blue-small',
+      'variant-blue-medium',
+    ]);
+    expect(store.form.controls.defaultVariantId.value).toBe('variant-blue-medium');
+    expect(defaultAddedRow.controls.inventoryVersion.value).toBe('stock-blue-medium-v1');
+    expect(redRow.controls.inventoryVersion.value).toBe('stock-red-v2');
+    expect(redRow.controls.inventoryOperationId.value).not.toBe(submittedInventoryOperationId);
+
+    redRow.controls.quantity.setValue(6);
+    store.save().subscribe();
+    const nextSave = service.saveEditor.mock.calls[1]?.[0] as SaveProductEditor | undefined;
+    if (!nextSave) throw new Error('Expected the follow-up editor save.');
+    expect(nextSave.addedOptions).toEqual([]);
+    expect(nextSave.optionEdits).toHaveLength(2);
+    expect(nextSave.optionEdits.map((option) => option.sortOrder)).toEqual([0, 1]);
+    expect(nextSave.optionEdits.map((option) => option.addValues)).toEqual([[], []]);
+    expect(nextSave.optionEdits.map((option) => option.values.map((value) => value.id))).toEqual([
+      ['value-red-server', 'value-blue-server'],
+      ['value-small-server', 'value-medium-server'],
+    ]);
+    expect(
+      nextSave.optionEdits.map((option) => option.values.map((value) => value.sortOrder)),
+    ).toEqual([
+      [0, 1],
+      [0, 1],
+    ]);
+    expect(nextSave.addedVariants).toEqual([]);
+    expect(nextSave.variantEdits.map((variant) => variant.variantId)).toEqual([
+      'variant-1',
+      'variant-red-medium',
+      'variant-blue-small',
+      'variant-blue-medium',
+    ]);
+    expect(nextSave.configuration?.defaultVariantId).toBe('variant-blue-medium');
+    const nextRedVariant = nextSave.configuration?.variants.find(
+      (variant) => variant.id === 'variant-1',
+    );
+    expect(nextRedVariant).toEqual(
+      expect.objectContaining({
+        quantity: 6,
+        inventoryVersion: 'stock-red-v2',
+      }),
+    );
+    expect(nextRedVariant?.inventoryOperationId).not.toBe(submittedInventoryOperationId);
   });
 
   it('cancels a previous detail load when navigation changes the record', () => {
@@ -376,6 +594,97 @@ describe('ProductIoStore', () => {
     expect(service.saveEditor).toHaveBeenLastCalledWith(
       expect.objectContaining({ version: 'fresh-version' }),
     );
+  });
+
+  it('rebases untouched custom fields while preserving only edited field drafts', () => {
+    const fields = [
+      {
+        id: 'field-edited',
+        code: 'EDITED',
+        label: 'Trường đã sửa',
+        dataType: ProductFieldType.Text,
+        helpText: null,
+        isRequired: false,
+        isFilterable: false,
+        isActive: true,
+        sortOrder: 0,
+        choices: [],
+      },
+      {
+        id: 'field-untouched',
+        code: 'UNTOUCHED',
+        label: 'Trường chưa sửa',
+        dataType: ProductFieldType.Text,
+        helpText: null,
+        isRequired: false,
+        isFilterable: false,
+        isActive: true,
+        sortOrder: 1,
+        choices: [],
+      },
+    ];
+    const original: ProductDto = {
+      ...item,
+      fields: fields.map((field) => ({
+        fieldDefinitionId: field.id,
+        fieldType: ProductFieldType.Text,
+        textValue: `old-${field.code.toLowerCase()}`,
+        label: field.label,
+        choiceLabel: null,
+      })),
+    };
+    service.get.mockReturnValueOnce(of(original));
+    service.productType.mockReturnValue(of({ ...schema, fields }));
+    store.load(item.id);
+    const edited = store.form.controls.fields.controls['field-edited'];
+    edited?.setValue('local draft');
+    edited?.markAsDirty();
+    changeName('Name draft');
+    service.saveEditor.mockReturnValue(
+      throwError(
+        () => new ApiError({ status: 409, kind: 'conflict', message: 'Conflict', fieldErrors: {} }),
+      ),
+    );
+    store.save().subscribe();
+
+    const canonical: ProductDto = {
+      ...original,
+      version: 'fresh-version',
+      fields: fields.map((field) => ({
+        fieldDefinitionId: field.id,
+        fieldType: ProductFieldType.Text,
+        textValue: `remote-${field.code.toLowerCase()}`,
+        label: field.label,
+        choiceLabel: null,
+      })),
+    };
+    service.get.mockReturnValueOnce(of(canonical));
+    service.productType.mockReturnValueOnce(of({ ...schema, version: 'type-version-2', fields }));
+    store.reloadCanonical();
+
+    expect(store.form.controls.fields.controls['field-edited']?.value).toBe('local draft');
+    expect(store.form.controls.fields.controls['field-untouched']?.value).toBe('remote-untouched');
+    expect(store.item()?.version).toBe('fresh-version');
+
+    const latest: ProductDto = {
+      ...canonical,
+      version: 'latest-version',
+      fields: fields.map((field) => ({
+        fieldDefinitionId: field.id,
+        fieldType: ProductFieldType.Text,
+        textValue: `latest-${field.code.toLowerCase()}`,
+        label: field.label,
+        choiceLabel: null,
+      })),
+    };
+    service.get.mockReturnValueOnce(of(latest));
+    service.productType.mockReturnValueOnce(of({ ...schema, version: 'type-version-3', fields }));
+    store.save().subscribe();
+    store.reloadCanonical();
+
+    expect(store.form.controls.fields.controls['field-edited']?.value).toBe('local draft');
+    expect(store.form.controls.fields.controls['field-untouched']?.value).toBe('latest-untouched');
+    expect(store.item()?.version).toBe('latest-version');
   });
 
   it('duplicates content and image links into a new draft with fresh SKU identities and no stock calls', () => {

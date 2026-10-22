@@ -49,6 +49,14 @@ export interface ProductVariant {
   readonly isActive: boolean;
   readonly imageMediaId: string | null;
   readonly inStock: boolean;
+  readonly trackInventory?: boolean;
+  readonly quantity?: number | null;
+  readonly inventoryVersion?: string | null;
+  readonly images?: readonly ProductMedia[];
+  readonly weight?: number | null;
+  readonly width?: number | null;
+  readonly height?: number | null;
+  readonly length?: number | null;
   readonly selections: readonly { readonly optionId: string; readonly optionValueId: string }[];
 }
 
@@ -121,6 +129,7 @@ export interface CreateProduct {
   readonly variants: readonly ProductVariantInput[];
   readonly fulfillmentKind: ProductFulfillmentKind;
   readonly defaultVariantSku?: string | null;
+  readonly configuration?: CatalogConfiguration;
 }
 
 export interface ProductOptionInput {
@@ -139,6 +148,8 @@ export interface ProductVariantInput {
 }
 
 export interface SaveProductEditor extends EditProduct {
+  readonly configuration?: CatalogConfiguration;
+  readonly addedOptions: readonly ProductOptionInput[];
   readonly optionEdits: readonly {
     readonly optionId: string;
     readonly name: string;
@@ -215,4 +226,31 @@ export interface ChangeProductStatus {
   readonly id: string;
   readonly version: string;
   readonly status: ProductStatus;
+}
+
+export interface CatalogConfiguration {
+  readonly options: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly values: readonly { readonly id: string; readonly label: string }[];
+  }[];
+  readonly variants: readonly {
+    readonly id: string;
+    readonly sku: string;
+    readonly price: number | null;
+    readonly compareAtPrice: number | null;
+    readonly selections: Readonly<Record<string, string>>;
+    readonly isActive: boolean;
+    readonly imageMediaId: string | null;
+    readonly trackInventory: boolean;
+    readonly quantity: number | null;
+    readonly inventoryVersion: string | null;
+    readonly inventoryOperationId: string;
+    readonly images: readonly ProductMedia[];
+    readonly weight: number | null;
+    readonly width: number | null;
+    readonly height: number | null;
+    readonly length: number | null;
+  }[];
+  readonly defaultVariantId: string;
 }

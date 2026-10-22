@@ -141,6 +141,7 @@ describe('ProductsService Catalog wire contract', () => {
         media: [],
       },
       optionEdits: [],
+      addedOptions: [],
       variantEdits: [],
       addedVariants: [],
       defaultVariantSku: 'SKU-1',

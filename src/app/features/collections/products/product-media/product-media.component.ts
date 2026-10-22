@@ -31,7 +31,10 @@ export class ProductMedia {
   readonly store = inject(ProductMediaStore);
   readonly previews = inject(MediaPreviewStore);
   readonly accept = PRODUCT_IMAGE_ACCEPT;
-  readonly limit = MAX_PRODUCT_MEDIA;
+  readonly heading = input('Hình ảnh');
+  readonly uploadId = input('product-media-upload');
+  readonly maximum = input(MAX_PRODUCT_MEDIA);
+  readonly limit = computed(() => this.maximum());
   readonly items = computed(() => [...this.media()].sort((a, b) => a.sortOrder - b.sortOrder));
   readonly blocked = computed(() => this.disabled() || this.store.busy());
 
@@ -48,8 +51,17 @@ export class ProductMedia {
     const files = Array.from(input.files ?? []);
     input.value = '';
     if (this.blocked()) return;
+    this.uploadFiles(files);
+  }
+
+  drop(event: DragEvent): void {
+    event.preventDefault();
+    if (!this.blocked()) this.uploadFiles(Array.from(event.dataTransfer?.files ?? []));
+  }
+
+  private uploadFiles(files: readonly File[]): void {
     let items = this.items();
-    this.store.upload(files, this.limit - this.media().length).subscribe((asset) => {
+    this.store.upload(files, this.limit() - this.media().length).subscribe((asset) => {
       items = [...items, { mediaAssetId: asset.id, sortOrder: items.length, altText: null }];
       this.mediaChange.emit(items);
     });

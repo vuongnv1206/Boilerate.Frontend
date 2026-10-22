@@ -29,7 +29,9 @@ export class ProductMediaStore {
 
   readonly busy = this.uploading.asReadonly();
   readonly error = this.failure.asReadonly();
-  readonly canUpload = computed(() => this.session.can('Product', 'Update'));
+  readonly canUpload = computed(
+    () => this.session.can('Product', 'Create') || this.session.can('Product', 'Update'),
+  );
 
   constructor() {
     effect(() => {

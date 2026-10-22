@@ -20,7 +20,7 @@ import {
 export function createChoiceForm(choice?: ProductFieldChoiceDto, index = 0) {
   return new FormGroup({
     id: new FormControl(choice?.id ?? '', { nonNullable: true }),
-    code: new FormControl(choice?.code ?? '', {
+    code: new FormControl(choice?.code || 'VALUE_' + crypto.randomUUID().replaceAll('-', ''), {
       nonNullable: true,
       validators: [
         Validators.required,
@@ -46,7 +46,7 @@ export function createChoiceForm(choice?: ProductFieldChoiceDto, index = 0) {
 export function createFieldForm(field?: ProductFieldDefinitionDto, index = 0) {
   return new FormGroup({
     id: new FormControl(field?.id ?? '', { nonNullable: true }),
-    code: new FormControl(field?.code ?? '', {
+    code: new FormControl(field?.code || 'FIELD_' + crypto.randomUUID().replaceAll('-', ''), {
       nonNullable: true,
       validators: [
         Validators.required,
@@ -85,7 +85,7 @@ export function createFieldForm(field?: ProductFieldDefinitionDto, index = 0) {
 }
 export function createProductTypeForm() {
   return new FormGroup({
-    code: new FormControl('', {
+    code: new FormControl('TYPE_' + crypto.randomUUID().replaceAll('-', ''), {
       nonNullable: true,
       validators: [
         Validators.required,
@@ -118,7 +118,7 @@ export function resetProductTypeForm(form: ProductTypeForm, type?: ProductTypeDt
   );
   form.reset(
     {
-      code: type?.code ?? '',
+      code: type?.code || 'TYPE_' + crypto.randomUUID().replaceAll('-', ''),
       name: type?.name ?? '',
       isActive: type?.isActive ?? true,
       fields: form.controls.fields.getRawValue(),
