@@ -1,0 +1,114 @@
+<div class="category-workspace" [class.category-editor-open]="editorId() !== null">
+  @if (editorId() !== null && store.canView()) {
+    <button
+      class="ui-button category-items-toggle"
+      type="button"
+      (click)="panelOpen.set(!panelOpen())"
+      [attr.aria-expanded]="panelOpen()"
+      aria-controls="category-items"
+    >
+      <ui-icon name="panel-left" [size]="14" />Danh sách danh mục
+    </button>
+    @if (panelOpen()) {
+      <button
+        class="category-items-backdrop"
+        type="button"
+        aria-label="Đóng danh sách danh mục"
+        (click)="panelOpen.set(false)"
+      ></button>
+    }
+    <aside
+      class="category-items"
+      [class.category-items-open]="panelOpen()"
+      id="category-items"
+      aria-label="Chuyển danh mục"
+      tabindex="-1"
+      [attr.role]="panelOpen() ? 'dialog' : null"
+      [attr.aria-modal]="panelOpen() ? true : null"
+      [cdkTrapFocus]="panelOpen()"
+      [cdkTrapFocusAutoCapture]="panelOpen()"
+      (keydown.escape)="panelOpen.set(false)"
+    >
+      <header>
+        <a
+          routerLink="/admin/collections/categories"
+          [queryParams]="routeQuery()"
+          (click)="panelOpen.set(false)"
+          >Danh mục <span>{{ store.items().length }}</span></a
+        >
+        @if (store.canCreate()) {
+          <a
+            class="icon-button"
+            routerLink="/admin/collections/categories/new"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            aria-label="Thêm danh mục"
+            ><ui-icon name="plus" [size]="14"
+          /></a>
+        }
+      </header>
+      <label class="category-item-search">
+        <span class="sr-only">Tìm trong danh mục</span>
+        <input
+          type="search"
+          [value]="store.query()"
+          #itemSearch
+          (input)="search(itemSearch.value)"
+          placeholder="Tìm danh mục…"
+        />
+      </label>
+      @if (store.loading()) {
+        <p class="category-items-message" role="status">Đang tải danh mục…</p>
+      }
+      @if (store.error()) {
+        <div class="category-items-message" role="alert">
+          {{ store.error() }}
+          <button class="ui-button" type="button" (click)="store.load()">Thử lại</button>
+        </div>
+      }
+      <nav class="category-items-list" aria-label="Danh mục trong bộ lọc">
+        @for (item of store.rows(); track item.id) {
+          <a
+            [routerLink]="['/admin/collections/categories', item.id]"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            [attr.aria-current]="editorId() === item.id ? 'page' : null"
+            [title]="item.name"
+            [style.padding-left.px]="10 + store.depth(item.id) * 16"
+          >
+            <ui-icon name="folder" [size]="14" />
+            <span>{{ item.name }}</span>
+            <small>{{ store.productCount(item.id) }}</small>
+          </a>
+        } @empty {
+          @if (!store.loading() && !store.error()) {
+            <p class="category-items-message">Không có danh mục trong bộ lọc.</p>
+          }
+        }
+      </nav>
+      <footer>
+        <button
+          class="icon-button"
+          type="button"
+          aria-label="Trang danh mục trước"
+          [disabled]="store.page() <= 1 || store.loading()"
+          (click)="setPage(store.page() - 1)"
+        >
+          <ui-icon name="chevron-left" [size]="14" /></button
+        ><span>{{ store.page() }} / {{ store.totalPages() }}</span
+        ><button
+          class="icon-button"
+          type="button"
+          aria-label="Trang danh mục sau"
+          [disabled]="store.page() >= store.totalPages() || store.loading()"
+          (click)="setPage(store.page() + 1)"
+        >
+          <ui-icon name="chevron-right" [size]="14" />
+        </button>
+      </footer>
+    </aside>
+  }
+  <div class="category-workspace-content" [attr.inert]="panelOpen() ? '' : null">
+    <router-outlet />
+  </div>
+</div>

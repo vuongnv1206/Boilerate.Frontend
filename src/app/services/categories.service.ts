@@ -1,7 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '@core/http/api-client';
-import { CategoryDto, CategoryProductCount, SaveCategoryRequest } from '@models/category.dto';
+import {
+  CategoryDto,
+  CategoryProductChange,
+  CategoryProductCount,
+  CategoryProductResult,
+  SaveCategoryRequest,
+} from '@models/category.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -22,6 +28,15 @@ export class CategoriesService {
   delete(id: string, version: string): Observable<boolean> {
     return this.api.delete<boolean>(`categories/${encodeURIComponent(id)}`, {
       params: { version },
+    });
+  }
+  setProducts(
+    id: string,
+    changes: readonly CategoryProductChange[],
+  ): Observable<CategoryProductResult[]> {
+    return this.api.put<CategoryProductResult[]>(`categories/${encodeURIComponent(id)}/products`, {
+      categoryId: id,
+      changes,
     });
   }
 }

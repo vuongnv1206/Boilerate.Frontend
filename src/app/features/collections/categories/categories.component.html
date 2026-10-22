@@ -61,12 +61,20 @@
           @for (item of store.rows(); track item.id) {
             <tr>
               <td>
-                <a [routerLink]="[item.id]" [queryParams]="routeQuery()"
+                <a
+                  class="category-name-link"
+                  [routerLink]="[item.id]"
+                  [queryParams]="routeQuery()"
+                  [style.padding-left.px]="10 + store.depth(item.id) * 16"
                   >{{ item.name }}<small>/{{ item.slug }}</small></a
                 >
               </td>
-              <td>{{ store.parentName(item.parentId) }}</td>
-              <td>{{ item.isActive ? 'Hoạt động' : 'Đã tắt' }}</td>
+              <td>{{ store.categoryPath(item.parentId) }}</td>
+              <td>
+                <ui-status-badge [tone]="item.isActive ? 'success' : 'muted'">
+                  {{ item.isActive ? 'Hoạt động' : 'Đã tắt' }}
+                </ui-status-badge>
+              </td>
               <td>
                 @if (store.canViewProducts()) {
                   <a

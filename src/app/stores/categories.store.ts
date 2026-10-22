@@ -21,6 +21,7 @@ import { CategoryDto } from '@models/category.dto';
 @Injectable()
 export class CategoriesStore {
   private readonly session = inject(AuthSession);
+  readonly canView = computed(() => this.session.can('Category', 'View'));
   readonly canCreate = computed(() => this.session.can('Category', 'Create'));
   readonly canDelete = computed(() => this.session.can('Category', 'Delete'));
   readonly canViewProducts = computed(() => this.session.can('Product', 'View'));
@@ -93,8 +94,50 @@ export class CategoriesStore {
   parentName(parentId: string | null): string {
     return this.items().find((item) => item.id === parentId)?.name ?? '—';
   }
+  categoryPath(id: string | null): string {
+    if (!id) return '—';
+    const byId = new Map(this.items().map((item) => [item.id, item]));
+    const names: string[] = [];
+    const visited = new Set<string>();
+    let current = byId.get(id);
+    while (current && !visited.has(current.id)) {
+      visited.add(current.id);
+      names.unshift(current.name);
+      current = current.parentId ? byId.get(current.parentId) : undefined;
+    }
+    return names.join(' / ') || '—';
+  }
+  depth(id: string): number {
+    const byId = new Map(this.items().map((item) => [item.id, item]));
+    const visited = new Set<string>([id]);
+    let current = byId.get(id);
+    let depth = 0;
+    while (current?.parentId && !visited.has(current.parentId)) {
+      visited.add(current.parentId);
+      depth++;
+      current = byId.get(current.parentId);
+    }
+    return depth;
+  }
   productCount(id: string): number {
     return this.counts().get(id) ?? 0;
+  }
+  upsert(category: CategoryDto): void {
+    this.records.update((records) => {
+      const updated = records.some((item) => item.id === category.id)
+        ? records.map((item) => (item.id === category.id ? category : item))
+        : [...records, category];
+      return updated.sort(
+        (left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id),
+      );
+    });
+    this.counts.update((counts) => {
+      if (counts.has(category.id)) return counts;
+      const updated = new Map(counts);
+      updated.set(category.id, 0);
+      return updated;
+    });
+    this.loadedState.set(true);
   }
   delete(category: CategoryDto): Observable<boolean> {
     return defer(() => {

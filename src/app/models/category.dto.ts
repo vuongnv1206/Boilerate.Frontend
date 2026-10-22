@@ -8,6 +8,8 @@ export interface CategoryDto {
   readonly parentId: string | null;
   readonly sortOrder: number;
   readonly isActive: boolean;
+  readonly createdOn?: string;
+  readonly lastModifiedOn?: string | null;
 }
 export interface SaveCategoryRequest {
   readonly id: string | null;
@@ -22,4 +24,14 @@ export interface SaveCategoryRequest {
 export interface CategoryProductCount {
   readonly id: string;
   readonly productCount: number;
+}
+export interface CategoryProductChange {
+  readonly productId: string;
+  readonly version: string;
+  readonly included: boolean;
+}
+export interface CategoryProductResult {
+  readonly productId: string;
+  readonly version: string;
+  readonly included: boolean;
 }

@@ -1,34 +1,42 @@
-<section class="editor-page" aria-labelledby="category-heading">
-  <nav class="editor-breadcrumb" aria-label="Điều hướng danh mục">
-    <a routerLink="/admin/collections/categories" queryParamsHandling="preserve"
-      ><ui-icon name="arrow-left" [size]="14" />Danh mục</a
-    ><span>/</span><span>{{ store.record()?.name || 'Danh mục mới' }}</span>
-  </nav>
-  <header class="editor-toolbar">
-    <div>
-      <h1 id="category-heading">{{ store.record()?.name || 'Thêm danh mục' }}</h1>
+<section class="editor-page category-editor-workspace" aria-labelledby="category-heading">
+  <header class="editor-toolbar category-editor-toolbar">
+    <a
+      class="category-editor-back"
+      routerLink="/admin/collections/categories"
+      queryParamsHandling="preserve"
+      aria-label="Quay lại danh sách danh mục"
+    >
+      <ui-icon name="arrow-left" [size]="14" />
+    </a>
+    <div class="category-editor-title">
+      <h1 id="category-heading">{{ store.record()?.name || 'Danh mục mới' }}</h1>
+      @if (store.record()) {
+        <span class="category-publish-state" [class.inactive]="!form.controls.isActive.value">
+          <span aria-hidden="true"></span>
+          {{ form.controls.isActive.value ? 'Đang hoạt động' : 'Đã tắt' }}
+        </span>
+      }
       <p class="editor-save-status" aria-live="polite">
         {{
           store.saving()
             ? 'Đang lưu…'
-            : store.saved() || (!!store.record() && !form.dirty)
+            : store.saved() || (!!store.record() && !form.dirty && !store.productsDirty())
               ? 'Đã lưu vào cửa hàng'
               : 'Thay đổi chỉ được ghi khi bấm Lưu'
         }}
       </p>
     </div>
     <div class="editor-actions">
-      <a class="ui-button" routerLink="/admin/collections/categories" queryParamsHandling="preserve"
-        >Quay lại</a
-      ><button
+      <button
         class="ui-button primary"
         (click)="save()"
         [disabled]="!store.canWrite() || store.loading() || store.saving() || !store.ready()"
       >
-        {{ store.saving() ? 'Đang lưu…' : 'Lưu danh mục' }}
+        {{ store.saving() ? 'Đang lưu…' : 'Lưu' }}
       </button>
     </div>
   </header>
+
   @if (store.summary().length) {
     <ui-form-error-summary [messages]="store.summary()" />
   }
@@ -43,15 +51,17 @@
   @if (store.loading()) {
     <ui-content-state kind="loading" title="Đang tải danh mục" layout="page" />
   } @else if (store.ready()) {
-    <div class="editor-body">
-      <main class="editor-main">
+    <div class="category-editor-body">
+      <main class="category-editor-main">
         <form class="editor-form" [formGroup]="form" novalidate>
           <fieldset class="save-lock" [disabled]="store.saving() || !store.canWrite()">
-            <section class="form-section">
-              <h2>Thông tin danh mục</h2>
-              <p>Quản lý tên, đường dẫn và cấu trúc danh mục của cửa hàng.</p>
+            <section
+              class="form-section category-basic-section"
+              aria-labelledby="category-basic-title"
+            >
+              <h2 id="category-basic-title">Thông tin cơ bản</h2>
               <div class="field">
-                <label for="category-name">Tên danh mục *</label>
+                <label for="category-name">Tên *</label>
                 <input
                   pInputText
                   id="category-name"
@@ -88,9 +98,13 @@
                     serverError('slug') ||
                       (invalid('slug')
                         ? 'Dùng chữ không dấu, số và dấu gạch ngang; tối đa 200 ký tự.'
-                        : 'Ví dụ: thoi-trang-nam')
+                        : 'Dùng chữ thường, số và dấu gạch ngang.')
                   }}</ui-field-message
                 >
+              </div>
+              <div class="category-url-preview" aria-live="polite">
+                <ui-icon name="link" [size]="13" />
+                <span>{{ categoryUrlPreview() }}</span>
               </div>
               <div class="field">
                 <label for="category-description">Mô tả</label>
@@ -99,41 +113,169 @@
                   id="category-description"
                   formControlName="description"
                   [maxlength]="limits.description"
-                  [attr.aria-invalid]="invalid('description')"
                   aria-describedby="category-description-help"
                 ></textarea>
-                <ui-field-message
-                  id="category-description-help"
-                  [tone]="invalid('description') ? 'error' : 'help'"
-                  >{{ serverError('description') || 'Tối đa 4.000 ký tự.' }}</ui-field-message
-                >
+                <ui-field-message id="category-description-help" tone="help">
+                  Tối đa 4.000 ký tự.
+                </ui-field-message>
               </div>
             </section>
-            <section class="form-section">
-              <h2>Cấu trúc và hiển thị</h2>
-              <div class="field-row">
-                <div class="field">
-                  <label for="category-parent">Danh mục cha</label>
-                  <select
-                    id="category-parent"
-                    formControlName="parentId"
-                    [attr.aria-invalid]="invalid('parentId')"
-                    aria-describedby="category-parent-help"
-                  >
-                    <option value="">Không có danh mục cha</option>
-                    @for (parent of store.parentOptions(); track parent.id) {
-                      <option [value]="parent.id">{{ parent.name }}</option>
-                    }
-                  </select>
-                  <ui-field-message
-                    id="category-parent-help"
-                    [tone]="invalid('parentId') ? 'error' : 'help'"
-                    >{{
-                      serverError('parentId') ||
-                        'Danh mục con không thể trở thành danh mục cha của chính nó.'
-                    }}</ui-field-message
-                  >
+
+            <section
+              class="form-section category-products-section"
+              aria-labelledby="category-products-title"
+            >
+              <div class="category-products-heading">
+                <div>
+                  <h2 id="category-products-title">Sản phẩm</h2>
+                  <p>Tìm sản phẩm để thêm vào danh mục này.</p>
                 </div>
+                @if (store.record(); as category) {
+                  @if (store.canViewProducts()) {
+                    <a
+                      class="ui-button"
+                      routerLink="/admin/collections/products"
+                      [queryParams]="{ categoryId: category.id }"
+                      >Mở danh sách</a
+                    >
+                  }
+                }
+              </div>
+
+              @if (store.productLoading()) {
+                <p class="category-product-status" role="status">Đang tải sản phẩm liên kết…</p>
+              }
+              @if (store.productError()) {
+                <p class="category-product-error" role="alert">
+                  {{ store.productError() }}
+                  <button class="ui-button" type="button" (click)="retry()">
+                    Tải lại liên kết
+                  </button>
+                </p>
+              }
+              @if (!store.canViewProducts()) {
+                <p class="category-product-status">
+                  Cần quyền Product.View để xem các sản phẩm đang liên kết.
+                </p>
+              } @else {
+                <div class="category-product-picker">
+                  <div class="category-product-chips" aria-label="Sản phẩm đã chọn">
+                    @for (product of store.selectedProducts(); track product.id) {
+                      <span class="category-product-chip">
+                        <span>{{ product.name }}</span>
+                        @if (store.canManageProducts()) {
+                          <button
+                            type="button"
+                            [attr.aria-label]="'Bỏ sản phẩm ' + product.name + ' khỏi danh mục'"
+                            [disabled]="store.saving()"
+                            (click)="store.removeProduct(product.id)"
+                          >
+                            <ui-icon name="close" [size]="12" />
+                          </button>
+                        }
+                      </span>
+                    } @empty {
+                      @if (!store.productLoading()) {
+                        <span class="category-product-empty">Chưa có sản phẩm được chọn</span>
+                      }
+                    }
+                    @if (store.canManageProducts()) {
+                      <label class="category-product-search">
+                        <span class="sr-only">Tìm sản phẩm để thêm</span>
+                        <input
+                          #productSearch
+                          type="search"
+                          [value]="store.productQuery()"
+                          placeholder="Tìm sản phẩm…"
+                          aria-label="Tìm sản phẩm để thêm vào danh mục"
+                          (input)="searchProducts(productSearch.value)"
+                          (focus)="store.searchProducts(productSearch.value)"
+                        />
+                        <ui-icon name="search" [size]="14" />
+                      </label>
+                    }
+                  </div>
+                  @if (store.productSearchLoading()) {
+                    <p class="category-product-status" role="status">Đang tìm sản phẩm…</p>
+                  }
+                  @if (store.productSearchError()) {
+                    <p class="category-product-error" role="alert">
+                      {{ store.productSearchError() }}
+                    </p>
+                  }
+                  @if (
+                    store.productQuery().trim() &&
+                    !store.productSearchLoading() &&
+                    !store.productSearchError() &&
+                    !store.availableProducts().length
+                  ) {
+                    <p class="category-product-status" role="status">
+                      Không tìm thấy sản phẩm phù hợp.
+                    </p>
+                  }
+                  @if (store.availableProducts().length) {
+                    <div
+                      class="category-product-results"
+                      role="listbox"
+                      aria-label="Kết quả sản phẩm"
+                    >
+                      @for (product of store.availableProducts(); track product.id) {
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected="false"
+                          [disabled]="store.saving()"
+                          (click)="store.addProduct(product)"
+                        >
+                          <span>{{ product.name }}</span>
+                          <small>{{ product.slug }}</small>
+                        </button>
+                      }
+                    </div>
+                  }
+                  @if (store.productsDirty()) {
+                    <p class="category-product-status" role="status">
+                      Liên kết sản phẩm sẽ được cập nhật khi bấm Lưu.
+                    </p>
+                  }
+                </div>
+                @if (!store.canManageProducts()) {
+                  <p class="category-product-status">
+                    Cần quyền Product.Update để thay đổi liên kết sản phẩm.
+                  </p>
+                }
+              }
+            </section>
+
+            <section
+              class="form-section category-item-details"
+              aria-labelledby="category-details-title"
+            >
+              <h2 id="category-details-title">Chi tiết danh mục</h2>
+              <div class="field">
+                <label for="category-parent">Danh mục cha</label>
+                <select
+                  id="category-parent"
+                  formControlName="parentId"
+                  [attr.aria-invalid]="invalid('parentId')"
+                  aria-describedby="category-parent-help"
+                >
+                  <option value="">Không có danh mục cha</option>
+                  @for (parent of store.parentOptions(); track parent.id) {
+                    <option [value]="parent.id">{{ store.categoryPath(parent.id) }}</option>
+                  }
+                </select>
+                <ui-field-message
+                  id="category-parent-help"
+                  [tone]="invalid('parentId') ? 'error' : 'help'"
+                >
+                  {{
+                    serverError('parentId') ||
+                      'Danh mục con không thể trở thành danh mục cha của chính nó.'
+                  }}
+                </ui-field-message>
+              </div>
+              <div class="category-detail-row">
                 <div class="field">
                   <label for="category-order">Thứ tự</label>
                   <input
@@ -149,33 +291,115 @@
                   <ui-field-message
                     id="category-order-help"
                     [tone]="invalid('sortOrder') ? 'error' : 'help'"
-                    >{{ serverError('sortOrder') || 'Số nguyên từ 0 trở lên.' }}</ui-field-message
                   >
+                    {{ serverError('sortOrder') || 'Số nguyên từ 0 trở lên.' }}
+                  </ui-field-message>
                 </div>
+                <label class="category-active-field" for="category-active">
+                  <input id="category-active" type="checkbox" formControlName="isActive" />
+                  <span>Đang hoạt động</span>
+                </label>
               </div>
-              <label class="check-field" for="category-active"
-                ><input id="category-active" type="checkbox" formControlName="isActive" />Đang hoạt
-                động</label
-              >
+              @if (store.record(); as category) {
+                <div class="category-item-id">
+                  <span>ID danh mục</span>
+                  <code>{{ category.id }}</code>
+                </div>
+              }
             </section>
+
+            @if (store.record(); as category) {
+              <section
+                class="form-section category-activity"
+                aria-labelledby="category-activity-title"
+              >
+                <h2 id="category-activity-title">Hoạt động</h2>
+                <p>
+                  <strong>Cập nhật lần cuối</strong
+                  ><span>{{ activityDate(category.lastModifiedOn || category.createdOn) }}</span>
+                </p>
+                <p>
+                  <strong>Tạo lúc</strong><span>{{ activityDate(category.createdOn) }}</span>
+                </p>
+              </section>
+            }
           </fieldset>
         </form>
+
+        @if (store.record(); as category) {
+          <footer class="category-item-actions" aria-label="Thao tác danh mục">
+            @if (category.isActive) {
+              <button
+                class="ui-button"
+                [disabled]="!store.canWrite() || store.saving()"
+                (click)="archive()"
+              >
+                <ui-icon name="archive" [size]="14" />Tắt danh mục
+              </button>
+            }
+            @if (!category.isActive) {
+              <button
+                class="ui-button"
+                [disabled]="!store.canWrite() || store.saving()"
+                (click)="form.controls.isActive.setValue(true); save()"
+              >
+                Kích hoạt lại
+              </button>
+            }
+            <button
+              class="ui-button danger"
+              [disabled]="
+                !categories.canDelete() ||
+                categories.deleting() ||
+                store.saving() ||
+                form.dirty ||
+                store.productsDirty()
+              "
+              (click)="deleteVisible.set(true)"
+            >
+              <ui-icon name="trash" [size]="14" />Xóa
+            </button>
+            <button
+              class="ui-button"
+              [disabled]="
+                !categories.canCreate() || store.saving() || form.dirty || store.productsDirty()
+              "
+              (click)="duplicate()"
+            >
+              <ui-icon name="copy" [size]="14" />Nhân bản
+            </button>
+          </footer>
+        }
       </main>
-      <aside class="editor-inspector">
-        <h2>Thông tin bản ghi</h2>
-        <dl>
-          <dt>Trạng thái</dt>
-          <dd>{{ form.controls.isActive.value ? 'Hoạt động' : 'Đã tắt' }}</dd>
-          <dt>ID</dt>
-          <dd>{{ store.record()?.id || 'Chưa tạo' }}</dd>
-        </dl>
-        <p>Danh mục cha và danh mục con được máy chủ kiểm tra để tránh vòng lặp.</p>
-      </aside>
     </div>
   }
 </section>
+
 <ui-confirm-dialog
   title="Rời khỏi màn hình?"
   [visible]="confirmation.visible()"
   (answered)="confirmation.answer($event)"
 />
+
+<p-dialog
+  header="Xóa danh mục?"
+  [visible]="deleteVisible()"
+  (visibleChange)="!$event && deleteVisible.set(false)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '420px', maxWidth: '92vw' }"
+>
+  <p>Danh mục chỉ xóa được khi không còn sản phẩm hoặc danh mục con liên kết.</p>
+  @if (categories.error()) {
+    <p class="category-product-error" role="alert">{{ categories.error() }}</p>
+  }
+  <ng-template #footer>
+    <button class="ui-button" [disabled]="categories.deleting()" (click)="deleteVisible.set(false)">
+      Hủy
+    </button>
+    <button class="ui-button danger" [disabled]="categories.deleting()" (click)="delete()">
+      {{ categories.deleting() ? 'Đang xóa…' : 'Xóa danh mục' }}
+    </button>
+  </ng-template>
+</p-dialog>

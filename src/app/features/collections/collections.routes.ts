@@ -40,7 +40,9 @@ export const COLLECTIONS_ROUTES: Routes = [
   },
   {
     path: 'categories',
-    providers: [CategoriesService],
+    providers: [CategoriesService, ProductsService],
+    loadComponent: () =>
+      import('./categories/categories-workspace.component').then((m) => m.CategoriesWorkspace),
     children: [
       {
         path: '',

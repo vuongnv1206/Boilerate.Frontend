@@ -2,6 +2,10 @@
 
 Chỉ ghi các khả năng đã triển khai theo mốc. Chi tiết sửa code tra trong Git; cách ghi tài liệu theo [quy tắc docs](../README.md#quy-tắc-duy-trì-docs).
 
+## 22/10/2026 — Editor danh mục theo Webflow
+
+Editor có Basic info, chọn sản phẩm bằng chip, Item details thêm Parent category, Activity và thao tác cuối trang; API lưu membership theo Product.Version và rollback batch khi conflict. Xem [Collections](../features/live-admin-collections.md). Production build đạt; API HTTP/browser E2E chưa chạy.
+
 ## 21/10/2026 — Vận hành shipping và hậu mãi trong Admin Orders
 
 Chi tiết đơn hiển thị shipment, ledger hoàn tiền và hàng nhận trả về. Nhân viên có quyền có thể giao từng phần, xác nhận shipment, ghi khoản hoàn đã chuyển và nhận lại hàng theo số đã xuất. Các thao tác dùng version/idempotency; COD cần xác nhận thu riêng. Xem [Admin Orders](../features/admin-orders.md).

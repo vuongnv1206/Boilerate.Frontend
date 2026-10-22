@@ -19,15 +19,25 @@ Tiêu chí: giữ ID biến thể/tổ hợp không đổi, SKU chỉ là nội 
 | Màn dưới `/admin/collections` | Khả năng                                                                                                                                                      |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `products`                    | Tìm kiếm, phân trang, xem/tạo/sửa sản phẩm; tạo options/SKU, sửa giá/trạng thái/mặc định SKU, nhãn/thứ tự lựa chọn; điều chỉnh tồn vật lý và nhập nội dung số |
-| `categories`                  | Danh sách, tạo/sửa và xóa kèm version                                                                                                                         |
+| `categories`                  | Danh sách phân cấp, tìm kiếm, cùng ngữ cảnh rail/editor, tạo/sửa/xóa kèm version; xem sản phẩm được liên kết qua bộ lọc danh mục                              |
 | `product-types`               | Danh sách, xem/tạo/sửa loại sản phẩm và schema thuộc tính; chưa có thao tác xóa                                                                               |
 
 Mỗi phần có route `new` và `:id` cho màn thêm/sửa. Lưu chỉ báo thành công sau phản hồi server; lỗi/409 giữ nội dung đang nhập. Dirty guard xác nhận trước khi rời màn. Gallery là khu thử control riêng, không cung cấp dữ liệu cho Collections.
 
+### Danh mục trong workspace
+
+Editor theo ảnh Webflow có Basic info (Name, Slug, preview path, Description), Product search với các chip thêm/bỏ, Item details (Parent category, thứ tự, trạng thái, ID), Activity và thao tác cuối trang. Parent là trường riêng của shop. Sitemap indexing/Published/Queued to publish không có trong API hiện tại nên không hiện.
+
+Danh sách/rail giữ phân cấp, tìm kiếm và số sản phẩm. Product membership được tìm bằng `ProductsService.search`; editor hydrate toàn bộ sản phẩm đã liên kết để giữ chip qua trang kết quả. Lưu danh mục trước, sau đó gửi delta tới `PUT /api/categories/{id}/products`; mỗi delta mang Product.Version, giữ nguyên các Category khác, giới hạn1.000 delta/lần và rollback cả batch nếu có conflict. Category dùng `Category.Update/Create`; search yêu cầu `Product.View`, gán/bỏ cần `Product.Update`. Nếu category-save thành công nhưng batch liên kết thất bại, trường danh mục đã lưu, chip chưa lưu vẫn ở form và lỗi yêu cầu đối chiếu.
+
+Archive/tắt đặt `IsActive=false`; xóa dùng Category.Delete và BE từ chối nếu còn product/child; duplicate sinh slug mới và sao chép các link đang tải. Activity hiển thị thời điểm tạo/cập nhật từ audit fields. Product permission không thay Category permission.
+
+Source workspace/editor đã có và production build đạt với Node24.19.0; BE Host build riêng thành công. Chưa chạy API HTTP/browser E2E hoặc nghiệm thu runtime của endpoint mới. Build solution ban đầu vướng DLL bị tiến trình Boilerate.Host đang chạy khóa; tiến trình không bị dừng, Host build được xác nhận vào thư mục temp riêng.
+
 ## Hợp đồng API mà FE sử dụng
 
 - [ProductsService](../../src/app/services/products.service.ts): projection search/filter/sort, product content/status, lookup Catalog và editor transaction `PUT products/{id}/editor`; legacy variant/option/default endpoints vẫn giữ; `GET inventory?productId=...`, adjustment/ledger; digital inventory theo variant cùng import/shared-content/availability/reveal. Media upload/preview dùng [MediaService](../../src/app/services/media.service.ts). Wire contract lấy từ source BE và [Commerce API](../../../Boilerate/docs/backend/commerce-api.md).
-- [CategoriesService](../../src/app/services/categories.service.ts): `GET/POST categories`, `PUT/DELETE categories/{id}`; DELETE gửi version trong query.
+- [CategoriesService](../../src/app/services/categories.service.ts): `GET/POST categories`, `PUT/DELETE categories/{id}` và `PUT categories/{id}/products` với versioned product-membership delta; DELETE gửi category version trong query.
 - [ProductTypesService](../../src/app/services/product-types.service.ts): `GET/POST product-types`, `GET/PUT product-types/{id}`.
 - Catalog pagination dùng `items/total/pageNumber/pageSize`, trang bắt đầu từ 1. Product/type version và các giá trị enum/field phải theo DTO của service; không dùng DTO demo hoặc pagination Identity để thay thế.
 - Đăng nhập và refresh theo [hợp đồng browser session](persistent-session.md). Interceptor chỉ gắn bearer trong API base, retry tối đa một lần sau refresh nếu vẫn cùng user; không tự retry mutation sau lỗi mạng hoặc 409.
