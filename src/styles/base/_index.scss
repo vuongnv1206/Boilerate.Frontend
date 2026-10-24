@@ -9,7 +9,7 @@ body {
 }
 body {
   font-family: var(--font-ui);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--text-1);
   -webkit-font-smoothing: antialiased;
@@ -45,7 +45,11 @@ textarea,
 select {
   outline-offset: 3px;
 }
-:focus-visible {
+:focus-visible:not(.p-button):not(.p-inputtext):not(.p-textarea):not(.p-select):not(
+    .p-multiselect
+  ):not(.p-datepicker-input):not(.p-checkbox-input):not(.p-toggleswitch-input):not(
+    .p-radiobutton-input
+  ) {
   outline: 2px solid var(--focus-ring);
 }
 button,
@@ -77,7 +81,7 @@ svg {
 img {
   max-width: 100%;
 }
-input[type='checkbox'] {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input) {
   accent-color: var(--accent);
   width: 14px;
   height: 14px;

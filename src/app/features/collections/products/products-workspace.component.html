@@ -1,7 +1,10 @@
 <div class="catalog-workspace" [class.catalog-editor-open]="editorId() !== null">
   @if (editorId() !== null && store.canView()) {
     <button
-      class="ui-button catalog-items-toggle"
+      pButton
+      severity="secondary"
+      outlined
+      class="catalog-items-toggle"
       type="button"
       (click)="panelOpen.set(!panelOpen())"
       [attr.aria-expanded]="panelOpen()"
@@ -11,6 +14,8 @@
     </button>
     @if (panelOpen()) {
       <button
+        pButton
+        text
         class="catalog-items-backdrop"
         type="button"
         aria-label="Đóng danh sách sản phẩm"
@@ -38,7 +43,11 @@
         >
         @if (store.canCreate()) {
           <a
-            class="icon-button"
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
             routerLink="/admin/collections/products/new"
             [queryParams]="routeQuery()"
             (click)="panelOpen.set(false)"
@@ -50,6 +59,7 @@
       <label class="catalog-item-search"
         ><span class="sr-only">Tìm trong danh sách sản phẩm</span
         ><input
+          pInputText
           type="search"
           [value]="store.query()"
           #itemSearch
@@ -62,7 +72,9 @@
       @if (store.error()) {
         <div class="catalog-items-message" role="alert">
           {{ store.error()
-          }}<button class="ui-button" type="button" (click)="store.load()">Thử lại</button>
+          }}<button pButton severity="secondary" outlined type="button" (click)="store.load()">
+            Thử lại
+          </button>
         </div>
       }
       <nav class="catalog-items-list" aria-label="Sản phẩm trong bộ lọc">
@@ -90,7 +102,11 @@
       </nav>
       <footer>
         <button
-          class="icon-button"
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
           type="button"
           aria-label="Trang sản phẩm trước"
           [disabled]="store.page().pageNumber <= 1 || store.loading()"
@@ -99,7 +115,11 @@
           <ui-icon name="chevron-left" [size]="14" /></button
         ><span>{{ store.page().pageNumber }} / {{ store.pageCount() }}</span
         ><button
-          class="icon-button"
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
           type="button"
           aria-label="Trang sản phẩm sau"
           [disabled]="store.page().pageNumber >= store.pageCount() || store.loading()"

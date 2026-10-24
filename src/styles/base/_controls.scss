@@ -92,28 +92,32 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-1);
   font-weight: 500;
 }
 .field-help {
   color: var(--text-3);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
   margin: 0;
 }
 .field-error {
   color: var(--danger);
-  font-size: 11px;
+  font-size: 12px;
   margin: 0;
 }
 
 :where(
-  input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(
-      [type='color']
-    ):not([type='file']):not([type='submit']):not([type='button']):not([type='reset']),
-  textarea,
-  select:not([multiple])
+  input:not([pInputText]):not(.p-inputtext):not(.p-datepicker-input):not(.p-checkbox-input):not(
+      .p-toggleswitch-input
+    ):not(.p-radiobutton-input):not([type='hidden']):not([type='checkbox']):not([type='radio']):not(
+      [type='range']
+    ):not([type='color']):not([type='file']):not([type='submit']):not([type='button']):not(
+      [type='reset']
+    ),
+  textarea:not([pTextarea]):not(.p-textarea),
+  select:not([multiple]):not([pSelect])
 ) {
   min-height: var(--control-height);
   padding: 5px 9px;
@@ -129,49 +133,65 @@
     box-shadow var(--motion-fast) var(--ease-out);
 }
 :where(
-    input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(
-        [type='color']
-      ):not([type='file']):not([type='submit']):not([type='button']):not([type='reset']),
-    textarea,
-    select:not([multiple])
+    input:not([pInputText]):not(.p-inputtext):not(.p-datepicker-input):not(.p-checkbox-input):not(
+        .p-toggleswitch-input
+      ):not(.p-radiobutton-input):not([type='hidden']):not([type='checkbox']):not(
+        [type='radio']
+      ):not([type='range']):not([type='color']):not([type='file']):not([type='submit']):not(
+        [type='button']
+      ):not([type='reset']),
+    textarea:not([pTextarea]):not(.p-textarea),
+    select:not([multiple]):not([pSelect])
   ):hover:not(:disabled):not([readonly]) {
   border-color: var(--text-3);
 }
 :where(
-  input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(
-      [type='color']
-    ):not([type='file']):not([type='submit']):not([type='button']):not([type='reset']),
-  textarea,
-  select:not([multiple])
+  input:not([pInputText]):not(.p-inputtext):not(.p-datepicker-input):not(.p-checkbox-input):not(
+      .p-toggleswitch-input
+    ):not(.p-radiobutton-input):not([type='hidden']):not([type='checkbox']):not([type='radio']):not(
+      [type='range']
+    ):not([type='color']):not([type='file']):not([type='submit']):not([type='button']):not(
+      [type='reset']
+    ),
+  textarea:not([pTextarea]):not(.p-textarea),
+  select:not([multiple]):not([pSelect])
 ):focus-visible {
   border-color: var(--accent);
 }
 :where(
-  input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(
-      [type='color']
-    ):not([type='file']):not([type='submit']):not([type='button']):not([type='reset']),
-  textarea,
-  select:not([multiple])
+  input:not([pInputText]):not(.p-inputtext):not(.p-datepicker-input):not(.p-checkbox-input):not(
+      .p-toggleswitch-input
+    ):not(.p-radiobutton-input):not([type='hidden']):not([type='checkbox']):not([type='radio']):not(
+      [type='range']
+    ):not([type='color']):not([type='file']):not([type='submit']):not([type='button']):not(
+      [type='reset']
+    ),
+  textarea:not([pTextarea]):not(.p-textarea),
+  select:not([multiple]):not([pSelect])
 ):disabled {
   background-color: var(--surface-2);
   color: var(--text-3);
   cursor: not-allowed;
 }
 :where(
-  input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not(
-      [type='color']
-    ):not([type='file']):not([type='submit']):not([type='button']):not([type='reset'])
+  input:not([pInputText]):not(.p-inputtext):not(.p-datepicker-input):not(.p-checkbox-input):not(
+      .p-toggleswitch-input
+    ):not(.p-radiobutton-input):not([type='hidden']):not([type='checkbox']):not([type='radio']):not(
+      [type='range']
+    ):not([type='color']):not([type='file']):not([type='submit']):not([type='button']):not(
+      [type='reset']
+    )
 ):read-only {
   background-color: var(--surface-1);
 }
 
-:where(textarea) {
+:where(textarea:not([pTextarea]):not(.p-textarea)) {
   min-height: 76px;
   padding: 8px 9px;
   resize: vertical;
 }
 
-:where(select:not([multiple])) {
+:where(select:not([multiple]):not([pSelect])) {
   min-height: var(--control-height);
   padding: 5px 30px 5px 9px;
   appearance: none;
@@ -184,13 +204,13 @@
   background-repeat: no-repeat;
   background-size: 5px 5px;
 }
-select option {
+select:not([pSelect]) option {
   background: var(--surface-0);
   color: var(--text-1);
 }
 
-input[type='checkbox'],
-input[type='radio'] {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input),
+input[type='radio']:not(.p-radiobutton-input) {
   appearance: none;
   display: inline-grid;
   place-content: center;
@@ -206,13 +226,13 @@ input[type='radio'] {
     border-color var(--motion-fast) var(--ease-out),
     box-shadow var(--motion-fast) var(--ease-out);
 }
-input[type='checkbox'] {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input) {
   border-radius: 3px;
 }
-input[type='radio'] {
+input[type='radio']:not(.p-radiobutton-input) {
   border-radius: 50%;
 }
-input[type='checkbox']::before {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input)::before {
   content: '';
   width: 7px;
   height: 4px;
@@ -221,7 +241,7 @@ input[type='checkbox']::before {
   transform: rotate(-45deg) scale(0);
   transition: transform var(--motion-fast) var(--ease-out);
 }
-input[type='radio']::before {
+input[type='radio']:not(.p-radiobutton-input)::before {
   content: '';
   width: 7px;
   height: 7px;
@@ -230,43 +250,45 @@ input[type='radio']::before {
   transform: scale(0);
   transition: transform var(--motion-fast) var(--ease-out);
 }
-input[type='checkbox']:hover:not(:disabled),
-input[type='radio']:hover:not(:disabled) {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input):hover:not(:disabled),
+input[type='radio']:not(.p-radiobutton-input):hover:not(:disabled) {
   border-color: var(--text-3);
 }
-input[type='checkbox']:checked,
-input[type='radio']:checked {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input):checked,
+input[type='radio']:not(.p-radiobutton-input):checked {
   border-color: var(--accent);
   background: var(--accent);
 }
-input[type='checkbox']:checked:hover:not(:disabled),
-input[type='radio']:checked:hover:not(:disabled) {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input):checked:hover:not(
+    :disabled
+  ),
+input[type='radio']:not(.p-radiobutton-input):checked:hover:not(:disabled) {
   border-color: var(--accent-hover);
   background: var(--accent-hover);
 }
-input[type='checkbox']:checked::before,
-input[type='radio']:checked::before {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input):checked::before,
+input[type='radio']:not(.p-radiobutton-input):checked::before {
   transform: rotate(-45deg) scale(1);
 }
-input[type='checkbox']:indeterminate {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input):indeterminate {
   border-color: var(--accent);
   background: var(--accent);
 }
-input[type='checkbox']:indeterminate::before {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input):indeterminate::before {
   width: 7px;
   height: 0;
   border: 0;
   border-top: 1.5px solid var(--on-accent);
   transform: none;
 }
-input[type='checkbox']:disabled,
-input[type='radio']:disabled {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input):disabled,
+input[type='radio']:not(.p-radiobutton-input):disabled {
   border-color: var(--border-strong);
   background: var(--surface-2);
   cursor: not-allowed;
 }
-input[type='checkbox']:checked:disabled,
-input[type='radio']:checked:disabled {
+input[type='checkbox']:not(.p-checkbox-input):not(.p-toggleswitch-input):checked:disabled,
+input[type='radio']:not(.p-radiobutton-input):checked:disabled {
   border-color: var(--border-strong);
 }
 
@@ -278,11 +300,11 @@ input[type='radio']:checked:disabled {
     min-width: 34px;
     min-height: 34px;
   }
-  input,
-  textarea,
-  select,
-  .p-inputtext,
-  .p-textarea {
+  input:not(.p-inputtext):not(.p-datepicker-input):not(.p-checkbox-input):not(
+      .p-toggleswitch-input
+    ),
+  textarea:not(.p-textarea),
+  select:not(.p-select) {
     font-size: 16px;
   }
 }

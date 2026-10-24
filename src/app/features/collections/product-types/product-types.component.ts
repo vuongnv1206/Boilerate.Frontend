@@ -1,3 +1,4 @@
+import { ButtonDirective } from 'primeng/button';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -5,6 +6,9 @@ import { listQueryParams, readListQuery } from '@utils/list-query.util';
 import { ListQuery } from '@models/list-query.model';
 import { ContentState } from '@shared/ui/content-state/content-state.component';
 import { Icon } from '@shared/ui/icon/icon.component';
+import { StatusBadge } from '@shared/ui/status-badge/status-badge.component';
+import { InputText } from 'primeng/inputtext';
+import { Table } from 'primeng/table';
 import { ProductTypesStore } from '@stores/product-types.store';
 import { PRODUCT_TYPE_SEARCH_DELAY_MS } from '@constants/product-type.constants';
 import { Subject, debounceTime } from 'rxjs';
@@ -12,7 +16,7 @@ import { Subject, debounceTime } from 'rxjs';
 @Component({
   selector: 'app-product-types',
   host: { class: 'collection-screen' },
-  imports: [RouterLink, ContentState, Icon],
+  imports: [RouterLink, ContentState, Icon, StatusBadge, InputText, Table, ButtonDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './product-types.component.html',
 })

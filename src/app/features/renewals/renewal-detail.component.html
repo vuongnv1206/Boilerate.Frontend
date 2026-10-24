@@ -12,16 +12,22 @@
     title="Không thể tải yêu cầu gia hạn"
     [message]="store.detailError()"
   >
-    <button class="ui-button" type="button" (click)="activeId && store.loadDetail(activeId)">
+    <button
+      pButton
+      severity="secondary"
+      outlined
+      type="button"
+      (click)="activeId && store.loadDetail(activeId)"
+    >
       Tải lại
     </button>
   </ui-content-state>
 } @else if (store.detail(); as detail) {
   @if (detail.renewal.id === activeId) {
-    <section class="renewal-detail-page" aria-labelledby="renewal-detail-title">
-      <header class="renewal-detail-header">
+    <section class="renewal-detail-page admin-record-page" aria-labelledby="renewal-detail-title">
+      <header class="renewal-detail-header admin-record-header">
         <div>
-          <a class="order-back-link" [routerLink]="['/admin/renewals']"
+          <a class="order-back-link" [routerLink]="['/admin/renewals']" [queryParams]="routeQuery()"
             ><ui-icon name="arrow-left" [size]="14" /> Quay lại gia hạn</a
           >
           <div class="renewal-detail-title-row">
@@ -29,20 +35,25 @@
               <span class="eyebrow">Yêu cầu gia hạn</span>
               <h1 id="renewal-detail-title">{{ detail.renewal.name }}</h1>
             </div>
-            <span class="renewal-status" [attr.data-status]="detail.renewal.status">{{
-              statusLabels[detail.renewal.status]
-            }}</span>
+            <ui-status-badge [tone]="statusTone(detail.renewal.status)">
+              {{ statusLabels[detail.renewal.status] }}
+            </ui-status-badge>
           </div>
           <p>
             {{ detail.renewal.sku
             }}{{
               detail.renewal.optionDescription ? ' · ' + detail.renewal.optionDescription : ''
             }}
-            · Số lượng {{ detail.renewal.quantity }} · Version {{ detail.renewal.version }}
+            · Số lượng {{ detail.renewal.quantity }} · Phiên bản dữ liệu
+            {{ detail.renewal.version }}
           </p>
         </div>
         @if (store.canViewOrders()) {
-          <a class="ui-button" [routerLink]="['/admin/orders', detail.renewal.orderId]"
+          <a
+            pButton
+            severity="secondary"
+            outlined
+            [routerLink]="['/admin/orders', detail.renewal.orderId]"
             >Mở đơn hàng</a
           >
         }
@@ -54,7 +65,9 @@
           <span>{{ store.commandError() }}</span>
           @if (store.commandFailure() === 'uncertain' && pendingCommand()) {
             <button
-              class="ui-button"
+              pButton
+              severity="secondary"
+              outlined
               type="button"
               [disabled]="store.commandBusy()"
               (click)="retry()"
@@ -66,12 +79,12 @@
       }
       @if (store.detailError()) {
         <p class="order-form-error" role="alert">{{ store.detailError() }}</p>
-        <button class="ui-button" type="button" (click)="store.reloadDetail()">
+        <button pButton severity="secondary" outlined type="button" (click)="store.reloadDetail()">
           Tải lại dữ liệu
         </button>
       }
 
-      <div class="renewal-workspace-grid">
+      <div class="renewal-workspace-grid admin-record-body">
         <main class="renewal-main-column">
           <section class="order-card renewal-target-card">
             <div class="order-card-heading">
@@ -88,11 +101,21 @@
               @if (store.revealedTarget(); as target) {
                 <div class="renewal-revealed-value">
                   <code>{{ target.content }}</code
-                  ><button class="ui-button" type="button" (click)="hideTarget()">Ẩn lại</button>
+                  ><button
+                    pButton
+                    severity="secondary"
+                    outlined
+                    type="button"
+                    (click)="hideTarget()"
+                  >
+                    Ẩn lại
+                  </button>
                 </div>
               } @else {
                 <button
-                  class="ui-button"
+                  pButton
+                  severity="secondary"
+                  outlined
                   type="button"
                   [disabled]="store.commandBusy()"
                   (click)="revealTarget()"
@@ -110,15 +133,15 @@
                 <h2>Quy trình xử lý</h2>
               </div>
               @if (detail.claimUntilUtc) {
-                <span class="order-readonly-note"
-                  >Lease đến {{ detail.claimUntilUtc | date: 'dd/MM/yyyy HH:mm' }}</span
-                >
+                <span class="order-readonly-note">
+                  Được giữ xử lý đến {{ detail.claimUntilUtc | date: 'dd/MM/yyyy HH:mm' }}
+                </span>
               }
             </div>
             @if (detail.renewal.status === status.AwaitingTarget) {
               <p class="order-muted">
-                Yêu cầu sẽ sẵn sàng khi khách cung cấp định danh tài khoản đích trong trang đơn hàng
-                của họ.
+                Khi khách nhập tài khoản đích trong trang đơn hàng, yêu cầu sẽ chuyển sang trạng
+                thái chờ nhân viên nhận xử lý.
               </p>
             }
             @if (
@@ -127,7 +150,8 @@
             ) {
               @if (store.canProcess()) {
                 <button
-                  class="ui-button primary"
+                  pButton
+                  severity="primary"
                   type="button"
                   [disabled]="
                     store.commandBusy() || pendingCommand() !== null || !store.claimAvailable()
@@ -146,7 +170,8 @@
               @if (detail.claimToken && store.canProcess()) {
                 <div class="renewal-action-buttons">
                   <button
-                    class="ui-button primary"
+                    pButton
+                    severity="primary"
                     type="button"
                     [disabled]="
                       store.commandBusy() ||
@@ -158,7 +183,9 @@
                     Bắt đầu gia hạn
                   </button>
                   <button
-                    class="ui-button"
+                    pButton
+                    severity="secondary"
+                    outlined
                     type="button"
                     [disabled]="
                       store.commandBusy() ||
@@ -171,8 +198,8 @@
                   </button>
                 </div>
                 <p class="order-muted">
-                  Bắt đầu sẽ ghi nhận một lần xử lý cần xác minh. Hãy chỉ thao tác trên dịch vụ bên
-                  ngoài sau khi server xác nhận bước này.
+                  Bắt đầu tạo một lần gia hạn cần xác minh. Chỉ thao tác trên dịch vụ bên ngoài sau
+                  khi hệ thống xác nhận bước này.
                 </p>
               } @else if (detail.claimedBy) {
                 <p class="order-muted">Đang được một nhân viên khác nhận xử lý.</p>
@@ -182,29 +209,43 @@
               @if (store.canVerify()) {
                 <form class="renewal-verify-form" (submit)="$event.preventDefault(); verify()">
                   <h3>Xác minh lần xử lý</h3>
-                  <label class="renewal-checkbox"
-                    ><input
-                      type="checkbox"
+                  <label class="renewal-checkbox" for="renewal-applied">
+                    <p-checkbox
+                      inputId="renewal-applied"
+                      [binary]="true"
                       [ngModel]="applied()"
                       (ngModelChange)="applied.set($event); dirty.set(true)"
+                      [ngModelOptions]="{ standalone: true }"
                       name="applied"
                       [disabled]="pendingCommand() !== null"
                     />
                     Gia hạn đã được áp dụng</label
                   >
                   @if (applied()) {
-                    <label for="renewal-expiry">Thời hạn mới còn hiệu lực</label>
-                    <input
-                      id="renewal-expiry"
-                      type="datetime-local"
-                      [ngModel]="newExpiresAt()"
-                      (ngModelChange)="newExpiresAt.set($event); dirty.set(true)"
-                      name="newExpiresAt"
-                      [disabled]="pendingCommand() !== null"
-                    />
+                    <ui-form-field
+                      forId="renewal-expiry"
+                      label="Thời hạn mới còn hiệu lực"
+                      [required]="true"
+                    >
+                      <p-datepicker
+                        inputId="renewal-expiry"
+                        dateFormat="dd/mm/yy"
+                        [ngModel]="expiryDateValue()"
+                        (ngModelChange)="setExpiryDate($event)"
+                        (input)="onExpiryInput($event)"
+                        (change)="onExpiryInput($event)"
+                        [ngModelOptions]="{ standalone: true }"
+                        [showTime]="true"
+                        hourFormat="24"
+                        appendTo="body"
+                        name="newExpiresAt"
+                        [disabled]="pendingCommand() !== null"
+                      />
+                    </ui-form-field>
                   }
                   <label for="renewal-note">Ghi chú xác minh</label>
                   <textarea
+                    pTextarea
                     id="renewal-note"
                     rows="3"
                     maxlength="1200"
@@ -215,6 +256,7 @@
                   ></textarea>
                   <label for="renewal-evidence">Bằng chứng (tùy chọn)</label>
                   <textarea
+                    pTextarea
                     id="renewal-evidence"
                     rows="2"
                     maxlength="1800"
@@ -224,7 +266,8 @@
                     [disabled]="pendingCommand() !== null"
                   ></textarea>
                   <button
-                    class="ui-button primary"
+                    pButton
+                    severity="primary"
                     type="submit"
                     [disabled]="
                       !verifyCanSubmit() || store.commandBusy() || pendingCommand() !== null
@@ -235,7 +278,7 @@
                 </form>
               } @else {
                 <p class="order-muted">
-                  Yêu cầu đang chờ nhân viên có quyền Renewal.Verify xác minh kết quả thực tế.
+                  Yêu cầu đang chờ nhân viên được cấp quyền xác minh kết quả thực tế.
                 </p>
               }
             }
@@ -252,39 +295,52 @@
           <section class="order-card renewal-history-card">
             <div class="order-card-heading">
               <div>
-                <span class="eyebrow">Audit metadata</span>
+                <span class="eyebrow">Theo dõi thao tác</span>
                 <h2>Lịch sử xử lý</h2>
               </div>
             </div>
             @if (store.historyError()) {
               <p class="order-form-error" role="alert">{{ store.historyError() }}</p>
-              <button class="ui-button" type="button" (click)="store.reloadDetail()">
+              <button
+                pButton
+                severity="secondary"
+                outlined
+                type="button"
+                [disabled]="store.historyLoading()"
+                (click)="store.reloadHistory()"
+              >
                 Tải lại lịch sử
               </button>
-            } @else if (store.history().length) {
+            }
+            @if (store.history().length) {
               <div class="table-scroll">
-                <table class="content-table renewal-history-table">
-                  <thead>
+                <p-table
+                  [value]="store.history().slice()"
+                  dataKey="operationId"
+                  tableStyleClass="content-table renewal-history-table"
+                  [tableStyle]="{ 'min-width': '680px' }"
+                >
+                  <ng-template #header>
                     <tr>
                       <th>Thao tác</th>
                       <th>Người thực hiện</th>
                       <th>Trạng thái</th>
                       <th>Thời điểm</th>
                     </tr>
-                  </thead>
-                  <tbody>
-                    @for (item of store.history(); track item.operationId) {
-                      <tr>
-                        <td>{{ item.action }}</td>
-                        <td>{{ item.actorId }}</td>
-                        <td>{{ statusLabels[item.statusAfter] }}</td>
-                        <td>{{ item.occurredAtUtc | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                  </ng-template>
+                  <ng-template #body let-item>
+                    <tr>
+                      <td>{{ item.action }}</td>
+                      <td>{{ item.actorId }}</td>
+                      <td>{{ statusLabel(item.statusAfter) }}</td>
+                      <td>{{ item.occurredAtUtc | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    </tr>
+                  </ng-template>
+                </p-table>
               </div>
-            } @else {
+            } @else if (store.historyLoading()) {
+              <p class="order-muted" role="status">Đang tải lịch sử…</p>
+            } @else if (!store.historyError()) {
               <p class="order-muted">Chưa có lịch sử thao tác.</p>
             }
           </section>
@@ -292,7 +348,7 @@
 
         <aside class="renewal-inspector">
           <section class="inspector-card">
-            <span class="eyebrow">Các lần xử lý</span>
+            <span class="eyebrow">Lịch sử các lần gia hạn</span>
             <h2>{{ detail.attempts.length }} lần</h2>
             @for (attempt of detail.attempts; track attempt.id) {
               <article class="renewal-attempt">
@@ -313,14 +369,22 @@
                 @if (store.canVerify()) {
                   @if (store.revealedEvidence()[attempt.id]; as content) {
                     <div class="renewal-revealed-value">
-                      <code>{{ content.content }}</code
-                      ><button class="ui-button" type="button" (click)="hideEvidence(attempt.id)">
+                      <code>{{ formatRevealedEvidence(content.content) }}</code
+                      ><button
+                        pButton
+                        severity="secondary"
+                        outlined
+                        type="button"
+                        (click)="hideEvidence(attempt.id)"
+                      >
                         Ẩn
                       </button>
                     </div>
                   } @else {
                     <button
-                      class="ui-button"
+                      pButton
+                      severity="secondary"
+                      outlined
                       type="button"
                       [disabled]="store.commandBusy()"
                       (click)="revealEvidence(attempt.id)"
@@ -336,10 +400,16 @@
             }
           </section>
           <section class="inspector-card">
-            <span class="eyebrow">Trạng thái yêu cầu</span>
+            <span class="eyebrow">Thông tin yêu cầu</span>
             <dl>
-              <dt>Mã đơn</dt>
-              <dd class="monospace">{{ detail.renewal.orderId }}</dd>
+              <dt>Đơn hàng liên quan</dt>
+              <dd>
+                @if (store.canViewOrders()) {
+                  <a [routerLink]="['/admin/orders', detail.renewal.orderId]">Mở đơn hàng</a>
+                } @else {
+                  <span>Không có quyền xem đơn hàng</span>
+                }
+              </dd>
               <dt>Số lượng</dt>
               <dd>{{ detail.renewal.quantity }}</dd>
               <dt>Người nhận xử lý</dt>

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthSession } from '@core/auth/auth-session';
 import { ApiError } from '@core/http/api-error';
 import { OrderDetail } from '@features/orders/order-detail.component';
+import { OrdersStore } from '@stores/orders.store';
 import { OrdersService } from '@services/orders.service';
 import {
   OrderDto,
@@ -74,6 +75,7 @@ describe('Order shipping commands and drafts', () => {
   let fixture: ComponentFixture<OrderDetail>;
   let screen: OrderDetail;
   const allowed = signal(true);
+  let ordersStore: { updateVisibleOrder: ReturnType<typeof vi.fn> };
   let service: {
     get: ReturnType<typeof vi.fn>;
     history: ReturnType<typeof vi.fn>;
@@ -96,6 +98,7 @@ describe('Order shipping commands and drafts', () => {
   }
   beforeEach(async () => {
     allowed.set(true);
+    ordersStore = { updateVisibleOrder: vi.fn() };
     service = {
       get: vi.fn(() => of(order())),
       history: vi.fn(() => of([])),
@@ -117,6 +120,7 @@ describe('Order shipping commands and drafts', () => {
         },
         { provide: AuthSession, useValue: { can: () => allowed() } },
         { provide: OrdersService, useValue: service },
+        { provide: OrdersStore, useValue: ordersStore },
       ],
     });
     TestBed.overrideComponent(OrderDetail, { set: { template: '', imports: [] } });
@@ -176,6 +180,9 @@ describe('Order shipping commands and drafts', () => {
     await settle();
     const original = service.dispatchShipment.mock.calls[0]?.[1];
     expect(screen.pendingDispatch()).toBeNull();
+    expect(ordersStore.updateVisibleOrder).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 'order-a', version: 'v2' }),
+    );
     screen.dispatchTrackingNumber.set('TRACK-CORRECTED');
     screen.submitDispatch();
     await settle();

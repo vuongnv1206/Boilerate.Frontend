@@ -1,3 +1,4 @@
+import { ButtonDirective } from 'primeng/button';
 import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -5,6 +6,7 @@ import {
   DestroyRef,
   HostListener,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -14,7 +16,13 @@ import { FormsModule } from '@angular/forms';
 import { distinctUntilChanged, map } from 'rxjs';
 import { ContentState } from '@shared/ui/content-state/content-state.component';
 import { Icon } from '@shared/ui/icon/icon.component';
+import { StatusBadge } from '@shared/ui/status-badge/status-badge.component';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog/confirm-dialog.component';
+import { FormField } from '@shared/ui/form-field/form-field.component';
+import { Table } from 'primeng/table';
+import { Checkbox } from 'primeng/checkbox';
+import { DatePicker } from 'primeng/datepicker';
+import { Textarea } from 'primeng/textarea';
 import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation';
 import {
   RenewalAdminDto,
@@ -22,12 +30,30 @@ import {
   RenewalStatus,
   VerifyRenewalRequest,
 } from '@models/renewal.dto';
-import { RENEWAL_OUTCOME_LABELS, RENEWAL_STATUS_LABELS } from '@constants/renewal.constants';
+import {
+  RENEWAL_OUTCOME_LABELS,
+  RENEWAL_STATUS_LABELS,
+  renewalStatusTone,
+} from '@constants/renewal.constants';
 import { RenewalCommand, RenewalsStore } from '@stores/renewals.store';
 
 @Component({
   selector: 'app-renewal-detail',
-  imports: [RouterLink, FormsModule, DatePipe, ContentState, Icon, ConfirmDialog],
+  imports: [
+    RouterLink,
+    FormsModule,
+    DatePipe,
+    ContentState,
+    Icon,
+    StatusBadge,
+    ConfirmDialog,
+    FormField,
+    Table,
+    Checkbox,
+    DatePicker,
+    Textarea,
+    ButtonDirective,
+  ],
   providers: [LeaveConfirmation],
   templateUrl: './renewal-detail.component.html',
   styleUrl: '../../../styles/admin/_renewals.scss',
@@ -39,18 +65,75 @@ export class RenewalDetail implements OnInit {
   readonly store = inject(RenewalsStore);
   readonly confirmation = inject(LeaveConfirmation);
   readonly statusLabels = RENEWAL_STATUS_LABELS;
+  readonly statusTone = renewalStatusTone;
   readonly outcomeLabels = RENEWAL_OUTCOME_LABELS;
   readonly status = RenewalStatus;
   readonly outcome = RenewalOutcome;
   readonly note = signal('');
   readonly applied = signal(true);
   readonly newExpiresAt = signal('');
+  readonly expiryDateValue = computed(() => {
+    const value = this.newExpiresAt();
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  });
   readonly evidence = signal('');
   readonly pendingCommand = signal<RenewalCommand | null>(null);
   readonly dirty = signal(false);
   activeId: string | null = null;
 
+  statusLabel(value: RenewalStatus): string {
+    return this.statusLabels[value];
+  }
+
+  setExpiryDate(value: Date | null): void {
+    this.newExpiresAt.set(
+      value
+        ? `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}T${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`
+        : '',
+    );
+    this.dirty.set(true);
+  }
+
+  onExpiryInput(event: Event): void {
+    const raw = (event.target as HTMLInputElement)?.value?.trim();
+    if (!raw) {
+      this.newExpiresAt.set('');
+      return;
+    }
+    const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/u.exec(raw);
+    if (dmy) {
+      const day = Number(dmy[1]);
+      const month = Number(dmy[2]) - 1;
+      const year = Number(dmy[3]);
+      const hour = Number(dmy[4] ?? 0);
+      const minute = Number(dmy[5] ?? 0);
+      const date = new Date(year, month, day, hour, minute);
+      if (!Number.isNaN(date.getTime())) {
+        this.setExpiryDate(date);
+        return;
+      }
+    }
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      this.setExpiryDate(parsed);
+    }
+  }
+
+  routeQuery(): Record<string, string | number> {
+    const params = this.route.snapshot.queryParams;
+    const rawPage = Number(params['page'] ?? 1);
+    const rawStatus = Number(params['status']);
+    const page = Number.isSafeInteger(rawPage) && rawPage > 1 ? rawPage : 1;
+    const status = Object.values(RenewalStatus).includes(rawStatus as RenewalStatus)
+      ? (rawStatus as RenewalStatus)
+      : null;
+    return { ...(page > 1 ? { page } : {}), ...(status !== null ? { status } : {}) };
+  }
+
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.store.clearDetail());
     this.route.paramMap
       .pipe(
         map((params) => params.get('id')),
@@ -127,7 +210,6 @@ export class RenewalDetail implements OnInit {
       note,
       evidence: this.evidence().trim() || null,
     };
-    this.dirty.set(false);
     this.execute(detail.renewal.id, { kind: 'verify', request });
   }
 
@@ -151,6 +233,29 @@ export class RenewalDetail implements OnInit {
 
   hideTarget(): void {
     this.store.hideTarget();
+  }
+
+  formatRevealedEvidence(content: string): string {
+    if (!content) return '';
+    try {
+      let parsed = JSON.parse(content) as unknown;
+      if (typeof parsed === 'string') {
+        try {
+          parsed = JSON.parse(parsed);
+        } catch {
+          // not JSON inside string
+        }
+      }
+      if (parsed && typeof parsed === 'object') {
+        const evidence =
+          (parsed as Record<string, unknown>)['Evidence'] ??
+          (parsed as Record<string, unknown>)['evidence'];
+        if (typeof evidence === 'string' && evidence.trim()) return evidence;
+      }
+    } catch {
+      // not JSON
+    }
+    return content;
   }
 
   verifyCanSubmit(): boolean {

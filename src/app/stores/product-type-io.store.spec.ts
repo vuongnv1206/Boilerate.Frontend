@@ -8,6 +8,7 @@ import { ProductTypesService } from '@services/product-types.service';
 import { ProductFieldType } from '@enums/product-field-type.enum';
 import { ProductTypeDto } from '@models/product-type.dto';
 import { ProductTypeIoStore } from '@stores/product-type-io.store';
+import { ProductsService } from '@services/products.service';
 
 describe('ProductTypeIoStore', () => {
   const productType: ProductTypeDto = {
@@ -38,14 +39,19 @@ describe('ProductTypeIoStore', () => {
     create: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
   };
+  let productsService: { search: ReturnType<typeof vi.fn> };
   let store: ProductTypeIoStore;
   beforeEach(() => {
     service = { getById: vi.fn(() => of(productType)), create: vi.fn(), update: vi.fn() };
+    productsService = {
+      search: vi.fn(() => of({ items: [], total: 0, pageNumber: 1, pageSize: 8 })),
+    };
     TestBed.configureTestingModule({
       providers: [
         { provide: AuthSession, useValue: { can: () => true } },
         ProductTypeIoStore,
         { provide: ProductTypesService, useValue: service },
+        { provide: ProductsService, useValue: productsService },
       ],
     });
     store = TestBed.inject(ProductTypeIoStore);

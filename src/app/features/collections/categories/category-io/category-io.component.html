@@ -30,7 +30,15 @@
       <button
         class="ui-button primary"
         (click)="save()"
-        [disabled]="!store.canWrite() || store.loading() || store.saving() || !store.ready()"
+        [disabled]="
+          !store.canSave() ||
+          store.loading() ||
+          store.saving() ||
+          store.productLoading() ||
+          store.productReconcileRequired() ||
+          store.productIssues().length > 0 ||
+          !store.ready()
+        "
       >
         {{ store.saving() ? 'Đang lưu…' : 'Lưu' }}
       </button>
@@ -48,13 +56,24 @@
       }
     </div>
   }
+  @if (store.partialCopy(); as copy) {
+    <div class="editor-notice" role="status">
+      Bản sao đã được tạo, còn liên kết sản phẩm đang chờ hoàn tất.
+      <a
+        class="ui-button"
+        [routerLink]="['/admin/collections/categories', copy.id]"
+        queryParamsHandling="preserve"
+        >Mở bản sao {{ copy.name }}</a
+      >
+    </div>
+  }
   @if (store.loading()) {
     <ui-content-state kind="loading" title="Đang tải danh mục" layout="page" />
   } @else if (store.ready()) {
     <div class="category-editor-body">
       <main class="category-editor-main">
         <form class="editor-form" [formGroup]="form" novalidate>
-          <fieldset class="save-lock" [disabled]="store.saving() || !store.canWrite()">
+          <fieldset class="save-lock" [disabled]="store.saving()">
             <section
               class="form-section category-basic-section"
               aria-labelledby="category-basic-title"
@@ -148,10 +167,33 @@
               @if (store.productError()) {
                 <p class="category-product-error" role="alert">
                   {{ store.productError() }}
-                  <button class="ui-button" type="button" (click)="retry()">
-                    Tải lại liên kết
-                  </button>
+                  @if (store.record() && store.canViewProducts()) {
+                    <button
+                      class="ui-button"
+                      type="button"
+                      [disabled]="store.productLoading()"
+                      (click)="store.reconcileProducts()"
+                    >
+                      Đối chiếu liên kết
+                    </button>
+                  }
                 </p>
+              }
+              @if (store.productIssues().length) {
+                <ul class="category-product-issues" aria-label="Sản phẩm cần giải quyết">
+                  @for (issue of store.productIssues(); track issue.product.id) {
+                    <li>
+                      <span>{{ issue.product.name }}: {{ issue.message }}</span>
+                      <button
+                        class="ui-button"
+                        type="button"
+                        (click)="store.discardProductChange(issue.product.id)"
+                      >
+                        Bỏ thay đổi này
+                      </button>
+                    </li>
+                  }
+                </ul>
               }
               @if (!store.canViewProducts()) {
                 <p class="category-product-status">
@@ -167,7 +209,7 @@
                           <button
                             type="button"
                             [attr.aria-label]="'Bỏ sản phẩm ' + product.name + ' khỏi danh mục'"
-                            [disabled]="store.saving()"
+                            [disabled]="store.saving() || store.productLoading()"
                             (click)="store.removeProduct(product.id)"
                           >
                             <ui-icon name="close" [size]="12" />
@@ -224,7 +266,7 @@
                           type="button"
                           role="option"
                           aria-selected="false"
-                          [disabled]="store.saving()"
+                          [disabled]="store.saving() || store.productLoading()"
                           (click)="store.addProduct(product)"
                         >
                           <span>{{ product.name }}</span>
@@ -362,7 +404,11 @@
             <button
               class="ui-button"
               [disabled]="
-                !categories.canCreate() || store.saving() || form.dirty || store.productsDirty()
+                !categories.canCreate() ||
+                store.saving() ||
+                !!store.partialCopy() ||
+                form.dirty ||
+                store.productsDirty()
               "
               (click)="duplicate()"
             >

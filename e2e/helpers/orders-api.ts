@@ -1,6 +1,7 @@
 import { type BrowserContext, type Route } from '@playwright/test';
 
 export const ORDER_ID = '50000000-0000-0000-0000-000000000001';
+export const SECOND_ORDER_ID = '50000000-0000-0000-0000-000000000002';
 export const SHIPPING_GRANTS = [
   'Permissions.Order.View',
   'Permissions.Shipping.View',
@@ -37,12 +38,15 @@ interface DeliveryBody {
   operationId: string;
 }
 
-export async function installOrdersApi(context: BrowserContext) {
+export async function installOrdersApi(context: BrowserContext, multiple = false) {
   let version = 1;
   let conflictNext = false;
   let loseDispatch = false;
   let loseDelivery = false;
-  const writes: { path: string; body: DispatchBody | DeliveryBody }[] = [];
+  const writes: {
+    path: string;
+    body: DispatchBody | DeliveryBody | { version: string; operationId?: never };
+  }[] = [];
   const shipments: Shipment[] = [];
   const dispatches = new Map<string, { body: DispatchBody; shipment: Shipment }>();
   const deliveries = new Map<string, { body: DeliveryBody; shipment: Shipment }>();
@@ -63,7 +67,7 @@ export async function installOrdersApi(context: BrowserContext) {
     shippingAddress: '12 Đường Nguyễn Huệ, Thành phố Hồ Chí Minh',
     paymentStatus: 1,
     fulfillmentStatus: 1,
-    paidAtUtc: null,
+    paidAtUtc: null as string | null,
     createdOn: '2026-10-21T00:00:00Z',
     physicalDispatchStarted: false,
     items: [
@@ -91,6 +95,17 @@ export async function installOrdersApi(context: BrowserContext) {
       },
     ],
   };
+  const orders = multiple
+    ? [
+        order,
+        {
+          ...structuredClone(order),
+          id: SECOND_ORDER_ID,
+          number: 'ORD-002',
+          recipientName: 'Trần Văn Bình',
+        },
+      ]
+    : [order];
   const reply = (route: Route, body: unknown, status = 200) =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   const conflict = (route: Route) =>
@@ -123,9 +138,31 @@ export async function installOrdersApi(context: BrowserContext) {
     if (!path.startsWith('admin/orders')) return route.fallback();
     const method = route.request().method();
     if (method === 'GET') {
-      if (path === 'admin/orders')
-        return reply(route, { items: [order], total: 1, pageNumber: 1, pageSize: 20 });
-      if (path === `admin/orders/${ORDER_ID}`) return reply(route, order);
+      if (path === 'admin/orders') {
+        const search = (url.searchParams.get('search') ?? '').toLocaleLowerCase('vi-VN');
+        const filtered = orders.filter(
+          (item) =>
+            `${item.number} ${item.recipientName} ${item.email} ${item.phone}`
+              .toLocaleLowerCase('vi-VN')
+              .includes(search) &&
+            ['status', 'paymentStatus', 'fulfillmentStatus'].every(
+              (key) =>
+                !url.searchParams.has(key) ||
+                item[key as 'status' | 'paymentStatus' | 'fulfillmentStatus'] ===
+                  Number(url.searchParams.get(key)),
+            ),
+        );
+        const pageNumber = Number(url.searchParams.get('page') ?? 1);
+        const pageSize = Number(url.searchParams.get('size') ?? 10);
+        return reply(route, {
+          items: filtered.slice((pageNumber - 1) * pageSize, pageNumber * pageSize),
+          total: filtered.length,
+          pageNumber,
+          pageSize,
+        });
+      }
+      const detail = orders.find((item) => path === `admin/orders/${item.id}`);
+      if (detail) return reply(route, detail);
       if (path.endsWith('/shipments')) return reply(route, shipments);
       if (path.endsWith('/history'))
         return reply(
@@ -150,6 +187,15 @@ export async function installOrdersApi(context: BrowserContext) {
           refunds: [],
           returns: [],
         });
+    }
+    if (method === 'POST' && path.endsWith('/cancel')) {
+      const body = route.request().postDataJSON() as { version: string };
+      writes.push({ path, body });
+      const target = orders.find((item) => item.id === path.split('/')[2]);
+      if (!target || target.version !== body.version) return conflict(route);
+      target.version = `order-v${++version}`;
+      target.status = 3;
+      return reply(route, target);
     }
     if (method === 'POST' && path.endsWith('/shipments')) {
       const body = route.request().postDataJSON() as DispatchBody;

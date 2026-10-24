@@ -155,8 +155,9 @@ describe('ProductIoStore', () => {
     expect(store.form.controls.slug.value).toBe('den-ban');
     store.form.controls.slug.setValue('duong-dan-rieng');
     store.form.controls.name.setValue('Đèn đọc sách');
-    store.form.controls.sku.setValue('DEN-01');
-    store.form.controls.price.setValue(450000);
+    const defaultVariant = store.form.controls.variants.at(0);
+    defaultVariant.controls.sku.setValue('DEN-01');
+    defaultVariant.controls.price.setValue(450000);
     const created = vi.fn();
     store.save().subscribe((saved) => {
       if (!store.form.dirty) created(saved.id);
@@ -168,7 +169,16 @@ describe('ProductIoStore', () => {
         fulfillmentKind: 1,
         content: expect.objectContaining({ name: 'Đèn đọc sách', slug: 'duong-dan-rieng' }),
         options: [],
-        variants: [{ sku: 'DEN-01', price: 450000, compareAtPrice: null, options: {} }],
+        variants: [
+          {
+            sku: 'DEN-01',
+            price: 450000,
+            compareAtPrice: null,
+            options: {},
+            isActive: true,
+            imageMediaId: null,
+          },
+        ],
       }),
     );
     expect(created).toHaveBeenCalledWith(item.id);
@@ -196,7 +206,7 @@ describe('ProductIoStore', () => {
     service.create.mockReturnValue(pending);
     store.load(null);
     changeName('Sản phẩm mới');
-    store.form.controls.sku.setValue('NEW-01');
+    store.form.controls.variants.at(0).controls.sku.setValue('NEW-01');
     const created = vi.fn();
     store.save().subscribe((saved) => {
       if (!store.form.dirty) created(saved.id);
@@ -513,7 +523,7 @@ describe('ProductIoStore', () => {
     );
     store.load(null);
     changeName();
-    store.form.controls.sku.setValue('SKU');
+    store.form.controls.variants.at(0).controls.sku.setValue('SKU');
     store.form.controls.fields.controls['material']?.setValue('   ');
     store.save().subscribe();
     expect(service.create).not.toHaveBeenCalled();

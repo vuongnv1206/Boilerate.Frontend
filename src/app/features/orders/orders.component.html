@@ -1,24 +1,8 @@
 <section class="collection-page order-list-page" aria-labelledby="orders-title">
-  <div class="collection-breadcrumb">
-    <ui-icon name="layers" [size]="13" /><span>Workspace</span
-    ><ui-icon name="chevron-right" [size]="12" /><strong>Đơn hàng</strong
-    ><span class="collection-id">ORDERING</span>
-  </div>
-  <header class="collection-heading">
-    <div class="heading-copy">
-      <div class="title-row">
-        <h1 id="orders-title">Đơn hàng</h1>
-        <span class="total-count">{{ store.page().total }}</span>
-      </div>
-      <p>Danh sách làm việc và trạng thái fulfillment của đơn hàng.</p>
-    </div>
-  </header>
-  <div class="collection-tabs">
-    <span class="active"
-      >Tất cả đơn hàng <span>{{ store.page().total }}</span></span
-    ><span class="collection-summary">Snapshot bất biến sau checkout</span>
-  </div>
-  <div class="collection-toolbar order-toolbar">
+  <header class="catalog-list-toolbar order-list-toolbar">
+    <h1 id="orders-title">
+      Đơn hàng <span>{{ store.page().total }}</span>
+    </h1>
     <label class="search-field"
       ><ui-icon name="search" [size]="14" /><input
         pInputText
@@ -52,28 +36,67 @@
       [options]="fulfillmentStatusOptions"
       optionLabel="label"
       optionValue="value"
-      placeholder="Fulfillment"
+      placeholder="Xử lý đơn"
       [ngModel]="store.query().fulfillmentStatus"
       (ngModelChange)="setFulfillmentStatus($event)"
       appendTo="body"
-      ariaLabel="Lọc trạng thái fulfillment"
+      ariaLabel="Lọc trạng thái xử lý đơn"
     />
-    <label class="order-date-filter"
-      ><span>Từ</span
-      ><input
-        type="date"
-        [value]="store.query().createdFrom"
-        (change)="setDate('createdFrom', $any($event.target).value)"
+    <label class="order-date-filter" for="order-created-from"
+      ><span>Tạo từ</span
+      ><p-datepicker
+        inputId="order-created-from"
+        [ngModel]="createdFromDate()"
+        (ngModelChange)="setDatePicker('createdFrom', $event)"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        iconDisplay="input"
+        appendTo="body"
+        ariaLabel="Ngày tạo từ"
     /></label>
-    <label class="order-date-filter"
+    <label class="order-date-filter" for="order-created-to"
       ><span>Đến</span
-      ><input
-        type="date"
-        [value]="store.query().createdTo"
-        (change)="setDate('createdTo', $any($event.target).value)"
+      ><p-datepicker
+        inputId="order-created-to"
+        [ngModel]="createdToDate()"
+        (ngModelChange)="setDatePicker('createdTo', $event)"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        iconDisplay="input"
+        appendTo="body"
+        ariaLabel="Ngày tạo đến"
     /></label>
-    <button class="ui-button" type="button" (click)="resetFilters()">Xóa lọc</button>
-  </div>
+    <button
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
+      type="button"
+      aria-label="Xóa bộ lọc"
+      title="Xóa bộ lọc"
+      (click)="resetFilters()"
+    >
+      <ui-icon name="close" [size]="14" />
+    </button>
+    <button
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
+      type="button"
+      aria-label="Tải lại đơn hàng"
+      title="Tải lại đơn hàng"
+      (click)="store.load()"
+      [disabled]="store.loading()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
+    <span class="toolbar-hint"
+      >Đơn hàng giữ nguyên thông tin tại checkout; chỉ cập nhật qua thao tác nghiệp vụ.</span
+    >
+  </header>
   @if (store.loading()) {
     <ui-content-state
       kind="loading"
@@ -87,91 +110,99 @@
       layout="page"
       title="Không thể tải đơn hàng"
       [message]="store.error()"
-      ><button class="ui-button" (click)="store.load()">Thử lại</button></ui-content-state
+      ><button pButton severity="secondary" outlined (click)="store.load()">
+        Thử lại
+      </button></ui-content-state
     >
   } @else {
     <div class="collection-table">
       <div class="table-scroll" role="region" aria-label="Danh sách đơn hàng" tabindex="0">
-        <table class="content-table order-table">
-          <thead>
+        <p-table
+          [value]="store.page().items.slice()"
+          dataKey="id"
+          tableStyleClass="content-table order-table"
+          [tableStyle]="{ 'min-width': '1120px' }"
+          [rowHover]="true"
+          [pt]="{ tableContainer: { style: { overflow: 'visible' } } }"
+        >
+          <ng-template #header>
             <tr>
               <th scope="col">Mã đơn</th>
               <th scope="col">Người nhận</th>
               <th scope="col">Tổng tiền</th>
               <th scope="col">Thanh toán</th>
-              <th scope="col">Fulfillment</th>
-              <th scope="col">Đơn hàng</th>
+              <th scope="col">Xử lý đơn</th>
+              <th scope="col">Trạng thái đơn</th>
               <th scope="col">Ngày tạo</th>
               <th scope="col">Hết hạn</th>
             </tr>
-          </thead>
-          <tbody>
-            @for (item of store.page().items; track item.id) {
-              <tr>
-                <td class="name-cell">
-                  <a [routerLink]="['/admin/orders', item.id]" [queryParams]="routeQuery()">{{
-                    item.number
-                  }}</a
-                  ><span class="order-payment-method">{{
-                    paymentMethodLabels[item.paymentMethod]
-                  }}</span>
-                </td>
-                <td>
-                  <strong>{{ item.recipientName }}</strong
-                  ><span class="order-contact">{{ item.email }} · {{ item.phone }}</span>
-                </td>
-                <td class="price-cell">
-                  {{ item.total | currency: item.currency : 'symbol-narrow' : '1.0-0' }}
-                </td>
-                <td>
-                  <ui-status-badge
-                    [tone]="item.paymentStatus === paymentStatus.Paid ? 'success' : 'warning'"
-                    >{{ paymentStatusLabels[item.paymentStatus] }}</ui-status-badge
-                  >
-                </td>
-                <td>
-                  <ui-status-badge
-                    [tone]="
-                      item.fulfillmentStatus === fulfillmentStatus.Completed
+          </ng-template>
+          <ng-template #body let-item>
+            <tr>
+              <td class="name-cell">
+                <a [routerLink]="['/admin/orders', item.id]" [queryParams]="routeQuery()">{{
+                  item.number
+                }}</a
+                ><span class="order-payment-method">{{
+                  paymentMethodLabel(item.paymentMethod)
+                }}</span>
+              </td>
+              <td>
+                <strong>{{ item.recipientName }}</strong
+                ><span class="order-contact">{{ item.email }} · {{ item.phone }}</span>
+              </td>
+              <td class="price-cell">
+                {{ item.total | currency: item.currency : 'symbol-narrow' : '1.0-0' }}
+              </td>
+              <td>
+                <ui-status-badge
+                  [tone]="item.paymentStatus === paymentStatus.Paid ? 'success' : 'warning'"
+                  >{{ paymentStatusLabel(item.paymentStatus) }}</ui-status-badge
+                >
+              </td>
+              <td>
+                <ui-status-badge
+                  [tone]="
+                    item.fulfillmentStatus === fulfillmentStatus.Completed
+                      ? 'success'
+                      : item.fulfillmentStatus === fulfillmentStatus.NeedsReview
+                        ? 'warning'
+                        : 'neutral'
+                  "
+                  >{{ fulfillmentStatusLabel(item.fulfillmentStatus) }}</ui-status-badge
+                >
+              </td>
+              <td>
+                <ui-status-badge
+                  [tone]="
+                    item.status === status.Cancelled || item.status === status.Expired
+                      ? 'muted'
+                      : item.status === status.Completed
                         ? 'success'
-                        : item.fulfillmentStatus === fulfillmentStatus.NeedsReview
-                          ? 'warning'
-                          : 'neutral'
-                    "
-                    >{{ fulfillmentStatusLabels[item.fulfillmentStatus] }}</ui-status-badge
-                  >
-                </td>
-                <td>
-                  <ui-status-badge
-                    [tone]="
-                      item.status === status.Cancelled || item.status === status.Expired
-                        ? 'muted'
-                        : item.status === status.Completed
-                          ? 'success'
-                          : 'neutral'
-                    "
-                    >{{ statusLabels[item.status] }}</ui-status-badge
-                  >
-                </td>
-                <td>{{ item.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
-                <td>{{ item.expiresAt ? (item.expiresAt | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
-              </tr>
-            } @empty {
-              <tr class="empty-row">
-                <td colspan="8">
-                  <ui-content-state
-                    kind="empty"
-                    title="Không có đơn hàng"
-                    message="Thử thay đổi từ khóa hoặc bộ lọc."
-                    ><button class="ui-button" (click)="resetFilters()">
-                      Xóa bộ lọc
-                    </button></ui-content-state
-                  >
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                        : 'neutral'
+                  "
+                  >{{ statusLabel(item.status) }}</ui-status-badge
+                >
+              </td>
+              <td>{{ item.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ item.expiresAt ? (item.expiresAt | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr class="empty-row">
+              <td colspan="8">
+                <ui-content-state
+                  kind="empty"
+                  title="Không có đơn hàng"
+                  message="Thử thay đổi từ khóa hoặc bộ lọc."
+                  ><button pButton severity="secondary" outlined (click)="resetFilters()">
+                    Xóa bộ lọc
+                  </button></ui-content-state
+                >
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
       </div>
       <footer class="pagination">
         <span
@@ -179,20 +210,21 @@
           {{ store.page().total }} đơn hàng</span
         >
         <div class="pagination-right">
-          <label class="page-size"
-            >Mỗi trang
-            <select
-              aria-label="Số đơn hàng mỗi trang"
-              [value]="store.page().pageSize"
-              (change)="changePageSize($event)"
-            >
-              @for (size of pageSizes; track size) {
-                <option [value]="size">{{ size }}</option>
-              }
-            </select></label
+          <label class="page-size" for="order-page-size"
+            >Mỗi trang<p-select
+              inputId="order-page-size"
+              [options]="pageSizes"
+              [ngModel]="store.page().pageSize"
+              (ngModelChange)="changePageSize($event)"
+              ariaLabel="Số đơn hàng mỗi trang"
+              appendTo="body" /></label
           ><span class="page-divider"></span
           ><button
-            class="icon-button"
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
             aria-label="Trang trước"
             [disabled]="store.page().pageNumber <= 1"
             (click)="setPage(store.page().pageNumber - 1)"
@@ -200,7 +232,11 @@
             <ui-icon name="chevron-left" [size]="14" /></button
           ><span>{{ store.page().pageNumber }} / {{ store.pageCount() }}</span
           ><button
-            class="icon-button"
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
             aria-label="Trang sau"
             [disabled]="store.page().pageNumber >= store.pageCount()"
             (click)="setPage(store.page().pageNumber + 1)"

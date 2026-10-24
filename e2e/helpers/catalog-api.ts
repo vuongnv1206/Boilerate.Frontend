@@ -421,13 +421,13 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
   const fields = (inputs: Field[], start = 0): Field[] =>
     inputs.map((field, index) => ({
       ...field,
-      id: field.id || id(5, start + index),
+      id: field.id || id(5, ++mediaSequence),
       code: field.code.toUpperCase(),
       isActive: field.isActive ?? true,
       sortOrder: field.sortOrder ?? index,
       choices: (field.choices ?? []).map((choice, choiceIndex) => ({
         ...choice,
-        id: choice.id || id(6, start * 100 + index * 10 + choiceIndex),
+        id: choice.id || id(6, ++mediaSequence),
         code: choice.code.toUpperCase(),
         isActive: choice.isActive ?? true,
         sortOrder: choice.sortOrder ?? choiceIndex,
@@ -775,6 +775,43 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
       const index = categories.findIndex((item) => item.id === path.split('/')[1]);
       const category = categories[index];
       if (!category) return reply(route, { status: 404 }, 404);
+      if (path.endsWith('/products') && method === 'PUT') {
+        if (!can('Product', 'Update')) return forbidden(route);
+        const changes = body?.['changes'] as
+          { productId: string; version: string; included: boolean }[] | undefined;
+        if (
+          !changes ||
+          changes.length > 1000 ||
+          new Set(changes.map((change) => change.productId)).size !== changes.length
+        )
+          return invalid(route, 'Danh sách liên kết không hợp lệ.');
+        const selected = changes.map((change) =>
+          products.find((product) => product.id === change.productId),
+        );
+        if (selected.some((product) => !product)) return invalid(route, 'Sản phẩm không tồn tại.');
+        if (
+          selected.some(
+            (product, changeIndex) => product!.version !== changes[changeIndex]!.version,
+          )
+        )
+          return conflict(route);
+        return reply(
+          route,
+          changes.map((change, changeIndex) => {
+            const product = selected[changeIndex]!;
+            if (change.included && !product.categoryIds.includes(category.id)) {
+              product.categoryIds.push(category.id);
+              product.version = `linked-${++version}`;
+            } else if (!change.included && product.categoryIds.includes(category.id)) {
+              product.categoryIds = product.categoryIds.filter(
+                (categoryId) => categoryId !== category.id,
+              );
+              product.version = `linked-${++version}`;
+            }
+            return { productId: product.id, version: product.version, included: change.included };
+          }),
+        );
+      }
       if (method === 'PUT') {
         if (body?.['version'] !== category.version) return conflict(route);
         Object.assign(category, body, { version: `saved-${++version}` });

@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthSession } from '@core/auth/auth-session';
 import { ApiError } from '@core/http/api-error';
@@ -223,6 +223,43 @@ describe('Renewal detail commands and retained requests', () => {
       .execute('renewal-a', { kind: 'claim', request: { version: 'r1', operationId: 'op-a' } })
       .subscribe();
     expect(service.claim).not.toHaveBeenCalled();
+  });
+
+  it('clears an accepted pending command even while its history read is still pending', async () => {
+    service.history.mockReturnValueOnce(new Subject());
+    screen.claim();
+    await settle();
+    expect(screen.pendingCommand()).toBeNull();
+    expect(store.commandBusy()).toBe(false);
+    expect(store.historyLoading()).toBe(true);
+  });
+
+  it('keeps verification input dirty after a conflict and does not replay the write', async () => {
+    service.get.mockReturnValue(of(pending()));
+    store.loadDetail('renewal-a');
+    await settle();
+    screen.applied.set(false);
+    screen.note.set('Ghi chú cần giữ lại');
+    screen.evidence.set('Bằng chứng chưa lưu');
+    screen.dirty.set(true);
+    service.verify.mockReturnValueOnce(
+      throwError(
+        () =>
+          new ApiError({
+            status: 409,
+            kind: 'conflict',
+            message: 'Đã thay đổi',
+            fieldErrors: {},
+          }),
+      ),
+    );
+    screen.verify();
+    await settle();
+    expect(screen.note()).toBe('Ghi chú cần giữ lại');
+    expect(screen.evidence()).toBe('Bằng chứng chưa lưu');
+    expect(screen.dirty()).toBe(true);
+    expect(screen.pendingCommand()).toBeNull();
+    expect(service.verify).toHaveBeenCalledTimes(1);
   });
 
   it('requires a future expiry when the operator marks a renewal applied', async () => {

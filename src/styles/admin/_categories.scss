@@ -442,6 +442,24 @@
       line-height: 16px;
     }
 
+    .category-product-issues {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0;
+      padding: 0;
+      list-style: none;
+
+      li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-width: 0;
+        color: var(--danger);
+        font-size: 11px;
+      }
+    }
+
     .category-detail-row {
       display: grid;
       grid-template-columns: minmax(130px, 220px) minmax(160px, 1fr);

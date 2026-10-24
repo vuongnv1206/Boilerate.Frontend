@@ -70,7 +70,7 @@ const formControlRoot = {
   shadow: 'none',
   borderRadius: 'var(--radius)',
   transitionDuration: 'var(--motion-fast)',
-  fontSize: '13px',
+  fontSize: '14px',
   fontWeight: '400',
   focusRing: {
     width: '2px',
@@ -128,7 +128,7 @@ export const WorkspacePreset = definePreset(Aura, {
     transitionDuration: 'var(--motion-base)',
     focusRing: { width: '2px', style: 'solid', color: 'var(--focus-ring)', offset: '2px' },
     formField: {
-      paddingX: '9px',
+      paddingX: '12px',
       paddingY: '6px',
       borderRadius: 'var(--radius)',
       borderColor: 'var(--field-border)',
@@ -141,7 +141,7 @@ export const WorkspacePreset = definePreset(Aura, {
       disabledColor: 'var(--text-3)',
       placeholderColor: 'var(--text-3)',
       shadow: 'none',
-      fontSize: '13px',
+      fontSize: '14px',
       fontWeight: '400',
       transitionDuration: 'var(--motion-fast)',
       focusRing: {
@@ -156,10 +156,10 @@ export const WorkspacePreset = definePreset(Aura, {
   },
   components: {
     inputtext: {
-      root: { ...formControlRoot, paddingX: '9px', paddingY: '6px' },
+      root: { ...formControlRoot, paddingX: '12px', paddingY: '6px' },
     },
     textarea: {
-      root: { ...formControlRoot, paddingX: '9px', paddingY: '8px' },
+      root: { ...formControlRoot, paddingX: '12px', paddingY: '8px' },
     },
     inputnumber: {
       root: { transitionDuration: 'var(--motion-fast)' },
@@ -179,7 +179,7 @@ export const WorkspacePreset = definePreset(Aura, {
     },
     select: {
       root: { ...formControlRoot },
-      dropdown: { width: '30px', color: 'var(--text-2)' },
+      dropdown: { width: '34px', color: 'var(--text-2)' },
       list: { padding: '4px', gap: '2px' },
       option: {
         focusBackground: 'var(--surface-2)',
@@ -205,7 +205,7 @@ export const WorkspacePreset = definePreset(Aura, {
     },
     multiselect: {
       root: { ...formControlRoot },
-      dropdown: { width: '30px', color: 'var(--text-2)' },
+      dropdown: { width: '34px', color: 'var(--text-2)' },
       list: { padding: '4px', gap: '2px' },
       option: {
         focusBackground: 'var(--surface-2)',
@@ -231,7 +231,7 @@ export const WorkspacePreset = definePreset(Aura, {
       },
     },
     checkbox: {
-      root: { ...choiceRoot, borderRadius: '3px' },
+      root: { ...choiceRoot, width: '16px', height: '16px', borderRadius: '4px' },
       icon: {
         size: '10px',
         color: 'var(--text-2)',
@@ -250,8 +250,8 @@ export const WorkspacePreset = definePreset(Aura, {
     },
     toggleswitch: {
       root: {
-        width: '30px',
-        height: '18px',
+        width: '36px',
+        height: '20px',
         borderRadius: '999px',
         borderWidth: '1px',
         background: 'var(--border-strong)',
@@ -274,7 +274,7 @@ export const WorkspacePreset = definePreset(Aura, {
         },
       },
       handle: {
-        size: '12px',
+        size: '14px',
         borderRadius: '50%',
         background: 'var(--surface-0)',
         disabledBackground: 'var(--surface-1)',
@@ -346,11 +346,11 @@ export const WorkspacePreset = definePreset(Aura, {
         hoverColor: 'var(--text-1)',
         selectedColor: 'var(--on-accent)',
         rangeSelectedColor: 'var(--highlight-text)',
-        width: '30px',
-        height: '30px',
+        width: '32px',
+        height: '32px',
         borderRadius: '3px',
         padding: '0',
-        fontSize: '12px',
+        fontSize: '13px',
         focusRing: {
           width: '2px',
           style: 'solid',
@@ -365,12 +365,12 @@ export const WorkspacePreset = definePreset(Aura, {
     button: {
       root: {
         borderRadius: 'var(--radius)',
-        gap: '6px',
-        paddingX: '10px',
-        paddingY: '5px',
-        iconOnlyWidth: '30px',
-        fontSize: '12px',
-        sm: { fontSize: '11px', paddingX: '8px', paddingY: '4px', iconOnlyWidth: '26px' },
+        gap: '8px',
+        paddingX: '12px',
+        paddingY: '6px',
+        iconOnlyWidth: '34px',
+        fontSize: '13px',
+        sm: { fontSize: '12px', paddingX: '10px', paddingY: '5px', iconOnlyWidth: '30px' },
         label: { fontWeight: '500' },
         focusRing: { width: '2px', style: 'solid', offset: '2px' },
         transitionDuration: 'var(--motion-fast)',
@@ -400,16 +400,66 @@ export const WorkspacePreset = definePreset(Aura, {
         },
       },
     },
+    tag: {
+      root: {
+        fontSize: '12px',
+        fontWeight: '600',
+        padding: '3px 8px',
+        gap: '5px',
+        borderRadius: 'var(--radius)',
+      },
+      secondary: { background: 'var(--surface-2)', color: 'var(--text-2)' },
+      success: { background: 'var(--success-soft)', color: 'var(--success)' },
+      warn: { background: 'var(--warning-soft)', color: 'var(--warning)' },
+      danger: { background: 'var(--danger-soft)', color: 'var(--danger)' },
+      info: { background: 'var(--accent-soft)', color: 'var(--highlight-text)' },
+    },
     tabs: {
       tablist: { background: 'transparent', borderColor: 'var(--border)' },
       tab: {
         padding: '12px 16px',
-        fontSize: '12px',
+        fontSize: '13px',
         fontWeight: '500',
         activeColor: 'var(--text-1)',
       },
       activeBar: { height: '2px', background: 'var(--accent)' },
       tabpanel: { background: 'transparent', padding: '20px 0 0', color: 'var(--text-1)' },
+    },
+    datatable: {
+      root: { borderColor: 'var(--border)', transitionDuration: 'var(--motion-fast)' },
+      header: {
+        background: 'var(--surface-1)',
+        borderColor: 'var(--border)',
+        color: 'var(--text-2)',
+        padding: '0',
+      },
+      headerCell: {
+        background: 'var(--surface-1)',
+        hoverBackground: 'var(--surface-2)',
+        selectedBackground: 'var(--accent-soft)',
+        borderColor: 'var(--border)',
+        color: 'var(--text-2)',
+        hoverColor: 'var(--text-1)',
+        selectedColor: 'var(--text-1)',
+        gap: '8px',
+        padding: '11px 14px',
+      },
+      columnTitle: { fontWeight: '600', fontSize: '12px' },
+      row: {
+        background: 'var(--surface-0)',
+        hoverBackground: 'var(--surface-1)',
+        selectedBackground: 'var(--accent-soft)',
+        color: 'var(--text-1)',
+        selectedColor: 'var(--text-1)',
+      },
+      bodyCell: {
+        borderColor: 'var(--border)',
+        padding: '12px 14px',
+        fontWeight: '400',
+        fontSize: '13px',
+      },
+      footerCell: { borderColor: 'var(--border)', padding: '10px 14px' },
+      paginatorBottom: { borderColor: 'var(--border)' },
     },
   },
 });

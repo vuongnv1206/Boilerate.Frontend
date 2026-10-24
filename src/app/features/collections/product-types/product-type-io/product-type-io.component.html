@@ -28,7 +28,8 @@
     </div>
     <div class="editor-actions">
       <button
-        class="ui-button primary"
+        pButton
+        severity="primary"
         (click)="save()"
         [disabled]="!store.canWrite() || store.loading() || store.saving() || !store.ready()"
       >
@@ -43,7 +44,7 @@
     <div class="editor-notice" role="alert">
       {{ store.error() }}
       @if (!store.saving()) {
-        <button class="ui-button" (click)="retry()">Tải lại</button>
+        <button pButton severity="secondary" outlined (click)="retry()">Tải lại</button>
       }
     </div>
   }
@@ -58,27 +59,26 @@
               <h2>Thông tin cơ bản</h2>
               <p>Mỗi loại sản phẩm định nghĩa bộ thuộc tính dùng khi tạo sản phẩm.</p>
 
-              <div class="field">
-                <label for="product-type-name">Tên loại *</label
-                ><input
+              <ui-form-field
+                class="field"
+                forId="product-type-name"
+                label="Tên loại"
+                [required]="true"
+                hint="Tên dễ nhận biết khi tạo sản phẩm."
+                [error]="
+                  serverError('name') ||
+                  (invalid('name') ? 'Nhập tên loại, tối đa 256 ký tự.' : null)
+                "
+              >
+                <input
                   pInputText
                   id="product-type-name"
                   formControlName="name"
                   [maxlength]="limits.name"
                   [attr.aria-invalid]="invalid('name')"
-                  aria-describedby="product-type-name-help"
+                  aria-describedby="product-type-name-hint product-type-name-error"
                 />
-                <ui-field-message
-                  id="product-type-name-help"
-                  [tone]="invalid('name') ? 'error' : 'help'"
-                  >{{
-                    serverError('name') ||
-                      (invalid('name')
-                        ? 'Nhập tên loại, tối đa 256 ký tự.'
-                        : 'Tên dễ nhận biết khi tạo sản phẩm.')
-                  }}</ui-field-message
-                >
-              </div>
+              </ui-form-field>
               <div class="field product-type-code-field">
                 <label for="product-type-code">Mã hệ thống</label>
                 <output id="product-type-code">{{ form.controls.code.value }}</output>
@@ -87,10 +87,14 @@
                 </ui-field-message>
               </div>
               @if (!!store.record()) {
-                <label class="check-field" for="product-type-active"
-                  ><input id="product-type-active" type="checkbox" formControlName="isActive" />Đang
-                  hoạt động</label
-                >
+                <label class="check-field" for="product-type-active">
+                  <p-checkbox
+                    inputId="product-type-active"
+                    [binary]="true"
+                    formControlName="isActive"
+                  />
+                  Đang hoạt động
+                </label>
               }
             </section>
             <section class="schema-section" [formGroup]="form">
@@ -103,7 +107,9 @@
                   </p>
                 </div>
                 <button
-                  class="ui-button"
+                  pButton
+                  severity="secondary"
+                  outlined
                   type="button"
                   (click)="store.addField()"
                   [disabled]="store.saving() || form.controls.fields.length >= limits.fields"
@@ -156,15 +162,16 @@
                             typeLabel(field.controls.dataType.value)
                           }}</output>
                         } @else {
-                          <select
-                            [id]="'field-type-' + fieldIndex"
+                          <p-select
+                            [inputId]="'field-type-' + fieldIndex"
                             formControlName="dataType"
-                            (change)="store.changeFieldType(fieldIndex)"
+                            [options]="fieldTypes"
+                            optionLabel="label"
+                            optionValue="value"
+                            appendTo="body"
+                            (onChange)="store.changeFieldType(fieldIndex)"
                           >
-                            @for (option of fieldTypes; track option.value) {
-                              <option [ngValue]="option.value">{{ option.label }}</option>
-                            }
-                          </select>
+                          </p-select>
                         }
                       </div>
                     </div>
@@ -188,44 +195,43 @@
                     </div>
                     <div class="field-options">
                       @if (!store.record() && !field.controls.id.value) {
-                        <label class="check-field" [for]="'field-required-' + fieldIndex"
-                          ><input
-                            [id]="'field-required-' + fieldIndex"
-                            type="checkbox"
+                        <label class="check-field" [for]="'field-required-' + fieldIndex">
+                          <p-checkbox
+                            [inputId]="'field-required-' + fieldIndex"
+                            [binary]="true"
                             formControlName="isRequired"
-                          />Bắt buộc</label
-                        >
+                          />Bắt buộc
+                        </label>
                       } @else {
                         <span class="schema-help">{{
                           field.controls.isRequired.value ? 'Bắt buộc' : 'Tùy chọn'
                         }}</span>
                       }
-                      <label class="check-field" [for]="'field-filter-' + fieldIndex"
-                        ><input
-                          [id]="'field-filter-' + fieldIndex"
-                          type="checkbox"
+                      <label class="check-field" [for]="'field-filter-' + fieldIndex">
+                        <p-checkbox
+                          [inputId]="'field-filter-' + fieldIndex"
+                          [binary]="true"
                           formControlName="isFilterable"
-                        />Dùng làm bộ lọc</label
-                      >
+                        />Dùng làm bộ lọc
+                      </label>
                       @if (field.controls.id.value) {
-                        <label class="check-field" [for]="'field-active-' + fieldIndex"
-                          ><input
-                            [id]="'field-active-' + fieldIndex"
-                            type="checkbox"
+                        <label class="check-field" [for]="'field-active-' + fieldIndex">
+                          <p-checkbox
+                            [inputId]="'field-active-' + fieldIndex"
+                            [binary]="true"
                             formControlName="isActive"
-                          />Hoạt động</label
-                        >
+                          />Hoạt động
+                        </label>
                       }
                     </div>
                     @if (field.controls.id.value) {
                       <div class="field">
                         <label [for]="'field-order-' + fieldIndex">Thứ tự</label
-                        ><input
-                          pInputText
-                          [id]="'field-order-' + fieldIndex"
-                          type="number"
-                          min="0"
-                          step="1"
+                        ><p-inputnumber
+                          [inputId]="'field-order-' + fieldIndex"
+                          [min]="0"
+                          [step]="1"
+                          [useGrouping]="false"
                           formControlName="sortOrder"
                         />
                       </div>
@@ -258,12 +264,11 @@
                               <div class="field">
                                 <label [for]="'choice-order-' + fieldIndex + '-' + choiceIndex"
                                   >Thứ tự</label
-                                ><input
-                                  pInputText
-                                  [id]="'choice-order-' + fieldIndex + '-' + choiceIndex"
-                                  type="number"
-                                  min="0"
-                                  step="1"
+                                ><p-inputnumber
+                                  [inputId]="'choice-order-' + fieldIndex + '-' + choiceIndex"
+                                  [min]="0"
+                                  [step]="1"
+                                  [useGrouping]="false"
                                   formControlName="sortOrder"
                                 /><ui-field-message tone="error">{{
                                   validation(choice.controls.sortOrder)
@@ -272,15 +277,17 @@
                               <label
                                 class="check-field"
                                 [for]="'choice-active-' + fieldIndex + '-' + choiceIndex"
-                                ><input
-                                  [id]="'choice-active-' + fieldIndex + '-' + choiceIndex"
-                                  type="checkbox"
+                                ><p-checkbox
+                                  [inputId]="'choice-active-' + fieldIndex + '-' + choiceIndex"
+                                  [binary]="true"
                                   formControlName="isActive"
                                 />Hoạt động</label
                               >
                             } @else {
                               <button
-                                class="ui-button"
+                                pButton
+                                severity="secondary"
+                                outlined
                                 type="button"
                                 (click)="store.removeNewChoice(fieldIndex, choiceIndex)"
                                 [disabled]="store.saving() || !store.canWrite()"
@@ -292,7 +299,9 @@
                           </div>
                         }
                         <button
-                          class="ui-button"
+                          pButton
+                          severity="secondary"
+                          outlined
                           type="button"
                           (click)="store.addChoice(fieldIndex)"
                           [disabled]="
@@ -312,7 +321,10 @@
                     }
                     @if (!field.controls.id.value) {
                       <button
-                        class="ui-button remove-field"
+                        pButton
+                        severity="secondary"
+                        outlined
+                        class="remove-field"
                         type="button"
                         (click)="store.removeNewField(fieldIndex)"
                         [disabled]="store.saving() || !store.canWrite()"
@@ -334,11 +346,13 @@
           <div class="product-type-section-heading">
             <div>
               <h2 id="product-type-products-title">Sản phẩm</h2>
-              <p>Sản phẩm được chọn loại khi tạo và giữ nguyên snapshot schema đã dùng.</p>
+              <p>Sản phẩm được gán loại khi tạo và giữ nguyên bộ thuộc tính đã dùng.</p>
             </div>
             @if (store.record() && store.canViewProducts()) {
               <a
-                class="ui-button"
+                pButton
+                severity="secondary"
+                outlined
                 routerLink="/admin/collections/products"
                 [queryParams]="{ productTypeId: store.record()!.id }"
                 >Mở danh sách</a
@@ -358,7 +372,9 @@
           } @else if (store.productError()) {
             <p class="product-type-linked-error" role="alert">
               {{ store.productError() }}
-              <button class="ui-button" type="button" (click)="retryProducts()">Tải lại</button>
+              <button pButton severity="secondary" outlined type="button" (click)="retryProducts()">
+                Tải lại
+              </button>
             </p>
           } @else {
             <div class="product-type-linked-list">
@@ -418,7 +434,9 @@
         @if (store.record() && store.canCreate()) {
           <footer class="product-type-editor-footer">
             <button
-              class="ui-button"
+              pButton
+              severity="secondary"
+              outlined
               type="button"
               (click)="duplicate()"
               [disabled]="store.saving() || store.loading()"

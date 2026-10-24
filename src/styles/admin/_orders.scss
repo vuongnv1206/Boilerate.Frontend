@@ -1,21 +1,16 @@
 .order-list-page {
-  .order-toolbar {
+  .order-list-toolbar {
     flex-wrap: wrap;
   }
   .order-date-filter {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--text-muted);
+    color: var(--text-3);
     font-size: 12px;
   }
-  .order-date-filter input {
-    min-height: 34px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0 8px;
-    background: var(--surface);
-    color: var(--text);
+  .order-date-filter p-datepicker {
+    width: 154px;
   }
   .order-table {
     min-width: 1120px;
@@ -27,7 +22,7 @@
   .order-payment-method,
   .order-contact {
     display: block;
-    color: var(--text-muted);
+    color: var(--text-3);
     font-size: 12px;
     margin-top: 3px;
   }
@@ -151,24 +146,24 @@
 }
 
 .order-detail-page {
-  padding: 28px 32px 44px;
-  max-width: 1500px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 .order-detail-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 22px;
+  margin-bottom: 0;
 }
 .order-back-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-muted);
-  font-size: 13px;
-  margin-bottom: 14px;
+  color: var(--text-3);
+  font-size: 11px;
+  margin-bottom: 8px;
 }
 .order-title-row {
   display: flex;
@@ -177,13 +172,13 @@
 }
 .order-title-row h1 {
   margin: 0;
-  font-size: clamp(26px, 3vw, 38px);
-  letter-spacing: -0.03em;
+  font-size: 15px;
+  letter-spacing: -0.3px;
 }
 .order-detail-header p {
-  color: var(--text-muted);
+  color: var(--text-3);
   margin: 8px 0 0;
-  font-size: 13px;
+  font-size: 11px;
 }
 .order-action-bar {
   display: flex;
@@ -198,9 +193,12 @@
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--warning) 38%, var(--border));
   border-radius: 8px;
-  color: var(--text);
-  background: color-mix(in srgb, var(--warning) 9%, var(--surface));
+  color: var(--text-1);
+  background: color-mix(in srgb, var(--warning) 9%, var(--surface-0));
   margin-bottom: 18px;
+}
+.order-detail-page > .order-action-message {
+  margin: 10px 22px 0;
 }
 .order-workspace-grid {
   display: grid;
@@ -214,13 +212,17 @@
   gap: 18px;
   min-width: 0;
 }
+.order-main-column > * {
+  min-width: 0;
+}
 .order-card,
 .inspector-card {
+  min-width: 0;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--surface-0);
   border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 7%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text-1) 7%, transparent);
 }
 .order-card-heading {
   display: flex;
@@ -237,14 +239,14 @@
 }
 .eyebrow {
   display: block;
-  color: var(--text-muted);
+  color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 10px;
   font-weight: 700;
 }
 .order-readonly-note {
-  color: var(--text-muted);
+  color: var(--text-3);
   font-size: 12px;
   border: 1px solid var(--border);
   padding: 4px 8px;
@@ -259,11 +261,11 @@
   gap: 8px 18px;
   margin: 18px 0 0 auto;
   max-width: 310px;
-  color: var(--text-muted);
+  color: var(--text-3);
   font-size: 13px;
 }
 .order-totals strong {
-  color: var(--text);
+  color: var(--text-1);
   text-align: right;
 }
 .order-totals .total-label,
@@ -282,7 +284,7 @@
   gap: 10px;
 }
 .inspector-card dt {
-  color: var(--text-muted);
+  color: var(--text-3);
   font-size: 11px;
 }
 .inspector-card dd {
@@ -291,7 +293,7 @@
   font-size: 13px;
 }
 .order-muted {
-  color: var(--text-muted);
+  color: var(--text-3);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -329,7 +331,7 @@
   font-size: 13px;
 }
 .order-timeline span {
-  color: var(--text-muted);
+  color: var(--text-3);
   font-size: 12px;
   margin-top: 4px;
 }
@@ -343,7 +345,7 @@
   margin-top: 5px;
 }
 .collapsed-section p {
-  color: var(--text-muted);
+  color: var(--text-3);
   margin: 7px 0 0;
   font-size: 12px;
 }
@@ -369,7 +371,7 @@
 .shipment-tracking {
   display: block;
   margin-top: 3px;
-  color: var(--text-muted);
+  color: var(--text-3);
   font-size: 12px;
   overflow-wrap: anywhere;
 }
@@ -413,7 +415,7 @@
   gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
-  color: var(--text);
+  color: var(--text-1);
   font-size: 13px;
 }
 .dispatch-line > span {
@@ -423,12 +425,11 @@
 .dispatch-line small {
   display: block;
   margin-top: 3px;
-  color: var(--text-muted);
+  color: var(--text-3);
   font-size: 11px;
 }
-.dispatch-line input {
+.dispatch-line p-inputnumber {
   width: 100%;
-  min-height: 36px;
 }
 .dispatch-lines > .order-muted {
   margin: 10px 0 0;
@@ -447,13 +448,17 @@
 .order-form-grid label {
   display: grid;
   gap: 6px;
-  color: var(--text-muted);
+  color: var(--text-3);
   font-size: 12px;
 }
-.order-form-grid input,
-.order-form-grid select {
+.order-form-grid ui-form-field {
+  min-width: 0;
+}
+.order-form-grid p-inputnumber,
+.order-form-grid p-datepicker,
+.order-form-grid p-select,
+.order-form-grid input[pInputText] {
   width: 100%;
-  min-height: 36px;
 }
 .order-form-error {
   color: var(--danger);
@@ -487,11 +492,11 @@
   font-size: 12px;
 }
 .after-sales-summary > span {
-  color: var(--text-muted);
+  color: var(--text-3);
 }
 .after-sales-summary strong {
   margin-left: 5px;
-  color: var(--text);
+  color: var(--text-1);
 }
 .after-sales-closed {
   color: var(--danger);
@@ -531,20 +536,19 @@
 .return-entry-table {
   min-width: 820px;
 }
-.return-entry-table input {
+.return-entry-table p-inputnumber {
   width: 100%;
   min-width: 80px;
-  min-height: 36px;
 }
 .after-sales-cod-choice {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  color: var(--text);
+  color: var(--text-1);
   font-size: 12px;
 }
-.after-sales-cod-choice input {
-  accent-color: var(--accent);
+.after-sales-cod-choice p-checkbox {
+  margin-top: 2px;
 }
 
 @media (max-width: 1040px) {
@@ -587,12 +591,13 @@
   }
 }
 @media (max-width: 760px) {
-  .order-detail-page {
-    padding: 22px 16px 36px;
-  }
   .order-detail-header {
     align-items: flex-start;
     flex-direction: column;
+    gap: 8px;
+  }
+  .order-detail-page > .order-action-message {
+    margin-inline: 12px;
   }
   .order-action-bar {
     justify-content: flex-start;

@@ -9,6 +9,7 @@ import { OrderDto, OrderListQuery, OrderPage } from '@models/order.dto';
 export class OrdersStore {
   private readonly service = inject(OrdersService);
   private readonly requests = new Subject<OrderListQuery>();
+  private readonly observedVersions = new Map<string, string>();
   private readonly pageState = signal<OrderPage>({
     items: [],
     total: 0,
@@ -88,31 +89,8 @@ export class OrdersStore {
   }
 
   updateVisibleOrder(order: OrderDto): void {
-    this.pageState.update((page) => {
-      if (!page.items.some((item) => item.id === order.id)) return page;
-      return {
-        ...page,
-        items: page.items.map((item) =>
-          item.id === order.id
-            ? {
-                ...item,
-                number: order.number,
-                status: order.status,
-                paymentMethod: order.paymentMethod,
-                total: order.total,
-                currency: order.currency,
-                createdOn: order.createdOn,
-                expiresAt: order.expiresAt,
-                paymentStatus: order.paymentStatus,
-                fulfillmentStatus: order.fulfillmentStatus,
-                paidAtUtc: order.paidAtUtc,
-                recipientName: order.recipientName,
-                email: order.email,
-                phone: order.phone,
-              }
-            : item,
-        ),
-      };
-    });
+    if (this.observedVersions.get(order.id) === order.version) return;
+    this.observedVersions.set(order.id, order.version);
+    this.load();
   }
 }

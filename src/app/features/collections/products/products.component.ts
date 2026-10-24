@@ -1,3 +1,4 @@
+import { ButtonDirective } from 'primeng/button';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,9 +17,13 @@ import { ProductListQuery } from '@models/list-query.model';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { Dialog } from 'primeng/dialog';
+import { Checkbox } from 'primeng/checkbox';
+import { InputNumber } from 'primeng/inputnumber';
+import { Table } from 'primeng/table';
 import { ContentState } from '@shared/ui/content-state/content-state.component';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { StatusBadge } from '@shared/ui/status-badge/status-badge.component';
+import { FormField } from '@shared/ui/form-field/form-field.component';
 import {
   PRODUCT_PAGE_SIZES,
   PRODUCT_STATUS_LABELS,
@@ -47,7 +52,12 @@ import { MediaPreviewStore } from '@stores/media-preview.store';
     InputText,
     Select,
     StatusBadge,
+    FormField,
     Dialog,
+    Checkbox,
+    InputNumber,
+    Table,
+    ButtonDirective,
   ],
   templateUrl: './products.component.html',
 
@@ -64,7 +74,7 @@ export class Products implements OnInit {
   readonly statuses = PRODUCT_STATUS_LABELS;
   readonly statusOptions = PRODUCT_STATUS_OPTIONS;
   readonly status = ProductStatus;
-  readonly pageSizes = PRODUCT_PAGE_SIZES;
+  readonly pageSizes: number[] = [...PRODUCT_PAGE_SIZES];
   readonly filtersOpen = signal(false);
   readonly bulkTarget = signal<ProductStatus | null>(null);
   readonly fulfillmentOptions = PRODUCT_LIST_FULFILLMENT_OPTIONS;
@@ -124,9 +134,8 @@ export class Products implements OnInit {
       page: 1,
     });
   }
-  setPrice(key: 'minimumPrice' | 'maximumPrice', event: Event): void {
-    if (event.target instanceof HTMLInputElement)
-      this.setFilter(key, event.target.value === '' ? null : Number(event.target.value));
+  setPrice(key: 'minimumPrice' | 'maximumPrice', value: number | null): void {
+    this.setFilter(key, value);
   }
   sortValue(): string {
     const query = this.store.filters();
@@ -143,6 +152,9 @@ export class Products implements OnInit {
   fulfillmentLabel(value: number): string {
     return PRODUCT_FULFILLMENT_OPTIONS.find((option) => option.value === value)?.label ?? '—';
   }
+  statusLabel(value: ProductStatus): string {
+    return this.statuses[value];
+  }
   confirmBulk(): void {
     const target = this.bulkTarget();
     if (target !== null)
@@ -151,9 +163,10 @@ export class Products implements OnInit {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => this.bulkTarget.set(null));
   }
-  changePageSize(event: Event): void {
-    if (event.target instanceof HTMLSelectElement)
-      this.update({ ...this.query(), pageSize: Number(event.target.value), page: 1 });
+  changePageSize(value: number | string): void {
+    const pageSize = Number(value);
+    if (this.pageSizes.some((size) => size === pageSize))
+      this.update({ ...this.query(), pageSize, page: 1 });
   }
   private query(): ProductListQuery {
     return readProductListQuery(this.route.snapshot.queryParams);

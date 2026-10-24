@@ -88,7 +88,7 @@ test('editor: validation, dirty guard, API save and conflict', async ({ page, ca
   await expect(guard).toBeVisible();
   await guard.getByRole('button', { name: 'Ở lại', exact: true }).click();
   await expect(name).toHaveValue(`${original} — chỉnh sửa kiểm thử`);
-  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.locator('.editor-notice')).toContainText('Đã lưu sản phẩm.');
   expect(catalog.products[0]?.name).toBe(`${original} — chỉnh sửa kiểm thử`);
   await name.blur();
@@ -98,7 +98,7 @@ test('editor: validation, dirty guard, API save and conflict', async ({ page, ca
   await expect(name).toHaveValue(`${original} — chỉnh sửa kiểm thử`);
   catalog.rejectNextProductSave();
   await name.fill('Bản đang sửa được giữ khi có lỗi');
-  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.locator('.editor-error')).toBeVisible();
   await expect(name).toHaveValue('Bản đang sửa được giữ khi có lỗi');
   await expect(page.locator('.editor-save-status')).toContainText('Có thay đổi chưa lưu');
@@ -112,12 +112,12 @@ test('categories and product types have separate create and edit screens', async
   await page.getByRole('link', { name: 'Thêm danh mục', exact: true }).click();
   await page.locator('#category-name').fill('Danh mục thử');
   await page.locator('#category-slug').fill('danh-muc-thu');
-  await page.getByRole('button', { name: 'Lưu danh mục', exact: true }).click();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page).toHaveURL(/\/categories\/[^/]+$/u);
   await expect(page.locator('.editor-save-status')).toContainText('Đã lưu');
   expect(catalog.categories.some((item) => item.slug === 'danh-muc-thu')).toBe(true);
   await page.locator('#category-name').fill('Danh mục đã sửa');
-  await page.getByRole('button', { name: 'Lưu danh mục', exact: true }).click();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.locator('.editor-save-status')).toContainText('Đã lưu');
   expect(catalog.categories.find((item) => item.slug === 'danh-muc-thu')?.name).toBe(
     'Danh mục đã sửa',
@@ -127,15 +127,15 @@ test('categories and product types have separate create and edit screens', async
     .getByRole('link', { name: 'Loại sản phẩm', exact: true })
     .click();
   await page.getByRole('link', { name: 'Thêm loại sản phẩm', exact: true }).click();
-  await page.locator('#product-type-code').fill('BROWSER-TEST');
+  await expect(page.locator('#product-type-code')).toHaveText(/^TYPE_[A-Fa-f0-9]+$/u);
   await page.locator('#product-type-name').fill('Loại sản phẩm thử');
-  await page.getByRole('button', { name: 'Lưu loại sản phẩm', exact: true }).click();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.locator('.editor-save-status')).toContainText('Đã lưu');
   await expect(page).toHaveURL(/\/product-types\/[^/]+$/u);
   await page.locator('#product-type-name').fill('Loại đã sửa');
-  await page.getByRole('button', { name: 'Lưu loại sản phẩm', exact: true }).click();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.locator('.editor-save-status')).toContainText('Đã lưu');
-  expect(catalog.productTypes.find((item) => item.code === 'BROWSER-TEST')?.name).toBe(
+  expect(catalog.productTypes.find((item) => item.name === 'Loại đã sửa')?.name).toBe(
     'Loại đã sửa',
   );
 });

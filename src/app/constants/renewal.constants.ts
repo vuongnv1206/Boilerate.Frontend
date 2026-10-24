@@ -1,17 +1,27 @@
 import { RenewalOutcome, RenewalStatus } from '@models/renewal.dto';
 
 export const RENEWAL_STATUS_LABELS: Readonly<Record<RenewalStatus, string>> = {
-  [RenewalStatus.AwaitingTarget]: 'Chờ thông tin tài khoản',
-  [RenewalStatus.Ready]: 'Sẵn sàng gia hạn',
-  [RenewalStatus.Claimed]: 'Đang được nhận xử lý',
-  [RenewalStatus.PendingVerification]: 'Chờ xác minh',
-  [RenewalStatus.Completed]: 'Đã gia hạn',
+  [RenewalStatus.AwaitingTarget]: 'Chờ khách nhập tài khoản',
+  [RenewalStatus.Ready]: 'Chờ nhận xử lý',
+  [RenewalStatus.Claimed]: 'Đang xử lý',
+  [RenewalStatus.PendingVerification]: 'Chờ xác minh kết quả',
+  [RenewalStatus.Completed]: 'Đã xác nhận gia hạn',
 };
 
+export function renewalStatusTone(
+  status: RenewalStatus,
+): 'success' | 'warning' | 'neutral' | 'muted' {
+  if (status === RenewalStatus.Completed) return 'success';
+  if (status === RenewalStatus.Claimed || status === RenewalStatus.PendingVerification)
+    return 'warning';
+  if (status === RenewalStatus.AwaitingTarget) return 'muted';
+  return 'neutral';
+}
+
 export const RENEWAL_OUTCOME_LABELS: Readonly<Record<RenewalOutcome, string>> = {
-  [RenewalOutcome.Pending]: 'Chờ xác minh',
-  [RenewalOutcome.Applied]: 'Đã áp dụng',
-  [RenewalOutcome.NotApplied]: 'Chưa áp dụng',
+  [RenewalOutcome.Pending]: 'Chờ xác minh kết quả',
+  [RenewalOutcome.Applied]: 'Đã gia hạn',
+  [RenewalOutcome.NotApplied]: 'Chưa gia hạn',
 };
 
 export const RENEWAL_STATUS_OPTIONS = Object.entries(RENEWAL_STATUS_LABELS).map(

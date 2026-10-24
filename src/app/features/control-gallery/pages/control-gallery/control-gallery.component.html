@@ -36,20 +36,30 @@
           <div class="specimen-row">
             <span class="row-caption">Biến thể</span>
             <div class="control-line">
-              <button class="ui-button primary" type="button" (click)="showToast()">
+              <button pButton severity="primary" type="button" (click)="showToast()">
                 <ui-icon name="plus" [size]="14" /> Tạo mới
               </button>
-              <button class="ui-button" type="button" (click)="openDialog($event)">
+              <button
+                pButton
+                severity="secondary"
+                outlined
+                type="button"
+                (click)="openDialog($event)"
+              >
                 Xem trước
               </button>
-              <button class="ui-button quiet" type="button" (click)="showToast()">
+              <button pButton severity="secondary" text type="button" (click)="showToast()">
                 Hủy thay đổi
               </button>
-              <button class="ui-button danger" type="button" (click)="previewDelete()">
+              <button pButton severity="danger" outlined type="button" (click)="previewDelete()">
                 Xóa bản nháp
               </button>
               <button
-                class="icon-button"
+                pButton
+                severity="secondary"
+                text
+                rounded
+                iconOnly
                 type="button"
                 aria-label="Cài đặt bản xem thử"
                 pTooltip="Cài đặt bản xem thử"
@@ -64,9 +74,11 @@
           <div class="specimen-row">
             <span class="row-caption">Trạng thái</span>
             <div class="control-line">
-              <button class="ui-button primary" type="button" disabled>Không khả dụng</button>
+              <button pButton severity="primary" type="button" disabled>Không khả dụng</button>
               <button
-                class="ui-button"
+                pButton
+                severity="secondary"
+                outlined
                 type="button"
                 [disabled]="saving()"
                 [attr.aria-busy]="saving()"
@@ -395,7 +407,9 @@
               <p>Dành cho một quyết định ngắn, có điểm bắt đầu và kết thúc rõ ràng.</p>
             </div>
             <button
-              class="ui-button"
+              pButton
+              severity="secondary"
+              outlined
               type="button"
               (click)="openDialog($event)"
               data-testid="gallery-dialog-trigger"
@@ -409,7 +423,9 @@
               <p>Thêm tùy chọn mà vẫn giữ được ngữ cảnh của màn đang làm việc.</p>
             </div>
             <button
-              class="ui-button"
+              pButton
+              severity="secondary"
+              outlined
               type="button"
               (click)="openDrawer($event)"
               data-testid="gallery-drawer-trigger"
@@ -423,7 +439,11 @@
               <p>Mô tả bổ sung cho icon; nhãn thao tác vẫn có sẵn cho trình đọc màn hình.</p>
             </div>
             <button
-              class="icon-button"
+              pButton
+              severity="secondary"
+              text
+              rounded
+              iconOnly
               type="button"
               aria-label="Thông tin về bộ giao diện"
               pTooltip="Mọi control dùng chung token sáng và tối."
@@ -461,7 +481,9 @@
           <div class="specimen-row feedback-action">
             <span class="row-caption">Thông báo nổi</span
             ><button
-              class="ui-button"
+              pButton
+              severity="secondary"
+              outlined
               type="button"
               (click)="showToast()"
               data-testid="gallery-toast-trigger"
@@ -481,7 +503,9 @@
           </div>
           <div class="control-line" aria-label="Chọn trạng thái xem thử">
             <button
-              class="ui-button"
+              pButton
+              severity="secondary"
+              outlined
               type="button"
               [attr.aria-pressed]="statePreview() === 'empty'"
               (click)="statePreview.set('empty')"
@@ -489,7 +513,9 @@
               Trống
             </button>
             <button
-              class="ui-button"
+              pButton
+              severity="secondary"
+              outlined
               type="button"
               [attr.aria-pressed]="statePreview() === 'loading'"
               (click)="statePreview.set('loading')"
@@ -497,7 +523,9 @@
               Đang tải
             </button>
             <button
-              class="ui-button"
+              pButton
+              severity="secondary"
+              outlined
               type="button"
               [attr.aria-pressed]="statePreview() === 'error'"
               (click)="statePreview.set('error')"
@@ -523,7 +551,13 @@
             "
           >
             @if (statePreview() === 'error') {
-              <button class="ui-button" type="button" (click)="statePreview.set('empty')">
+              <button
+                pButton
+                severity="secondary"
+                outlined
+                type="button"
+                (click)="statePreview.set('empty')"
+              >
                 Thử lại
               </button>
             }
@@ -571,8 +605,9 @@
     </p>
   </div>
   <ng-template #footer
-    ><button class="ui-button" type="button" (click)="dialogVisible.set(false)">Quay lại</button
-    ><button class="ui-button primary" type="button" (click)="closeDialog()">
+    ><button pButton severity="secondary" outlined type="button" (click)="dialogVisible.set(false)">
+      Quay lại</button
+    ><button pButton severity="primary" type="button" (click)="closeDialog()">
       Lưu bản xem thử
     </button></ng-template
   >
@@ -612,7 +647,9 @@
   </div>
   <ng-template #footer
     ><button
-      class="ui-button primary drawer-close"
+      pButton
+      severity="primary"
+      class="drawer-close"
       type="button"
       (click)="drawerVisible.set(false)"
     >

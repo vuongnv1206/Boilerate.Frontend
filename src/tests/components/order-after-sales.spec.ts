@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthSession } from '@core/auth/auth-session';
 import { ApiError } from '@core/http/api-error';
 import { OrderDetail } from '@features/orders/order-detail.component';
+import { OrdersStore } from '@stores/orders.store';
 import {
   AfterSalesSummary,
   OrderDto,
@@ -183,6 +184,7 @@ describe('Order after-sales drafts and mutation retries', () => {
           },
         },
         { provide: OrdersService, useValue: service },
+        { provide: OrdersStore, useValue: { updateVisibleOrder: vi.fn() } },
       ],
     });
     TestBed.overrideComponent(OrderDetail, { set: { template: '', imports: [] } });

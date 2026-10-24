@@ -1,7 +1,11 @@
 <div class="orders-workspace" [class.order-detail-open]="editorId() !== null">
   @if (editorId() !== null) {
     <button
-      class="ui-button order-items-toggle"
+      #itemsToggle
+      pButton
+      severity="secondary"
+      outlined
+      class="order-items-toggle"
       type="button"
       (click)="panelOpen.set(!panelOpen())"
       [attr.aria-expanded]="panelOpen()"
@@ -11,10 +15,12 @@
     </button>
     @if (panelOpen()) {
       <button
+        pButton
+        text
         class="order-items-backdrop"
         type="button"
         aria-label="Đóng danh sách đơn hàng"
-        (click)="panelOpen.set(false)"
+        (click)="closePanel()"
       ></button>
     }
     <aside
@@ -27,7 +33,7 @@
       [attr.aria-modal]="panelOpen() ? true : null"
       [cdkTrapFocus]="panelOpen()"
       [cdkTrapFocusAutoCapture]="panelOpen()"
-      (keydown.escape)="panelOpen.set(false)"
+      (keydown.escape)="closePanel()"
     >
       <header>
         <a routerLink="/admin/orders" [queryParams]="routeQuery()" (click)="panelOpen.set(false)"
@@ -37,6 +43,7 @@
       <label class="order-item-search">
         <span class="sr-only">Tìm trong đơn hàng</span>
         <input
+          pInputText
           type="search"
           [value]="store.query().q"
           #itemSearch
@@ -50,7 +57,9 @@
       @if (store.error()) {
         <div class="order-items-message" role="alert">
           {{ store.error() }}
-          <button class="ui-button" type="button" (click)="store.load()">Thử lại</button>
+          <button pButton severity="secondary" outlined type="button" (click)="store.load()">
+            Thử lại
+          </button>
         </div>
       }
       <nav class="order-items-list" aria-label="Đơn hàng trong bộ lọc">
@@ -82,7 +91,11 @@
       </nav>
       <footer>
         <button
-          class="icon-button"
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
           type="button"
           aria-label="Trang đơn hàng trước"
           [disabled]="store.page().pageNumber <= 1 || store.loading()"
@@ -91,7 +104,11 @@
           <ui-icon name="chevron-left" [size]="14" /></button
         ><span>{{ store.page().pageNumber }} / {{ store.pageCount() }}</span
         ><button
-          class="icon-button"
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
           type="button"
           aria-label="Trang đơn hàng sau"
           [disabled]="store.page().pageNumber >= store.pageCount() || store.loading()"

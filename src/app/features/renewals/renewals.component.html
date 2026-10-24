@@ -1,37 +1,34 @@
 <section class="collection-page renewals-page" aria-labelledby="renewals-title">
-  <div class="collection-breadcrumb">
-    <ui-icon name="layers" [size]="13" /><span>Workspace</span> ><ui-icon
-      name="chevron-right"
-      [size]="12"
-    /><strong>Gia hạn</strong>
-  </div>
-  <header class="collection-heading">
-    <div class="heading-copy">
-      <div class="title-row">
-        <h1 id="renewals-title">Gia hạn thủ công</h1>
-        <span class="total-count">{{ store.page().total }}</span>
-      </div>
-      <p>Nhận xử lý, theo dõi lần gia hạn và xác minh kết quả cho khách.</p>
-    </div>
+  <header class="catalog-list-toolbar renewal-list-toolbar">
+    <h1 id="renewals-title">
+      Gia hạn <span>{{ store.page().total }}</span>
+    </h1>
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Mọi trạng thái"
+      [ngModel]="statusFilter()"
+      (ngModelChange)="setStatus($event)"
+      appendTo="body"
+      ariaLabel="Lọc trạng thái yêu cầu gia hạn"
+    />
+    <button
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
+      type="button"
+      aria-label="Tải lại yêu cầu gia hạn"
+      title="Tải lại yêu cầu gia hạn"
+      (click)="store.loadPage(store.page().pageNumber, store.selectedStatus())"
+      [disabled]="store.loading()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
+    <span class="toolbar-hint">Thông tin tài khoản chỉ mở khi cần và có quyền.</span>
   </header>
-  <div class="collection-tabs">
-    <span class="active">Yêu cầu gia hạn</span
-    ><span class="collection-summary">Thông tin tài khoản luôn được che</span>
-  </div>
-  <div class="collection-toolbar renewals-toolbar">
-    <label class="renewal-filter" for="renewal-status"
-      >Trạng thái
-      <select
-        id="renewal-status"
-        [value]="store.selectedStatus() ?? ''"
-        (change)="setStatus($any($event.target).value)"
-      >
-        @for (option of statusOptions; track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
-    </label>
-  </div>
   @if (store.loading()) {
     <ui-content-state
       kind="loading"
@@ -46,93 +43,117 @@
       title="Không thể tải gia hạn"
       [message]="store.error()"
     >
-      <button class="ui-button" type="button" (click)="store.loadPage(store.page().pageNumber)">
+      <button
+        pButton
+        severity="secondary"
+        outlined
+        type="button"
+        (click)="store.loadPage(store.page().pageNumber, store.selectedStatus())"
+      >
         Thử lại
       </button>
     </ui-content-state>
   } @else {
     <div class="collection-table">
       <div class="table-scroll" role="region" aria-label="Danh sách yêu cầu gia hạn" tabindex="0">
-        <table class="content-table renewal-table">
-          <thead>
+        <p-table
+          [value]="store.page().items.slice()"
+          dataKey="renewal.id"
+          tableStyleClass="content-table renewal-table"
+          [tableStyle]="{ 'min-width': '880px' }"
+          [rowHover]="true"
+          [pt]="{ tableContainer: { style: { overflow: 'visible' } } }"
+        >
+          <ng-template #header>
             <tr>
-              <th>Mặt hàng</th>
-              <th>Mã đơn</th>
-              <th>Thông tin tài khoản</th>
-              <th>Trạng thái</th>
-              <th>Số lượng</th>
+              <th scope="col">Sản phẩm cần gia hạn</th>
+              <th scope="col">Đơn liên quan</th>
+              <th scope="col">Tài khoản đích</th>
+              <th scope="col">Tiến độ</th>
+              <th scope="col">Số lượng</th>
             </tr>
-          </thead>
-          <tbody>
-            @for (item of store.page().items; track item.renewal.id) {
-              <tr>
-                <td class="name-cell">
-                  <a [routerLink]="[item.renewal.id]">{{ item.renewal.name }}</a
-                  ><span class="order-contact"
-                    >{{ item.renewal.sku
-                    }}{{
-                      item.renewal.optionDescription ? ' · ' + item.renewal.optionDescription : ''
-                    }}</span
-                  >
-                </td>
-                <td>
-                  @if (store.canViewOrders()) {
-                    <a [routerLink]="['/admin/orders', item.renewal.orderId]">Mở đơn hàng</a>
-                  } @else {
-                    <span class="renewal-order-reference">{{ item.renewal.orderId }}</span>
-                  }
-                </td>
-                <td>
-                  <span class="renewal-private-value">{{
-                    item.renewal.targetPreview || 'Chưa nhập'
-                  }}</span>
-                </td>
-                <td>
-                  <span class="renewal-status" [attr.data-status]="item.renewal.status">{{
-                    statuses[item.renewal.status]
-                  }}</span>
-                </td>
-                <td>{{ item.renewal.quantity }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="5">
-                  <div class="renewal-empty">Không có yêu cầu trong trạng thái này.</div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+          </ng-template>
+          <ng-template #body let-item>
+            <tr>
+              <td class="name-cell">
+                <a [routerLink]="[item.renewal.id]" [queryParams]="routeQuery()">{{
+                  item.renewal.name
+                }}</a
+                ><span class="order-contact"
+                  >{{ item.renewal.sku
+                  }}{{
+                    item.renewal.optionDescription ? ' · ' + item.renewal.optionDescription : ''
+                  }}</span
+                >
+              </td>
+              <td>
+                @if (store.canViewOrders()) {
+                  <a [routerLink]="['/admin/orders', item.renewal.orderId]">Mở đơn hàng</a>
+                } @else {
+                  <span class="renewal-order-reference">Không có quyền xem đơn hàng</span>
+                }
+              </td>
+              <td>
+                <span class="renewal-private-value">{{
+                  item.renewal.targetPreview || 'Chưa nhập'
+                }}</span>
+              </td>
+              <td>
+                <ui-status-badge [tone]="statusTone(item.renewal.status)">
+                  {{ statusLabel(item.renewal.status) }}
+                </ui-status-badge>
+              </td>
+              <td>{{ item.renewal.quantity }}</td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr class="empty-row">
+              <td colspan="5">
+                <ui-content-state
+                  kind="empty"
+                  title="Không có yêu cầu gia hạn"
+                  message="Thử đổi bộ lọc trạng thái."
+                />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
       </div>
-      <nav class="renewal-pagination" aria-label="Phân trang gia hạn">
-        <span>Trang {{ store.page().pageNumber }} / {{ store.pageCount() }}</span>
-        <button
-          class="ui-button"
-          type="button"
-          [disabled]="store.page().pageNumber <= 1"
-          (click)="previous()"
-        >
-          Trước
-        </button>
-        @for (page of pageNumbers(); track page) {
+      <footer class="pagination">
+        <span>
+          Hiển thị <strong>{{ rangeStart() }}–{{ rangeEnd() }}</strong> trong
+          {{ store.page().total }} yêu cầu
+        </span>
+        <div class="pagination-right">
           <button
-            class="ui-button"
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
             type="button"
-            [attr.aria-current]="page === store.page().pageNumber ? 'page' : null"
-            (click)="updateQuery(page, store.selectedStatus())"
+            aria-label="Trang gia hạn trước"
+            [disabled]="store.page().pageNumber <= 1 || store.loading()"
+            (click)="previous()"
           >
-            {{ page }}
+            <ui-icon name="chevron-left" [size]="14" />
           </button>
-        }
-        <button
-          class="ui-button"
-          type="button"
-          [disabled]="store.page().pageNumber >= store.pageCount()"
-          (click)="next()"
-        >
-          Sau
-        </button>
-      </nav>
+          <span>{{ store.page().pageNumber }} / {{ store.pageCount() }}</span>
+          <button
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
+            type="button"
+            aria-label="Trang gia hạn sau"
+            [disabled]="store.page().pageNumber >= store.pageCount() || store.loading()"
+            (click)="next()"
+          >
+            <ui-icon name="chevron-right" [size]="14" />
+          </button>
+        </div>
+      </footer>
     </div>
   }
 </section>

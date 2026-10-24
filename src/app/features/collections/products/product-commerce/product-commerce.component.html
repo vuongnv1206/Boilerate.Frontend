@@ -18,15 +18,13 @@
             : 'Địa chỉ giao hàng không cần thu thập cho cách cung cấp này.'
         }}
       </p>
-      <label class="wf-switch">
-        <input
-          id="wf-requires-shipping"
-          type="checkbox"
-          [checked]="form().controls.fulfillmentKind.value === kind.Physical"
-          disabled
-        />
-        <span></span>{{ form().controls.fulfillmentKind.value === kind.Physical ? 'CÓ' : 'KHÔNG' }}
-      </label>
+      <p-toggleswitch
+        inputId="wf-requires-shipping"
+        [ngModel]="form().controls.fulfillmentKind.value === kind.Physical"
+        [ngModelOptions]="{ standalone: true }"
+        [disabled]="true"
+        ariaLabel="Yêu cầu giao hàng"
+      />
     </div>
   </section>
   @if (!options().length) {
@@ -49,6 +47,8 @@
       @for (option of options(); track option; let index = $index) {
         @if (editingOption() !== index) {
           <button
+            pButton
+            text
             class="wf-option-summary"
             type="button"
             (click)="editOption(index)"
@@ -68,8 +68,10 @@
       }
       <div class="wf-option-footer">
         <button
+          pButton
+          text
+          severity="secondary"
           type="button"
-          class="wf-text-button"
           [disabled]="options().length >= optionLimit || !catalog().canWrite() || catalog().busy()"
           (click)="addOption()"
         >
@@ -85,8 +87,9 @@
   @if (pendingOptionRemoval() !== null) {
     <div class="wf-inline-confirm" role="alert">
       <p>Xóa nhóm lựa chọn và các tổ hợp liên quan? Thay đổi có hiệu lực khi lưu sản phẩm.</p>
-      <button class="ui-button" type="button" (click)="cancelRemoveOption()">Hủy</button
-      ><button class="ui-button danger" type="button" (click)="confirmRemoveOption()">
+      <button pButton severity="secondary" outlined type="button" (click)="cancelRemoveOption()">
+        Hủy</button
+      ><button pButton severity="danger" outlined type="button" (click)="confirmRemoveOption()">
         Xóa nhóm
       </button>
     </div>
@@ -97,8 +100,12 @@
   @if (options().length) {
     <h2 class="wf-variants-title">Biến thể</h2>
     <div class="wf-variant-grid" role="region" aria-label="Biến thể của sản phẩm" tabindex="0">
-      <table class="wf-variant-table">
-        <thead>
+      <p-table
+        [value]="form().controls.variants.controls"
+        tableStyleClass="wf-variant-table"
+        [tableStyle]="{ 'min-width': '780px' }"
+      >
+        <ng-template #header>
           <tr>
             <th>Ảnh</th>
             @for (option of options(); track option) {
@@ -109,96 +116,106 @@
             <th class="wf-number">Giá</th>
             <th class="wf-number">Giá so sánh</th>
           </tr>
-        </thead>
-        <tbody>
-          @for (row of form().controls.variants.controls; track row; let index = $index) {
-            @if (expanded() !== row) {
-              <tr
-                class="wf-variant-row"
-                tabindex="0"
-                (click)="expand(row)"
-                (keydown.enter)="expand(row)"
-                (keydown)="rowKeydown($event, row)"
-                [attr.aria-label]="'Sửa biến thể ' + variantName(row)"
-                [attr.aria-expanded]="expanded() === row"
-                [attr.aria-controls]="'variant-detail-' + rowKey(row)"
-              >
-                <td>
-                  <div class="wf-variant-image">
-                    @if (previews.url(row.controls.imageMediaId.value); as url) {
-                      <img [src]="url" alt="" width="28" height="28" />
-                    } @else {
-                      <span class="wf-image-placeholder"><ui-icon name="image" [size]="16" /></span>
-                    }
-                    @if (isDefault(row)) {
-                      <span aria-label="Biến thể mặc định">★</span>
-                    }
-                  </div>
-                </td>
-                @for (option of options(); track option; let optionIndex = $index) {
-                  <td>{{ valueLabel(row, optionIndex) }}</td>
-                }
-                <td class="wf-number">{{ quantity(row) }}</td>
-                <td>{{ row.controls.sku.value || '—' }}</td>
-                <td class="wf-number">
-                  {{
-                    row.controls.price.value === null
-                      ? '—'
-                      : (row.controls.price.value | currency: 'VND' : 'symbol-narrow' : '1.0-0')
-                  }}
-                </td>
-                <td class="wf-number">
-                  {{
-                    row.controls.compareAtPrice.value === null
-                      ? '—'
-                      : (row.controls.compareAtPrice.value
-                        | currency: 'VND' : 'symbol-narrow' : '1.0-0')
-                  }}
-                </td>
-              </tr>
-            } @else {
-              <tr class="wf-detail-row" [id]="'variant-detail-' + rowKey(row)">
-                <td [attr.colspan]="options().length + 5">
-                  <section class="wf-variant-detail" aria-label="Chi tiết biến thể">
-                    <div class="wf-detail-toolbar">
-                      <strong
-                        >{{ form().controls.name.value }}
-                        <span>({{ variantName(row) }})</span></strong
-                      >
-                      <div>
-                        @if (isDefault(row)) {
-                          <span>★ Biến thể mặc định</span>
-                        } @else {
-                          <button
-                            class="wf-text-button"
-                            type="button"
-                            (click)="setDefault(row)"
-                            [disabled]="!catalog().canWrite()"
-                          >
-                            Đặt mặc định
-                          </button>
-                        }
+        </ng-template>
+        <ng-template #body let-row>
+          @if (expanded() !== row) {
+            <tr
+              class="wf-variant-row"
+              tabindex="0"
+              (click)="expand(row)"
+              (keydown.enter)="expand(row)"
+              (keydown)="rowKeydown($event, row)"
+              [attr.aria-label]="'Sửa biến thể ' + variantName(row)"
+              [attr.aria-expanded]="expanded() === row"
+              [attr.aria-controls]="'variant-detail-' + rowKey(row)"
+            >
+              <td>
+                <div class="wf-variant-image">
+                  @if (previews.url(row.controls.imageMediaId.value); as url) {
+                    <img [src]="url" alt="" width="28" height="28" />
+                  } @else {
+                    <span class="wf-image-placeholder"><ui-icon name="image" [size]="16" /></span>
+                  }
+                  @if (isDefault(row)) {
+                    <span aria-label="Biến thể mặc định">★</span>
+                  }
+                </div>
+              </td>
+              @for (option of options(); track option; let optionIndex = $index) {
+                <td>{{ valueLabel(row, optionIndex) }}</td>
+              }
+              <td class="wf-number">{{ quantity(row) }}</td>
+              <td>{{ row.controls.sku.value || '—' }}</td>
+              <td class="wf-number">
+                {{
+                  row.controls.price.value === null
+                    ? '—'
+                    : (row.controls.price.value | currency: 'VND' : 'symbol-narrow' : '1.0-0')
+                }}
+              </td>
+              <td class="wf-number">
+                {{
+                  row.controls.compareAtPrice.value === null
+                    ? '—'
+                    : (row.controls.compareAtPrice.value
+                      | currency: 'VND' : 'symbol-narrow' : '1.0-0')
+                }}
+              </td>
+            </tr>
+          } @else {
+            <tr class="wf-detail-row" [id]="'variant-detail-' + rowKey(row)">
+              <td [attr.colspan]="options().length + 5">
+                <section class="wf-variant-detail" aria-label="Chi tiết biến thể">
+                  <div class="wf-detail-toolbar">
+                    <strong
+                      >{{ form().controls.name.value }}
+                      <span>({{ variantName(row) }})</span></strong
+                    >
+                    <div>
+                      @if (isDefault(row)) {
+                        <span>★ Biến thể mặc định</span>
+                      } @else {
                         <button
-                          class="ui-button"
+                          pButton
+                          text
+                          severity="secondary"
                           type="button"
-                          (click)="revertRow()"
+                          (click)="setDefault(row)"
                           [disabled]="!catalog().canWrite()"
                         >
-                          Hoàn tác</button
-                        ><button class="ui-button" type="button" (click)="closeRow()">Đóng</button>
-                      </div>
+                          Đặt mặc định
+                        </button>
+                      }
+                      <button
+                        pButton
+                        severity="secondary"
+                        outlined
+                        type="button"
+                        (click)="revertRow()"
+                        [disabled]="!catalog().canWrite()"
+                      >
+                        Hoàn tác</button
+                      ><button
+                        pButton
+                        severity="secondary"
+                        outlined
+                        type="button"
+                        (click)="closeRow()"
+                      >
+                        Đóng
+                      </button>
                     </div>
-                    <ng-container
-                      [ngTemplateOutlet]="variantFields"
-                      [ngTemplateOutletContext]="{ $implicit: row }"
-                    />
-                  </section>
-                </td>
-              </tr>
-            }
+                  </div>
+                  <ng-container
+                    [ngTemplateOutlet]="variantFields"
+                    [ngTemplateOutletContext]="{ $implicit: row }"
+                  />
+                </section>
+              </td>
+            </tr>
           }
-        </tbody>
-      </table>
+        </ng-template>
+      </p-table>
     </div>
   }
   <ng-template #optionFields>
@@ -211,14 +228,20 @@
         >
         <div>
           <button
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
             class="wf-icon-button"
             type="button"
             aria-label="Xóa nhóm lựa chọn"
             (click)="removeOption(editingOption()!)"
           >
             <ui-icon name="trash" [size]="13" /></button
-          ><button class="ui-button" type="button" (click)="cancelOption()">Hủy</button
-          ><button class="ui-button primary" type="button" (click)="finishOption()">Xong</button>
+          ><button pButton severity="secondary" outlined type="button" (click)="cancelOption()">
+            Hủy</button
+          ><button pButton severity="primary" type="button" (click)="finishOption()">Xong</button>
         </div>
       </div>
       <div class="wf-option-editor-fields">
@@ -245,6 +268,12 @@
               <span class="wf-option-chip" (dblclick)="renameChip(index); chipInput.focus()"
                 ><span>{{ value.controls.label.value }}</span
                 ><button
+                  pButton
+                  text
+                  severity="secondary"
+                  rounded
+                  iconOnly
+                  size="small"
                   class="wf-chip-menu-button"
                   type="button"
                   [attr.aria-label]="'Tùy chọn ' + value.controls.label.value"
@@ -256,14 +285,32 @@
                 </button>
                 @if (valueMenu() === index) {
                   <span class="wf-chip-menu"
-                    ><button type="button" (click)="renameChip(index); chipInput.focus()">
+                    ><button
+                      pButton
+                      text
+                      severity="secondary"
+                      size="small"
+                      type="button"
+                      (click)="renameChip(index); chipInput.focus()"
+                    >
                       Đổi tên</button
-                    ><button type="button" (click)="removeChip(index)">Xóa</button></span
+                    ><button
+                      pButton
+                      text
+                      severity="secondary"
+                      size="small"
+                      type="button"
+                      (click)="removeChip(index)"
+                    >
+                      Xóa
+                    </button></span
                   >
                 }
               </span>
             }
             <input
+              pInputText
+              pSize="small"
               #chipInput
               id="option-values"
               type="text"
@@ -310,60 +357,55 @@
       <div class="wf-variant-input-grid">
         <div class="field">
           <label [for]="'variant-price-' + rowKey(row)">Giá <span class="required">*</span></label>
-          <div class="wf-unit-input">
-            <span>₫</span
-            ><input
-              pInputText
-              [id]="'variant-price-' + rowKey(row)"
-              type="number"
-              min="0"
-              step="1"
+          <p-inputgroup>
+            <p-inputgroup-addon>₫</p-inputgroup-addon>
+            <p-inputnumber
+              [inputId]="'variant-price-' + rowKey(row)"
+              [min]="0"
+              [step]="1"
+              [useGrouping]="false"
               formControlName="price"
             />
-          </div>
+          </p-inputgroup>
           <ui-field-message tone="error">{{ error(row.controls.price) }}</ui-field-message>
         </div>
         <div class="field">
           <label [for]="'variant-compare-' + rowKey(row)">Giá so sánh</label>
-          <div class="wf-unit-input">
-            <span>₫</span
-            ><input
-              pInputText
-              [id]="'variant-compare-' + rowKey(row)"
-              type="number"
-              min="0"
-              step="1"
+          <p-inputgroup>
+            <p-inputgroup-addon>₫</p-inputgroup-addon>
+            <p-inputnumber
+              [inputId]="'variant-compare-' + rowKey(row)"
+              [min]="0"
+              [step]="1"
+              [useGrouping]="false"
               formControlName="compareAtPrice"
             />
-          </div>
+          </p-inputgroup>
           @if (row.hasError('comparePrice')) {
             <p class="field-error">Giá so sánh phải lớn hơn giá bán.</p>
           }
         </div>
         @if (form().controls.fulfillmentKind.value === kind.Physical) {
           <div class="field wf-inventory-toggle">
-            <label [for]="'variant-track-' + rowKey(row)">Theo dõi tồn kho</label
-            ><label class="wf-switch"
-              ><input
-                [id]="'variant-track-' + rowKey(row)"
-                type="checkbox"
-                [checked]="row.controls.trackInventory.value"
-                [disabled]="!store.canAdjust() || catalog().busy()"
-                (change)="toggleTrack(row, $event)"
-              /><span></span>{{ row.controls.trackInventory.value ? 'CÓ' : 'KHÔNG' }}</label
-            >
+            <label [for]="'variant-track-' + rowKey(row)">Theo dõi tồn kho</label>
+            <p-toggleswitch
+              [inputId]="'variant-track-' + rowKey(row)"
+              [ngModel]="row.controls.trackInventory.value"
+              (ngModelChange)="setTrack(row, $event)"
+              [ngModelOptions]="{ standalone: true }"
+              [disabled]="!store.canAdjust() || catalog().busy()"
+              [ariaLabel]="'Theo dõi tồn kho ' + row.controls.sku.value"
+            />
           </div>
           <div class="field wf-quantity-field">
             <label [for]="'variant-quantity-' + rowKey(row)">Số lượng</label>
             @if (row.controls.trackInventory.value) {
-              <input
-                pInputText
-                [id]="'variant-quantity-' + rowKey(row)"
-                type="number"
-                min="0"
-                step="1"
+              <p-inputnumber
+                [inputId]="'variant-quantity-' + rowKey(row)"
+                [min]="0"
+                [step]="1"
+                [useGrouping]="false"
                 formControlName="quantity"
-                [readOnly]="!store.canAdjust()"
               /><ui-field-message tone="error">{{ error(row.controls.quantity) }}</ui-field-message>
             } @else {
               <div class="wf-readonly-value">∞</div>
@@ -379,62 +421,93 @@
             maxlength="100"
           /><ui-field-message tone="error">{{ error(row.controls.sku) }}</ui-field-message>
         </div>
+        @if (product()) {
+          <div class="field">
+            <label class="variant-active-toggle" [for]="'variant-active-' + rowKey(row)">
+              <span>Đang bán</span>
+              <p-toggleswitch
+                [inputId]="'variant-active-' + rowKey(row)"
+                [ngModel]="row.controls.isActive.value"
+                (ngModelChange)="setVariantActive(row, $event)"
+                [ngModelOptions]="{ standalone: true }"
+                [disabled]="!catalog().canWrite() || catalog().busy()"
+                [ariaLabel]="'Đang bán ' + row.controls.sku.value"
+              />
+            </label>
+          </div>
+        }
       </div>
       @if (form().controls.fulfillmentKind.value === kind.Physical) {
         <div class="wf-measurements">
           <div class="field">
             <label [for]="'variant-weight-' + rowKey(row)">Cân nặng</label>
-            <div class="wf-unit-input trailing">
-              <input
-                pInputText
-                [id]="'variant-weight-' + rowKey(row)"
+            <p-inputgroup>
+              <p-inputnumber
+                [inputId]="'variant-weight-' + rowKey(row)"
                 formControlName="weight"
-                type="number"
-                min="0"
-                step="any"
-              /><span>g</span>
-            </div>
+                [min]="0"
+                [step]="0.1"
+                [maxFractionDigits]="4"
+                [useGrouping]="false"
+              />
+              <p-inputgroup-addon>g</p-inputgroup-addon>
+            </p-inputgroup>
           </div>
           <div class="field">
             <label [for]="'variant-width-' + rowKey(row)">Chiều rộng</label>
-            <div class="wf-unit-input trailing">
-              <input
-                pInputText
-                [id]="'variant-width-' + rowKey(row)"
+            <p-inputgroup>
+              <p-inputnumber
+                [inputId]="'variant-width-' + rowKey(row)"
                 formControlName="width"
-                type="number"
-                min="0"
-                step="any"
-              /><span>cm</span>
-            </div>
+                [min]="0"
+                [step]="0.1"
+                [maxFractionDigits]="4"
+                [useGrouping]="false"
+              />
+              <p-inputgroup-addon>cm</p-inputgroup-addon>
+            </p-inputgroup>
           </div>
           <div class="field">
             <label [for]="'variant-height-' + rowKey(row)">Chiều cao</label>
-            <div class="wf-unit-input trailing">
-              <input
-                pInputText
-                [id]="'variant-height-' + rowKey(row)"
+            <p-inputgroup>
+              <p-inputnumber
+                [inputId]="'variant-height-' + rowKey(row)"
                 formControlName="height"
-                type="number"
-                min="0"
-                step="any"
-              /><span>cm</span>
-            </div>
+                [min]="0"
+                [step]="0.1"
+                [maxFractionDigits]="4"
+                [useGrouping]="false"
+              />
+              <p-inputgroup-addon>cm</p-inputgroup-addon>
+            </p-inputgroup>
           </div>
           <div class="field">
             <label [for]="'variant-length-' + rowKey(row)">Chiều dài</label>
-            <div class="wf-unit-input trailing">
-              <input
-                pInputText
-                [id]="'variant-length-' + rowKey(row)"
+            <p-inputgroup>
+              <p-inputnumber
+                [inputId]="'variant-length-' + rowKey(row)"
                 formControlName="length"
-                type="number"
-                min="0"
-                step="any"
-              /><span>cm</span>
-            </div>
+                [min]="0"
+                [step]="0.1"
+                [maxFractionDigits]="4"
+                [useGrouping]="false"
+              />
+              <p-inputgroup-addon>cm</p-inputgroup-addon>
+            </p-inputgroup>
           </div>
         </div>
+        @if (product() && store.canInventory()) {
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            type="button"
+            (click)="openInventory(row)"
+            [disabled]="blocked() || !inventoryBalance(row)"
+          >
+            Tồn kho {{ row.controls.sku.value }}
+          </button>
+        }
       }
       @if (
         product() &&
@@ -442,7 +515,9 @@
           form().controls.fulfillmentKind.value === kind.DigitalShared)
       ) {
         <button
-          class="ui-button"
+          pButton
+          severity="secondary"
+          outlined
           type="button"
           (click)="openStock(row)"
           [disabled]="blocked() || !store.canDigital()"
@@ -461,7 +536,14 @@
   @if (store.error()) {
     <div class="editor-error" role="alert">
       <span>{{ store.error() }}</span
-      ><button class="ui-button small" [disabled]="store.busy()" (click)="store.reloadCanonical()">
+      ><button
+        pButton
+        severity="secondary"
+        outlined
+        size="small"
+        [disabled]="store.busy()"
+        (click)="store.reloadCanonical()"
+      >
         Tải bản mới, giữ nội dung nhập
       </button>
     </div>
@@ -474,7 +556,10 @@
           {{ store.selectedVariant()?.sku }}
         </h3>
         <button
-          class="ui-button small"
+          pButton
+          severity="secondary"
+          outlined
+          size="small"
           [disabled]="store.busy() || !!store.pendingAdjustment()"
           (click)="close()"
         >
@@ -498,13 +583,12 @@
               >
                 <div class="field">
                   <label for="inventory-delta" class="field-label">Số lượng tăng / giảm</label
-                  ><input
-                    pInputText
-                    id="inventory-delta"
-                    type="number"
-                    step="1"
+                  ><p-inputnumber
+                    inputId="inventory-delta"
+                    [step]="1"
+                    [useGrouping]="false"
                     formControlName="delta"
-                    aria-describedby="inventory-delta-help inventory-delta-error"
+                    ariaDescribedBy="inventory-delta-help inventory-delta-error"
                   /><ui-field-message id="inventory-delta-help"
                     >Nhập số dương để nhập kho, số âm để giảm kho.</ui-field-message
                   ><ui-field-message id="inventory-delta-error" tone="error">{{
@@ -525,7 +609,7 @@
                   }}</ui-field-message>
                 </div>
               </fieldset>
-              <button class="ui-button primary" type="submit" [disabled]="store.busy()">
+              <button pButton severity="primary" type="submit" [disabled]="store.busy()">
                 {{ store.pendingAdjustment() ? 'Gửi lại đúng yêu cầu cũ' : 'Ghi nhận điều chỉnh' }}
               </button>
             </form>
@@ -539,41 +623,50 @@
           <h4>Lịch sử tồn kho</h4>
           @if (store.movements(); as ledger) {
             <div class="product-commerce-table">
-              <table class="content-table">
-                <thead>
+              <p-table
+                [value]="ledger.items.slice()"
+                tableStyleClass="content-table"
+                [tableStyle]="{ 'min-width': '620px' }"
+              >
+                <ng-template #header>
                   <tr>
                     <th>Thời gian</th>
                     <th>Thay đổi</th>
                     <th>Tồn sau</th>
                     <th>Lý do</th>
                   </tr>
-                </thead>
-                <tbody>
-                  @for (movement of ledger.items; track movement.id) {
-                    <tr>
-                      <td>{{ movement.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
-                      <td>{{ movement.delta > 0 ? '+' : '' }}{{ movement.delta }}</td>
-                      <td>{{ movement.quantityAfter }}</td>
-                      <td>{{ movement.reason }}</td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td colspan="4">Chưa có điều chỉnh.</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+                </ng-template>
+                <ng-template #body let-movement>
+                  <tr>
+                    <td>{{ movement.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ movement.delta > 0 ? '+' : '' }}{{ movement.delta }}</td>
+                    <td>{{ movement.quantityAfter }}</td>
+                    <td>{{ movement.reason }}</td>
+                  </tr>
+                </ng-template>
+                <ng-template #emptymessage>
+                  <tr>
+                    <td colspan="4">Chưa có điều chỉnh.</td>
+                  </tr>
+                </ng-template>
+              </p-table>
             </div>
             <div class="product-commerce-actions">
               <button
-                class="ui-button small"
+                pButton
+                severity="secondary"
+                outlined
+                size="small"
                 [disabled]="ledger.pageNumber <= 1"
                 (click)="store.loadMovements(ledger.pageNumber - 1)"
               >
                 Trước</button
               ><span>Trang {{ ledger.pageNumber }} · {{ ledger.total }} bản ghi</span
               ><button
-                class="ui-button small"
+                pButton
+                severity="secondary"
+                outlined
+                size="small"
                 [disabled]="ledger.pageNumber * ledger.pageSize >= ledger.total"
                 (click)="store.loadMovements(ledger.pageNumber + 1)"
               >
@@ -623,11 +716,16 @@
                 }}</ui-field-message>
               </div>
               @if (product()?.fulfillmentKind === kind.DigitalShared) {
-                <label class="product-checkbox"
-                  ><input type="checkbox" formControlName="isActive" />Sẵn sàng cung cấp</label
-                >
+                <label class="product-checkbox" for="shared-stock-active">
+                  <p-checkbox
+                    inputId="shared-stock-active"
+                    [binary]="true"
+                    formControlName="isActive"
+                  />
+                  Sẵn sàng cung cấp
+                </label>
               }
-              <button class="ui-button primary" type="submit">
+              <button pButton severity="primary" type="submit">
                 {{
                   product()?.fulfillmentKind === kind.DigitalShared
                     ? 'Lưu nội dung dùng chung'
@@ -647,7 +745,10 @@
               <div class="product-commerce-actions">
                 @if (store.canReveal()) {
                   <button
-                    class="ui-button small"
+                    pButton
+                    severity="secondary"
+                    outlined
+                    size="small"
                     [disabled]="store.busy()"
                     (click)="store.reveal(entry)"
                   >
@@ -656,7 +757,10 @@
                 }
                 @if (store.canDigitalUpdate() && entry.state <= 2) {
                   <button
-                    class="ui-button small"
+                    pButton
+                    severity="secondary"
+                    outlined
+                    size="small"
                     [disabled]="store.busy() || store.digitalForm.dirty"
                     (click)="store.setDigitalAvailability(entry)"
                   >
@@ -670,14 +774,20 @@
           }
           <div class="product-commerce-actions">
             <button
-              class="ui-button small"
+              pButton
+              severity="secondary"
+              outlined
+              size="small"
               [disabled]="stock.pageNumber <= 1"
               (click)="store.loadDigital(stock.pageNumber - 1)"
             >
               Trước</button
             ><span>Trang {{ stock.pageNumber }} · {{ stock.total }} nội dung</span
             ><button
-              class="ui-button small"
+              pButton
+              severity="secondary"
+              outlined
+              size="small"
               [disabled]="stock.pageNumber * stock.pageSize >= stock.total"
               (click)="store.loadDigital(stock.pageNumber + 1)"
             >

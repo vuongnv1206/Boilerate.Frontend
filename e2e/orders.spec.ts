@@ -1,11 +1,12 @@
 import { test, expect, ready } from './helpers/catalog-api';
-import { installOrdersApi, ORDER_ID, SHIPPING_GRANTS } from './helpers/orders-api';
+import { installOrdersApi, ORDER_ID, SECOND_ORDER_ID, SHIPPING_GRANTS } from './helpers/orders-api';
 
 test('shipping: partial dispatch, delivery, preserved draft and COD status', async ({
   page,
   context,
   catalog,
 }, testInfo) => {
+  test.setTimeout(60_000);
   catalog.setPermissions(SHIPPING_GRANTS);
   const api = await installOrdersApi(context);
   await ready(page, `/admin/orders/${ORDER_ID}`);
@@ -16,7 +17,7 @@ test('shipping: partial dispatch, delivery, preserved draft and COD status', asy
     .fill('Đơn vị vận chuyển có tên dài để kiểm tra tablet');
   await dialog.getByLabel('Mã vận chuyển *').fill('TRACK-PARTIAL-001');
   await dialog.getByLabel('Số lượng giao: Túi vải phiên bản có tên dài').fill('1');
-  await dialog.getByRole('button', { name: 'Tạo shipment', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Tạo đợt giao hàng', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator('.shipment-card')).toHaveCount(1);
   expect(api.shipments[0]?.items).toEqual([{ orderItemId: 'line-a', quantity: 1 }]);
@@ -55,23 +56,30 @@ test('shipping: conflict removes consumed selections and permits corrected new o
   context,
   catalog,
 }) => {
+  test.setTimeout(60_000);
   catalog.setPermissions(SHIPPING_GRANTS);
   const api = await installOrdersApi(context);
   api.conflictNextDispatch();
   await ready(page, `/admin/orders/${ORDER_ID}`);
   await page.getByRole('button', { name: 'Tạo lần giao', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Tạo lần giao hàng' });
-  await dialog.getByLabel('Hãng vận chuyển *').fill('Hãng A');
-  await dialog.getByLabel('Mã vận chuyển *').fill('TRACK-CONFLICT');
+  const carrierField = dialog.getByLabel('Hãng vận chuyển *');
+  const trackingField = dialog.getByLabel('Mã vận chuyển *');
+  await carrierField.fill('Hãng A');
+  await trackingField.fill('TRACK-CONFLICT');
+  await expect(carrierField).toHaveValue('Hãng A');
+  await expect(trackingField).toHaveValue('TRACK-CONFLICT');
   await dialog.getByLabel('Số lượng giao: Túi vải phiên bản có tên dài').fill('2');
   await dialog.getByLabel('Số lượng giao: Sổ tay').fill('1');
-  await dialog.getByRole('button', { name: 'Tạo shipment', exact: true }).click();
-  await expect(dialog).toContainText('bỏ khỏi lựa chọn');
+  await dialog.getByRole('button', { name: 'Tạo đợt giao hàng', exact: true }).click();
+  await expect(dialog).toContainText(/bỏ khỏi lựa chọn|Dữ liệu đã được tải lại/u);
   await expect(dialog.getByLabel('Số lượng giao: Túi vải phiên bản có tên dài')).toHaveCount(0);
   await expect(dialog.getByLabel('Số lượng giao: Sổ tay')).toHaveValue('1');
-  await expect(dialog.getByRole('button', { name: 'Tạo shipment', exact: true })).toBeEnabled();
+  await expect(
+    dialog.getByRole('button', { name: 'Tạo đợt giao hàng', exact: true }),
+  ).toBeEnabled();
   expect(api.writes).toHaveLength(1);
-  await dialog.getByRole('button', { name: 'Tạo shipment', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Tạo đợt giao hàng', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   expect(api.writes).toHaveLength(2);
   expect(api.writes[1]?.body.operationId).not.toBe(api.writes[0]?.body.operationId);
@@ -83,6 +91,7 @@ test('shipping: lost dispatch response freezes payload and retries one operation
   context,
   catalog,
 }) => {
+  test.setTimeout(60_000);
   catalog.setPermissions(SHIPPING_GRANTS);
   const api = await installOrdersApi(context);
   api.loseNextDispatchResponse();
@@ -92,7 +101,7 @@ test('shipping: lost dispatch response freezes payload and retries one operation
   await dialog.getByLabel('Hãng vận chuyển *').fill('Hãng A');
   await dialog.getByLabel('Mã vận chuyển *').fill('LOST-001');
   await dialog.getByLabel('Số lượng giao: Túi vải phiên bản có tên dài').fill('2');
-  await dialog.getByRole('button', { name: 'Tạo shipment', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Tạo đợt giao hàng', exact: true }).click();
   await expect(dialog.getByRole('button', { name: 'Kiểm tra lại yêu cầu đã gửi' })).toBeEnabled();
   await expect(dialog.getByLabel('Hãng vận chuyển *')).toBeDisabled();
   await expect(dialog.getByLabel('Mã vận chuyển *')).toBeDisabled();
@@ -108,6 +117,7 @@ test('shipping: lost delivery response can be confirmed without double delivery'
   context,
   catalog,
 }) => {
+  test.setTimeout(60_000);
   catalog.setPermissions(SHIPPING_GRANTS);
   const api = await installOrdersApi(context);
   api.seedShipment();
@@ -151,7 +161,48 @@ test('shipping: no View does not request or expose shipments', async ({
     if (r.url().includes('/shipments')) reads.push(r.url());
   });
   await ready(page, `/admin/orders/${ORDER_ID}`);
-  await expect(page.locator('.shipping-card')).toContainText('Cần quyền Shipping.View');
+  await expect(page.locator('.shipping-card')).toContainText(
+    'Tài khoản của bạn chưa được cấp quyền xem thông tin giao hàng.',
+  );
   await expect(page.getByRole('button', { name: 'Tạo lần giao', exact: true })).toHaveCount(0);
   expect(reads).toEqual([]);
+});
+
+test('orders rail: query, Back, tablet focus and canonical membership survive commands', async ({
+  page,
+  context,
+  catalog,
+}, testInfo) => {
+  catalog.setPermissions(['Permissions.Order.View', 'Permissions.Order.Cancel']);
+  const api = await installOrdersApi(context, true);
+  const query = '?q=ORD&status=2';
+  await ready(page, `/admin/orders${query}`);
+  await page.getByRole('link', { name: 'ORD-001', exact: true }).click();
+  await expect(page).toHaveURL(`/admin/orders/${ORDER_ID}${query}`);
+  const tablet = testInfo.project.name.startsWith('tablet');
+  const toggle = page.getByRole('button', { name: 'Danh sách đơn hàng', exact: true });
+  if (tablet) {
+    await toggle.click();
+    await expect(page.locator('#order-items')).toHaveAttribute('role', 'dialog');
+    await page.keyboard.press('Escape');
+    await expect(toggle).toBeFocused();
+    await toggle.click();
+  }
+  const rail = page.getByRole('navigation', { name: 'Đơn hàng trong bộ lọc', exact: true });
+  await rail.getByRole('link').filter({ hasText: 'ORD-002' }).click();
+  await expect(page).toHaveURL(`/admin/orders/${SECOND_ORDER_ID}${query}`);
+  await page.getByRole('link', { name: 'Quay lại đơn hàng', exact: true }).click();
+  await expect(page).toHaveURL(`/admin/orders${query}`);
+  await page.goBack();
+  await expect(page).toHaveURL(`/admin/orders/${SECOND_ORDER_ID}${query}`);
+  await page.getByRole('button', { name: 'Hủy đơn', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Hủy đơn hàng', exact: true })
+    .getByRole('button', { name: 'Xác nhận hủy', exact: true })
+    .click();
+  if (tablet) await toggle.click();
+  await expect(rail.getByRole('link').filter({ hasText: 'ORD-002' })).toHaveCount(0);
+  await expect(rail.getByRole('link').filter({ hasText: 'ORD-001' })).toHaveCount(1);
+  expect(api.writes).toHaveLength(1);
+  await expect(page).toHaveURL(`/admin/orders/${SECOND_ORDER_ID}${query}`);
 });

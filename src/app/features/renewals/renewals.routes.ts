@@ -8,6 +8,8 @@ export const RENEWAL_ROUTES: Routes = [
   {
     path: '',
     providers: [RenewalsService, RenewalsStore],
+    loadComponent: () =>
+      import('./renewals-workspace.component').then((module) => module.RenewalsWorkspace),
     children: [
       {
         path: '',

@@ -1,6 +1,18 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, Subject, catchError, defer, finalize, forkJoin, map, of, switchMap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  catchError,
+  defer,
+  filter,
+  finalize,
+  map,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { ApiError } from '@core/http/api-error';
 import { AuthSession } from '@core/auth/auth-session';
 import {
@@ -27,13 +39,26 @@ export class RenewalsStore {
   private readonly service = inject(RenewalsService);
   private readonly session = inject(AuthSession);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly pageRequests = new Subject<{ page: number; status: RenewalStatus | null }>();
+  private readonly pageRequests = new Subject<{
+    page: number;
+    status: RenewalStatus | null;
+    afterWrite: boolean;
+  }>();
   private readonly detailRequests = new Subject<{
     id: string;
     sequence: number;
     preserveFailure: boolean;
-  }>();
+  } | null>();
+  private readonly historyRequests = new Subject<{
+    id: string;
+    sequence: number;
+    afterWrite: boolean;
+  } | null>();
+  private requestedPage = 1;
   private detailSequence = 0;
+  private revealSequence = 0;
+  private targetSequence = 0;
+  private readonly evidenceSequences = new Map<string, number>();
   private readonly pageState = signal<RenewalPage>({
     items: [],
     total: 0,
@@ -47,6 +72,7 @@ export class RenewalsStore {
   private readonly detailState = signal<RenewalAdminDto | null>(null);
   private readonly historyState = signal<readonly RenewalHistoryDto[]>([]);
   private readonly historyErrorState = signal('');
+  private readonly historyLoadingState = signal(false);
   private readonly detailLoadingState = signal(false);
   private readonly detailErrorState = signal('');
   private readonly commandErrorState = signal('');
@@ -62,6 +88,7 @@ export class RenewalsStore {
   readonly detail = this.detailState.asReadonly();
   readonly history = this.historyState.asReadonly();
   readonly historyError = this.historyErrorState.asReadonly();
+  readonly historyLoading = this.historyLoadingState.asReadonly();
   readonly detailLoading = this.detailLoadingState.asReadonly();
   readonly detailError = this.detailErrorState.asReadonly();
   readonly commandError = this.commandErrorState.asReadonly();
@@ -81,14 +108,14 @@ export class RenewalsStore {
   constructor() {
     this.pageRequests
       .pipe(
-        switchMap(({ page, status }) => {
+        switchMap(({ page, status, afterWrite }) => {
           this.loadingState.set(true);
           this.errorState.set('');
           return this.service.list(page, status).pipe(
             catchError((error: unknown) => {
-              this.errorState.set(
-                error instanceof ApiError ? error.message : 'Không thể tải danh sách gia hạn.',
-              );
+              const message =
+                error instanceof ApiError ? error.message : 'Không thể tải danh sách gia hạn.';
+              this.errorState.set(afterWrite ? `Thao tác đã lưu. ${message}` : message);
               return of(null);
             }),
           );
@@ -108,14 +135,12 @@ export class RenewalsStore {
       });
     this.detailRequests
       .pipe(
-        switchMap(({ id, sequence, preserveFailure }) => {
+        switchMap((request) => {
+          if (!request) return EMPTY;
+          const { id, sequence, preserveFailure } = request;
           this.detailLoadingState.set(true);
           this.detailErrorState.set('');
-          this.historyErrorState.set('');
-          return forkJoin({
-            renewal: this.service.get(id),
-            history: this.service.history(id),
-          }).pipe(
+          return this.service.get(id).pipe(
             catchError((error: unknown) => {
               if (sequence === this.detailSequence)
                 this.detailErrorState.set(
@@ -126,7 +151,7 @@ export class RenewalsStore {
             finalize(() => {
               if (sequence === this.detailSequence) this.detailLoadingState.set(false);
             }),
-            map((result) => result && { ...result, sequence, preserveFailure }),
+            map((renewal) => renewal && { renewal, sequence, preserveFailure }),
           );
         }),
         takeUntilDestroyed(this.destroyRef),
@@ -134,34 +159,72 @@ export class RenewalsStore {
       .subscribe((result) => {
         if (!result || result.sequence !== this.detailSequence) return;
         this.detailState.set(result.renewal);
-        this.historyState.set(result.history);
-        this.revealedTargetState.set(null);
-        this.revealedEvidenceState.set({});
+        this.clearRevealedContent();
         if (!result.preserveFailure) {
           this.commandErrorState.set('');
           this.commandFailureState.set(null);
         }
+        this.reloadHistory();
+      });
+    this.historyRequests
+      .pipe(
+        switchMap((request) => {
+          if (!request) return EMPTY;
+          const { id, sequence, afterWrite } = request;
+          this.historyLoadingState.set(true);
+          this.historyErrorState.set('');
+          return this.service.history(id).pipe(
+            catchError((error: unknown) => {
+              if (this.isCurrentDetail(id, sequence)) {
+                const message =
+                  error instanceof ApiError ? error.message : 'Không thể tải lịch sử gia hạn.';
+                this.historyErrorState.set(afterWrite ? `Thao tác đã lưu. ${message}` : message);
+              }
+              return of(null);
+            }),
+            finalize(() => {
+              if (this.isCurrentDetail(id, sequence)) this.historyLoadingState.set(false);
+            }),
+            map((history) => ({ history, id, sequence })),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ history, id, sequence }) => {
+        if (history && this.isCurrentDetail(id, sequence)) this.historyState.set(history);
       });
     this.destroyRef.onDestroy(() => {
       this.pageRequests.complete();
       this.detailRequests.complete();
+      this.historyRequests.complete();
     });
   }
 
   loadPage(page = 1, status = this.selectedStatus()): void {
     const safePage = Number.isSafeInteger(page) && page > 0 ? page : 1;
+    this.requestedPage = safePage;
     this.selectedStatusState.set(status);
     this.pageCorrectionState.set(null);
     this.clearRevealedContent();
-    this.pageRequests.next({ page: safePage, status });
+    this.pageRequests.next({ page: safePage, status, afterWrite: false });
   }
 
   loadDetail(id: string, preserveFailure = false): void {
+    this.clearDetail();
+    this.detailRequests.next({ id, sequence: this.detailSequence, preserveFailure });
+  }
+
+  clearDetail(): void {
     this.detailSequence++;
+    this.detailRequests.next(null);
+    this.historyRequests.next(null);
     this.clearRevealedContent();
     this.detailState.set(null);
     this.historyState.set([]);
-    this.detailRequests.next({ id, sequence: this.detailSequence, preserveFailure });
+    this.historyErrorState.set('');
+    this.historyLoadingState.set(false);
+    this.detailErrorState.set('');
+    this.detailLoadingState.set(false);
   }
 
   reloadDetail(): void {
@@ -169,7 +232,12 @@ export class RenewalsStore {
     if (id) this.loadDetail(id);
   }
 
-  execute(id: string, command: RenewalCommand, replay = false) {
+  reloadHistory(afterWrite = false): void {
+    const id = this.detail()?.renewal.id;
+    if (id) this.historyRequests.next({ id, sequence: this.detailSequence, afterWrite });
+  }
+
+  execute(id: string, command: RenewalCommand, replay = false): Observable<RenewalAdminDto> {
     return defer(() => {
       const detail = this.detail();
       if (!detail || detail.renewal.id !== id || this.commandBusy()) return EMPTY;
@@ -179,6 +247,7 @@ export class RenewalsStore {
       this.commandBusyState.set(true);
       this.commandErrorState.set('');
       this.commandFailureState.set(null);
+      const sequence = this.detailSequence;
       const request =
         command.kind === 'claim'
           ? this.service.claim(id, command.request)
@@ -188,22 +257,15 @@ export class RenewalsStore {
               ? this.service.start(id, command.request)
               : this.service.verify(id, command.request);
       return request.pipe(
-        switchMap((saved) => {
+        filter(() => this.isCurrentDetail(id, sequence)),
+        tap((saved) => {
           this.detailState.set(saved);
-          this.revealedTargetState.set(null);
-          this.revealedEvidenceState.set({});
-          return this.service.history(id).pipe(
-            catchError((error: unknown) => {
-              this.historyErrorState.set(
-                error instanceof ApiError ? error.message : 'Không thể tải lịch sử gia hạn.',
-              );
-              return of(null);
-            }),
-            switchMap((history) => of({ saved, history })),
-          );
+          this.clearRevealedContent();
+          this.reloadHistory(true);
+          this.refreshPage();
         }),
         catchError((error: unknown) => {
-          if (this.detail()?.renewal.id !== id) return EMPTY;
+          if (!this.isCurrentDetail(id, sequence)) return EMPTY;
           const status = error instanceof ApiError ? error.status : 0;
           this.commandFailureState.set(status > 0 && status < 500 ? 'rejected' : 'uncertain');
           this.commandErrorState.set(
@@ -211,7 +273,10 @@ export class RenewalsStore {
               ? error.message
               : 'Chưa nhận được kết quả từ máy chủ. Hãy kiểm tra cùng yêu cầu.',
           );
-          if (status === 409) this.loadDetail(id, true);
+          if (status === 409) {
+            this.loadDetail(id, true);
+            this.refreshPage(false);
+          }
           return EMPTY;
         }),
         finalize(() => this.commandBusyState.set(false)),
@@ -253,15 +318,27 @@ export class RenewalsStore {
 
   revealTarget(id: string): void {
     if (!this.canReveal() || this.commandBusy() || this.detail()?.renewal.id !== id) return;
+    const sequence = this.detailSequence;
+    const revealSequence = this.revealSequence;
+    const targetSequence = ++this.targetSequence;
+    const isCurrent = () =>
+      this.isCurrentDetail(id, sequence) &&
+      revealSequence === this.revealSequence &&
+      targetSequence === this.targetSequence &&
+      this.canReveal();
     this.service
       .revealTarget(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (content) => this.revealedTargetState.set(content),
-        error: (error: unknown) =>
-          this.commandErrorState.set(
-            error instanceof ApiError ? error.message : 'Không thể xem thông tin tài khoản.',
-          ),
+        next: (content) => {
+          if (isCurrent()) this.revealedTargetState.set(content);
+        },
+        error: (error: unknown) => {
+          if (isCurrent())
+            this.commandErrorState.set(
+              error instanceof ApiError ? error.message : 'Không thể xem thông tin tài khoản.',
+            );
+        },
       });
   }
 
@@ -273,31 +350,61 @@ export class RenewalsStore {
       !this.detail()?.attempts.some((attempt) => attempt.id === attemptId)
     )
       return;
+    const sequence = this.detailSequence;
+    const revealSequence = this.revealSequence;
+    const evidenceSequence = (this.evidenceSequences.get(attemptId) ?? 0) + 1;
+    this.evidenceSequences.set(attemptId, evidenceSequence);
+    const isCurrent = () =>
+      this.isCurrentDetail(id, sequence) &&
+      revealSequence === this.revealSequence &&
+      evidenceSequence === this.evidenceSequences.get(attemptId) &&
+      this.canVerify();
     this.service
       .revealEvidence(id, attemptId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (content) =>
-          this.revealedEvidenceState.update((current) => ({ ...current, [attemptId]: content })),
-        error: (error: unknown) =>
-          this.commandErrorState.set(
-            error instanceof ApiError ? error.message : 'Không thể xem nội dung đối soát.',
-          ),
+        next: (content) => {
+          if (isCurrent())
+            this.revealedEvidenceState.update((current) => ({ ...current, [attemptId]: content }));
+        },
+        error: (error: unknown) => {
+          if (isCurrent())
+            this.commandErrorState.set(
+              error instanceof ApiError ? error.message : 'Không thể xem nội dung đối soát.',
+            );
+        },
       });
   }
 
   hideTarget(): void {
+    this.targetSequence++;
     this.revealedTargetState.set(null);
   }
 
   hideEvidence(attemptId: string): void {
+    this.evidenceSequences.set(attemptId, (this.evidenceSequences.get(attemptId) ?? 0) + 1);
     this.revealedEvidenceState.update((current) =>
       Object.fromEntries(Object.entries(current).filter(([id]) => id !== attemptId)),
     );
   }
 
   private clearRevealedContent(): void {
+    this.revealSequence++;
+    this.evidenceSequences.clear();
     this.revealedTargetState.set(null);
     this.revealedEvidenceState.set({});
+  }
+
+  private isCurrentDetail(id: string, sequence: number): boolean {
+    return sequence === this.detailSequence && this.detail()?.renewal.id === id;
+  }
+
+  private refreshPage(afterWrite = true): void {
+    this.pageCorrectionState.set(null);
+    this.pageRequests.next({
+      page: this.requestedPage,
+      status: this.selectedStatus(),
+      afterWrite,
+    });
   }
 }

@@ -1,8 +1,8 @@
 # Admin Orders — workspace quản trị đơn hàng
 
 - **Ngày bắt đầu:** 2026-10-21
-- **Cập nhật:** 2026-10-22
-- **Trạng thái:** Nghiệp vụ đơn hàng đã nghiệm thu FE local; workspace rail vừa được mở rộng, chưa nghiệm thu lại hoặc nghiệm thu deployment
+- **Cập nhật:** 2026-10-23
+- **Trạng thái:** Thanh công cụ, nhãn và giao diện chi tiết đã chuẩn hóa trong working tree; FE checks và browser fixture đã đạt theo [PRODUCT](../../PRODUCT.md), còn nghiệm thu API thật và các nhánh chưa có browser coverage
 - **Khu vực:** FE
 - **Hồ sơ BE:** [Admin Orders](../../../Boilerate/docs/backend/features/admin-orders.md)
 - **Bằng chứng nghiệm thu:** [báo cáo kiểm chứng](../verification/2026-10-21-admin-orders.md)
@@ -13,18 +13,19 @@ Module nằm tại `/admin/orders` và `/admin/orders/:id`, dùng cùng workspac
 
 - Navigation chỉ hiện khi có `Order.View`.
 - List gọi server-side query với `q`, `status`, `paymentStatus`, `fulfillmentStatus`, `createdFrom`, `createdTo`, `page`, `pageSize`; đổi filter reset page 1 và giữ query trong URL.
-- Cột list gồm mã đơn, người nhận, tổng tiền, payment method/status, fulfillment status, order status, ngày tạo và hết hạn.
-- Detail giữ rail/context, có header/status/action bar, inspector và snapshot OrderItem read-only.
-- Command gồm cancel, confirm payment, retry fulfillment, dispatch vật lý từng phần và xác nhận shipment đã giao. Không có `/new`, Edit, inline edit hoặc bulk action.
+- Toolbar, bộ lọc, bảng, phân trang và trạng thái dùng cùng mẫu Catalog Products. Hai nhóm trạng thái được tách nhãn: vòng đời đơn hàng và tiến độ thực hiện đơn.
+- Cột list gồm mã đơn, người nhận, tổng tiền, thanh toán, tiến độ thực hiện, trạng thái đơn, ngày tạo và hết hạn.
+- Detail giữ rail/context cạnh nội dung và dùng chung thanh record với các màn quản trị. OrderItem vẫn là snapshot chỉ đọc.
+- Command gồm hủy đơn, xác nhận tiền đã nhận, thử xử lý lại, tạo đợt giao từng phần và xác nhận đợt giao đã tới khách. Không có `/new`, Edit, inline edit hoặc bulk action.
 - Timeline gọi history endpoint read-only; không hiển thị raw audit JSON hoặc digital delivery content.
 - Shipping đọc shipment và các dòng đã xuất; quyền `Shipping.View`, `Shipping.Dispatch`, `Shipping.Deliver` được kiểm riêng. Dispatch dùng số còn lại, shipment version và operation ID ổn định. Giao shipment không tự xác nhận COD.
 - After-sales đọc ledger refund/return độc lập và ghi khoản hoàn thực tế hoặc hàng nhận thực tế. Đây là command append-only; FE không chuyển tiền và không sửa snapshot Order/OrderItem.
 
 ## List rail cạnh chi tiết
 
-Khi mở một đơn, workspace giữ trang, filter và từ khóa hiện tại ở rail để chuyển sang đơn khác mà không rời ngữ cảnh. Rail hiển thị mã, người nhận, trạng thái, tổng tiền và ngày tạo; tìm kiếm/phân trang cập nhật query trên URL. Sau command thành công, nếu đơn còn trong trang đang xem, summary ở rail nhận trạng thái mới từ response của detail.
+Khi mở một đơn, workspace giữ trang, filter và từ khóa hiện tại ở rail để chuyển sang đơn khác mà không rời ngữ cảnh. Rail hiển thị mã, người nhận, trạng thái, tổng tiền và ngày tạo; tìm kiếm/phân trang cập nhật query trên URL. Sau command thay đổi version của đơn, store tải lại danh sách canonical theo query hiện tại để filter, tổng số và phân trang phản ánh đúng dữ liệu. Version đã đọc không gây vòng lặp tải lại. Retry tải lại giữ nguyên trang, bộ lọc và từ khóa hiện tại.
 
-Trên tablet, rail chuyển thành panel overlay có focus trap và nút mở rõ ràng. Snapshot Order/OrderItem trong detail vẫn chỉ đọc; không có tạo/sửa/xóa đơn hoặc bulk action.
+Trên tablet, rail chuyển thành panel overlay có focus trap và nút mở rõ ràng; đóng bằng Escape/backdrop trả focus về nút mở. Snapshot Order/OrderItem trong detail vẫn chỉ đọc; không có tạo/sửa/xóa đơn hoặc bulk action.
 
 ## Invariant FE
 
@@ -64,10 +65,10 @@ Theo [contract hậu mãi BE](../../../Boilerate/docs/backend/features/refunds-r
 | List query/pagination                    | `src/app/utils/order-query.util.ts`, `src/app/stores/orders.store.ts` |
 | Detail/command/conflict/related sections | `src/app/stores/order-detail.store.ts`                                |
 | Routes/screens                           | `src/app/features/orders/`, `src/app/app.routes.ts`                   |
-| Workspace styling                        | `src/styles/admin/_orders.scss`                                       |
+| Workspace styling                        | `src/styles/admin/_orders.scss`, `src/styles/admin/_collections.scss` |
 
 Services chỉ gọi `ApiClient`; stores sở hữu request/loading/error state; component không tự gọi API.
 
 ## Kiểm chứng và phần còn lại
 
-Kết quả source, unit, browser desktop/tablet × Light/Dark và giới hạn môi trường được tổng hợp trong [báo cáo kiểm chứng](../verification/2026-10-21-admin-orders.md). Chưa nghiệm thu deployment hoặc các dịch vụ vận chuyển/ngân hàng bên ngoài. Xem thêm [Gia hạn thủ công](admin-renewals.md) cho mutation Renewal.
+Kết quả lịch sử source/unit/browser được ghi trong [báo cáo kiểm chứng](../verification/2026-10-21-admin-orders.md). Đợt [nghiệm thu admin](../../../Boilerate/docs/shared/features/admin-acceptance.md) bổ sung fixture refund/return, nhiều bản ghi trong rail và live API/SQL Server với dữ liệu riêng. Chưa nghiệm thu deployment hoặc dịch vụ vận chuyển/ngân hàng bên ngoài. Xem thêm [Gia hạn thủ công](admin-renewals.md) cho mutation Renewal.

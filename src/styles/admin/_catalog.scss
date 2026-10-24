@@ -150,10 +150,6 @@
   }
   .catalog-products-table {
     min-width: 990px;
-    th,
-    td {
-      padding: 8px 12px;
-    }
     td {
       height: 46px;
     }
@@ -170,7 +166,7 @@
         gap: 2px;
       }
       a {
-        font-size: 12px;
+        font-size: 13px;
       }
     }
   }
@@ -371,6 +367,11 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+
+  ui-form-field,
+  p-inputnumber {
+    width: 100%;
+  }
 }
 @media (max-width: 1150px) {
   .catalog-workspace {

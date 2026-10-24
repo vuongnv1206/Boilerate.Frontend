@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.ui-form-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ui-form-field-label {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--text-1);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.ui-form-field-required,
+.ui-form-field-error {
+  color: var(--danger);
+}
+
+.ui-form-field-hint,
+.ui-form-field-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.ui-form-field-hint {
+  color: var(--text-2);
+}

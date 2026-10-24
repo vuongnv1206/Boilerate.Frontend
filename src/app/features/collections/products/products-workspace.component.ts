@@ -1,3 +1,5 @@
+import { ButtonDirective } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -22,7 +24,7 @@ import { listQueryParams, readProductListQuery, sameQueryParams } from '@utils/l
 @Component({
   selector: 'app-products-workspace',
   host: { class: 'products-workspace' },
-  imports: [RouterOutlet, RouterLink, Icon, CdkTrapFocus],
+  imports: [RouterOutlet, RouterLink, Icon, CdkTrapFocus, InputText, ButtonDirective],
   providers: [ProductsStore, MediaPreviewStore],
   templateUrl: './products-workspace.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -40,7 +40,7 @@ test('view-only access locks the editor, hides writes and rejects direct create 
   await expect(page.getByRole('button', { name: /^Xóa danh mục /u }).first()).toBeDisabled();
   await page.locator('.content-table tbody a').first().click();
   await expect(page.locator('#category-name')).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Lưu danh mục', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Lưu', exact: true })).toBeDisabled();
   await page.goto('/admin/collections/categories/new');
   await expect(page.getByRole('heading', { name: 'Không có quyền truy cập' })).toBeVisible();
   expect(
@@ -70,12 +70,12 @@ test('field errors, unknown summary and 403 preserve draft without replaying a w
     'Content.Name': ['Tên bị từ chối'],
     Other: ['Lỗi chưa gắn trường'],
   });
-  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.locator('#product-name-error')).toContainText('Tên bị từ chối');
   await expect(page.locator('ui-form-error-summary')).toContainText('Lỗi chưa gắn trường');
   await name.fill('Bản nháp sau lỗi quyền');
   catalog.failNextProductSave(403);
-  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.locator('.editor-error')).toBeVisible();
   await expect(name).toHaveValue('Bản nháp sau lỗi quyền');
   expect(
@@ -89,8 +89,9 @@ test('category and type query return through their editors, category delete uses
 }) => {
   await ready(page, '/admin/collections/categories');
   await page.locator('#categories-search').fill('Phụ kiện');
+  await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('Phụ kiện');
   await page.locator('.content-table tbody a').first().click();
-  await page.locator('.editor-breadcrumb a').click();
+  await page.locator('.category-editor-back').click();
   await expect(page.locator('#categories-search')).toHaveValue('Phụ kiện');
   await page.getByRole('button', { name: 'Xóa danh mục Phụ kiện', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Xóa danh mục', exact: true });
@@ -104,7 +105,8 @@ test('category and type query return through their editors, category delete uses
     .click();
   await expect(page).toHaveURL(/\/product-types$/u);
   await page.locator('#product-types-search').fill('Đồ dùng');
+  await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('Đồ dùng');
   await page.locator('.content-table tbody a').first().click();
-  await page.locator('.editor-breadcrumb a').click();
+  await page.locator('.product-type-editor-back').click();
   await expect(page.locator('#product-types-search')).toHaveValue('Đồ dùng');
 });

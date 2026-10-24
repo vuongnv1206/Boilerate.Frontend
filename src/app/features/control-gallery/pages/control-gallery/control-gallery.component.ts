@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ButtonDirective } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 import { Checkbox } from 'primeng/checkbox';
 import { DatePicker } from 'primeng/datepicker';
@@ -48,6 +49,7 @@ import { PreviewRecord } from '@models/preview-record.model';
   selector: 'app-control-gallery',
   imports: [
     FormsModule,
+    ButtonDirective,
     Checkbox,
     DatePicker,
     Dialog,

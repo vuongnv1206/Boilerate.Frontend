@@ -8,14 +8,14 @@ Source theo [quy tắc code](docs/coding-rules.md): mỗi phần chỉ có màn 
 
 Ưu tiên **web desktop/tablet**, mobile tối ưu sau. Dev server giữ ở [http://localhost:4200](http://localhost:4200); cổng 4300 chỉ dùng tạm cho QA production.
 
-**BE đã đồng bộ:** sibling `Boilerate` ở `9e5b410` có browser session, ProductType và Catalog DTO mà FE sử dụng. [Collections](docs/features/live-admin-collections.md) ghi quyền/query/API; [giữ phiên](docs/features/persistent-session.md) ghi contract cookie. Kết quả kiểm thử fixture và API thật được tách riêng trong báo cáo tích hợp.
+**Mốc đối chiếu 23/10/2026:** FE working tree dựa trên revision `ee1eb03`, sibling BE `bab1df5`; có thay đổi FE chưa commit. Source có browser session, Catalog workspace, Orders, Renewals và quản trị hệ thống. Phạm vi kiểm chứng và kế hoạch tiếp theo ở [PRODUCT](PRODUCT.md); các kết quả chỉ gắn với snapshot được nêu rõ tại đó, không với HEAD riêng lẻ. [Collections](docs/features/live-admin-collections.md) ghi quyền/query/API; [giữ phiên](docs/features/persistent-session.md) ghi contract cookie. Fixture, API thật và deployment có phạm vi nghiệm thu riêng.
 
 ## Chạy local
 
 Yêu cầu Node tương thích Angular 22; runtime lựa chọn trong `.node-version` là **24.19.0**. `run.ps1` chọn Node phù hợp trên PATH hoặc runtime bundled của Codex; có thể đặt `BOILERATE_NODE` tới `node.exe` mong muốn. Script chỉ chỉnh PATH của tiến trình hiện tại, không thay Node global.
 
 ```powershell
-cd D:\MyCode\BoilerateWorkspace\Boilerate.Frontend
+cd D:\MyCode\BoilerateWorkspace\Frontend
 .\run.ps1 install
 .\run.ps1 start
 ```
@@ -51,6 +51,18 @@ Giá trị trong ví dụ là placeholder. Copy `.env.example` thành `.env.loca
 `.\run.ps1 check` gộp format, lint/boundaries, unit tests và build. Khi terminal đã chọn Node phù hợp, có thể dùng npm scripts tương ứng. Lệnh install dùng npm 12.2.0 để tránh lỗi resolver đã gặp ở npm 10 trên máy phát triển. Trên máy mới dùng `npx --yes --package=npm@12.2.0 npm ci`, rồi `npm run check`. Khi deploy, host cần fallback các route SPA về `index.html`, cache runtime config phù hợp và chuyển `/api` tới BE; chưa nghiệm thu deployment.
 
 Browser tests dùng production build. Cài Chromium bằng `npx playwright install chromium`, build với `PRIMEUI_LICENSE_KEY` rỗng và `API_BASE_URL=/api`, rồi chạy `npm run test:e2e`: desktop/tablet × light/dark. API fixture chỉ nằm trong `e2e/helpers`, không đưa mock vào route ứng dụng. `test:e2e:mobile`/`test:e2e:all` giữ để kiểm tra sau. Preview dùng port 4300 và tự đóng khi xong. Chỉ cập nhật ảnh khi đã xem lại thay đổi; CI không tự sửa baseline. Raw report/trace nằm trong `artifacts/` bị ignore.
+
+## Nghiệm thu admin với API thật
+
+Suite `e2e-live/` dùng Kestrel và SQL Server cô lập, không dùng auto fixture của `e2e/`. Từ workspace chung:
+
+```powershell
+.\Boilerate\scripts\verify-admin.ps1 -FrontendRoot 'D:\MyCode\BoilerateWorkspace\Frontend'
+```
+
+Lệnh build FE/runner, tạo database `boilerate_test_<guid>`, migrate/bootstrap/seed, khởi chạy API và proxy cùng origin trên cổng loopback còn trống rồi chạy desktop/tablet × Light/Dark. Windows mặc định dùng LocalDB; có thể chọn SQL Server instance bằng `BOILERATE_TEST_MSSQL`. Connection database đích luôn do fixture tạo. Có thể dùng `-SkipBuild` khi đã có đúng production build cần kiểm tra, hoặc `run.ps1 test:e2e:live` từ FE; `BOILERATE_BACKEND_ROOT` chọn checkout BE ngoài vị trí sibling mặc định.
+
+Runner dọn database và runtime keys/media sau khi Host kết thúc; logs, report và trace giữ trong `artifacts/live-acceptance/<run-id>/`. Không đưa private readiness manifest hoặc credentials vào báo cáo/Git. Phạm vi và tiêu chí tại [kế hoạch nghiệm thu admin](../Boilerate/docs/shared/features/admin-acceptance.md); deployment được nghiệm thu riêng.
 
 ## Tài liệu và quy chuẩn
 

@@ -55,6 +55,9 @@ export class ProductIoStore {
   readonly canDelete = computed(() => this.session.can('Product', 'Delete'));
   readonly canCreate = computed(() => this.session.can('Product', 'Create'));
   readonly canPrice = computed(() => this.session.can('Price', 'Update'));
+  readonly canAdjust = computed(
+    () => this.session.can('Inventory', 'Adjust') && this.session.can('Inventory', 'View'),
+  );
   private readonly service = inject(ProductsService);
   private readonly destroyRef = inject(DestroyRef);
   private currentForm: ProductForm | null = null;
@@ -103,6 +106,8 @@ export class ProductIoStore {
   constructor() {
     effect(() => {
       this.canWrite();
+      this.canPrice();
+      this.canAdjust();
       this.applyAccess();
     });
     this.destroyRef.onDestroy(() => {
@@ -313,18 +318,9 @@ export class ProductIoStore {
             productTypeVersion: schema.version,
             content,
             options: optionInputs(this.form.controls.options.controls),
-            variants: this.form.controls.options.length
-              ? skuInputs(this.form.controls.variants.controls).map((variant) =>
-                  this.canPrice() ? variant : { ...variant, price: null, compareAtPrice: null },
-                )
-              : [
-                  {
-                    sku: raw.sku.trim(),
-                    price: this.canPrice() ? raw.price : null,
-                    compareAtPrice: null,
-                    options: {},
-                  },
-                ],
+            variants: skuInputs(this.form.controls.variants.controls).map((variant) =>
+              this.canPrice() ? variant : { ...variant, price: null, compareAtPrice: null },
+            ),
             configuration: productConfiguration(this.form, this.canPrice()),
             fulfillmentKind: raw.fulfillmentKind,
             defaultVariantSku: raw.defaultVariantSku || raw.variants[0]?.sku || raw.sku.trim(),
@@ -591,6 +587,14 @@ export class ProductIoStore {
         if (!this.canPrice()) {
           variant.controls.price.disable({ emitEvent: false });
           variant.controls.compareAtPrice.disable({ emitEvent: false });
+        } else {
+          variant.controls.price.enable({ emitEvent: false });
+          variant.controls.compareAtPrice.enable({ emitEvent: false });
+        }
+        if (!this.canAdjust() || this.busy()) {
+          variant.controls.quantity.disable({ emitEvent: false });
+        } else {
+          variant.controls.quantity.enable({ emitEvent: false });
         }
       }
       if (!this.canPrice()) this.currentForm.controls.price.disable({ emitEvent: false });

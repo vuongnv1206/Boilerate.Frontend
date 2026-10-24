@@ -38,7 +38,7 @@
       padding: 8px 12px;
       gap: 8px;
       border-bottom: 1px solid var(--border);
-      font-size: 12px;
+      font-size: 13px;
     }
 
     header > a:first-child {
@@ -46,7 +46,7 @@
     }
 
     header span {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-3);
       margin-left: 6px;
     }
@@ -81,7 +81,7 @@
       padding: 7px 10px;
       border-bottom: 1px solid var(--border);
       color: var(--text-2);
-      font-size: 12px;
+      font-size: 13px;
 
       > span {
         flex: 1;
@@ -92,7 +92,7 @@
 
       > small {
         color: var(--text-3);
-        font-size: 10px;
+        font-size: 12px;
         font-variant-numeric: tabular-nums;
       }
 
@@ -129,27 +129,8 @@
 
     code {
       color: var(--text-3);
-      font-size: 11px;
+      font-size: 12px;
       overflow-wrap: anywhere;
-    }
-  }
-
-  .product-type-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--success);
-    font-size: 11px;
-
-    > span {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: currentColor;
-    }
-
-    &.inactive {
-      color: var(--text-3);
     }
   }
 
@@ -161,7 +142,8 @@
     min-height: 0;
     color: var(--text-1);
     background: var(--editor-surface);
-    font-size: 11.5px;
+    font-size: 14px;
+    line-height: 21px;
 
     .product-type-editor-toolbar {
       flex: none;
@@ -178,7 +160,7 @@
         max-width: min(440px, 45vw);
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 13px;
+        font-size: 15px;
       }
     }
 
@@ -218,7 +200,7 @@
       gap: 6px;
       flex: none;
       color: var(--success);
-      font-size: 11px;
+      font-size: 12px;
 
       > span {
         width: 7px;
@@ -261,14 +243,14 @@
 
       h2 {
         margin: 0 0 10px;
-        font-size: 13px;
-        line-height: 17px;
+        font-size: 14px;
+        line-height: 20px;
       }
 
       > p {
         margin: 0 0 14px;
         color: var(--text-3);
-        font-size: 11px;
+        font-size: 12px;
       }
     }
 
@@ -277,13 +259,13 @@
       margin-bottom: 15px;
 
       label {
-        font-size: 11px;
+        font-size: 13px;
       }
     }
 
     .check-field {
       margin: 8px 0;
-      font-size: 11px;
+      font-size: 13px;
     }
 
     .schema-section {
@@ -297,12 +279,12 @@
 
       p {
         margin: 7px 0 12px;
-        font-size: 11px;
+        font-size: 12px;
       }
     }
 
     .schema-help {
-      font-size: 11px;
+      font-size: 12px;
       margin: 8px 0 12px;
     }
 
@@ -313,12 +295,12 @@
       margin: 14px 0;
 
       legend {
-        font-size: 12px;
+        font-size: 13px;
       }
     }
 
     .product-type-code-field output {
-      min-height: 30px;
+      min-height: var(--control-height);
       display: flex;
       align-items: center;
       width: fit-content;
@@ -339,8 +321,8 @@
 
       h2 {
         margin: 0;
-        font-size: 13px;
-        line-height: 17px;
+        font-size: 14px;
+        line-height: 20px;
       }
     }
 
@@ -354,7 +336,7 @@
       p {
         margin: 6px 0 0;
         color: var(--text-3);
-        font-size: 11px;
+        font-size: 12px;
       }
     }
 
@@ -377,7 +359,7 @@
 
         small {
           color: var(--text-3);
-          font-size: 10px;
+          font-size: 12px;
         }
       }
     }
@@ -387,13 +369,13 @@
     .product-type-item-details > p {
       margin: 8px 0 0;
       color: var(--text-3);
-      font-size: 11px;
+      font-size: 12px;
       line-height: 1.6;
     }
 
     .product-type-linked-error {
       color: var(--danger);
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .product-type-item-details dl {
@@ -404,12 +386,12 @@
 
       dt {
         color: var(--text-3);
-        font-size: 10px;
+        font-size: 12px;
       }
 
       dd {
         margin: 5px 0 0;
-        font-size: 11px;
+        font-size: 13px;
         overflow-wrap: anywhere;
       }
     }

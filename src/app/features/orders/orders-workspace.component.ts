@@ -1,11 +1,15 @@
+import { ButtonDirective } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -26,7 +30,17 @@ import { OrderListQuery, OrderStatus } from '@models/order.dto';
 @Component({
   selector: 'app-orders-workspace',
   host: { class: 'orders-workspace-shell' },
-  imports: [RouterOutlet, RouterLink, Icon, StatusBadge, CurrencyPipe, DatePipe, CdkTrapFocus],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    Icon,
+    StatusBadge,
+    CurrencyPipe,
+    DatePipe,
+    CdkTrapFocus,
+    InputText,
+    ButtonDirective,
+  ],
   providers: [OrdersStore],
   templateUrl: './orders-workspace.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +53,7 @@ export class OrdersWorkspace implements OnInit {
   readonly store = inject(OrdersStore);
   readonly editorId = signal<string | null>(null);
   readonly panelOpen = signal(false);
+  private readonly itemsToggle = viewChild<ElementRef<HTMLButtonElement>>('itemsToggle');
   readonly statusLabels = ORDER_STATUS_LABELS;
 
   constructor() {
@@ -84,6 +99,11 @@ export class OrdersWorkspace implements OnInit {
 
   setPage(page: number): void {
     this.updateQuery({ ...this.query(), page });
+  }
+
+  closePanel(): void {
+    this.panelOpen.set(false);
+    this.itemsToggle()?.nativeElement.focus();
   }
 
   private query(): OrderListQuery {

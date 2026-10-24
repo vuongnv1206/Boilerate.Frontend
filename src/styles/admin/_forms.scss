@@ -59,7 +59,7 @@
     margin-bottom: 20px;
     min-width: 0;
     label {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
     }
     input:not([type='checkbox']),
@@ -74,11 +74,11 @@
       resize: vertical;
     }
     output {
-      min-height: 30px;
+      min-height: var(--control-height);
       display: flex;
       align-items: center;
       color: var(--text-3);
-      font-size: 12px;
+      font-size: 14px;
     }
   }
   .field-row,
@@ -91,7 +91,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: 13px;
     margin: 16px 0;
     input {
       margin: 0;
@@ -104,7 +104,7 @@
   .inactive {
     margin-left: auto;
     color: var(--text-3);
-    font-size: 11px;
+    font-size: 12px;
   }
   .slug-input {
     display: flex;
@@ -113,7 +113,7 @@
     > span {
       flex: none;
       color: var(--text-3);
-      font-size: 11px;
+      font-size: 13px;
     }
     > input {
       min-width: 0;
@@ -123,7 +123,7 @@
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.8;
     color: var(--text-3);
     > ui-icon {
@@ -153,7 +153,7 @@
     border-top: 1px solid var(--border);
     padding-top: 16px;
     h3 {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
       margin: 0 0 16px;
     }

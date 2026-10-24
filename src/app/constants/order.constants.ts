@@ -21,7 +21,7 @@ export const ORDER_PAYMENT_STATUS_LABELS: Record<OrderPaymentStatus, string> = {
 };
 
 export const ORDER_FULFILLMENT_STATUS_LABELS: Record<OrderFulfillmentStatus, string> = {
-  [OrderFulfillmentStatus.Pending]: 'Chờ fulfillment',
+  [OrderFulfillmentStatus.Pending]: 'Chưa bắt đầu',
   [OrderFulfillmentStatus.NeedsReview]: 'Cần kiểm tra',
   [OrderFulfillmentStatus.InProgress]: 'Đang xử lý',
   [OrderFulfillmentStatus.Completed]: 'Đã hoàn tất',
@@ -43,10 +43,20 @@ export const ORDER_FULFILLMENT_STATUS_OPTIONS = Object.entries(ORDER_FULFILLMENT
 
 export const ORDER_PAYMENT_METHOD_LABELS: Record<OrderPaymentMethod, string> = {
   [OrderPaymentMethod.Prepaid]: 'Trả trước',
-  [OrderPaymentMethod.CashOnDelivery]: 'COD',
+  [OrderPaymentMethod.CashOnDelivery]: 'Thu hộ (COD)',
 };
 
 export const ORDER_PAGE_SIZES = [10, 20, 50] as const;
+
+export const ORDER_PAYMENT_SOURCE_OPTIONS = [
+  { label: 'Chuyển khoản ngân hàng', value: 'ManualBankTransfer' as const },
+  { label: 'Thu hộ khi giao hàng (COD)', value: 'ManualCOD' as const },
+];
+
+export const ORDER_REFUND_SOURCE_OPTIONS = [
+  { label: 'Chuyển khoản ngân hàng', value: 'ManualBankTransfer' as const },
+  { label: 'Tiền mặt', value: 'ManualCash' as const },
+];
 
 export const SHIPMENT_STATUS_LABELS: Record<ShipmentStatus, string> = {
   [ShipmentStatus.Dispatched]: 'Đang giao',

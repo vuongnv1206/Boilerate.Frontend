@@ -21,7 +21,7 @@ GetDesign Webflow trong thư viện local phân tích website marketing. Chỉ d
 | Panel ngữ cảnh     | 240px, min 200px, max 320px                                           | Điều hướng theo nhóm; kéo mép phải để resize; thu gọn và nhớ kích thước     |
 | Toolbar vùng chính | Khoảng 48px, tăng khi cần wrap                                        | Tiêu đề, search/filter và action của màn hiện tại                           |
 | Rail sản phẩm      | 218px desktop; 240px overlay tablet                                   | Giữ danh sách và bộ lọc cạnh editor; tablet mở bằng panel có focus trap     |
-| Control            | 30px chuẩn desktop                                                    | Form, toolbar và bảng dùng cùng nhịp; textarea/đa dòng tự mở rộng           |
+| Control            | 34px chuẩn desktop; 30px cho biến thể compact                          | Form, toolbar và bảng dùng cùng nhịp; textarea/đa dòng tự mở rộng           |
 | Bảng               | Header 34px; dòng 62px cho fixture hai dòng (68px từ viewport 1500px) | Thumbnail 36px; tên chính 13px, metadata 11px; viền ngang mảnh; số căn phải |
 
 Shell chiếm viewport, tránh scroll cả document trên desktop. Panel và phần nội dung cuộn trong vùng sở hữu; header/toolbar giữ ổn định. List dùng hết vùng chính, không bọc trong card lớn. Catalog editor giữ rail sản phẩm bên trái; metadata nằm ở cuối form và không lặp thành inspector.
@@ -33,9 +33,9 @@ Resize có pointer capture/cleanup; giới hạn min/max và bảo vệ khi stor
 ## 3. Typography, spacing và hình dáng
 
 - Một họ sans dễ đọc tiếng Việt. Ưu tiên Inter tự host nếu có font được cấp phép; fallback `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`. Không dùng font Webflow độc quyền nếu chưa có quyền.
-- Body/control và tên chính trong list 13px, line-height 1.45–1.5; label/caption 12px; section title 14px/600; page title 20–23px/600 theo màn/viewport. Tối thiểu 11px dành cho chrome/metadata phụ; input, tên bản ghi chính và lỗi quan trọng giữ cỡ đọc rõ.
+- Body/control 14px, line-height 1.45–1.5; label 13px; hint/caption/lỗi 12px; tên chính trong list 13–14px; section title 14px/600; page title 20–23px/600 theo màn/viewport. Tối thiểu 11px dành cho chrome/metadata phụ; input, tên bản ghi chính và lỗi quan trọng giữ cỡ đọc rõ.
 - Spacing scale: 4, 8, 12, 16, 20, 24, 32px. Toolbar có thể dùng khoảng 6px giữa icon và chữ. Form label cách input 6px, trường cách nhau 16px.
-- Radius chính 4px; nhóm panel 0; badge 3–4px; dialog tối đa 8px. Icon cùng hệ outline, 16px phổ biến, stroke nhất quán. Không dùng nhiều emoji thay icon.
+- Radius chính 6px; nhóm panel 0; badge theo preset; dialog tối đa 8px. Icon cùng hệ outline, 16px phổ biến, stroke nhất quán. Không dùng nhiều emoji thay icon.
 - Viền 1px ngăn vùng; bóng chỉ để tách overlay nổi. Tránh gradient, glass, card bóng đậm và góc pill trên control vận hành.
 
 ## 4. Theme và tokens
@@ -63,7 +63,7 @@ Target: chữ thường 4.5:1, chữ lớn 3:1; focus/icon/border cần thiết 
 
 ## 5. Bộ control và trạng thái
 
-PrimeNG cung cấp hành vi; preset của dự án quyết định diện mạo. Dùng chung token cho button, input/textarea, number, select/multiselect, checkbox, switch, date picker, table/pagination, tabs, dialog/drawer, tooltip, toast/message và upload khi có trong gallery.
+PrimeNG Angular components cung cấp hành vi; `WorkspacePreset` và semantic tokens quyết định diện mạo. Dùng trực tiếp `pButton`, `pInputText`, `pTextarea`, `p-inputnumber`, `p-select`, `p-multiselect`, `p-checkbox`, `p-toggleswitch`, `p-datepicker`, `p-table` và `p-tag` trong các màn đã chuẩn hóa. Dùng chung token cho table/pagination, tabs, dialog/drawer, tooltip, toast/message và upload khi có trong gallery. SCSS của màn chỉ giữ bố cục; không chồng màu, viền, radius, focus hoặc kích thước riêng lên từng control.
 
 | Trạng thái           | Quy tắc                                                                                 |
 | -------------------- | --------------------------------------------------------------------------------------- |
@@ -107,6 +107,6 @@ Animation bình thường **bật mặc định**; không thêm switch giảm ch
 - Chụp ảnh bản dựng sau khi tương tác ổn định; soát tỷ lệ, alignment, contrast và các vùng scroll. Ảnh Webflow công khai có thể khác phiên bản/viewport: ghi rõ nguồn và giới hạn so sánh.
 - Báo cáo kết quả thực sự chạy và khoảng trống trong bàn giao; chỉ giữ bằng chứng lâu dài khi cần theo [quy tắc docs](docs/README.md#quy-tắc-duy-trì-docs). Nghiệm thu thiết kế với người dùng và nghiệm thu deployment là trạng thái riêng.
 
-## Catalog editor Webflow (2026-10-22)
+## Catalog editor Webflow
 
-Icon/CMS navigation và product rail giữ nguyên thiết kế hiện có. Chỉ editor dùng _catalog-editor.scss, import sau catalog: toolbar40px, controls24px, option32px, header34px, variant53px, font Inter11.5/16; headings13px, viền1px và góc2px. Các semantic editor tokens riêng giữ dark surface #292929, raised #353535, border #424242, field đen alpha22%; Light dùng surface/field trắng và viền tương phản theo theme. Options là chip input Hủy/Xong, variants inline Hoàn tác/Đóng, một Save chung và lifecycle ở footer. Không thêm mã nội bộ trong form hoặc đổi geometry của nav. Tablet giữ cơ chế rail overlay hiện có; editor grid co về một cột khi thiếu chiều rộng.
+Icon/CMS navigation và product rail giữ nguyên thiết kế hiện có. Editor dùng `_catalog-editor.scss`, import sau catalog để bố trí toolbar 40px, options, variants và metadata. Products, ProductType, Orders và Renewals dùng cùng hệ control PrimeNG: cao 34px mặc định, 30px cho compact; body/control 14px, label 13px, helper/lỗi 12px và radius 6px. `WorkspacePreset` giữ quyền quyết định trạng thái và diện mạo control; editor không thu nhỏ input bằng override cục bộ. Semantic editor tokens sở hữu nền và viền phân vùng theo Light/Dark; các trường nhập dùng semantic form tokens chung. Options là chip input Hủy/Xong, variants inline Hoàn tác/Đóng, một Save chung và lifecycle ở footer. Không thêm mã nội bộ trong form hoặc đổi geometry của nav. Tablet giữ cơ chế rail overlay hiện có; editor grid co về một cột khi thiếu chiều rộng.

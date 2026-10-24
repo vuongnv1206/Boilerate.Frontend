@@ -1,3 +1,4 @@
+import { ButtonDirective } from 'primeng/button';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,13 +13,20 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
-import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
+import { Table } from 'primeng/table';
+import { InputNumber } from 'primeng/inputnumber';
+import { InputGroup } from 'primeng/inputgroup';
+import { InputGroupAddon } from 'primeng/inputgroupaddon';
+import { Checkbox } from 'primeng/checkbox';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 import { ProductFulfillmentKind } from '@enums/product.enum';
 import {
   createOptionForm,
   createOptionValueForm,
+  generatedCatalogCode,
   createSkuRow,
   CreateOptionForm,
   CreateSkuForm,
@@ -27,6 +35,7 @@ import {
 } from '@forms/product-commerce.form';
 import { ProductForm } from '@forms/product-form.model';
 import { createProductMediaForm } from '@forms/product.form';
+import { InventoryBalance } from '@models/inventory.dto';
 import { ProductDto, ProductMedia } from '@models/product.dto';
 import { ProductCommerceStore } from '@stores/product-commerce.store';
 import { ProductIoStore } from '@stores/product-io.store';
@@ -42,15 +51,23 @@ import { ProductMedia as ProductMediaEditor } from '../product-media/product-med
   selector: 'app-product-commerce',
   imports: [
     ReactiveFormsModule,
+    FormsModule,
     CurrencyPipe,
     DatePipe,
     InputText,
     Textarea,
+    Table,
+    InputNumber,
+    InputGroup,
+    InputGroupAddon,
+    Checkbox,
+    ToggleSwitch,
     FieldMessage,
     ConfirmDialog,
     Icon,
     ProductMediaEditor,
     NgTemplateOutlet,
+    ButtonDirective,
   ],
   providers: [ProductCommerceStore, LeaveConfirmation, MediaPreviewStore],
   templateUrl: './product-commerce.component.html',
@@ -215,6 +232,15 @@ export class ProductCommerce implements OnInit {
       return false;
     }
     this.optionDraft.controls.name.setValue(this.optionDraft.controls.name.value.trim());
+    if (index === this.options().length)
+      this.optionDraft.controls.code.setValue(
+        generatedCatalogCode(
+          this.optionDraft.controls.name.value,
+          this.options().map((option) => option.controls.code.value),
+          'OPTION',
+        ),
+        { emitEvent: false },
+      );
     if (index < this.options().length)
       this.form().controls.options.setControl(index, this.optionDraft);
     else this.form().controls.options.push(this.optionDraft);
@@ -238,7 +264,17 @@ export class ProductCommerce implements OnInit {
       return false;
     }
     if (index !== null) this.optionDraft.controls.values.at(index).controls.label.setValue(text);
-    else this.optionDraft.controls.values.push(createOptionValueForm('', text));
+    else
+      this.optionDraft.controls.values.push(
+        createOptionValueForm(
+          generatedCatalogCode(
+            text,
+            this.optionDraft.controls.values.controls.map((value) => value.controls.code.value),
+            'VALUE',
+          ),
+          text,
+        ),
+      );
     this.valueText.set('');
     this.renamingValue.set(null);
     this.valueMenu.set(null);
@@ -332,7 +368,10 @@ export class ProductCommerce implements OnInit {
         previous.controls.options.setValue(selection, { emitEvent: false });
         return previous;
       }
-      const row = createSkuRow(baseline?.sku ?? '', selection, baseline?.price ?? 0);
+      const generatedSku = baseline?.sku.trim()
+        ? [baseline.sku.trim(), ...Object.values(selection)].join('-').slice(0, 100)
+        : '';
+      const row = createSkuRow(generatedSku, selection, baseline?.price ?? 0);
       if (baseline)
         row.patchValue(
           {
@@ -450,9 +489,14 @@ export class ProductCommerce implements OnInit {
     }
     this.markDirty();
   }
-  toggleTrack(row: CreateSkuForm, event: Event): void {
+  setTrack(row: CreateSkuForm, checked: boolean): void {
     if (!this.store.canAdjust()) return;
-    row.controls.trackInventory.setValue((event.target as HTMLInputElement).checked);
+    row.controls.trackInventory.setValue(checked);
+    this.markDirty();
+  }
+  setVariantActive(row: CreateSkuForm, checked: boolean): void {
+    if (!this.catalog().canWrite()) return;
+    row.controls.isActive.setValue(checked);
     this.markDirty();
   }
   quantity(row: CreateSkuForm): string {
@@ -475,6 +519,21 @@ export class ProductCommerce implements OnInit {
     }
     this.expanded.set(null);
     this.store.openDigital(variant);
+  }
+  inventoryBalance(row: CreateSkuForm): InventoryBalance | null {
+    const variantId = row.controls.id.value;
+    return variantId
+      ? (this.store.balances().find((balance) => balance.variantId === variantId) ?? null)
+      : null;
+  }
+  openInventory(row: CreateSkuForm): void {
+    const balance = this.inventoryBalance(row);
+    if (!balance || this.blocked()) {
+      this.localError.set('Chưa có bản ghi tồn kho cho biến thể này.');
+      return;
+    }
+    this.expanded.set(null);
+    this.store.openInventory(balance);
   }
   async close(): Promise<void> {
     const dirty =

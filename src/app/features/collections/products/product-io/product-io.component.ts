@@ -1,3 +1,4 @@
+import { ButtonDirective } from 'primeng/button';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,7 +12,7 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { defaultIfEmpty, distinctUntilChanged, firstValueFrom, map } from 'rxjs';
 import { Dialog } from 'primeng/dialog';
@@ -20,9 +21,13 @@ import { validationMessage } from '@shared/forms/validation-message';
 import { InputText } from 'primeng/inputtext';
 import { MultiSelect } from 'primeng/multiselect';
 import { Select } from 'primeng/select';
+import { InputNumber } from 'primeng/inputnumber';
+import { Checkbox } from 'primeng/checkbox';
+import { DatePicker } from 'primeng/datepicker';
 import { Textarea } from 'primeng/textarea';
 import { ContentState } from '@shared/ui/content-state/content-state.component';
 import { FieldMessage } from '@shared/ui/field-message/field-message.component';
+import { FormField } from '@shared/ui/form-field/form-field.component';
 import { Icon } from '@shared/ui/icon/icon.component';
 import {
   PRODUCT_FULFILLMENT_OPTIONS,
@@ -49,12 +54,18 @@ import { createProductMediaForm } from '@forms/product.form';
     Icon,
     DatePipe,
     ReactiveFormsModule,
+    FormsModule,
     InputText,
     MultiSelect,
     Select,
+    InputNumber,
+    Checkbox,
+    DatePicker,
     Textarea,
     FieldMessage,
+    FormField,
     ProductCommerce,
+    ButtonDirective,
   ],
   providers: [ProductIoStore],
   templateUrl: './product-io.component.html',
@@ -204,5 +215,41 @@ export class ProductIo implements OnInit {
 
   error(control: AbstractControl | undefined): string {
     return validationMessage(control);
+  }
+
+  dateValue(value: unknown): Date | null {
+    if (typeof value !== 'string') return null;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value);
+    if (!match) return null;
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  setDateValue(control: FormControl, value: Date | null): void {
+    const formatted = value
+      ? `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`
+      : null;
+    this.setFieldValue(control, formatted);
+  }
+
+  setFieldValue(control: AbstractControl, value: string | number | boolean | null): void {
+    if (this.fieldDisabled(control)) return;
+    control.setValue(value);
+    control.markAsDirty();
+    this.form.markAsDirty();
+  }
+
+  fieldDisabled(control: AbstractControl): boolean {
+    return control.disabled || this.commerceBusy() || this.mediaBusy() || this.store.busy();
+  }
+
+  choiceOptions(field: {
+    choices: readonly { id: string; label: string; isActive: boolean }[];
+  }): { label: string; value: string; disabled: boolean }[] {
+    return field.choices.map((choice) => ({
+      label: choice.label,
+      value: choice.id,
+      disabled: !choice.isActive,
+    }));
   }
 }

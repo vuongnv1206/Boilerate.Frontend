@@ -1,139 +1,30 @@
-// Preset tokens own colors and supported component sizing. Keep only density,
-// structural separators and accessibility exceptions without matching tokens here.
-.p-component,
+// PrimeNG appearance comes from WorkspacePreset; only layout belongs here.
 .p-inputtext,
 .p-textarea,
+.p-inputnumber,
 .p-select,
 .p-multiselect,
-.p-inputnumber-input,
-.p-button,
 .p-datepicker,
-.p-dialog,
-.p-drawer,
-.p-toast {
-  font-family: var(--font-ui);
-  font-size: 13px;
-}
-
-.p-inputtext,
-.p-textarea,
-.p-inputnumber-input {
-  border-radius: var(--radius);
-  padding: 6px 9px;
-  min-height: var(--control-height);
-  box-shadow: none;
-}
-
-.p-select,
-.p-multiselect {
-  min-height: var(--control-height);
-  border-radius: var(--radius);
-  align-items: center;
-}
-.p-select-label,
-.p-multiselect-label {
-  padding: 6px 9px;
-}
-.p-select-dropdown svg,
-.p-multiselect-dropdown svg {
-  width: 12px;
-  height: 12px;
-}
-.p-datepicker-panel {
-  border: 1px solid var(--border-strong);
-  background: var(--surface-0);
-  box-shadow: var(--overlay-shadow);
-  border-radius: 5px;
-}
-
 .p-button {
   min-height: var(--control-height);
-  padding: 5px 10px;
-  gap: 6px;
-  border-radius: var(--radius);
-  font-size: 12px;
-  font-weight: 500;
-  box-shadow: none;
 }
-.p-button-label {
-  font-weight: 500;
+.p-button.p-button-sm {
+  min-height: var(--control-height-compact);
 }
-.p-button-sm {
-  font-size: 12px;
-  padding: 4px 8px;
-  min-height: 26px;
-}
-.p-toggleswitch {
-  width: 30px;
-  height: 18px;
-}
-.p-toggleswitch-handle {
-  width: 12px;
-  height: 12px;
-}
-.p-toggleswitch-checked .p-toggleswitch-handle {
-  inset-inline-start: calc(100% - 15px);
-}
-.p-datepicker {
+.p-datepicker,
+.p-inputnumber {
   width: 100%;
 }
 .p-datepicker-input {
   width: 100%;
 }
-.p-datepicker-panel {
-  font-size: 12px;
-  min-width: 270px;
-  padding: 10px;
+.p-datatable {
+  font-size: 13px;
 }
-.p-datepicker-day {
-  width: 30px;
-  height: 30px;
+.p-datatable-thead > tr > th {
   font-size: 12px;
 }
 
-.p-datatable {
-  font-size: 12px;
-}
-.p-datatable-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.p-datatable-thead > tr > th {
-  background: var(--surface-1);
-  color: var(--text-2);
-  font-size: 11px;
-  font-weight: 500;
-  padding: 10px 12px;
-  border-color: var(--border);
-}
-.p-datatable-tbody > tr {
-  background: var(--surface-0);
-  color: var(--text-1);
-}
-.p-datatable-tbody > tr > td {
-  padding: 10px 12px;
-  border-color: var(--border);
-}
-.p-datatable-tbody > tr:hover {
-  background: var(--surface-2);
-}
-.p-paginator {
-  background: var(--surface-0);
-  padding: 10px;
-  font-size: 12px;
-  gap: 3px;
-  border-radius: 0;
-}
-.p-paginator-page,
-.p-paginator-first,
-.p-paginator-prev,
-.p-paginator-next,
-.p-paginator-last {
-  min-width: 28px;
-  height: 28px;
-  border-radius: var(--radius);
-  font-size: 12px;
-}
 .p-dialog {
   background: var(--surface-0);
   color: var(--text-1);

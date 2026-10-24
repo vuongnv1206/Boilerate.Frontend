@@ -96,7 +96,20 @@ export function initializeProductForm(form: ProductForm, item: ProductDto | null
   );
   const legacyGallery =
     item?.media.filter((media) => !assignedMediaIds.has(media.mediaAssetId)) ?? [];
-  for (const variant of item?.variants ?? []) {
+  const rawVariants = [...(item?.variants ?? [])];
+  if (item?.options?.length) {
+    rawVariants.sort((a, b) => {
+      for (const option of item.options) {
+        const aSel = a.selections.find((s) => s.optionId === option.id);
+        const bSel = b.selections.find((s) => s.optionId === option.id);
+        const aIndex = aSel ? option.values.findIndex((v) => v.id === aSel.optionValueId) : -1;
+        const bIndex = bSel ? option.values.findIndex((v) => v.id === bSel.optionValueId) : -1;
+        if (aIndex !== bIndex) return aIndex - bIndex;
+      }
+      return 0;
+    });
+  }
+  for (const variant of rawVariants) {
     const selection: Record<string, string> = {};
     for (const selected of variant.selections) {
       const option = item?.options.find((value) => value.id === selected.optionId);

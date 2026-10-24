@@ -1,9 +1,16 @@
+@use 'sass:meta';
 @use 'styles/tokens';
 @use 'styles/motion';
-@use 'styles/primeng';
-@use 'styles/base';
-@use 'styles/base/controls';
-@use 'styles/admin';
 @import '@fontsource-variable/inter/wght.css';
 
 @layer reset, primeng, app;
+
+@layer reset {
+  @include meta.load-css('styles/base');
+}
+
+@layer app {
+  @include meta.load-css('styles/primeng');
+  @include meta.load-css('styles/base/controls');
+  @include meta.load-css('styles/admin');
+}

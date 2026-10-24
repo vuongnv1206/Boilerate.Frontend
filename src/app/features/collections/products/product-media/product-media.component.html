@@ -49,6 +49,11 @@
           />
           @if (items().length > 1) {
             <button
+              pButton
+              severity="secondary"
+              text
+              rounded
+              iconOnly
               class="wf-icon-button"
               type="button"
               [disabled]="blocked() || index === 0"
@@ -57,6 +62,11 @@
             >
               <ui-icon name="arrow-left" [size]="12" /></button
             ><button
+              pButton
+              severity="secondary"
+              text
+              rounded
+              iconOnly
               class="wf-icon-button"
               type="button"
               [disabled]="blocked() || index === items().length - 1"
@@ -67,6 +77,11 @@
             </button>
           }
           <button
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
             class="wf-icon-button"
             type="button"
             [disabled]="blocked()"

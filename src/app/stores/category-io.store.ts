@@ -12,6 +12,7 @@ import {
   expand,
   filter,
   finalize,
+  forkJoin,
   map,
   of,
   reduce,
@@ -29,7 +30,13 @@ import {
   CategoryProductResult,
   SaveCategoryRequest,
 } from '@models/category.dto';
-import { ProductPage, ProductSearch, ProductSummary } from '@models/product.dto';
+import { ProductDto, ProductPage, ProductSearch, ProductSummary } from '@models/product.dto';
+
+interface CategoryProductIssue {
+  readonly product: ProductSummary;
+  readonly included: boolean;
+  readonly message: string;
+}
 
 @Injectable()
 export class CategoryIoStore {
@@ -42,7 +49,15 @@ export class CategoryIoStore {
   );
   readonly canViewProducts = computed(() => this.session.can('Product', 'View'));
   readonly canManageProducts = computed(
-    () => this.canWrite() && this.canViewProducts() && this.session.can('Product', 'Update'),
+    () =>
+      (this.record() !== null || this.canWrite()) &&
+      this.canViewProducts() &&
+      this.session.can('Product', 'Update'),
+  );
+  readonly canSave = computed(
+    () =>
+      this.canWrite() ||
+      (this.record() !== null && this.canManageProducts() && this.productsDirty()),
   );
   private readonly service = inject(CategoriesService);
   private readonly productsService = inject(ProductsService);
@@ -62,6 +77,12 @@ export class CategoryIoStore {
   private readonly productSearchLoadingState = signal(false);
   private readonly productErrorState = signal('');
   private readonly productSearchErrorState = signal('');
+  private readonly productIssuesState = signal<readonly CategoryProductIssue[]>([]);
+  private readonly productReconcileRequiredState = signal(false);
+  private readonly pendingDuplicateState = signal<{
+    record: CategoryDto;
+    products: readonly ProductSummary[];
+  } | null>(null);
   private loadSubscription?: Subscription;
   private membershipSubscription?: Subscription;
   private searchSubscription?: Subscription;
@@ -84,6 +105,9 @@ export class CategoryIoStore {
   readonly productSearchLoading = this.productSearchLoadingState.asReadonly();
   readonly productError = this.productErrorState.asReadonly();
   readonly productSearchError = this.productSearchErrorState.asReadonly();
+  readonly productIssues = this.productIssuesState.asReadonly();
+  readonly productReconcileRequired = this.productReconcileRequiredState.asReadonly();
+  readonly partialCopy = computed(() => this.pendingDuplicateState()?.record ?? null);
   readonly productsDirty = computed(() => {
     const baseline = this.productBaselineState();
     const selected = this.productSelectionState();
@@ -139,6 +163,10 @@ export class CategoryIoStore {
   }
 
   load(id: string): void {
+    const pendingCopy = this.pendingDuplicateState();
+    const copyDraft =
+      pendingCopy && pendingCopy.record.id === id ? pendingCopy.products : undefined;
+    if (copyDraft) this.pendingDuplicateState.set(null);
     this.currentId = id;
     this.cancelWrites.next();
     this.membershipSubscription?.unsubscribe();
@@ -152,6 +180,8 @@ export class CategoryIoStore {
     this.errorState.set('');
     this.productErrorState.set('');
     this.productSearchErrorState.set('');
+    this.productIssuesState.set([]);
+    this.productReconcileRequiredState.set(false);
     this.productSelectionState.set([]);
     this.productBaselineState.set(new Map());
     this.productResultsState.set([]);
@@ -179,7 +209,7 @@ export class CategoryIoStore {
           this.form.reset(categoryFormValue(item), { emitEvent: false });
           this.readyState.set(true);
           this.applyAccess();
-          if (item && this.canViewProducts()) this.loadMemberships(item.id, generation);
+          if (item && this.canViewProducts()) this.loadMemberships(item.id, generation, copyDraft);
         },
         error: (error: unknown) => {
           this.loadingState.set(false);
@@ -233,6 +263,8 @@ export class CategoryIoStore {
   addProduct(product: ProductSummary): void {
     if (
       !this.canManageProducts() ||
+      this.productLoading() ||
+      this.saving() ||
       this.productSelectionState().some((item) => item.id === product.id)
     )
       return;
@@ -246,14 +278,14 @@ export class CategoryIoStore {
   }
 
   removeProduct(id: string): void {
-    if (!this.canManageProducts()) return;
+    if (!this.canManageProducts() || this.productLoading() || this.saving()) return;
     this.productSelectionState.update((items) => items.filter((item) => item.id !== id));
     this.productErrorState.set('');
   }
 
   save(): Observable<CategoryDto> {
     return defer(() => {
-      if (!this.canWrite() || this.saving() || this.loading() || !this.ready()) return EMPTY;
+      if (!this.canSave() || this.saving() || this.loading() || !this.ready()) return EMPTY;
       clearServerErrors(this.form);
       this.summaryState.set([]);
       this.form.markAllAsTouched();
@@ -267,6 +299,16 @@ export class CategoryIoStore {
         this.errorState.set('Cần quyền Product.View và Product.Update để lưu liên kết sản phẩm.');
         return EMPTY;
       }
+      if (
+        this.productReconcileRequired() ||
+        this.productIssues().length ||
+        (changes.length && this.productLoading())
+      ) {
+        this.productErrorState.set(
+          'Cần đối chiếu và giải quyết sản phẩm không còn truy cập được trước khi lưu liên kết.',
+        );
+        return EMPTY;
+      }
       const generation = this.generation;
       const revision = this.revision;
       this.savingState.set(true);
@@ -274,16 +316,32 @@ export class CategoryIoStore {
       this.productErrorState.set('');
       this.savedState.set(false);
       const request = categoryRequest(this.form, this.record());
-      const operation = request.id
-        ? this.service.update(request.id, request)
-        : this.service.create(request);
+      const current = this.record();
+      const metadataChanged =
+        !current ||
+        request.name !== current.name ||
+        request.slug !== current.slug ||
+        request.description !== current.description ||
+        request.parentId !== current.parentId ||
+        request.sortOrder !== current.sortOrder ||
+        request.isActive !== current.isActive;
+      if (metadataChanged && !this.canWrite()) {
+        this.savingState.set(false);
+        this.errorState.set('Cần quyền Category.Update để sửa thông tin danh mục.');
+        return EMPTY;
+      }
+      const operation =
+        current && !metadataChanged
+          ? of(current)
+          : request.id
+            ? this.service.update(request.id, request)
+            : this.service.create(request);
       return operation.pipe(
-        takeUntil(this.cancelWrites),
-        takeUntilDestroyed(this.destroyRef),
         filter(() => generation === this.generation),
         concatMap((result) => {
           this.recordState.set(result);
-          if (revision === this.revision)
+          this.currentId = result.id;
+          if (metadataChanged && revision === this.revision)
             this.form.reset(categoryFormValue(result), { emitEvent: false });
           this.savedState.set(changes.length === 0 && revision === this.revision);
           if (changes.length === 0) return of(result);
@@ -291,7 +349,7 @@ export class CategoryIoStore {
             tap((updated) => this.acceptProductChanges(updated)),
             map(() => result),
             catchError((error: unknown) => {
-              this.productErrorState.set(this.productSaveError(error));
+              this.productErrorState.set(this.productSaveError(error, metadataChanged));
               this.savedState.set(false);
               return EMPTY;
             }),
@@ -312,6 +370,8 @@ export class CategoryIoStore {
           } else this.errorState.set('Chưa lưu được danh mục. Nội dung đang nhập được giữ lại.');
           return EMPTY;
         }),
+        takeUntil(this.cancelWrites),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => {
           if (generation === this.generation) {
             this.savingState.set(false);
@@ -327,6 +387,12 @@ export class CategoryIoStore {
       const record = this.record();
       if (!record || !this.session.can('Category', 'Create') || this.saving() || this.loading())
         return EMPTY;
+      if (this.partialCopy()) {
+        this.errorState.set(
+          'Bản sao đã được tạo. Mở bản sao để hoàn tất liên kết trước khi nhân bản tiếp.',
+        );
+        return EMPTY;
+      }
       if (this.form.dirty || this.productsDirty()) {
         this.errorState.set('Lưu thay đổi hiện tại trước khi nhân bản danh mục.');
         return EMPTY;
@@ -366,8 +432,6 @@ export class CategoryIoStore {
       this.errorState.set('');
       const create = this.service.create(request);
       return create.pipe(
-        takeUntil(this.cancelWrites),
-        takeUntilDestroyed(this.destroyRef),
         concatMap((copy) => {
           if (members.length === 0) return of(copy);
           const changes: CategoryProductChange[] = members.map((product) => ({
@@ -379,8 +443,9 @@ export class CategoryIoStore {
             tap((updated) => this.acceptProductChanges(updated)),
             map(() => copy),
             catchError((error: unknown) => {
+              this.pendingDuplicateState.set({ record: copy, products: members });
               this.errorState.set(
-                `Đã tạo bản sao ${copy.name}, nhưng chưa sao chép được liên kết sản phẩm. ${this.productSaveError(error)}`,
+                `Đã tạo bản sao ${copy.name}, nhưng chưa sao chép được liên kết sản phẩm. Mở bản sao để đối chiếu và lưu các liên kết đang chờ. ${error instanceof ApiError ? error.message : ''}`,
               );
               return EMPTY;
             }),
@@ -393,6 +458,8 @@ export class CategoryIoStore {
           );
           return EMPTY;
         }),
+        takeUntil(this.cancelWrites),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => {
           if (generation === this.generation) this.savingState.set(false);
         }),
@@ -413,25 +480,125 @@ export class CategoryIoStore {
     return names.join(' / ') || id;
   }
 
-  private loadMemberships(categoryId: string, generation: number): void {
+  reconcileProducts(): void {
+    const category = this.record();
+    if (!category || !this.canViewProducts() || this.saving() || this.productLoading()) return;
+    const generation = this.generation;
+    const baseline = this.productBaselineState();
+    const selected = new Map(this.productSelectionState().map((item) => [item.id, item]));
+    const removed = [...baseline.values()].filter((item) => !selected.has(item.id));
+    const added = [...selected.values()].filter((item) => !baseline.has(item.id));
+    const pending = [
+      ...removed.map((product) => ({ product, included: false })),
+      ...added.map((product) => ({ product, included: true })),
+    ];
+    this.membershipSubscription?.unsubscribe();
     this.productLoadingState.set(true);
-    const first: ProductSearch = {
-      pageNumber: 1,
-      pageSize: 100,
-      categoryId,
-      sortBy: 'name',
-      sortDirection: 'asc',
-    };
-    const requestPage = (pageNumber: number) =>
-      this.productsService.search({ ...first, pageNumber });
-    this.membershipSubscription = requestPage(1)
+    this.productErrorState.set('');
+    this.membershipSubscription = this.membershipPages(category.id)
       .pipe(
-        expand((page: ProductPage) =>
-          page.pageNumber * page.pageSize < page.total ? requestPage(page.pageNumber + 1) : EMPTY,
-        ),
-        reduce((all, page) => [...all, ...page.items], [] as ProductSummary[]),
+        concatMap((items) => {
+          if (!pending.length) return of({ items, checked: [] });
+          return forkJoin(
+            pending.map((change) =>
+              this.productsService.get(change.product.id).pipe(
+                map((product: ProductDto) => ({ ...change, version: product.version, error: '' })),
+                catchError((error: unknown) =>
+                  of({
+                    ...change,
+                    version: '',
+                    error:
+                      error instanceof ApiError && (error.status === 403 || error.status === 404)
+                        ? 'Sản phẩm đã bị xóa hoặc bạn không còn quyền truy cập.'
+                        : 'Chưa kiểm tra được phiên bản sản phẩm. Thử đối chiếu lại.',
+                  }),
+                ),
+              ),
+            ),
+          ).pipe(map((checked) => ({ items, checked })));
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
+      .subscribe({
+        next: ({ items, checked }) => {
+          if (generation !== this.generation) return;
+          if (items.some((item) => !item.version)) {
+            this.productErrorState.set(
+              'Có sản phẩm thiếu phiên bản. Bản nhập vẫn được giữ; thử đối chiếu lại.',
+            );
+            this.productLoadingState.set(false);
+            return;
+          }
+          const fresh = new Map(
+            checked.filter((item) => !item.error).map((item) => [item.product.id, item.version]),
+          );
+          const canonical = new Map(
+            items.map((item) => [
+              item.id,
+              fresh.has(item.id) ? { ...item, version: fresh.get(item.id) } : item,
+            ]),
+          );
+          const rebased = new Map(canonical);
+          for (const product of removed) rebased.delete(product.id);
+          for (const product of added)
+            rebased.set(
+              product.id,
+              fresh.has(product.id) ? { ...product, version: fresh.get(product.id) } : product,
+            );
+          this.productBaselineState.set(canonical);
+          this.productSelectionState.set([...rebased.values()]);
+          this.productIssuesState.set(
+            checked
+              .filter((item) => !!item.error)
+              .map((item) => ({
+                product: item.product,
+                included: item.included,
+                message: item.error,
+              })),
+          );
+          this.productReconcileRequiredState.set(false);
+          this.productErrorState.set(
+            this.productIssues().length
+              ? 'Một số sản phẩm chưa thể đối chiếu. Bỏ ý định thay đổi từng sản phẩm hoặc thử lại trước khi lưu.'
+              : 'Đã đối chiếu liên kết. Kiểm tra bản nhập rồi bấm Lưu để ghi thay đổi.',
+          );
+          this.productLoadingState.set(false);
+        },
+        error: (error: unknown) => {
+          if (generation !== this.generation) return;
+          this.productLoadingState.set(false);
+          this.productErrorState.set(
+            error instanceof ApiError
+              ? error.message
+              : 'Không thể đối chiếu liên kết. Bản nhập vẫn được giữ.',
+          );
+        },
+      });
+  }
+
+  discardProductChange(id: string): void {
+    if (!this.canManageProducts() || this.productLoading() || this.saving()) return;
+    const issue = this.productIssues().find((item) => item.product.id === id);
+    if (!issue) return;
+    const canonical = this.productBaselineState().get(id);
+    this.productSelectionState.update((items) =>
+      canonical
+        ? [...items.filter((item) => item.id !== id), canonical]
+        : items.filter((item) => item.id !== id),
+    );
+    this.productIssuesState.update((items) => items.filter((item) => item.product.id !== id));
+    if (!this.productIssues().length)
+      this.productErrorState.set('Đã giải quyết sản phẩm cần đối chiếu. Kiểm tra và bấm Lưu.');
+  }
+
+  private loadMemberships(
+    categoryId: string,
+    generation: number,
+    copyDraft?: readonly ProductSummary[],
+  ): void {
+    this.productLoadingState.set(true);
+    this.membershipSubscription = this.membershipPages(categoryId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (items) => {
           if (generation !== this.generation) return;
@@ -443,8 +610,15 @@ export class CategoryIoStore {
             return;
           }
           this.productBaselineState.set(new Map(items.map((item) => [item.id, item])));
-          this.productSelectionState.set(items);
-          this.productErrorState.set('');
+          const selection = new Map(items.map((item) => [item.id, item]));
+          for (const product of copyDraft ?? []) selection.set(product.id, product);
+          this.productSelectionState.set([...selection.values()]);
+          this.productReconcileRequiredState.set(!!copyDraft);
+          this.productErrorState.set(
+            copyDraft
+              ? 'Bản sao đã được tạo; các liên kết đang chờ được giữ trong bản nhập. Bấm Đối chiếu liên kết trước khi lưu.'
+              : '',
+          );
           this.productLoadingState.set(false);
         },
         error: (error: unknown) => {
@@ -455,6 +629,24 @@ export class CategoryIoStore {
           );
         },
       });
+  }
+
+  private membershipPages(categoryId: string): Observable<ProductSummary[]> {
+    const first: ProductSearch = {
+      pageNumber: 1,
+      pageSize: 100,
+      categoryId,
+      sortBy: 'name',
+      sortDirection: 'asc',
+    };
+    const requestPage = (pageNumber: number) =>
+      this.productsService.search({ ...first, pageNumber });
+    return requestPage(1).pipe(
+      expand((page: ProductPage) =>
+        page.pageNumber * page.pageSize < page.total ? requestPage(page.pageNumber + 1) : EMPTY,
+      ),
+      reduce((all, page) => [...all, ...page.items], [] as ProductSummary[]),
+    );
   }
 
   private productChanges(): CategoryProductChange[] {
@@ -501,12 +693,13 @@ export class CategoryIoStore {
     return slug;
   }
 
-  private productSaveError(error: unknown): string {
+  private productSaveError(error: unknown, metadataChanged = true): string {
+    const prefix = metadataChanged ? 'Danh mục đã lưu, còn liên kết được giữ trong bản nhập; ' : '';
     if (error instanceof ApiError && error.status === 409)
-      return 'Có sản phẩm đã thay đổi. Danh mục đã lưu, còn liên kết được giữ trong bản nhập; tải lại sản phẩm để đối chiếu.';
+      return `Có sản phẩm đã thay đổi. ${prefix}Bấm Đối chiếu liên kết rồi kiểm tra trước khi lưu.`;
     return error instanceof ApiError
-      ? error.message
-      : 'Danh mục đã lưu nhưng chưa cập nhật được liên kết sản phẩm.';
+      ? `${prefix}${error.message}`
+      : `${prefix}Chưa cập nhật được liên kết sản phẩm.`;
   }
 
   private applyAccess(): void {

@@ -1,3 +1,4 @@
+import { ButtonDirective } from 'primeng/button';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -5,9 +6,11 @@ import {
   DestroyRef,
   HostListener,
   OnInit,
+  computed,
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -15,9 +18,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
+import { Checkbox } from 'primeng/checkbox';
+import { Select } from 'primeng/select';
+import { DatePicker } from 'primeng/datepicker';
+import { Table } from 'primeng/table';
 import { ContentState } from '@shared/ui/content-state/content-state.component';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { StatusBadge } from '@shared/ui/status-badge/status-badge.component';
+import { FormField } from '@shared/ui/form-field/form-field.component';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog/confirm-dialog.component';
 import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation';
 import { AuthSession } from '@core/auth/auth-session';
@@ -42,11 +50,14 @@ import {
 import {
   ORDER_FULFILLMENT_STATUS_LABELS,
   ORDER_PAYMENT_METHOD_LABELS,
+  ORDER_PAYMENT_SOURCE_OPTIONS,
   ORDER_PAYMENT_STATUS_LABELS,
+  ORDER_REFUND_SOURCE_OPTIONS,
   ORDER_STATUS_LABELS,
   SHIPMENT_STATUS_LABELS,
 } from '@constants/order.constants';
 import { orderListQueryParams, readOrderListQuery } from '@utils/order-query.util';
+import { PRODUCT_FULFILLMENT_OPTIONS } from '@constants/product.constants';
 
 @Component({
   selector: 'app-order-detail',
@@ -55,12 +66,18 @@ import { orderListQueryParams, readOrderListQuery } from '@utils/order-query.uti
     ContentState,
     Icon,
     StatusBadge,
+    FormField,
     CurrencyPipe,
     DatePipe,
     Dialog,
     FormsModule,
     InputText,
+    Checkbox,
+    Select,
+    DatePicker,
+    Table,
     ConfirmDialog,
+    ButtonDirective,
   ],
   providers: [OrderDetailStore, LeaveConfirmation],
   templateUrl: './order-detail.component.html',
@@ -81,7 +98,9 @@ export class OrderDetail implements OnInit {
   readonly paymentAmount = signal(0);
   readonly paymentCurrency = signal('VND');
   readonly paymentReceivedAt = signal('');
+  readonly paymentDateValue = computed(() => this.dateTimeValue(this.paymentReceivedAt()));
   readonly paymentSource = signal<'ManualBankTransfer' | 'ManualCOD'>('ManualBankTransfer');
+  readonly paymentSourceOptions = ORDER_PAYMENT_SOURCE_OPTIONS;
   readonly dispatchDialog = signal(false);
   readonly dispatchCarrier = signal('');
   readonly dispatchTrackingNumber = signal('');
@@ -95,7 +114,9 @@ export class OrderDetail implements OnInit {
   readonly refundAmount = signal<number | null>(null);
   readonly refundReason = signal('');
   readonly refundSource = signal<'ManualBankTransfer' | 'ManualCash'>('ManualBankTransfer');
+  readonly refundSourceOptions = ORDER_REFUND_SOURCE_OPTIONS;
   readonly refundAt = signal('');
+  readonly refundDateValue = computed(() => this.dateTimeValue(this.refundAt()));
   readonly refundDirty = signal(false);
   readonly pendingRefund = signal<ConfirmRefundRequest | null>(null);
   readonly returnFormOpen = signal(false);
@@ -106,6 +127,7 @@ export class OrderDetail implements OnInit {
   readonly closeRemainingCod = signal(false);
   readonly returnDirty = signal(false);
   readonly pendingReturn = signal<ReceiveReturnRequest | null>(null);
+  readonly returnableLines = computed(() => this.calculateReturnableLines());
   readonly statusLabels = ORDER_STATUS_LABELS;
   readonly paymentStatusLabels = ORDER_PAYMENT_STATUS_LABELS;
   readonly fulfillmentStatusLabels = ORDER_FULFILLMENT_STATUS_LABELS;
@@ -121,7 +143,7 @@ export class OrderDetail implements OnInit {
   constructor() {
     effect(() => {
       const order = this.store.order();
-      if (order) this.orders.updateVisibleOrder(order);
+      if (order) untracked(() => this.orders.updateVisibleOrder(order));
       if (
         this.paymentDialog() &&
         this.paymentSubmitted() &&
@@ -142,6 +164,30 @@ export class OrderDetail implements OnInit {
       )
         this.reconcileDispatchDraft();
     });
+  }
+
+  fulfillmentLabel(value: number): string {
+    return PRODUCT_FULFILLMENT_OPTIONS.find((option) => option.value === value)?.label ?? '—';
+  }
+
+  private dateTimeValue(value: string): Date | null {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  setPaymentDateTime(value: Date | null): void {
+    this.paymentReceivedAt.set(this.localDateTime(value));
+  }
+
+  setRefundDateTime(value: Date | null): void {
+    this.refundAt.set(this.localDateTime(value));
+    this.markRefundDirty();
+  }
+
+  private localDateTime(value: Date | null): string {
+    if (!value) return '';
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}T${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
   }
 
   canCancel(): boolean {
@@ -528,7 +574,7 @@ export class OrderDetail implements OnInit {
     this.returnDirty.set(true);
   }
 
-  returnableLines(): Array<{
+  private calculateReturnableLines(): Array<{
     shipmentId: string;
     carrier: string;
     trackingNumber: string;

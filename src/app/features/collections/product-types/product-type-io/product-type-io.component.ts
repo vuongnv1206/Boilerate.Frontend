@@ -1,3 +1,4 @@
+import { ButtonDirective } from 'primeng/button';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -17,8 +18,12 @@ import { FormErrorSummary } from '@shared/ui/form-error-summary/form-error-summa
 import { validationMessage } from '@shared/forms/validation-message';
 import { AbstractControl } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
+import { InputNumber } from 'primeng/inputnumber';
+import { Checkbox } from 'primeng/checkbox';
+import { Select } from 'primeng/select';
 import { ContentState } from '@shared/ui/content-state/content-state.component';
 import { FieldMessage } from '@shared/ui/field-message/field-message.component';
+import { FormField } from '@shared/ui/form-field/form-field.component';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { PRODUCT_FIELD_TYPE_OPTIONS, PRODUCT_TYPE_LIMITS } from '@constants/product-type.constants';
 import { ProductFieldType } from '@enums/product-field-type.enum';
@@ -38,7 +43,12 @@ import { ProductTypesStore } from '@stores/product-types.store';
     Icon,
     ReactiveFormsModule,
     FieldMessage,
+    FormField,
     InputText,
+    InputNumber,
+    Checkbox,
+    Select,
+    ButtonDirective,
   ],
   providers: [ProductTypeIoStore, LeaveConfirmation],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,7 +62,7 @@ export class ProductTypeIo implements OnInit {
   private readonly listStore = inject(ProductTypesStore);
   readonly form = createProductTypeForm();
   readonly limits = PRODUCT_TYPE_LIMITS;
-  readonly fieldTypes = PRODUCT_FIELD_TYPE_OPTIONS;
+  readonly fieldTypes = [...PRODUCT_FIELD_TYPE_OPTIONS];
   readonly fieldType = ProductFieldType;
 
   readonly confirmation = inject(LeaveConfirmation);

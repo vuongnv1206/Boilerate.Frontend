@@ -1,3 +1,4 @@
+import { ButtonDirective } from 'primeng/button';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -17,7 +18,7 @@ import { Icon } from '@shared/ui/icon/icon.component';
 
 @Component({
   selector: 'app-product-media',
-  imports: [InputText, Icon],
+  imports: [InputText, Icon, ButtonDirective],
   providers: [MediaPreviewStore, ProductMediaStore],
   templateUrl: './product-media.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -136,7 +136,10 @@ export class CategoryIo implements OnInit {
   }
   confirmLeave(): boolean | Promise<boolean> {
     return this.confirmation.request(
-      this.form.dirty || this.store.productsDirty(),
+      this.form.dirty ||
+        this.store.productsDirty() ||
+        this.store.productReconcileRequired() ||
+        this.store.productIssues().length > 0,
       this.store.saving(),
     );
   }
@@ -145,7 +148,13 @@ export class CategoryIo implements OnInit {
   }
   @HostListener('window:beforeunload', ['$event'])
   beforeUnload(event: BeforeUnloadEvent): void {
-    if (this.form.dirty || this.store.productsDirty() || this.store.saving()) {
+    if (
+      this.form.dirty ||
+      this.store.productsDirty() ||
+      this.store.productReconcileRequired() ||
+      this.store.productIssues().length ||
+      this.store.saving()
+    ) {
       event.preventDefault();
       event.returnValue = '';
     }
