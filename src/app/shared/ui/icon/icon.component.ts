@@ -2,6 +2,21 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 const paths: Readonly<Record<string, readonly string[]>> = {
   user: ['M20 21v-2a7 7 0 0 0-14 0v2', 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z'],
+  key: [
+    'M21 2 11 12',
+    'M7 16l-5 5',
+    'm6 12 6 6',
+    'm9 9 6 6',
+    'M16 7a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z',
+  ],
+  truck: [
+    'M3 6h11v11H3z',
+    'M14 10h4l3 3v4h-7z',
+    'M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
+    'M18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
+  ],
+  bank: ['M3 10h18M5 10v9m5-9v9m4-9v9m5-9v9M3 21h18M2 8l10-6 10 6v2H2V8Z'],
+  receipt: ['M5 2 7 4l2-2 3 2 3-2 2 2 2-2v20l-2-2-2 2-3-2-3 2-2-2-2 2V2Z', 'M8 9h8M8 13h8M8 17h5'],
   database: ['M4 6c0-2 16-2 16 0s-16 2-16 0v12c0 2 16 2 16 0V6', 'M4 12c0 2 16 2 16 0'],
   box: ['m12 3 9 5-9 5-9-5 9-5Z', 'm3 8 0 9 9 5 9-5V8', 'M12 13v9', 'm7 5 9 5'],
   layers: ['m12 3 10 6-10 6L2 9l10-6Z', 'm2 13 10 6 10-6', 'm2 17 10 6 10-6'],
@@ -59,6 +74,7 @@ const paths: Readonly<Record<string, readonly string[]>> = {
     'M7 8h.01M12 6h.01M17 8h.01M6 13h.01',
   ],
   'check-circle': ['M22 11v1a10 10 0 1 1-6-9', 'm8 11 4 4L22 3'],
+  'shield-check': ['M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z', 'm9 12 2 2 4-4'],
   keyboard: ['M2 5h20v14H2z', 'M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h8'],
   folder: ['M2 5h8l2 3h10v13H2V5Z'],
   logout: ['M9 4H3v16h6M8 12h13m-5-5 5 5-5 5'],

@@ -10,7 +10,7 @@ test('system: home chooses the first system section when no Catalog grant exists
   await finishSignIn(page);
   await expect(page).toHaveURL(/\/admin\/system\/roles$/u);
   await expect(
-    page.getByRole('heading', { name: 'Vai trò và phân quyền', exact: true }),
+    page.getByRole('heading', { name: /^Vai trò và phân quyền/u, level: 1 }),
   ).toBeVisible();
 });
 
@@ -28,9 +28,12 @@ test('system: role matrix uses API actions and filtered bulk preserves hidden gr
   const group = page
     .locator('.permission-group')
     .filter({ has: page.getByRole('button', { name: /Danh mục và sản phẩm/u }) });
-  await expect(
-    group.getByRole('checkbox', { name: 'Xem trong nhóm Danh mục và sản phẩm', exact: true }),
-  ).toHaveJSProperty('indeterminate', true);
+  const bulkView = group.getByRole('checkbox', {
+    name: 'Xem trong nhóm Danh mục và sản phẩm',
+    exact: true,
+  });
+  await expect(bulkView).toHaveJSProperty('indeterminate', true);
+  await expect(bulkView).toHaveAttribute('aria-checked', 'mixed');
   await page.getByLabel('Tìm kiếm chức năng', { exact: true }).fill('Product');
   await expect(page.locator('.permission-function')).toHaveCount(1);
   await group

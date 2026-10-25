@@ -2,6 +2,8 @@
 
 This file records design-research provenance for the admin UI foundation, reviewed 2026-10-19. Runtime package licenses are supplied by their installed packages and lockfile; this list does not replace those licenses.
 
+The storefront self-hosts Instrument Sans Variable via `@fontsource-variable/instrument-sans`; its package license and font metadata are distributed with the installed package. Inter Variable remains self-hosted through `@fontsource-variable/inter`.
+
 ## PrimeUI runtime license
 
 The user will supply a valid license later. The application currently runs with no license key and retains the vendor's normal warning/watermark behavior. An optional `PRIMEUI_LICENSE_KEY` environment variable is written to ignored runtime configuration and supplied through PrimeNG's supported `license` option. This is configuration support, not a license grant or verification of eligibility. No key is included in project documentation; license acceptance and watermark-free review remain pending.

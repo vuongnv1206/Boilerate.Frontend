@@ -10,6 +10,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ButtonDirective } from 'primeng/button';
+import { TableModule } from 'primeng/table';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { SystemListStore } from '@stores/system-list.store';
@@ -19,6 +21,7 @@ import { createFunctionGroupForm } from '@forms/system.form';
 import { listQueryParams, readListQuery } from '@utils/list-query.util';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { ContentState } from '@shared/ui/content-state/content-state.component';
+import { StatusBadge } from '@shared/ui/status-badge/status-badge.component';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog/confirm-dialog.component';
 import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation';
 
@@ -26,7 +29,18 @@ import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation'
   selector: 'app-system-list',
   host: { class: 'collection-screen system-screen' },
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Dialog, InputText, ReactiveFormsModule, Icon, ContentState, ConfirmDialog],
+  imports: [
+    ButtonDirective,
+    TableModule,
+    StatusBadge,
+    RouterLink,
+    Dialog,
+    InputText,
+    ReactiveFormsModule,
+    Icon,
+    ContentState,
+    ConfirmDialog,
+  ],
   providers: [SystemListStore, LeaveConfirmation],
   templateUrl: './system-list.component.html',
 })

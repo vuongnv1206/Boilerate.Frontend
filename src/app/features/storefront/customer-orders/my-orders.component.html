@@ -1,0 +1,148 @@
+<div class="storefront-page my-orders-page">
+  <div class="orders-header">
+    <div>
+      <p class="store-eyebrow"><span></span> ORDER HISTORY</p>
+      <h1 class="page-title">Đơn hàng của tôi</h1>
+    </div>
+    <a routerLink="/shop/products" class="continue-shopping">
+      <ui-icon name="arrow-left" [size]="15" /> Tiếp tục mua sắm
+    </a>
+  </div>
+
+  @if (!session.signedIn() && !customerOrderStore.verifiedEmail()) {
+    <section class="orders-verify-card" aria-labelledby="orders-verify-title">
+      <div class="orders-verify-icon"><ui-icon name="mail" [size]="23" /></div>
+      <p class="store-eyebrow"><span></span> SECURE ACCESS</p>
+      <h2 id="orders-verify-title">Đơn hàng gắn với email của bạn</h2>
+      <p>Nhập email đã dùng khi đặt hàng để nhận mã xác minh một lần. Không cần tạo tài khoản.</p>
+      <div class="form-group">
+        <label for="orders-email">Email</label>
+        <input
+          id="orders-email"
+          type="email"
+          class="form-control"
+          autocomplete="email"
+          [value]="email()"
+          (input)="onEmailChange($event)"
+        />
+      </div>
+      @if (customerOrderStore.codeSent()) {
+        <div class="form-group">
+          <label for="orders-code">Mã xác minh 6 chữ số</label>
+          <input
+            id="orders-code"
+            type="text"
+            class="form-control otp-input"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            [value]="code()"
+            (input)="code.set($any($event.target).value)"
+          />
+        </div>
+      }
+      @if (customerOrderStore.error()) {
+        <p class="form-error" role="alert">{{ customerOrderStore.error() }}</p>
+      }
+      <div class="form-actions">
+        @if (!customerOrderStore.codeSent()) {
+          <button
+            type="button"
+            class="store-button store-button-primary"
+            (click)="requestCode()"
+            [disabled]="!email().includes('@') || customerOrderStore.accessSubmitting()"
+          >
+            <ui-icon name="mail" [size]="16" /> Gửi mã xác minh
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="store-button store-button-primary"
+            (click)="verifyCode()"
+            [disabled]="code().length !== 6 || customerOrderStore.accessSubmitting()"
+          >
+            Xác minh và xem đơn <ui-icon name="arrow-right" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="store-button store-button-secondary"
+            (click)="requestCode()"
+            [disabled]="customerOrderStore.accessSubmitting()"
+          >
+            Gửi lại mã
+          </button>
+        }
+      </div>
+    </section>
+  } @else if (customerOrderStore.loading()) {
+    <div class="orders-loading">
+      <p>Đang tải danh sách đơn hàng...</p>
+    </div>
+  } @else if (customerOrderStore.error()) {
+    <div class="orders-error">
+      <p>{{ customerOrderStore.error() }}</p>
+      <button type="button" class="retry-btn" (click)="onRetry()">Thử lại</button>
+    </div>
+  } @else if (customerOrderStore.myOrders().items.length === 0) {
+    <div class="orders-empty">
+      <div class="empty-icon"><ui-icon name="receipt" [size]="29" /></div>
+      <p class="store-eyebrow"><span></span> NOTHING HERE YET</p>
+      <h2>Chưa có đơn hàng nào</h2>
+      <p>Những đơn bạn đặt bằng email đã xác minh sẽ xuất hiện tại đây.</p>
+      <a routerLink="/shop/products" class="store-button store-button-primary shop-now-btn">
+        Khám phá sản phẩm <ui-icon name="arrow-right" [size]="16" />
+      </a>
+    </div>
+  } @else {
+    <div class="orders-list">
+      @for (order of customerOrderStore.myOrders().items; track order.id) {
+        <div class="order-card" [attr.data-order-id]="order.id">
+          <div class="order-card-header">
+            <div class="order-identity">
+              <span class="order-number">Đơn hàng #{{ order.number }}</span>
+              <span class="order-date">{{ order.createdOn | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="order-badges">
+              <span
+                class="status-badge"
+                [class.paid]="order.paymentStatus === 2"
+                [class.unpaid]="order.paymentStatus === 1"
+              >
+                <ui-icon [name]="order.paymentStatus === 2 ? 'check' : 'clock'" [size]="13" />
+                {{ order.paymentStatus === 2 ? 'Đã thanh toán' : 'Chưa thanh toán' }}
+              </span>
+              <span class="fulfillment-badge">
+                {{ getFulfillmentStatusLabel(order.fulfillmentStatus) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="order-card-body">
+            <div class="order-summary-info">
+              <div class="info-item">
+                <span class="info-label">Phương thức:</span>
+                <span class="info-value">{{
+                  order.paymentMethod === 1 ? 'Chuyển khoản' : 'Thu hộ COD'
+                }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Người nhận:</span>
+                <span class="info-value">{{ order.recipientName }} ({{ order.phone }})</span>
+              </div>
+              <div class="info-item total-item">
+                <span class="info-label">Tổng thanh toán:</span>
+                <span class="total-price">{{ order.total | number: '1.0-0' }} ₫</span>
+              </div>
+            </div>
+
+            <div class="order-card-actions">
+              <a [routerLink]="['/shop/orders', order.id]" class="view-detail-btn">
+                Xem chi tiết <ui-icon name="arrow-right" [size]="15" />
+              </a>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

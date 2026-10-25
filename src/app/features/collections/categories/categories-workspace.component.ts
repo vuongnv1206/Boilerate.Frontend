@@ -10,6 +10,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { ButtonDirective } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
 import { Subject, debounceTime, filter } from 'rxjs';
 import { ListQuery } from '@models/list-query.model';
 import { CATEGORY_SEARCH_DELAY_MS } from '@constants/category.constants';
@@ -21,7 +23,7 @@ import { listQueryParams, readListQuery, sameQueryParams } from '@utils/list-que
 @Component({
   selector: 'app-categories-workspace',
   host: { class: 'categories-workspace-shell' },
-  imports: [RouterOutlet, RouterLink, Icon, CdkTrapFocus],
+  imports: [ButtonDirective, InputText, RouterOutlet, RouterLink, Icon, CdkTrapFocus],
   providers: [CategoriesStore],
   templateUrl: './categories-workspace.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

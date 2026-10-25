@@ -129,7 +129,7 @@ export const WorkspacePreset = definePreset(Aura, {
     focusRing: { width: '2px', style: 'solid', color: 'var(--focus-ring)', offset: '2px' },
     formField: {
       paddingX: '12px',
-      paddingY: '6px',
+      paddingY: '5px',
       borderRadius: 'var(--radius)',
       borderColor: 'var(--field-border)',
       hoverBorderColor: 'var(--text-3)',
@@ -156,7 +156,7 @@ export const WorkspacePreset = definePreset(Aura, {
   },
   components: {
     inputtext: {
-      root: { ...formControlRoot, paddingX: '12px', paddingY: '6px' },
+      root: { ...formControlRoot, paddingX: '12px', paddingY: '5px' },
     },
     textarea: {
       root: { ...formControlRoot, paddingX: '12px', paddingY: '8px' },
@@ -367,10 +367,10 @@ export const WorkspacePreset = definePreset(Aura, {
         borderRadius: 'var(--radius)',
         gap: '8px',
         paddingX: '12px',
-        paddingY: '6px',
+        paddingY: '5px',
         iconOnlyWidth: '34px',
-        fontSize: '13px',
-        sm: { fontSize: '12px', paddingX: '10px', paddingY: '5px', iconOnlyWidth: '30px' },
+        fontSize: '14px',
+        sm: { fontSize: '13px', paddingX: '10px', paddingY: '4px', iconOnlyWidth: '30px' },
         label: { fontWeight: '500' },
         focusRing: { width: '2px', style: 'solid', offset: '2px' },
         transitionDuration: 'var(--motion-fast)',
@@ -442,7 +442,7 @@ export const WorkspacePreset = definePreset(Aura, {
         hoverColor: 'var(--text-1)',
         selectedColor: 'var(--text-1)',
         gap: '8px',
-        padding: '11px 14px',
+        padding: '8px 14px',
       },
       columnTitle: { fontWeight: '600', fontSize: '12px' },
       row: {

@@ -24,6 +24,7 @@ describe('Admin route composition', () => {
         '/admin/collections/categories',
         '/admin/collections/product-types',
         '/admin/orders',
+        '/admin/storefront-settings',
         '/admin/renewals',
       ]);
       expect(first.collections().every((link) => link.count === undefined)).toBe(true);

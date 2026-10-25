@@ -8,8 +8,10 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ButtonDirective } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
 import { distinctUntilChanged, map } from 'rxjs';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
@@ -25,6 +27,9 @@ import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation'
   host: { class: 'collection-screen system-screen' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    ButtonDirective,
+    Checkbox,
+    FormsModule,
     RouterLink,
     ReactiveFormsModule,
     InputText,

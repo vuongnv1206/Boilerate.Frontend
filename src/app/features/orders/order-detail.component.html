@@ -108,7 +108,7 @@
             </div>
             <span class="order-readonly-note">Chỉ đọc</span>
           </div>
-          <div class="table-scroll">
+          <div class="table-scroll" role="region" aria-label="Sản phẩm trong đơn hàng" tabindex="0">
             <p-table
               [value]="order.items.slice()"
               dataKey="id"
@@ -427,7 +427,12 @@
               <section>
                 <h3>Các khoản đã hoàn</h3>
                 @if (afterSales.refunds.length) {
-                  <div class="table-scroll">
+                  <div
+                    class="table-scroll"
+                    role="region"
+                    aria-label="Các khoản đã hoàn"
+                    tabindex="0"
+                  >
                     <p-table
                       [value]="afterSales.refunds.slice()"
                       dataKey="id"
@@ -469,7 +474,12 @@
               <section>
                 <h3>Phiếu nhận hàng trả</h3>
                 @if (afterSales.returns.length) {
-                  <div class="table-scroll">
+                  <div
+                    class="table-scroll"
+                    role="region"
+                    aria-label="Phiếu nhận hàng trả"
+                    tabindex="0"
+                  >
                     <p-table
                       [value]="afterSales.returns.slice()"
                       dataKey="id"
@@ -631,7 +641,12 @@
                     Cần quyền xem giao hàng để đối chiếu các mặt hàng đã xuất.
                   </p>
                 } @else {
-                  <div class="table-scroll">
+                  <div
+                    class="table-scroll"
+                    role="region"
+                    aria-label="Mặt hàng nhận trả"
+                    tabindex="0"
+                  >
                     <p-table
                       [value]="returnableLines()"
                       tableStyleClass="content-table after-sales-table return-entry-table"

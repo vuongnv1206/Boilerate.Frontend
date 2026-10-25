@@ -1,7 +1,10 @@
 <div class="category-workspace" [class.category-editor-open]="editorId() !== null">
   @if (editorId() !== null && store.canView()) {
     <button
-      class="ui-button category-items-toggle"
+      pButton
+      severity="secondary"
+      outlined
+      class="category-items-toggle"
       type="button"
       (click)="panelOpen.set(!panelOpen())"
       [attr.aria-expanded]="panelOpen()"
@@ -38,7 +41,11 @@
         >
         @if (store.canCreate()) {
           <a
-            class="icon-button"
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
             routerLink="/admin/collections/categories/new"
             [queryParams]="routeQuery()"
             (click)="panelOpen.set(false)"
@@ -50,6 +57,7 @@
       <label class="category-item-search">
         <span class="sr-only">Tìm trong danh mục</span>
         <input
+          pInputText
           type="search"
           [value]="store.query()"
           #itemSearch
@@ -63,7 +71,9 @@
       @if (store.error()) {
         <div class="category-items-message" role="alert">
           {{ store.error() }}
-          <button class="ui-button" type="button" (click)="store.load()">Thử lại</button>
+          <button pButton severity="secondary" outlined type="button" (click)="store.load()">
+            Thử lại
+          </button>
         </div>
       }
       <nav class="category-items-list" aria-label="Danh mục trong bộ lọc">
@@ -88,7 +98,11 @@
       </nav>
       <footer>
         <button
-          class="icon-button"
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
           type="button"
           aria-label="Trang danh mục trước"
           [disabled]="store.page() <= 1 || store.loading()"
@@ -97,7 +111,11 @@
           <ui-icon name="chevron-left" [size]="14" /></button
         ><span>{{ store.page() }} / {{ store.totalPages() }}</span
         ><button
-          class="icon-button"
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
           type="button"
           aria-label="Trang danh mục sau"
           [disabled]="store.page() >= store.totalPages() || store.loading()"

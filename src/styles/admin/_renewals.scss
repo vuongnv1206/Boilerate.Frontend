@@ -11,7 +11,7 @@
   position: relative;
 }
 .renewals-workspace.renewal-detail-open:has(.renewal-items) {
-  grid-template-columns: 218px minmax(0, 1fr);
+  grid-template-columns: var(--record-rail-width) minmax(0, 1fr);
 }
 .renewals-workspace-content {
   min-width: 0;
@@ -35,7 +35,7 @@
   padding: 8px 12px;
   gap: 8px;
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  font-size: 13px;
 }
 .renewal-items > header > a {
   font-weight: 600;
@@ -43,7 +43,7 @@
 .renewal-items > header span {
   margin-left: 6px;
   color: var(--text-3);
-  font-size: 11px;
+  font-size: 12px;
 }
 .renewal-items > footer {
   margin-top: auto;
@@ -56,11 +56,10 @@
   padding: 10px;
   border-bottom: 1px solid var(--border);
   color: var(--text-3);
-  font-size: 11px;
+  font-size: 13px;
 }
 .renewal-item-filter p-select {
   width: 100%;
-  min-height: 34px;
 }
 .renewal-items-list {
   min-height: 0;
@@ -73,7 +72,7 @@
   padding: 9px 10px;
   border-bottom: 1px solid var(--border);
   color: var(--text-2);
-  font-size: 11px;
+  font-size: 13px;
 }
 .renewal-items-list > a:hover {
   background: var(--surface-2);
@@ -85,16 +84,17 @@
 }
 .renewal-item-heading {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
   min-width: 0;
 }
 .renewal-item-heading strong {
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 13px;
 }
 .renewal-item-heading ui-status-badge {
   flex: none;
@@ -108,7 +108,7 @@
 .renewal-items-list small,
 .renewal-items-message {
   color: var(--text-3);
-  font-size: 10px;
+  font-size: 12px;
 }
 .renewal-items-message {
   padding: 12px;
@@ -166,12 +166,12 @@
 .renewal-detail-header p {
   margin: 8px 0 0;
   color: var(--text-3);
-  font-size: 11px;
+  font-size: 12px;
 }
 .renewal-workspace-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) var(--inspector-width);
+  gap: 24px;
   align-items: start;
 }
 .renewal-detail-page .renewal-workspace-grid {
@@ -182,7 +182,7 @@
 .renewal-main-column,
 .renewal-inspector {
   display: grid;
-  gap: 18px;
+  gap: 0;
   min-width: 0;
 }
 .renewal-command-message {
@@ -192,7 +192,7 @@
   padding: 12px 14px;
   margin-bottom: 18px;
   border: 1px solid color-mix(in srgb, var(--warning) 38%, var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: color-mix(in srgb, var(--warning) 9%, var(--surface-0));
 }
 .renewal-command-message > span {
@@ -213,7 +213,7 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   padding: 12px;
-  border-radius: 7px;
+  border-radius: var(--radius);
   background: var(--surface-2);
   color: var(--text-1);
 }
@@ -233,11 +233,11 @@
 }
 .renewal-verify-form h3 {
   margin: 2px 0 5px;
-  font-size: 15px;
+  font-size: 14px;
 }
 .renewal-verify-form label {
-  color: var(--text-3);
-  font-size: 12px;
+  color: var(--text-1);
+  font-size: 13px;
 }
 .renewal-verify-form p-datepicker,
 .renewal-verify-form input:not([type='checkbox']),
@@ -315,7 +315,7 @@
     inset: 48px auto 0 0;
     z-index: 22;
     display: none;
-    width: min(240px, 85%);
+    width: min(var(--record-rail-overlay-width), 85%);
     box-shadow: var(--overlay-shadow);
   }
   .renewal-items.renewal-items-open {

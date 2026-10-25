@@ -3,7 +3,6 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 0 32px 20px;
     input {
       max-width: 360px;
       flex: 1;
@@ -88,7 +87,7 @@
     border-bottom: 1px solid var(--border);
     h2 {
       margin: 4px 0 8px;
-      font-size: 19px;
+      font-size: 14px;
     }
     p {
       color: var(--text-2);
@@ -149,7 +148,7 @@
     border-radius: var(--radius);
     margin-bottom: 20px;
     > p {
-      font-size: 10px;
+      font-size: 12px;
       color: var(--text-3);
       margin: 0 0 10px;
       letter-spacing: 0.4px;
@@ -231,15 +230,6 @@
       margin: 18px 0;
     }
   }
-  .system-select {
-    width: 100%;
-    min-height: 30px;
-    padding: 4px 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface-0);
-    color: var(--text-1);
-  }
   .system-check-row {
     display: flex;
     align-items: center;
@@ -319,12 +309,17 @@
   .field {
     display: flex;
     flex-direction: column;
-    gap: 7px;
-    margin-bottom: 18px;
+    gap: 6px;
+    margin-bottom: 16px;
+
+    > label {
+      font-size: 13px;
+      font-weight: 500;
+    }
   }
   small {
     color: var(--text-3);
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.5;
   }
   .system-row-actions {

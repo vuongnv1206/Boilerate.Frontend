@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
+  ElementRef,
   HostListener,
   OnInit,
   inject,
@@ -10,6 +12,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ButtonDirective } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
+import { Select } from 'primeng/select';
 import { Subject, debounceTime, distinctUntilChanged, map } from 'rxjs';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog/confirm-dialog.component';
 import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation';
@@ -24,6 +29,7 @@ import { FieldMessage } from '@shared/ui/field-message/field-message.component';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { CATEGORY_LIMITS } from '@constants/category.constants';
 import { CategoryForm as CategoryFormGroup, createCategoryForm } from '@forms/category.form';
+import { ProductSummary } from '@models/product.dto';
 import { CategoryIoStore } from '@stores/category-io.store';
 import { CategoriesStore } from '@stores/categories.store';
 
@@ -31,6 +37,9 @@ import { CategoriesStore } from '@stores/categories.store';
   selector: 'app-category-io',
   host: { class: 'collection-screen' },
   imports: [
+    ButtonDirective,
+    Checkbox,
+    Select,
     RouterLink,
     ConfirmDialog,
     FormErrorSummary,
@@ -50,14 +59,23 @@ export class CategoryIo implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly elementRef = inject(ElementRef);
   private readonly productTyping = new Subject<string>();
   readonly store = inject(CategoryIoStore);
   readonly categories = inject(CategoriesStore);
   readonly form = createCategoryForm();
   readonly limits = CATEGORY_LIMITS;
+  readonly parentOptions = computed(() => [
+    { id: '', label: 'Không có danh mục cha' },
+    ...this.store.parentOptions().map((parent) => ({
+      id: parent.id,
+      label: this.store.categoryPath(parent.id),
+    })),
+  ]);
 
   readonly confirmation = inject(LeaveConfirmation);
   readonly deleteVisible = signal(false);
+  readonly productResultsOpen = signal(false);
 
   ngOnInit(): void {
     this.store.setForm(this.form);
@@ -88,7 +106,30 @@ export class CategoryIo implements OnInit {
       });
   }
   searchProducts(query: string): void {
+    this.productResultsOpen.set(true);
     this.productTyping.next(query);
+  }
+  openProductSearch(query: string): void {
+    this.productResultsOpen.set(true);
+    this.store.searchProducts(query);
+  }
+  closeProductSearch(): void {
+    this.productResultsOpen.set(false);
+  }
+  selectProduct(product: ProductSummary): void {
+    this.store.addProduct(product);
+    this.store.searchProducts('');
+    this.productResultsOpen.set(false);
+  }
+  @HostListener('document:pointerdown', ['$event'])
+  onDocumentPointerDown(event: PointerEvent): void {
+    const target = event.target as Node | null;
+    const picker = (this.elementRef.nativeElement as HTMLElement).querySelector(
+      '.category-product-picker',
+    );
+    if (picker && target && !picker.contains(target)) {
+      this.closeProductSearch();
+    }
   }
   archive(): void {
     if (!this.store.canWrite() || !this.form.controls.isActive.value) return;

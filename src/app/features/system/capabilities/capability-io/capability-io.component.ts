@@ -7,8 +7,11 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ButtonDirective } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
+import { Select } from 'primeng/select';
 import { distinctUntilChanged, map } from 'rxjs';
 import { InputText } from 'primeng/inputtext';
 import { createCapabilityForm } from '@forms/system.form';
@@ -22,7 +25,18 @@ import { LeaveConfirmation } from '@shared/ui/confirm-dialog/leave-confirmation'
   selector: 'app-capability-io',
   host: { class: 'collection-screen system-screen' },
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ReactiveFormsModule, InputText, Icon, ContentState, ConfirmDialog],
+  imports: [
+    ButtonDirective,
+    Checkbox,
+    Select,
+    FormsModule,
+    RouterLink,
+    ReactiveFormsModule,
+    InputText,
+    Icon,
+    ContentState,
+    ConfirmDialog,
+  ],
   providers: [CapabilityIoStore, LeaveConfirmation],
   templateUrl: './capability-io.component.html',
 })

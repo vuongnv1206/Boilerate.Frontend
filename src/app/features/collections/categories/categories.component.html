@@ -6,6 +6,7 @@
     <label class="search-field"
       ><span class="sr-only">Tìm danh mục</span
       ><input
+        pInputText
         id="categories-search"
         type="search"
         [value]="store.query()"
@@ -14,7 +15,11 @@
         placeholder="Tên hoặc slug…"
     /></label>
     <button
-      class="icon-button"
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
       aria-label="Tải lại danh mục"
       (click)="store.load()"
       [disabled]="store.loading()"
@@ -22,7 +27,7 @@
       <ui-icon name="refresh" [size]="14" />
     </button>
     @if (store.canCreate()) {
-      <a class="ui-button primary" routerLink="new" [queryParams]="routeQuery()"
+      <a pButton severity="primary" routerLink="new" [queryParams]="routeQuery()"
         ><ui-icon name="plus" [size]="14" />Thêm danh mục</a
       >
     }
@@ -33,7 +38,7 @@
   @if (store.notice()) {
     <div class="collection-notice" role="status">{{ store.notice() }}</div>
   }
-  <div class="table-scroll">
+  <div class="table-scroll" role="region" aria-label="Danh sách danh mục" tabindex="0">
     @if (store.loading()) {
       <ui-content-state
         kind="loading"
@@ -46,8 +51,15 @@
         message="Thử đổi từ khóa hoặc thêm danh mục mới."
       />
     } @else {
-      <table class="content-table">
-        <thead>
+      <p-table
+        [value]="store.rows()"
+        dataKey="id"
+        tableStyleClass="content-table"
+        [tableStyle]="{ 'min-width': '720px' }"
+        [rowHover]="true"
+        [pt]="{ tableContainer: { style: { overflow: 'visible' } } }"
+      >
+        <ng-template #header>
           <tr>
             <th scope="col">Tên danh mục</th>
             <th scope="col">Danh mục cha</th>
@@ -56,65 +68,82 @@
             <th scope="col">Thứ tự</th>
             <th scope="col">Thao tác</th>
           </tr>
-        </thead>
-        <tbody>
-          @for (item of store.rows(); track item.id) {
-            <tr>
-              <td>
-                <a
-                  class="category-name-link"
-                  [routerLink]="[item.id]"
-                  [queryParams]="routeQuery()"
-                  [style.padding-left.px]="10 + store.depth(item.id) * 16"
-                  >{{ item.name }}<small>/{{ item.slug }}</small></a
+        </ng-template>
+        <ng-template #body let-item>
+          <tr>
+            <td>
+              <a
+                class="category-name-link"
+                [routerLink]="[item.id]"
+                [queryParams]="routeQuery()"
+                [style.padding-left.px]="10 + store.depth(item.id) * 16"
+                >{{ item.name }}<small>/{{ item.slug }}</small></a
+              >
+            </td>
+            <td>{{ store.categoryPath(item.parentId) }}</td>
+            <td>
+              <ui-status-badge [tone]="item.isActive ? 'success' : 'muted'">
+                {{ item.isActive ? 'Hoạt động' : 'Đã tắt' }}
+              </ui-status-badge>
+            </td>
+            <td>
+              @if (store.canViewProducts()) {
+                <a routerLink="/admin/collections/products" [queryParams]="{ categoryId: item.id }"
+                  >{{ store.productCount(item.id) }} sản phẩm</a
                 >
-              </td>
-              <td>{{ store.categoryPath(item.parentId) }}</td>
-              <td>
-                <ui-status-badge [tone]="item.isActive ? 'success' : 'muted'">
-                  {{ item.isActive ? 'Hoạt động' : 'Đã tắt' }}
-                </ui-status-badge>
-              </td>
-              <td>
-                @if (store.canViewProducts()) {
-                  <a
-                    routerLink="/admin/collections/products"
-                    [queryParams]="{ categoryId: item.id }"
-                    >{{ store.productCount(item.id) }} sản phẩm</a
-                  >
-                } @else {
-                  {{ store.productCount(item.id) }}
-                }
-              </td>
-              <td>{{ item.sortOrder }}</td>
-              <td>
-                <button
-                  class="icon-button"
-                  [attr.aria-label]="'Xóa danh mục ' + item.name"
-                  [disabled]="!store.canDelete() || store.deleting()"
-                  (click)="store.canDelete() && deleteTarget.set(item)"
-                >
-                  <ui-icon name="trash" [size]="14" />
-                </button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+              } @else {
+                {{ store.productCount(item.id) }}
+              }
+            </td>
+            <td>{{ item.sortOrder }}</td>
+            <td>
+              <button
+                pButton
+                severity="secondary"
+                text
+                rounded
+                iconOnly
+                [attr.aria-label]="'Xóa danh mục ' + item.name"
+                [disabled]="!store.canDelete() || store.deleting()"
+                (click)="store.canDelete() && deleteTarget.set(item)"
+              >
+                <ui-icon name="trash" [size]="14" />
+              </button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
     }
   </div>
-  <footer class="collection-footer">
+  <footer class="pagination">
     <span>{{ store.filtered().length }} danh mục</span>
-    <div class="pagination">
-      <button class="ui-button" [disabled]="store.page() === 1" (click)="setPage(store.page() - 1)">
-        Trước</button
-      ><span>Trang {{ store.page() }} / {{ store.totalPages() }}</span
-      ><button
-        class="ui-button"
-        [disabled]="store.page() >= store.totalPages()"
+    <div class="pagination-right">
+      <button
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang danh mục trước"
+        [disabled]="store.page() <= 1 || store.loading()"
+        (click)="setPage(store.page() - 1)"
+      >
+        <ui-icon name="chevron-left" [size]="14" />
+      </button>
+      <span>{{ store.page() }} / {{ store.totalPages() }}</span>
+      <button
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang danh mục sau"
+        [disabled]="store.page() >= store.totalPages() || store.loading()"
         (click)="setPage(store.page() + 1)"
       >
-        Sau
+        <ui-icon name="chevron-right" [size]="14" />
       </button>
     </div>
   </footer>
@@ -138,10 +167,18 @@
     <p role="alert" class="collection-dialog-copy">{{ store.error() }}</p>
   }
   <ng-template #footer
-    ><button class="ui-button" (click)="deleteTarget.set(null)" [disabled]="store.deleting()">
+    ><button
+      pButton
+      severity="secondary"
+      outlined
+      (click)="deleteTarget.set(null)"
+      [disabled]="store.deleting()"
+    >
       Hủy</button
     ><button
-      class="ui-button danger"
+      pButton
+      severity="danger"
+      outlined
       (click)="delete()"
       [disabled]="!store.canDelete() || store.deleting()"
     >

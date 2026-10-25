@@ -30,6 +30,13 @@ export const COLLECTION_LINKS = [
     permission: { functionCode: 'Order', actionCode: 'View' },
   },
   {
+    key: 'storefront-settings',
+    label: 'Thanh toán cửa hàng',
+    icon: 'settings',
+    path: '/admin/storefront-settings',
+    permission: { functionCode: 'StorefrontSettings', actionCode: 'View' },
+  },
+  {
     key: 'renewals',
     label: 'Gia hạn thủ công',
     icon: 'settings',

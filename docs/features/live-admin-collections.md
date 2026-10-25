@@ -64,7 +64,7 @@ BE quyết định authorization cuối cùng. FE có route/menu/action/store pe
 
 ### Editor theo Webflow (2026-10-22)
 
-Giữ nguyên icon rail, nav CMS và rail sản phẩm/search/phân trang. Editor dùng control24px, option32px, header34px, row53px; semantic tokens riêng cho surface/field/border/accent cả hai theme, scope trong catalog-product-editor. Chi tiết style tại DESIGN.md.
+Giữ icon rail, nav CMS và rail sản phẩm/search/phân trang. Editor dùng chung control, typography và semantic tokens của Admin; các token editor ánh xạ về hệ surface/border/accent chung trong cả hai theme. Metadata nằm cuối form. Quy chuẩn thị giác hiện tại nằm trong [DESIGN.md](../../DESIGN.md).
 
 Option thu gọn tên/giá trị; mở tên bên trái, chip bên phải, Hủy/Xong/trash. Enter/Tab thêm, double-click/menu đổi tên, menu/Backspace xóa. Xong tự tạo tổ hợp; không có nút generate hoặc ô mã kỹ thuật. Ba nhóm/50 biến thể, giữ dữ liệu cũ trên50. Mã type/field/choice/option/value tự sinh, không có control nhập mã.
 

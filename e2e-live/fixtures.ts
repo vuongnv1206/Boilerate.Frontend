@@ -22,6 +22,21 @@ export interface LiveScenario {
   expectedDigitalContents?: string[] | null;
 }
 
+export interface LiveStorefrontScenario {
+  physicalProductId: string;
+  physicalSlug: string;
+  physicalName: string;
+  physicalVariantId: string;
+  digitalProductId: string;
+  digitalSlug: string;
+  digitalName: string;
+  digitalVariantId: string;
+  digitalContent: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+}
+
 export interface LiveManifest {
   schemaVersion: 1;
   runId: string;
@@ -31,6 +46,7 @@ export interface LiveManifest {
   credentials: { admin: LiveCredentials; basic: LiveCredentials };
   actors: Record<string, LiveActor>;
   scenarios: Record<string, LiveScenario>;
+  storefront: LiveStorefrontScenario;
   products: { id: string; slug: string; name: string; version: string; productTypeId: string }[];
   categories: { id: string; slug: string; name: string; version: string }[];
   productTypes: { id: string; code: string; name: string; version: string }[];

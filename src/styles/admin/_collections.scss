@@ -108,8 +108,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 63px;
-    padding: 14px 28px;
+    min-height: var(--record-toolbar-height);
+    padding: 6px 28px;
     border-bottom: 1px solid var(--border);
   }
   .collection-toolbar > label {
@@ -167,6 +167,12 @@
     border-collapse: collapse;
     text-align: left;
     white-space: nowrap;
+    th {
+      height: var(--table-header-height);
+    }
+    tbody td {
+      height: var(--table-row-height);
+    }
     td a {
       font-weight: 500;
       &:hover {
@@ -180,23 +186,19 @@
       font-weight: 400;
     }
     &:not(.p-datatable-table) {
-      font-size: 12px;
+      font-size: 13px;
       th {
         position: sticky;
         top: 0;
-        height: 34px;
         background: var(--surface-1);
         color: var(--text-3);
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 500;
       }
       th,
       td {
         padding: 8px 18px;
         border-bottom: 1px solid var(--border);
-      }
-      td {
-        height: 62px;
       }
       tbody tr {
         transition: background var(--motion-fast);
@@ -323,12 +325,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    min-height: 80px;
-    padding: 18px 22px;
+    min-height: var(--record-toolbar-height);
+    padding: 6px 16px;
+    flex-wrap: wrap;
     border-bottom: 1px solid var(--border);
     h1 {
       margin: 0 0 8px;
-      font-size: 17px;
+      font-size: 15px;
       font-weight: 600;
       letter-spacing: -0.4px;
     }
@@ -346,7 +349,7 @@
   }
   .editor-save-status {
     color: var(--text-3);
-    font-size: 11px;
+    font-size: 12px;
   }
   .editor-body {
     display: grid;
@@ -533,7 +536,7 @@
 .admin-record-header p {
   margin: 6px 0 0;
   color: var(--text-3);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .admin-record-body {
@@ -574,11 +577,9 @@
 }
 @media (min-width: 1500px) {
   .collection-screen {
+    --table-row-height: 68px;
     .collection-heading {
       padding-block: 35px 30px;
-    }
-    .content-table td {
-      height: 68px;
     }
   }
 }

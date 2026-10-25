@@ -61,6 +61,7 @@ import { PRODUCT_FULFILLMENT_OPTIONS } from '@constants/product.constants';
 
 @Component({
   selector: 'app-order-detail',
+  host: { class: 'collection-screen' },
   imports: [
     RouterLink,
     ContentState,

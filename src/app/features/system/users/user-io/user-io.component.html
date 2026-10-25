@@ -31,7 +31,9 @@
       @if (store.record(); as user) {
         <button
           type="button"
-          class="ui-button"
+          pButton
+          severity="secondary"
+          outlined
           (click)="openAction('password-reset', $event)"
           [disabled]="!store.canUpdate() || store.saving() || !user.emailConfirmed"
           [attr.title]="
@@ -42,15 +44,21 @@
         </button>
         <button
           type="button"
-          class="ui-button"
-          [class.danger]="user.isActive"
+          pButton
+          [severity]="user.isActive ? 'danger' : 'secondary'"
+          outlined
           (click)="openAction('status', $event)"
           [disabled]="!store.canUpdate() || store.saving()"
         >
           {{ user.isActive ? 'Vô hiệu hóa' : 'Kích hoạt' }} tài khoản
         </button>
       }
-      <a class="ui-button" routerLink="/admin/system/users" queryParamsHandling="preserve"
+      <a
+        pButton
+        severity="secondary"
+        outlined
+        routerLink="/admin/system/users"
+        queryParamsHandling="preserve"
         >Quay lại</a
       >
     </div>
@@ -58,7 +66,9 @@
   @if (store.error()) {
     <div class="editor-notice" role="alert">
       {{ store.error()
-      }}<button class="ui-button" (click)="retry()" [disabled]="store.saving()">Tải lại</button>
+      }}<button pButton severity="secondary" outlined (click)="retry()" [disabled]="store.saving()">
+        Tải lại
+      </button>
     </div>
   }
   @if (store.notice()) {
@@ -97,7 +107,8 @@
             <h2>Tài khoản đã được tạo</h2>
             <p>{{ store.notice() }}</p>
             <a
-              class="ui-button primary"
+              pButton
+              severity="primary"
               routerLink="/admin/system/users"
               queryParamsHandling="preserve"
             >
@@ -263,9 +274,9 @@
                     <div class="field">
                       <label for="user-delete-image">Ảnh đại diện hiện tại</label>
                       <label class="check-field" for="user-delete-image">
-                        <input
-                          id="user-delete-image"
-                          type="checkbox"
+                        <p-checkbox
+                          inputId="user-delete-image"
+                          [binary]="true"
                           formControlName="deleteCurrentImage"
                         />
                         Xóa ảnh đại diện hiện tại
@@ -294,7 +305,8 @@
               }
               <button
                 type="submit"
-                class="ui-button primary"
+                pButton
+                severity="primary"
                 [disabled]="!store.canWrite() || store.saving() || !store.profileDirty()"
               >
                 {{ store.saving() ? 'Đang lưu…' : store.isNew() ? 'Tạo người dùng' : 'Lưu hồ sơ' }}
@@ -310,14 +322,17 @@
                 <div class="system-user-roles">
                   @for (role of store.roles(); track role.roleId) {
                     <label
+                      [for]="'user-role-' + role.roleId"
                       class="permission-action"
                       [class.selected]="store.selected().has(role.roleId)"
-                      ><input
-                        #roleInput
-                        type="checkbox"
-                        [checked]="store.selected().has(role.roleId)"
+                      ><p-checkbox
+                        [inputId]="'user-role-' + role.roleId"
+                        [ariaLabel]="role.roleName"
+                        [binary]="true"
+                        [ngModelOptions]="{ standalone: true }"
+                        [ngModel]="store.selected().has(role.roleId)"
                         [disabled]="!store.canUpdate() || store.saving()"
-                        (change)="store.toggle(role.roleId, roleInput.checked)"
+                        (onChange)="store.toggle(role.roleId, $event.checked)"
                       /><span
                         >{{ role.roleName }}
                         @if (role.description) {
@@ -331,7 +346,8 @@
                 </div>
                 <button
                   type="button"
-                  class="ui-button primary"
+                  pButton
+                  severity="primary"
                   (click)="saveRoles()"
                   [disabled]="!store.canUpdate() || store.saving() || !store.rolesDirty()"
                 >
@@ -380,10 +396,16 @@
     </p>
   }
   <ng-template #footer>
-    <button class="ui-button" (click)="actionTarget.set(null)" [disabled]="store.saving()">
+    <button
+      pButton
+      severity="secondary"
+      outlined
+      (click)="actionTarget.set(null)"
+      [disabled]="store.saving()"
+    >
       Hủy
     </button>
-    <button class="ui-button primary" (click)="runAction()" [disabled]="store.saving()">
+    <button pButton severity="primary" (click)="runAction()" [disabled]="store.saving()">
       {{ store.saving() ? 'Đang xử lý…' : 'Xác nhận' }}
     </button>
   </ng-template>

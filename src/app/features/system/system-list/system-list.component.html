@@ -1,46 +1,48 @@
 <section class="collection-page" aria-labelledby="system-list-heading">
-  <nav class="collection-breadcrumb" aria-label="Điều hướng">
-    <a routerLink="/admin">Quản trị</a><span>/</span><strong>Hệ thống</strong>
-  </nav>
-  <header class="collection-heading">
-    <div class="heading-copy">
-      <div class="title-row">
-        <h1 id="system-list-heading">{{ store.section().title }}</h1>
-        <span>{{ store.total() }}</span>
-      </div>
-      <p>Quản lý truy cập và tổ chức chức năng của cửa hàng.</p>
-    </div>
-    <div class="heading-actions">
-      @if (store.kind() === 'functions') {
-        <button class="ui-button" (click)="openGroups()">
-          <ui-icon name="folder" [size]="14" />Quản lý nhóm
-        </button>
-      }
-      @if (store.canCreate()) {
-        <a class="ui-button primary" [routerLink]="['new']" queryParamsHandling="preserve"
-          ><ui-icon name="plus" [size]="14" />Thêm {{ store.section().singular }}</a
-        >
-      }
-    </div>
-  </header>
-  <div class="system-list-toolbar">
-    <label for="system-search">Tìm kiếm</label
-    ><input
-      pInputText
-      id="system-search"
-      #searchInput
-      [value]="searchTerm()"
-      (keydown.enter)="search(searchInput.value)"
-      placeholder="Nhập tên hoặc mã"
-    /><button class="ui-button" (click)="search(searchInput.value)">Tìm</button
-    ><button
-      class="ui-button"
+  <header class="catalog-list-toolbar system-list-toolbar">
+    <h1 id="system-list-heading">
+      {{ store.section().title }} <span>{{ store.total() }}</span>
+    </h1>
+    <label class="search-field" for="system-search">
+      <span class="sr-only">Tìm kiếm {{ store.section().title }}</span>
+      <ui-icon name="search" [size]="14" />
+      <input
+        pInputText
+        id="system-search"
+        type="search"
+        #searchInput
+        [value]="searchTerm()"
+        (keydown.enter)="search(searchInput.value)"
+        placeholder="Nhập tên hoặc mã…"
+      />
+    </label>
+    <button pButton severity="secondary" outlined type="button" (click)="search(searchInput.value)">
+      Tìm
+    </button>
+    <button
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
+      type="button"
+      aria-label="Tải lại danh sách"
       (click)="store.reload()"
       [disabled]="store.loading() || store.saving()"
     >
-      Tải lại
+      <ui-icon name="refresh" [size]="14" />
     </button>
-  </div>
+    @if (store.kind() === 'functions') {
+      <button pButton severity="secondary" outlined type="button" (click)="openGroups()">
+        <ui-icon name="folder" [size]="14" />Quản lý nhóm
+      </button>
+    }
+    @if (store.canCreate()) {
+      <a pButton severity="primary" [routerLink]="['new']" queryParamsHandling="preserve">
+        <ui-icon name="plus" [size]="14" />Thêm {{ store.section().singular }}
+      </a>
+    }
+  </header>
   @if (store.error()) {
     <div class="collection-notice error-notice" role="alert">{{ store.error() }}</div>
   }
@@ -63,88 +65,113 @@
       [attr.aria-label]="store.section().title"
       tabindex="0"
     >
-      <table class="content-table">
-        <thead>
+      <p-table
+        [value]="store.rows().slice()"
+        dataKey="id"
+        tableStyleClass="content-table"
+        [tableStyle]="{ 'min-width': '680px' }"
+        [rowHover]="true"
+        [pt]="{ tableContainer: { style: { overflow: 'visible' } } }"
+      >
+        <ng-template #header>
           <tr>
-            <th>Tên</th>
+            <th scope="col">Tên</th>
             @if (store.kind() === 'users') {
-              <th>Email</th>
+              <th scope="col">Email</th>
             } @else if (store.kind() !== 'roles') {
-              <th>Mã</th>
+              <th scope="col">Mã</th>
             }
             @if (store.kind() === 'functions') {
-              <th>Nhóm</th>
+              <th scope="col">Nhóm</th>
             }
-            <th>{{ store.kind() === 'roles' ? 'Mô tả' : 'Trạng thái' }}</th>
-            <th class="action-column">Thao tác</th>
+            <th scope="col">{{ store.kind() === 'roles' ? 'Mô tả' : 'Trạng thái' }}</th>
+            <th scope="col" class="action-column">Thao tác</th>
           </tr>
-        </thead>
-        <tbody>
-          @for (row of store.rows(); track row.id) {
-            <tr>
+        </ng-template>
+        <ng-template #body let-row>
+          <tr>
+            <td>
+              <a class="item-title" [routerLink]="[row.id]" queryParamsHandling="preserve">{{
+                row.name
+              }}</a>
+            </td>
+            @if (store.kind() === 'users') {
+              <td>{{ row.email || '—' }}</td>
+            } @else if (store.kind() !== 'roles') {
               <td>
-                <a class="item-title" [routerLink]="[row.id]" queryParamsHandling="preserve">{{
-                  row.name
-                }}</a>
+                <code>{{ row.code }}</code>
               </td>
-              @if (store.kind() === 'users') {
-                <td>{{ row.email || '—' }}</td>
-              } @else if (store.kind() !== 'roles') {
-                <td>
-                  <code>{{ row.code }}</code>
-                </td>
+            }
+            @if (store.kind() === 'functions') {
+              <td>{{ store.groupName(row.groupId) }}</td>
+            }
+            <td>
+              @if (store.kind() === 'roles') {
+                {{ row.description || '—' }}
+              } @else {
+                <ui-status-badge [tone]="row.isActive ? 'success' : 'muted'">
+                  {{ row.isActive ? 'Hoạt động' : 'Vô hiệu hóa' }}
+                </ui-status-badge>
               }
-              @if (store.kind() === 'functions') {
-                <td>{{ store.groupName(row.groupId) }}</td>
-              }
-              <td>
-                {{
-                  store.kind() === 'roles'
-                    ? row.description || '—'
-                    : row.isActive
-                      ? 'Hoạt động'
-                      : 'Vô hiệu hóa'
-                }}
-              </td>
-              <td>
-                <div class="system-row-actions">
-                  <a class="ui-button" [routerLink]="[row.id]" queryParamsHandling="preserve">{{
-                    store.canUpdate() ? 'Chỉnh sửa' : 'Xem'
-                  }}</a>
-                  @if (store.canDeleteRow(row)) {
-                    <button
-                      class="ui-button danger"
-                      (click)="deleteTarget.set(row)"
-                      [disabled]="store.saving()"
-                      [attr.aria-label]="'Xóa ' + row.name"
-                    >
-                      <ui-icon name="trash" [size]="14" />
-                    </button>
-                  }
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+            </td>
+            <td>
+              <div class="system-row-actions">
+                <a
+                  pButton
+                  severity="secondary"
+                  outlined
+                  [routerLink]="[row.id]"
+                  queryParamsHandling="preserve"
+                  >{{ store.canUpdate() ? 'Chỉnh sửa' : 'Xem' }}</a
+                >
+                @if (store.canDeleteRow(row)) {
+                  <button
+                    pButton
+                    severity="danger"
+                    outlined
+                    (click)="deleteTarget.set(row)"
+                    [disabled]="store.saving()"
+                    [attr.aria-label]="'Xóa ' + row.name"
+                  >
+                    <ui-icon name="trash" [size]="14" />
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
     </div>
   }
-  <footer class="collection-footer">
+  <footer class="pagination">
     <span>{{ store.total() }} bản ghi</span>
-    <div class="collection-pagination">
+    <div class="pagination-right">
       <button
-        class="ui-button"
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang trước"
         [disabled]="store.page() <= 1 || store.loading()"
         (click)="setPage(store.page() - 1)"
       >
-        Trước</button
-      ><span>Trang {{ store.page() }} / {{ store.pageCount() }}</span
-      ><button
-        class="ui-button"
+        <ui-icon name="chevron-left" [size]="14" />
+      </button>
+      <span>{{ store.page() }} / {{ store.pageCount() }}</span>
+      <button
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang sau"
         [disabled]="store.page() >= store.pageCount() || store.loading()"
         (click)="setPage(store.page() + 1)"
       >
-        Sau
+        <ui-icon name="chevron-right" [size]="14" />
       </button>
     </div>
   </footer>
@@ -164,7 +191,9 @@
   <div class="system-group-manager">
     <div class="system-group-list">
       <button
-        class="ui-button"
+        pButton
+        severity="secondary"
+        outlined
         (click)="chooseGroup(null)"
         [disabled]="!store.canCreate() || store.saving()"
       >
@@ -219,10 +248,16 @@
           </p>
         }
         <div class="system-row-actions">
-          <button type="submit" class="ui-button primary">Lưu nhóm</button>
+          <button type="submit" pButton severity="primary">Lưu nhóm</button>
           @if (groupTarget(); as group) {
             @if (store.canDelete()) {
-              <button type="button" class="ui-button danger" (click)="deleteGroupTarget.set(group)">
+              <button
+                type="button"
+                pButton
+                severity="danger"
+                outlined
+                (click)="deleteGroupTarget.set(group)"
+              >
                 Xóa nhóm
               </button>
             }
@@ -237,7 +272,13 @@
     </p>
   }
   <ng-template #footer
-    ><button class="ui-button" (click)="closeGroups()" [disabled]="store.saving()">
+    ><button
+      pButton
+      severity="secondary"
+      outlined
+      (click)="closeGroups()"
+      [disabled]="store.saving()"
+    >
       Đóng
     </button></ng-template
   >
@@ -262,12 +303,14 @@
   }
   <ng-template #footer
     ><button
-      class="ui-button"
+      pButton
+      severity="secondary"
+      outlined
       (click)="deleteTarget.set(null); deleteGroupTarget.set(null)"
       [disabled]="store.saving()"
     >
       Hủy</button
-    ><button class="ui-button danger" (click)="delete()" [disabled]="store.saving()">
+    ><button pButton severity="danger" outlined (click)="delete()" [disabled]="store.saving()">
       Xóa
     </button></ng-template
   ></p-dialog

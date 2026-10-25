@@ -1,4 +1,4 @@
-// Product editor measurements come from the user's live Webflow reference.
+// Product editor composition follows the shared workspace baseline in DESIGN.md.
 .catalog-workspace:has(.catalog-product-editor) {
   min-height: 0;
   overflow: clip;
@@ -14,6 +14,13 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
+
+  .editor-breadcrumb,
+  .editor-tabs,
+  .editor-inspector,
+  .inspector {
+    display: none;
+  }
 
   .editor-body.catalog-editor-body {
     display: flex;
@@ -45,15 +52,15 @@
 
   .editor-toolbar {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 12px;
-    min-height: 40px;
-    height: 40px;
-    padding: 0 12px;
+    min-height: var(--record-toolbar-height);
+    padding: 6px 12px;
     background: var(--editor-surface);
     border-color: var(--editor-border);
   }
   .editor-toolbar h1 {
+    margin: 0;
     font-size: 15px;
     font-weight: 600;
   }
@@ -75,14 +82,16 @@
   }
   .wf-status {
     color: var(--text-2);
-    font-size: 11px;
+    font-size: 12px;
   }
   .editor-body,
   .form-scroll {
     background: var(--editor-surface);
   }
   .editor-form {
-    padding: 0 12px 0;
+    max-width: none;
+    margin: 0;
+    padding: 16px 12px 0;
   }
   .form-section {
     margin: 0 0 16px;
@@ -101,20 +110,20 @@
   }
   h2,
   h3 {
-    font-size: 13px;
-    line-height: 16px;
+    font-size: 14px;
+    line-height: 20px;
     font-weight: 600;
-    margin: 0 0 8px;
+    margin: 0 0 10px;
   }
   .field {
     display: block;
     min-width: 0;
-    margin: 0 0 12px;
+    margin: 0 0 16px;
   }
   .wf-product-section {
     margin: 0 0 16px;
-    padding: 0 0 8px;
-    border-bottom: 1px solid var(--editor-border);
+    padding: 0;
+    border-bottom: 0;
   }
   .wf-product-section .wf-help {
     margin: 0 0 8px;
@@ -138,13 +147,6 @@
   }
   .slug-input {
     min-height: var(--control-height);
-    height: var(--control-height);
-    background: var(--surface-0);
-    border-color: var(--editor-field-border);
-    border-radius: var(--radius);
-  }
-  .slug-input input {
-    border: 0 !important;
   }
   .slug-input > span {
     font-size: 13px;
@@ -165,7 +167,7 @@
   }
   .wf-option-sets {
     border: 1px solid var(--editor-border);
-    border-radius: 3px;
+    border-radius: var(--radius);
   }
   .wf-option-summary {
     display: flex;
@@ -173,7 +175,7 @@
     text-align: left;
     gap: 6px;
     width: 100%;
-    min-height: 34px;
+    min-height: var(--control-height);
     padding: 8px;
     border-bottom: 1px solid var(--editor-border);
   }
@@ -196,7 +198,7 @@
     min-height: 32px;
     padding: 4px 8px;
     color: var(--text-2);
-    font-size: 11px;
+    font-size: 12px;
   }
   .wf-option-editor {
     padding: 8px;
@@ -321,24 +323,28 @@
   .wf-variant-table {
     width: 100%;
     min-width: 660px;
-    border: 1px solid var(--editor-border);
+    border: 0;
     border-collapse: collapse;
     font: inherit;
   }
   .wf-variant-table th {
-    height: 34px;
-    padding: 8px 12px;
+    height: var(--table-header-height);
+    padding: 6px 10px;
     text-align: left;
+    font-size: 12px;
     font-weight: 600;
-    background: var(--editor-raised-surface);
+    color: var(--text-2);
+    background: var(--surface-2);
+    border-top: 1px solid var(--editor-border);
     border-bottom: 1px solid var(--editor-border);
   }
   .wf-variant-table td {
-    padding: 12px;
+    padding: 8px 10px;
     border-bottom: 1px solid var(--editor-border);
+    font-size: 13px;
   }
   .wf-variant-row {
-    height: 53px;
+    height: var(--table-row-height);
     cursor: pointer;
   }
   .wf-variant-row:hover,
@@ -417,9 +423,12 @@
   }
   .wf-readonly-value {
     min-height: var(--control-height);
-    padding: 7px 12px;
-    border-radius: var(--radius);
-    background: var(--editor-raised-surface);
+    padding: 4px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-1);
+    font-size: 14px;
   }
   .wf-measurements {
     display: grid;
@@ -434,12 +443,12 @@
     width: 100%;
   }
   .variant-active-toggle {
-    display: flex !important;
+    display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     min-height: var(--control-height);
-    margin: 0 !important;
+    margin: 0;
   }
   .wf-media {
     display: block;
@@ -500,7 +509,10 @@
   }
   .catalog-editor-meta {
     padding: 16px 12px;
-    border-color: var(--editor-border);
+    border-top: 1px solid var(--editor-border);
+    color: var(--text-3);
+    font-size: 12px;
+    overflow-wrap: anywhere;
   }
   .catalog-editor-meta dl {
     display: block;
@@ -511,6 +523,7 @@
   }
   .catalog-editor-meta dd {
     margin: 0;
+    color: var(--text-2);
   }
   .wf-activity-title {
     margin-top: 24px;

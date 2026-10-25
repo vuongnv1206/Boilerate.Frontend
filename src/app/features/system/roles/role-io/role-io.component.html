@@ -11,14 +11,21 @@
         {{ store.record()?.name || 'Tạo vai trò trước khi cấu hình quyền truy cập.' }}
       </p>
     </div>
-    <a class="ui-button" routerLink="/admin/system/roles" queryParamsHandling="preserve"
+    <a
+      pButton
+      severity="secondary"
+      outlined
+      routerLink="/admin/system/roles"
+      queryParamsHandling="preserve"
       >Quay lại</a
     >
   </header>
   @if (store.error()) {
     <div class="editor-notice" role="alert">
       {{ store.error()
-      }}<button class="ui-button" (click)="retry()" [disabled]="store.saving()">Tải lại</button>
+      }}<button pButton severity="secondary" outlined (click)="retry()" [disabled]="store.saving()">
+        Tải lại
+      </button>
     </div>
   }
   @if (store.notice()) {
@@ -87,7 +94,8 @@
               }
               <button
                 type="submit"
-                class="ui-button primary"
+                pButton
+                severity="primary"
                 [disabled]="!store.canWrite() || store.saving()"
               >
                 {{ store.saving() ? 'Đang lưu…' : 'Lưu thông tin' }}
@@ -103,7 +111,8 @@
                 <p>Chọn các thao tác vai trò được phép thực hiện.</p>
               </div>
               <button
-                class="ui-button primary"
+                pButton
+                severity="primary"
                 (click)="savePermissions()"
                 [disabled]="!store.canWrite() || store.saving() || !store.permissionsDirty()"
               >
@@ -120,13 +129,17 @@
                 (input)="store.keyword.set(permissionSearch.value)"
                 placeholder="Tìm kiếm theo tên hoặc mã chức năng…"
               /><button
-                class="ui-button"
+                pButton
+                severity="secondary"
+                outlined
                 (click)="store.expandAll(true)"
                 aria-label="Mở tất cả nhóm"
               >
                 <ui-icon name="chevron-down" [size]="14" /></button
               ><button
-                class="ui-button"
+                pButton
+                severity="secondary"
+                outlined
                 (click)="store.expandAll(false)"
                 aria-label="Thu gọn tất cả nhóm"
               >
@@ -165,22 +178,36 @@
                       <div class="permission-actions">
                         @for (action of group.actions; track action.id) {
                           <label
+                            [for]="'permission-bulk-' + group.id + '-' + action.id"
                             class="permission-action"
                             [class.selected]="
                               store.bulkState(group.functions, action.id) !== 'none'
                             "
-                            ><input
-                              #bulkInput
-                              type="checkbox"
-                              [checked]="store.bulkState(group.functions, action.id) === 'all'"
+                            ><p-checkbox
+                              [inputId]="'permission-bulk-' + group.id + '-' + action.id"
+                              [binary]="true"
+                              [ngModelOptions]="{ standalone: true }"
+                              [ngModel]="store.bulkState(group.functions, action.id) === 'all'"
                               [indeterminate]="
                                 store.bulkState(group.functions, action.id) === 'some'
                               "
+                              [pt]="{
+                                input: {
+                                  indeterminate:
+                                    store.bulkState(group.functions, action.id) === 'some',
+                                  'aria-checked':
+                                    store.bulkState(group.functions, action.id) === 'some'
+                                      ? 'mixed'
+                                      : store.bulkState(group.functions, action.id) === 'all'
+                                        ? 'true'
+                                        : 'false',
+                                },
+                              }"
                               [disabled]="!store.canWrite() || store.saving()"
-                              (change)="
-                                store.toggleBulk(group.functions, action.id, bulkInput.checked)
+                              (onChange)="
+                                store.toggleBulk(group.functions, action.id, $event.checked)
                               "
-                              [attr.aria-label]="action.name + ' trong nhóm ' + group.name"
+                              [ariaLabel]="action.name + ' trong nhóm ' + group.name"
                             /><span>{{ action.name }}</span></label
                           >
                         }
@@ -198,20 +225,22 @@
                         <div class="permission-actions">
                           @for (action of fn.actionDtos; track action.id) {
                             <label
+                              [for]="'permission-' + fn.id + '-' + action.id"
                               class="permission-action"
                               [class.selected]="store.checked(fn.id, action.id)"
                               [class.inactive]="!fn.isActive || !action.isActive"
-                              ><input
-                                #permissionInput
-                                type="checkbox"
-                                [checked]="store.checked(fn.id, action.id)"
+                              ><p-checkbox
+                                [inputId]="'permission-' + fn.id + '-' + action.id"
+                                [binary]="true"
+                                [ngModelOptions]="{ standalone: true }"
+                                [ngModel]="store.checked(fn.id, action.id)"
                                 [disabled]="
                                   !store.canWrite() ||
                                   store.saving() ||
                                   !store.selectable(fn, action)
                                 "
-                                (change)="store.toggle(fn, action, permissionInput.checked)"
-                                [attr.aria-label]="action.name + ' — ' + fn.name"
+                                (onChange)="store.toggle(fn, action, $event.checked)"
+                                [ariaLabel]="action.name + ' — ' + fn.name"
                               /><span
                                 >{{ action.name }}
                                 @if (!fn.isActive || !action.isActive) {

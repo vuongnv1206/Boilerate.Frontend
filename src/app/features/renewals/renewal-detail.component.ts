@@ -39,6 +39,7 @@ import { RenewalCommand, RenewalsStore } from '@stores/renewals.store';
 
 @Component({
   selector: 'app-renewal-detail',
+  host: { class: 'collection-screen' },
   imports: [
     RouterLink,
     FormsModule,

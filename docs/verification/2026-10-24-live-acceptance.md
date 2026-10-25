@@ -7,10 +7,10 @@ Validates end-to-end user journeys for Catalog Editor, Physical and Digital Inve
 
 ## Results
 
-| Command | Environment | Result |
-| --- | --- | --- |
-| `run.ps1 check` | Windows, Node 24.19.0 | Pass: Prettier, ESLint, 43 architecture checks, 41 test files / 262 Vitest tests, production Angular build `dist/boilerate-admin`. |
-| `powershell -ExecutionPolicy Bypass -File Boilerate\scripts\verify-admin.ps1 -FrontendRoot Frontend -SkipBuild` | Playwright Chromium, 4 viewport/colorScheme projects, isolated MSSQL database | Pass: **68 / 68 live acceptance tests (100% green)** in 3.9m. |
+| Command                                                                                                         | Environment                                                                   | Result                                                                                                                             |
+| --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `run.ps1 check`                                                                                                 | Windows, Node 24.19.0                                                         | Pass: Prettier, ESLint, 43 architecture checks, 41 test files / 262 Vitest tests, production Angular build `dist/boilerate-admin`. |
+| `powershell -ExecutionPolicy Bypass -File Boilerate\scripts\verify-admin.ps1 -FrontendRoot Frontend -SkipBuild` | Playwright Chromium, 4 viewport/colorScheme projects, isolated MSSQL database | Pass: **68 / 68 live acceptance tests (100% green)** in 3.9m.                                                                      |
 
 ### Per-Project Live Acceptance Breakdown
 

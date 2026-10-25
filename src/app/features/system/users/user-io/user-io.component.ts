@@ -8,8 +8,10 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ButtonDirective } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { distinctUntilChanged, map } from 'rxjs';
@@ -25,7 +27,18 @@ import { validationMessage } from '@shared/forms/validation-message';
   selector: 'app-user-io',
   host: { class: 'collection-screen system-screen' },
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ReactiveFormsModule, Dialog, InputText, Icon, ContentState, ConfirmDialog],
+  imports: [
+    ButtonDirective,
+    Checkbox,
+    FormsModule,
+    RouterLink,
+    ReactiveFormsModule,
+    Dialog,
+    InputText,
+    Icon,
+    ContentState,
+    ConfirmDialog,
+  ],
   providers: [UserRolesStore, LeaveConfirmation],
   templateUrl: './user-io.component.html',
 })

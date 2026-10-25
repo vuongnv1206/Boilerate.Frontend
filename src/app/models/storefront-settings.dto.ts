@@ -1,0 +1,20 @@
+export interface GuestPaymentSettings {
+  readonly bankName: string | null;
+  readonly accountNumber: string | null;
+  readonly accountHolder: string | null;
+  readonly branch: string | null;
+  readonly instructions: string | null;
+  readonly bankTransferEnabled: boolean;
+}
+
+export interface GuestVerificationResult {
+  readonly email: string;
+}
+
+export interface StorefrontSettings extends GuestPaymentSettings {
+  readonly version: string;
+}
+
+export type UpdateStorefrontSettings = Omit<StorefrontSettings, 'version'> & {
+  readonly version: string;
+};

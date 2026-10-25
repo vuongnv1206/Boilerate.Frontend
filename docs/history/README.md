@@ -2,6 +2,14 @@
 
 Chỉ ghi các khả năng đã triển khai theo mốc. Chi tiết sửa code tra trong Git; cách ghi tài liệu theo [quy tắc docs](../README.md#quy-tắc-duy-trì-docs).
 
+## 25/10/2026 — Thống nhất toàn bộ giao diện Admin
+
+Catalog, Đơn hàng, Gia hạn, Hệ thống và Cài đặt thanh toán dùng chung control PrimeNG, typography, toolbar, bảng và trạng thái Light/Dark. Settings có khóa nhập khi đang lưu; phân quyền giữ trạng thái chọn một phần cho bàn phím và trình đọc màn hình. [DESIGN.md](../../DESIGN.md) là chuẩn chung; phạm vi kiểm chứng và giới hạn môi trường tại [báo cáo đồng bộ Admin](../verification/2026-10-25-admin-design.md).
+
+## 24/10/2026 — Redesign storefront khách mua
+
+Catalog, chi tiết sản phẩm, giỏ, checkout/OTP và My Orders dùng hệ Editorial riêng với typography display, ảnh fallback, Light/Dark và trạng thái nhất quán. Hành vi mua và API giữ nguyên; xem [quy chuẩn](../../DESIGN.md#storefront-editorial) và [feature](../features/storefront.md).
+
 ## 22/10/2026 — Workspace cho loại sản phẩm và đơn hàng
 
 Loại sản phẩm giữ rail cạnh schema editor, xem danh sách sản phẩm liên quan và sao chép schema với identity mới. Chi tiết đơn giữ list/search/filter cạnh snapshot và lệnh vận hành, không mở quyền sửa OrderItem. Xem [Collections](../features/live-admin-collections.md) và [Admin Orders](../features/admin-orders.md). Production build đạt; browser review đã xem type list/editor và order list ở local; không chạy test, và detail đơn chưa được xem vì dữ liệu local hiện không có đơn.

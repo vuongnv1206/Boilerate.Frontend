@@ -32,6 +32,12 @@
     align-items: center;
     justify-content: flex-start;
     gap: 12px;
+    flex-wrap: wrap;
+
+    > .p-button {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
     h2 {
       margin: 0;
     }
@@ -56,7 +62,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     min-width: 0;
     label {
       font-size: 13px;
@@ -85,7 +91,7 @@
   .fields-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 16px;
   }
   .check-field {
     display: inline-flex;
@@ -170,5 +176,14 @@
   }
   .remove-field {
     margin-top: 16px;
+  }
+}
+
+@media (max-width: 760px) {
+  .collection-screen {
+    .field-row,
+    .fields-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 }

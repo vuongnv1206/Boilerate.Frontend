@@ -24,6 +24,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { Dialog } from 'primeng/dialog';
+import { ButtonDirective } from 'primeng/button';
 import { ThemeController } from '@core/theme/theme-controller';
 import { WORKSPACE_NAVIGATION } from '@core/navigation/workspace-navigation';
 import { Icon } from '@shared/ui/icon/icon.component';
@@ -42,7 +43,15 @@ function preference(key: string, fallback: string): string {
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-admin-shell',
-  imports: [CdkTrapFocus, RouterOutlet, RouterLink, RouterLinkActive, Icon, Dialog],
+  imports: [
+    CdkTrapFocus,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    Icon,
+    Dialog,
+    ButtonDirective,
+  ],
   templateUrl: './admin-shell.component.html',
   styleUrl: '../../../styles/admin/_shell.scss',
 })

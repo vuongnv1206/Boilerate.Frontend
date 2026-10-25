@@ -81,26 +81,34 @@
       </p-table>
     }
   </div>
-  <footer class="collection-footer">
+  <footer class="pagination">
     <span>{{ store.filtered().length }} loại sản phẩm trong kết quả</span>
-    <div class="pagination">
+    <div class="pagination-right">
       <button
         pButton
         severity="secondary"
-        outlined
-        [disabled]="store.page() === 1"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang loại sản phẩm trước"
+        [disabled]="store.page() <= 1 || store.loading()"
         (click)="setPage(store.page() - 1)"
       >
-        Trước</button
-      ><span>Trang {{ store.page() }} / {{ store.totalPages() }}</span
+        <ui-icon name="chevron-left" [size]="14" /></button
+      ><span>{{ store.page() }} / {{ store.totalPages() }}</span
       ><button
         pButton
         severity="secondary"
-        outlined
-        [disabled]="store.page() >= store.totalPages()"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang loại sản phẩm sau"
+        [disabled]="store.page() >= store.totalPages() || store.loading()"
         (click)="setPage(store.page() + 1)"
       >
-        Sau
+        <ui-icon name="chevron-right" [size]="14" />
       </button>
     </div>
   </footer>

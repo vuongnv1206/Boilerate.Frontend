@@ -12,7 +12,7 @@
   position: relative;
 
   &.product-type-editor-open:has(.product-type-items) {
-    grid-template-columns: 218px minmax(0, 1fr);
+    grid-template-columns: var(--record-rail-width) minmax(0, 1fr);
   }
 
   .product-types-workspace-content {
@@ -147,11 +147,10 @@
 
     .product-type-editor-toolbar {
       flex: none;
-      min-height: 42px;
-      height: 42px;
-      padding: 0 12px;
+      min-height: var(--record-toolbar-height);
+      padding: 6px 12px;
       gap: 12px;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       border-color: var(--product-type-editor-border);
 
       h1 {
@@ -169,16 +168,15 @@
       flex: none;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
+      width: var(--control-height-compact);
+      height: var(--control-height-compact);
       color: var(--text-2);
 
       &:hover,
       &:focus-visible {
-        border-radius: 3px;
+        border-radius: var(--radius);
         background: var(--surface-2);
         color: var(--text-1);
-        outline: none;
       }
     }
 
@@ -256,7 +254,7 @@
 
     .field {
       max-width: 720px;
-      margin-bottom: 15px;
+      margin-bottom: 16px;
 
       label {
         font-size: 13px;
@@ -276,6 +274,13 @@
     .schema-section > .section-heading {
       padding-bottom: 12px;
       border-bottom: 1px solid var(--product-type-editor-border);
+
+      h2 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 20px;
+      }
 
       p {
         margin: 7px 0 12px;
@@ -421,7 +426,7 @@
     .product-type-items {
       position: absolute;
       inset: 48px auto 0 0;
-      width: min(240px, 85%);
+      width: min(var(--record-rail-overlay-width), 85%);
       z-index: 22;
       display: none;
       box-shadow: var(--overlay-shadow);

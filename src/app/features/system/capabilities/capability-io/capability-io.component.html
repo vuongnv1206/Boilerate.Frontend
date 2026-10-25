@@ -15,7 +15,9 @@
       <p class="editor-save-status">Quản lý danh mục và trạng thái sử dụng.</p>
     </div>
     <a
-      class="ui-button"
+      pButton
+      severity="secondary"
+      outlined
       [routerLink]="['/admin/system', store.kind()]"
       queryParamsHandling="preserve"
       >Quay lại</a
@@ -24,7 +26,9 @@
   @if (store.error()) {
     <div class="editor-notice" role="alert">
       {{ store.error()
-      }}<button class="ui-button" (click)="retry()" [disabled]="store.saving()">Tải lại</button>
+      }}<button pButton severity="secondary" outlined (click)="retry()" [disabled]="store.saving()">
+        Tải lại
+      </button>
     </div>
   }
   @if (store.notice()) {
@@ -59,22 +63,30 @@
               @if (store.kind() === 'functions') {
                 <div class="field">
                   <label for="capability-group">Nhóm chức năng *</label
-                  ><select id="capability-group" class="system-select" formControlName="groupId">
-                    @for (group of store.groups(); track group.id) {
-                      <option [value]="group.id">{{ group.name }}</option>
-                    }
-                  </select>
+                  ><p-select
+                    inputId="capability-group"
+                    formControlName="groupId"
+                    [options]="store.groups().slice()"
+                    optionLabel="name"
+                    optionValue="id"
+                    appendTo="body"
+                  />
                 </div>
               }
-              <label class="system-check-row"
-                ><input type="checkbox" formControlName="isActive" />Đang hoạt động</label
+              <label class="system-check-row" for="capability-active"
+                ><p-checkbox
+                  inputId="capability-active"
+                  [binary]="true"
+                  formControlName="isActive"
+                />Đang hoạt động</label
               >
             </fieldset>
             @if (form.invalid && form.touched) {
               <p class="system-error" role="alert">Nhập mã, tên và nhóm hợp lệ trước khi lưu.</p>
             }
             <button
-              class="ui-button primary"
+              pButton
+              severity="primary"
               type="submit"
               [disabled]="store.saving() || !store.canWrite()"
             >
@@ -92,14 +104,17 @@
               <div class="permission-actions">
                 @for (action of store.actions(); track action.id) {
                   <label
+                    [for]="'capability-action-' + action.id"
                     class="permission-action"
                     [class.selected]="store.selected().has(action.id)"
-                    ><input
-                      #actionInput
-                      type="checkbox"
-                      [checked]="store.selected().has(action.id)"
+                    ><p-checkbox
+                      [inputId]="'capability-action-' + action.id"
+                      [ariaLabel]="action.name"
+                      [binary]="true"
+                      [ngModelOptions]="{ standalone: true }"
+                      [ngModel]="store.selected().has(action.id)"
                       [disabled]="!store.canWrite() || store.saving() || !store.selectable(action)"
-                      (change)="store.toggleAction(action, actionInput.checked)"
+                      (onChange)="store.toggleAction(action, $event.checked)"
                     /><span
                       >{{ action.name }}
                       @if (!action.isActive) {
@@ -110,7 +125,8 @@
                 }
               </div>
               <button
-                class="ui-button primary"
+                pButton
+                severity="primary"
                 (click)="saveActions()"
                 [disabled]="!store.canWrite() || store.saving() || !store.actionsDirty()"
               >

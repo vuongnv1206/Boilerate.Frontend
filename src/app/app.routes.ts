@@ -9,12 +9,24 @@ export const routes: Routes = [
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
   {
+    path: 'shop',
+    loadChildren: () =>
+      import('./features/storefront/storefront.routes').then((m) => m.STOREFRONT_ROUTES),
+  },
+  {
     path: 'admin',
     canActivate: [authGuard],
     providers: [provideWorkspaceNavigation()],
     loadComponent: () =>
       import('./layout/admin-shell/admin-shell.component').then((m) => m.AdminShell),
     children: [
+      {
+        path: 'storefront-settings',
+        loadChildren: () =>
+          import('./features/storefront-settings/storefront-settings.routes').then(
+            (m) => m.STOREFRONT_SETTINGS_ROUTES,
+          ),
+      },
       {
         path: '',
         pathMatch: 'full',

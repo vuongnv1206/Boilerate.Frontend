@@ -97,7 +97,6 @@
   } @else {
     <div class="editor-body catalog-editor-body">
       <div class="editor-fields">
-        <div class="editor-tabs"><span class="active">Thông tin sản phẩm</span></div>
         <div class="form-scroll">
           <form class="editor-form" [formGroup]="form" (submit)="$event.preventDefault()">
             <fieldset
@@ -106,13 +105,7 @@
               [inert]="commerceBusy() || mediaBusy() || store.busy()"
             >
               <section class="form-section" aria-labelledby="product-content-title">
-                <div class="section-heading">
-                  <ui-icon name="file" [size]="15" />
-                  <h2 id="product-content-title">Thông tin cơ bản</h2>
-                </div>
-                <p class="section-description">
-                  Thông tin hiển thị của sản phẩm. Thay đổi chỉ được ghi nhận khi bấm lưu.
-                </p>
+                <h2 id="product-content-title">Thông tin cơ bản</h2>
                 <div class="field">
                   <label class="field-label" for="product-type"
                     >Loại sản phẩm <span class="required">*</span></label
@@ -229,11 +222,7 @@
                 class="form-section product-attributes-section"
                 aria-labelledby="product-fields-title"
               >
-                <div class="section-heading">
-                  <ui-icon name="sliders" [size]="15" />
-                  <h2 id="product-fields-title">Thuộc tính sản phẩm</h2>
-                </div>
-                <p class="section-description">Các trường do loại sản phẩm quy định.</p>
+                <h2 id="product-fields-title">Thuộc tính sản phẩm</h2>
                 @for (field of store.visibleFields(); track field.id) {
                   @if (form.controls.fields.controls[field.id]; as control) {
                     <div class="field">

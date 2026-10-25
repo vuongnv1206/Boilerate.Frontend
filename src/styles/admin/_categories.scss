@@ -12,7 +12,7 @@
   position: relative;
 
   &.category-editor-open:has(.category-items) {
-    grid-template-columns: 218px minmax(0, 1fr);
+    grid-template-columns: var(--record-rail-width) minmax(0, 1fr);
   }
 
   .category-workspace-content {
@@ -38,7 +38,7 @@
       padding: 8px 12px;
       gap: 8px;
       border-bottom: 1px solid var(--border);
-      font-size: 12px;
+      font-size: 13px;
     }
 
     header > a:first-child {
@@ -46,7 +46,7 @@
     }
 
     header span {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-3);
       margin-left: 6px;
     }
@@ -81,7 +81,7 @@
       padding: 7px 10px;
       border-bottom: 1px solid var(--border);
       color: var(--text-2);
-      font-size: 12px;
+      font-size: 13px;
 
       > span {
         flex: 1;
@@ -92,7 +92,7 @@
 
       > small {
         color: var(--text-3);
-        font-size: 10px;
+        font-size: 12px;
         font-variant-numeric: tabular-nums;
       }
 
@@ -142,15 +142,15 @@
     min-height: 0;
     color: var(--text-1);
     background: var(--editor-surface);
-    font-size: 11.5px;
+    font-size: 14px;
+    line-height: 21px;
 
     .editor-toolbar {
       flex: none;
-      min-height: 42px;
-      height: 42px;
-      padding: 0 12px;
+      min-height: var(--record-toolbar-height);
+      padding: 6px 12px;
       gap: 12px;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       border-color: var(--category-editor-border);
 
       h1 {
@@ -159,7 +159,7 @@
         max-width: min(440px, 45vw);
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 13px;
+        font-size: 15px;
       }
     }
 
@@ -168,16 +168,15 @@
       flex: none;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
+      width: var(--control-height-compact);
+      height: var(--control-height-compact);
       color: var(--text-2);
 
       &:hover,
       &:focus-visible {
-        border-radius: 3px;
+        border-radius: var(--radius);
         background: var(--surface-2);
         color: var(--text-1);
-        outline: none;
       }
     }
 
@@ -199,7 +198,7 @@
       gap: 6px;
       flex: none;
       color: var(--success);
-      font-size: 11px;
+      font-size: 12px;
 
       > span {
         width: 7px;
@@ -240,58 +239,34 @@
 
       h2 {
         margin: 0 0 10px;
-        font-size: 13px;
-        line-height: 17px;
+        font-size: 14px;
+        line-height: 20px;
       }
 
       > p {
         margin: 0 0 8px;
         color: var(--text-3);
-        font-size: 11px;
-        line-height: 16px;
+        font-size: 12px;
+        line-height: 18px;
       }
     }
 
     .field {
-      margin-bottom: 12px;
-      gap: 5px;
-
-      > label {
-        font-size: 11.5px;
-        line-height: 16px;
-      }
-
-      input:not([type='checkbox']),
-      select,
-      textarea {
-        min-height: 25px;
-        padding: 4px 8px;
-        border-radius: 3px;
-        font-size: 11.5px;
-      }
-
-      textarea {
-        min-height: 64px;
-      }
-    }
-
-    ui-field-message {
-      font-size: 10.5px;
-      line-height: 15px;
+      margin-bottom: 16px;
     }
 
     .category-url-preview {
       display: flex;
       align-items: center;
       gap: 7px;
-      min-height: 25px;
+      min-height: var(--control-height);
       margin: -4px 0 12px;
       padding: 4px 8px;
       border: 1px solid var(--category-editor-border);
-      border-radius: 3px;
+      border-radius: var(--radius);
       background: var(--surface-2);
       color: var(--text-2);
-      font-size: 11px;
+      font-size: 12px;
       overflow-wrap: anywhere;
     }
 
@@ -317,11 +292,17 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 4px;
-      min-height: 29px;
+      min-height: var(--control-height);
       padding: 3px;
-      border: 1px solid var(--category-editor-border);
-      border-radius: 3px;
-      background: var(--editor-field-surface);
+      border: 1px solid var(--field-border);
+      border-radius: var(--radius);
+      background: var(--surface-0);
+
+      &:focus-within {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+        border-color: var(--accent);
+      }
     }
 
     .category-product-chip {
@@ -329,12 +310,13 @@
       align-items: center;
       gap: 5px;
       max-width: 100%;
-      min-height: 20px;
+      min-height: var(--control-height-compact);
       padding: 2px 5px 2px 7px;
-      border-radius: 2px;
+      border-radius: var(--radius);
       background: var(--accent);
-      color: var(--accent-contrast, #fff);
-      line-height: 15px;
+      color: var(--on-accent);
+      font-size: 12px;
+      line-height: 18px;
 
       > span {
         overflow: hidden;
@@ -347,8 +329,8 @@
         flex: none;
         align-items: center;
         justify-content: center;
-        width: 16px;
-        height: 16px;
+        width: 24px;
+        height: 24px;
         padding: 0;
         border: 0;
         border-radius: 2px;
@@ -366,7 +348,7 @@
     .category-product-empty,
     .category-product-status {
       color: var(--text-3);
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .category-product-search {
@@ -381,9 +363,10 @@
       input {
         width: 100%;
         min-width: 0;
-        height: 22px;
+        min-height: var(--control-height-compact);
         padding: 2px 0;
         border: 0;
+        box-shadow: none;
         outline: none;
         background: transparent;
         color: var(--text-1);
@@ -403,9 +386,41 @@
       max-height: 220px;
       overflow: auto;
       border: 1px solid var(--category-editor-border);
-      border-radius: 3px;
+      border-radius: var(--radius);
       background: var(--surface-1);
       box-shadow: var(--overlay-shadow);
+
+      .category-product-results-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 9px;
+        border-bottom: 1px solid var(--category-editor-border);
+        background: var(--surface-2);
+        color: var(--text-3);
+        font-size: 12px;
+        font-weight: 500;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+
+        button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2px;
+          border: 0;
+          background: transparent;
+          color: var(--text-2);
+          border-radius: 2px;
+          cursor: pointer;
+
+          &:hover {
+            color: var(--text-1);
+            background: var(--surface-3);
+          }
+        }
+      }
 
       > button {
         display: flex;
@@ -430,7 +445,7 @@
 
         small {
           color: var(--text-3);
-          font-size: 10px;
+          font-size: 12px;
         }
       }
     }
@@ -438,8 +453,8 @@
     .category-product-error {
       margin: 6px 0;
       color: var(--danger);
-      font-size: 11px;
-      line-height: 16px;
+      font-size: 12px;
+      line-height: 18px;
     }
 
     .category-product-issues {
@@ -456,7 +471,7 @@
         gap: 12px;
         min-width: 0;
         color: var(--danger);
-        font-size: 11px;
+        font-size: 12px;
       }
     }
 
@@ -472,16 +487,10 @@
       align-items: center;
       align-self: center;
       gap: 8px;
-      min-height: 28px;
+      min-height: var(--control-height);
       margin: 0 0 16px;
       color: var(--text-2);
-      font-size: 11.5px;
-
-      input {
-        width: 15px;
-        height: 15px;
-        margin: 0;
-      }
+      font-size: 13px;
     }
 
     .category-item-id {
@@ -492,12 +501,12 @@
 
       span {
         color: var(--text-2);
-        font-size: 11.5px;
+        font-size: 13px;
       }
 
       code {
         color: var(--text-3);
-        font-size: 10.5px;
+        font-size: 12px;
         overflow-wrap: anywhere;
       }
     }
@@ -548,7 +557,7 @@
       display: none;
       position: absolute;
       inset: 48px auto 0 0;
-      width: 240px;
+      width: var(--record-rail-overlay-width);
       max-width: 85%;
       z-index: 22;
       box-shadow: var(--overlay-shadow);

@@ -1,0 +1,81 @@
+<div class="storefront-app">
+  <div class="storefront-note-bar">
+    <span><ui-icon name="check-circle" [size]="14" /> Mua hàng không cần tạo tài khoản</span>
+    <span>Nội dung số được mở sau khi đơn hàng thanh toán thành công</span>
+  </div>
+
+  <header class="storefront-header">
+    <div class="storefront-nav-container">
+      <a routerLink="/shop" class="brand-link" aria-label="Boilerate Store — Trang chủ">
+        <span class="brand-mark"><ui-icon name="box" [size]="20" /></span>
+        <span class="brand-copy">
+          <span class="brand-name">Boilerate</span>
+          <span class="brand-caption">THE SELECT SHOP</span>
+        </span>
+      </a>
+
+      <nav class="storefront-links" aria-label="Điều hướng cửa hàng">
+        <a routerLink="/shop/products" routerLinkActive="active" class="nav-link">Sản phẩm</a>
+        <a routerLink="/shop/orders" routerLinkActive="active" class="nav-link">Đơn hàng</a>
+      </nav>
+
+      <div class="storefront-actions">
+        <a routerLink="/shop/cart" class="cart-btn" aria-label="Giỏ hàng">
+          <ui-icon name="shopping-bag" [size]="18" />
+          <span class="cart-label">Giỏ hàng</span>
+          @if (cartStore.itemCount() > 0) {
+            <span class="cart-badge">{{ cartStore.itemCount() }}</span>
+          }
+        </a>
+
+        @if (authSession.signedIn()) {
+          @if (canAccessAdmin()) {
+            <a routerLink="/admin" class="admin-link-btn">
+              <ui-icon name="arrow-up-right" [size]="14" /> Quản trị
+            </a>
+          }
+          <button type="button" class="logout-btn" (click)="onSignOut()">Đăng xuất</button>
+        } @else {
+          <a [routerLink]="['/login']" [queryParams]="{ returnUrl: '/shop' }" class="staff-link">
+            <ui-icon name="user" [size]="16" />
+            <span>Dành cho nhân viên</span>
+          </a>
+        }
+      </div>
+    </div>
+  </header>
+
+  <main class="storefront-main">
+    <router-outlet />
+  </main>
+
+  <footer class="storefront-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <a routerLink="/shop" class="brand-link">
+          <span class="brand-mark"><ui-icon name="box" [size]="18" /></span>
+          <span class="brand-name">Boilerate</span>
+        </a>
+        <p>Những sản phẩm hữu ích cho công việc, không gian sống và nhịp sống số mỗi ngày.</p>
+      </div>
+      <div class="footer-links">
+        <h2>Mua sắm</h2>
+        <a routerLink="/shop/products">Tất cả sản phẩm</a>
+        <a routerLink="/shop/cart">Giỏ hàng</a>
+        <a routerLink="/shop/orders">Tra cứu đơn hàng</a>
+      </div>
+      <div class="footer-promise">
+        <p class="store-eyebrow"><span></span> MUA SẮM AN TÂM</p>
+        <p>Không cần tài khoản. Thông tin đơn hàng được gửi tới email đã xác minh của bạn.</p>
+        <span class="footer-digital-note">
+          <ui-icon name="key" [size]="15" /> Nội dung số chỉ hiển thị sau khi thanh toán được xác
+          nhận.
+        </span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Boilerate Store</span>
+      <span>Thiết kế cho công việc và đời sống số.</span>
+    </div>
+  </footer>
+</div>

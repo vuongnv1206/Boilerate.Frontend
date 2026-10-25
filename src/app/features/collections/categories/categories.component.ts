@@ -7,6 +7,9 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ButtonDirective } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { TableModule } from 'primeng/table';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime } from 'rxjs';
 import { listQueryParams, readListQuery } from '@utils/list-query.util';
@@ -22,7 +25,16 @@ import { CategoriesStore } from '@stores/categories.store';
 @Component({
   selector: 'app-categories',
   host: { class: 'collection-screen' },
-  imports: [RouterLink, Dialog, ContentState, Icon, StatusBadge],
+  imports: [
+    ButtonDirective,
+    InputText,
+    TableModule,
+    RouterLink,
+    Dialog,
+    ContentState,
+    Icon,
+    StatusBadge,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './categories.component.html',
 })
