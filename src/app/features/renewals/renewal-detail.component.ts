@@ -36,6 +36,7 @@ import {
   renewalStatusTone,
 } from '@constants/renewal.constants';
 import { RenewalCommand, RenewalsStore } from '@stores/renewals.store';
+import { readRenewalListQuery, renewalListQueryParams } from '@utils/renewal-query.util';
 
 @Component({
   selector: 'app-renewal-detail',
@@ -123,14 +124,7 @@ export class RenewalDetail implements OnInit {
   }
 
   routeQuery(): Record<string, string | number> {
-    const params = this.route.snapshot.queryParams;
-    const rawPage = Number(params['page'] ?? 1);
-    const rawStatus = Number(params['status']);
-    const page = Number.isSafeInteger(rawPage) && rawPage > 1 ? rawPage : 1;
-    const status = Object.values(RenewalStatus).includes(rawStatus as RenewalStatus)
-      ? (rawStatus as RenewalStatus)
-      : null;
-    return { ...(page > 1 ? { page } : {}), ...(status !== null ? { status } : {}) };
+    return renewalListQueryParams(readRenewalListQuery(this.route.snapshot.queryParams));
   }
 
   ngOnInit(): void {

@@ -286,6 +286,9 @@ test('system: a permission string alone cannot open a central administration URL
   await expect(
     page.getByRole('navigation', { name: 'Quản trị hệ thống', exact: true }),
   ).toHaveCount(0);
+  await expect(page).toHaveScreenshot('admin-forbidden.png');
+  await page.getByRole('link', { name: 'Về trang được phép' }).click();
+  await expect(page).toHaveURL(/\/admin\/collections\/products$/u);
 });
 
 test('system: function metadata and action mapping save separately and codes stay immutable', async ({

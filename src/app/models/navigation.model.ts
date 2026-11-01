@@ -11,7 +11,10 @@ export interface PermissionRequirement {
   readonly actionCode: string;
 }
 
+export type NavigationPermission =
+  PermissionRequirement | { readonly anyOf: readonly PermissionRequirement[] };
+
 export interface ProtectedNavigationLink extends WorkspaceCollectionLink {
-  readonly permission: PermissionRequirement;
+  readonly permission: NavigationPermission;
   readonly centralAdmin?: boolean;
 }

@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { AuthSession } from '@core/auth/auth-session';
 import { WORKSPACE_NAVIGATION } from '@core/navigation/workspace-navigation';
 import { provideWorkspaceNavigation } from '@app/app.providers';
-import { adminHomeGuard, permissionGuard } from './permission.guard';
+import { adminHomeGuard, overviewGuard, permissionGuard } from './permission.guard';
 
 describe('Route and navigation permissions', () => {
   afterEach(() => TestBed.resetTestingModule());
@@ -88,5 +88,52 @@ describe('Route and navigation permissions', () => {
     } finally {
       child.destroy();
     }
+  });
+
+  it('opens overview from either a domain permission or finance alone and revokes navigation with the grant', async () => {
+    granted.set(['Permissions.FinancialSummary.View']);
+    configure();
+    const guard = () =>
+      TestBed.runInInjectionContext(() =>
+        overviewGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
+      );
+    expect(guard()).toBe(true);
+    const result = TestBed.runInInjectionContext(() =>
+      adminHomeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
+    );
+    if (isObservable(result)) expect(String(await firstValueFrom(result))).toBe('/admin/overview');
+    granted.set(['Permissions.Inventory.View']);
+    expect(guard()).toBe(true);
+    granted.set(['Permissions.Product.View']);
+    expect(String(guard())).toBe('/admin/forbidden');
+    const fallback = TestBed.runInInjectionContext(() =>
+      adminHomeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
+    );
+    if (isObservable(fallback))
+      expect(String(await firstValueFrom(fallback))).toBe('/admin/collections/products');
+  });
+
+  it('supports an OR route requirement and fails closed for malformed or empty alternatives', () => {
+    granted.set(['Permissions.Renewal.View']);
+    configure();
+    const check = (permission: unknown) =>
+      TestBed.runInInjectionContext(() =>
+        permissionGuard(
+          Object.assign(new ActivatedRouteSnapshot(), { data: { permission } }),
+          {} as RouterStateSnapshot,
+        ),
+      );
+    expect(
+      check({
+        anyOf: [
+          { functionCode: 'Order', actionCode: 'View' },
+          { functionCode: 'Renewal', actionCode: 'View' },
+        ],
+      }),
+    ).toBe(true);
+    expect(String(check({ anyOf: [] }))).toBe('/admin/forbidden');
+    expect(String(check({ anyOf: [{ functionCode: 'Renewal', actionCode: 'View' }, {}] }))).toBe(
+      '/admin/forbidden',
+    );
   });
 });

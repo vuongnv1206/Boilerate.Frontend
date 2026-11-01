@@ -29,6 +29,14 @@
     </button>
     <span class="toolbar-hint">Thông tin tài khoản chỉ mở khi cần và có quyền.</span>
   </header>
+  @if (store.selectedQueue(); as queue) {
+    <div class="collection-queue-filter" role="group" aria-label="Nhóm gia hạn đang chọn">
+      <span>{{ queueLabels[queue] }}</span>
+      <button pButton severity="secondary" text type="button" (click)="clearQueue()">
+        Xóa nhóm
+      </button>
+    </div>
+  }
   @if (store.loading()) {
     <ui-content-state
       kind="loading"

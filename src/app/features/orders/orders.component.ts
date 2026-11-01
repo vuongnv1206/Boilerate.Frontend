@@ -31,6 +31,7 @@ import {
   ORDER_FULFILLMENT_STATUS_LABELS,
   ORDER_FULFILLMENT_STATUS_OPTIONS,
   ORDER_PAGE_SIZES,
+  ORDER_QUEUE_LABELS,
   ORDER_PAYMENT_METHOD_LABELS,
   ORDER_PAYMENT_STATUS_LABELS,
   ORDER_PAYMENT_STATUS_OPTIONS,
@@ -60,6 +61,7 @@ import { orderListQueryParams, readOrderListQuery } from '@utils/order-query.uti
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Orders implements OnInit {
+  readonly queueLabels = ORDER_QUEUE_LABELS;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -138,6 +140,7 @@ export class Orders implements OnInit {
   resetFilters(): void {
     this.update({
       ...this.query(),
+      queue: null,
       q: '',
       status: null,
       paymentStatus: null,
@@ -146,6 +149,9 @@ export class Orders implements OnInit {
       createdTo: '',
       page: 1,
     });
+  }
+  clearQueue(): void {
+    this.update({ ...this.query(), queue: null, page: 1 });
   }
   private query(): OrderListQuery {
     return readOrderListQuery(this.route.snapshot.queryParams);

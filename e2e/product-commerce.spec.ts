@@ -26,7 +26,7 @@ const permissions = [
 test('rebases category membership after a stale product without repeating saved metadata', async ({
   page,
   catalog,
-}) => {
+}, testInfo) => {
   catalog.setPermissions([...permissions, 'Permissions.Category.Update']);
   const category = catalog.categories[0]!;
   const removed = catalog.products[0]!;
@@ -48,8 +48,43 @@ test('rebases category membership after a stale product without repeating saved 
     page.getByRole('button', { name: `Bỏ sản phẩm ${removed.name} khỏi danh mục` }),
   ).toBeVisible();
   await page.getByRole('button', { name: `Bỏ sản phẩm ${removed.name} khỏi danh mục` }).click();
-  await page.getByRole('searchbox', { name: 'Tìm sản phẩm để thêm vào danh mục' }).fill(added.name);
-  await page.locator('.category-product-results button').filter({ hasText: added.name }).click();
+  const productSearch = page.getByRole('combobox', {
+    name: 'Tìm sản phẩm để thêm vào danh mục',
+  });
+  await productSearch.fill(added.name);
+  const options = page.locator('.category-product-results');
+  await expect(options.getByRole('option', { name: added.name, exact: true })).toBeVisible();
+  await expect(options.getByRole('option')).toHaveCount(1);
+  expect(await options.evaluate((element) => element.closest('.workspace') === null)).toBe(true);
+  await expect
+    .poll(() =>
+      options.evaluate((element) => {
+        const anchor = document.querySelector('#category-product-search')?.getBoundingClientRect();
+        if (!anchor) return Number.POSITIVE_INFINITY;
+        const panel = element.getBoundingClientRect();
+        return Math.min(Math.abs(panel.top - anchor.bottom), Math.abs(anchor.top - panel.bottom));
+      }),
+    )
+    .toBeLessThanOrEqual(8);
+  expect(
+    await options.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.top >= 0 && rect.bottom <= window.innerHeight;
+    }),
+  ).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('category-product-picker.png') });
+  await productSearch.press('Escape');
+  await expect(options).not.toBeVisible();
+  await expect(productSearch).toBeFocused();
+  await productSearch.fill('');
+  await productSearch.fill(added.name);
+  await expect(options.getByRole('option', { name: added.name, exact: true })).toBeVisible();
+  await productSearch.press('ArrowDown');
+  await expect(productSearch).toHaveAttribute('aria-activedescendant', /.+/u);
+  await productSearch.press('Enter');
+  await expect(
+    page.getByRole('button', { name: `Bỏ sản phẩm ${added.name} khỏi danh mục` }),
+  ).toBeVisible();
   await page.locator('#category-name').fill('Danh mục đã sửa');
   await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Danh mục đã lưu');

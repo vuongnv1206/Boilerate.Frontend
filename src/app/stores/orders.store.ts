@@ -17,6 +17,7 @@ export class OrdersStore {
     pageSize: 10,
   });
   private readonly queryState = signal<OrderListQuery>({
+    queue: null,
     q: '',
     status: null,
     paymentStatus: null,

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '@core/http/api-client';
-import { CartDto, SaveCartRequest } from '@models/cart.dto';
+import { CartDto, SaveCartRequest, SetCartDiscountRequest } from '@models/cart.dto';
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
@@ -21,5 +21,11 @@ export class CartService {
 
   saveGuestCart(request: SaveCartRequest): Observable<CartDto> {
     return this.api.put<CartDto>('storefront/cart', request, { withCredentials: true });
+  }
+
+  setDiscount(request: SetCartDiscountRequest, guest: boolean): Observable<CartDto> {
+    return this.api.put<CartDto>(guest ? 'storefront/cart/discount' : 'cart/discount', request, {
+      withCredentials: true,
+    });
   }
 }

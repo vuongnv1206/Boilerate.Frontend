@@ -231,71 +231,45 @@
                       }
                     }
                     @if (store.canManageProducts()) {
-                      <label class="category-product-search">
-                        <span class="sr-only">Tìm sản phẩm để thêm</span>
-                        <input
-                          pInputText
-                          #productSearch
-                          type="search"
-                          [value]="store.productQuery()"
+                      <div class="category-product-search">
+                        <p-autocomplete
+                          inputId="category-product-search"
+                          ariaLabel="Tìm sản phẩm để thêm vào danh mục"
                           placeholder="Tìm sản phẩm…"
-                          aria-label="Tìm sản phẩm để thêm vào danh mục"
-                          (input)="searchProducts(productSearch.value)"
-                          (focus)="openProductSearch(productSearch.value)"
-                          (keydown.escape)="closeProductSearch()"
-                        />
+                          optionLabel="name"
+                          appendTo="body"
+                          panelStyleClass="category-product-results"
+                          [formControl]="productSearch"
+                          [suggestions]="productSuggestions()"
+                          [completeOnFocus]="true"
+                          [delay]="250"
+                          [disabled]="store.saving() || store.productLoading()"
+                          (completeMethod)="searchProducts($event)"
+                          (onSelect)="selectProduct($event)"
+                          (onClear)="store.searchProducts('')"
+                        >
+                          <ng-template #item let-product>
+                            <span class="category-product-option">
+                              <span>{{ product.name }}</span>
+                              <small>{{ product.slug }}</small>
+                            </span>
+                          </ng-template>
+                          <ng-template #empty>
+                            @if (store.productSearchError()) {
+                              Không thể tải kết quả tìm kiếm.
+                            } @else {
+                              Không tìm thấy sản phẩm phù hợp.
+                            }
+                          </ng-template>
+                        </p-autocomplete>
                         <ui-icon name="search" [size]="14" />
-                      </label>
+                      </div>
                     }
                   </div>
-                  @if (productResultsOpen() && store.productSearchLoading()) {
-                    <p class="category-product-status" role="status">Đang tìm sản phẩm…</p>
-                  }
-                  @if (productResultsOpen() && store.productSearchError()) {
+                  @if (store.productSearchError()) {
                     <p class="category-product-error" role="alert">
                       {{ store.productSearchError() }}
                     </p>
-                  }
-                  @if (
-                    productResultsOpen() &&
-                    store.productQuery().trim() &&
-                    !store.productSearchLoading() &&
-                    !store.productSearchError() &&
-                    !store.availableProducts().length
-                  ) {
-                    <p class="category-product-status" role="status">
-                      Không tìm thấy sản phẩm phù hợp.
-                    </p>
-                  }
-                  @if (productResultsOpen() && store.availableProducts().length) {
-                    <div
-                      class="category-product-results"
-                      role="listbox"
-                      aria-label="Kết quả sản phẩm"
-                    >
-                      <div class="category-product-results-header">
-                        <span>Gợi ý sản phẩm</span>
-                        <button
-                          type="button"
-                          aria-label="Đóng danh sách gợi ý"
-                          (click)="closeProductSearch()"
-                        >
-                          <ui-icon name="close" [size]="12" />
-                        </button>
-                      </div>
-                      @for (product of store.availableProducts(); track product.id) {
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected="false"
-                          [disabled]="store.saving() || store.productLoading()"
-                          (click)="selectProduct(product)"
-                        >
-                          <span>{{ product.name }}</span>
-                          <small>{{ product.slug }}</small>
-                        </button>
-                      }
-                    </div>
                   }
                   @if (store.productsDirty()) {
                     <p class="category-product-status" role="status">

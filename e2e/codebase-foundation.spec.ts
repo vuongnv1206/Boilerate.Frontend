@@ -56,6 +56,7 @@ test('empty grants show access denied and retain logout', async ({ page, catalog
   await finishSignIn(page);
   await expect(page).toHaveURL(/\/forbidden$/u);
   await expect(page.getByRole('heading', { name: 'Không có quyền truy cập' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Đến cửa hàng' })).toHaveAttribute('href', '/shop');
   await expect(page.getByRole('button', { name: 'Đăng xuất', exact: true })).toBeVisible();
 });
 

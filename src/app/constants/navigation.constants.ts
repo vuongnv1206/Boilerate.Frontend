@@ -1,6 +1,19 @@
 import { ProtectedNavigationLink } from '@models/navigation.model';
 
+export const OVERVIEW_PERMISSION = {
+  anyOf: ['Order', 'Renewal', 'Inventory', 'DigitalInventory', 'FinancialSummary'].map(
+    (functionCode) => ({ functionCode, actionCode: 'View' }),
+  ),
+} as const;
+
 export const COLLECTION_LINKS = [
+  {
+    key: 'overview',
+    label: 'Tổng quan',
+    icon: 'layers',
+    path: '/admin/overview',
+    permission: OVERVIEW_PERMISSION,
+  },
   {
     key: 'products',
     label: 'Sản phẩm',
@@ -28,6 +41,13 @@ export const COLLECTION_LINKS = [
     icon: 'shopping-bag',
     path: '/admin/orders',
     permission: { functionCode: 'Order', actionCode: 'View' },
+  },
+  {
+    key: 'discounts',
+    label: 'Mã giảm giá',
+    icon: 'sliders',
+    path: '/admin/discounts',
+    permission: { functionCode: 'Discount', actionCode: 'View' },
   },
   {
     key: 'storefront-settings',

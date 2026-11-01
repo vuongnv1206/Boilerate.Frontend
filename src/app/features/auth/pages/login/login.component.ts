@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { InputText } from 'primeng/inputtext';
 import { Button } from 'primeng/button';
 import { createLoginForm } from '@forms/login.form';
@@ -9,7 +9,7 @@ import { LoginStore } from '@stores/login.store';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, InputText, Button],
+  imports: [ReactiveFormsModule, InputText, Button, RouterLink],
   providers: [LoginStore],
   templateUrl: './login.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

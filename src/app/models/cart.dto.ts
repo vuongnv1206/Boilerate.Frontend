@@ -10,6 +10,11 @@ export interface SaveCartRequest {
   readonly items: readonly CartLineInput[];
 }
 
+export interface SetCartDiscountRequest {
+  readonly version: string | null;
+  readonly code: string | null;
+}
+
 export interface CartLineDto {
   readonly variantId: string;
   readonly quantity: number;
@@ -25,6 +30,9 @@ export interface CartDto {
   readonly version: string | null;
   readonly items: readonly CartLineDto[];
   readonly subtotal: number;
+  readonly discountCode: string | null;
+  readonly discountAmount: number;
+  readonly discountError: string | null;
   readonly shippingAmount: number;
   readonly total: number;
   readonly canCheckout: boolean;

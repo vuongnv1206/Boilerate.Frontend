@@ -80,6 +80,8 @@ export interface OrderDto {
   readonly status: OrderStatus;
   readonly paymentMethod: OrderPaymentMethod;
   readonly subtotal: number;
+  readonly discountCode: string | null;
+  readonly discountAmount: number;
   readonly shippingAmount: number;
   readonly total: number;
   readonly currency: string;
@@ -207,7 +209,10 @@ export interface ReturnResult {
   readonly closed: boolean;
 }
 
+export type OrderQueue = 'awaiting-payment' | 'awaiting-processing' | 'needs-review';
+
 export interface OrderListQuery {
+  readonly queue: OrderQueue | null;
   readonly q: string;
   readonly status: OrderStatus | null;
   readonly paymentStatus: OrderPaymentStatus | null;

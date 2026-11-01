@@ -20,10 +20,12 @@ describe('Admin route composition', () => {
       expect(firstAdmin.get(WORKSPACE_NAVIGATION)).toBe(first);
       expect(secondAdmin.get(WORKSPACE_NAVIGATION)).not.toBe(first);
       expect(first.collections().map((link) => link.path)).toEqual([
+        '/admin/overview',
         '/admin/collections/products',
         '/admin/collections/categories',
         '/admin/collections/product-types',
         '/admin/orders',
+        '/admin/discounts',
         '/admin/storefront-settings',
         '/admin/renewals',
       ]);

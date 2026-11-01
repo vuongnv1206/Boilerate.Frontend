@@ -26,6 +26,7 @@ export class OrdersService {
       params: {
         page: query.page,
         size: query.pageSize,
+        ...(query.queue ? { queue: query.queue } : {}),
         ...(query.q ? { search: query.q } : {}),
         ...(query.status === null ? {} : { status: query.status }),
         ...(query.paymentStatus === null ? {} : { paymentStatus: query.paymentStatus }),

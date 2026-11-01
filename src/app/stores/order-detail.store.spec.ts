@@ -31,6 +31,8 @@ describe('OrderDetailStore', () => {
     status: OrderStatus.AwaitingProcessing,
     paymentMethod: OrderPaymentMethod.Prepaid,
     subtotal: 100,
+    discountCode: null,
+    discountAmount: 0,
     shippingAmount: 0,
     total: 100,
     currency: 'VND',

@@ -83,8 +83,15 @@ export async function installRenewalsApi(context: BrowserContext) {
       reads.push(path);
       if (path === 'admin/renewals') {
         const status = url.searchParams.get('status');
+        const queue = url.searchParams.get('queue');
         const items = records.filter(
-          (item) => status === null || item.renewal.status === Number(status),
+          (item) =>
+            (status === null || item.renewal.status === Number(status)) &&
+            (queue === null ||
+              (queue === 'awaiting-work' &&
+                [RenewalStatus.Ready, RenewalStatus.Claimed].includes(item.renewal.status)) ||
+              (queue === 'pending-verification' &&
+                item.renewal.status === RenewalStatus.PendingVerification)),
         );
         const pageNumber = Number(url.searchParams.get('page') ?? 1);
         return reply(route, {

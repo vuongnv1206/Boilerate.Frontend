@@ -2,6 +2,7 @@ import {
   OrderFulfillmentStatus,
   OrderListQuery,
   OrderPaymentStatus,
+  OrderQueue,
   OrderStatus,
 } from '@models/order.dto';
 
@@ -23,6 +24,11 @@ function dateValue(value: unknown): string {
 
 export function readOrderListQuery(values: QueryValues): OrderListQuery {
   return {
+    queue:
+      typeof values['queue'] === 'string' &&
+      ['awaiting-payment', 'awaiting-processing', 'needs-review'].includes(values['queue'])
+        ? (values['queue'] as OrderQueue)
+        : null,
     q: typeof values['q'] === 'string' ? values['q'].trim() : '',
     status: enumValue(values['status'], [1, 2, 3, 4, 5, 6]),
     paymentStatus: enumValue(values['paymentStatus'], [1, 2]),
@@ -38,6 +44,7 @@ export function readOrderListQuery(values: QueryValues): OrderListQuery {
 
 export function orderListQueryParams(query: OrderListQuery): Record<string, string | number> {
   return {
+    ...(query.queue ? { queue: query.queue } : {}),
     ...(query.q ? { q: query.q } : {}),
     ...(query.status === null ? {} : { status: query.status }),
     ...(query.paymentStatus === null ? {} : { paymentStatus: query.paymentStatus }),

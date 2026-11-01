@@ -75,6 +75,25 @@ test('layout: resize or mobile modal, theme persistence and normal motion', asyn
   expect(motion).toEqual({ reduce: false, duration: 240 });
 });
 
+test('system theme follows the browser preference and survives reload', async ({
+  page,
+}, testInfo) => {
+  await ready(page);
+  const selectedSystemMode = page.getByTestId('theme-system');
+  await selectedSystemMode.click();
+  const firstTheme = testInfo.project.name.endsWith('dark') ? 'dark' : 'light';
+  await expect(page.locator('html')).toHaveAttribute('data-theme', firstTheme);
+  await expect(selectedSystemMode).toHaveAttribute('aria-pressed', 'true');
+
+  const nextTheme = firstTheme === 'dark' ? 'light' : 'dark';
+  await page.emulateMedia({ colorScheme: nextTheme });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', nextTheme);
+  await expect(selectedSystemMode).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', nextTheme);
+  expect(await page.evaluate(() => localStorage.getItem('boilerate.ui.theme'))).toBe('system');
+});
+
 test('editor: validation, dirty guard, API save and conflict', async ({ page, catalog }) => {
   await ready(page, `/admin/collections/products/${FIRST_PRODUCT_ID}`);
   const name = page.locator('#product-name');
@@ -153,13 +172,15 @@ test('gallery: select, datepicker, dialog, drawer, tooltip and toast', async ({ 
   await dialogTrigger.click();
   const dialog = page.getByRole('dialog', { name: 'Lưu bản xem thử?', exact: true });
   await expect(dialog).toBeVisible();
-  const surface = await page.evaluate(() =>
-    getComputedStyle(document.documentElement).getPropertyValue('--surface-0').trim(),
-  );
-  await expect(dialog).toHaveCSS(
-    'background-color',
-    surface === '#242426' ? 'rgb(36, 36, 38)' : 'rgb(255, 255, 255)',
-  );
+  const surface = await page.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = 'var(--surface-0)';
+    document.body.append(probe);
+    const color = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return color;
+  });
+  await expect(dialog).toHaveCSS('background-color', surface);
   // Focus and automatic scrolling of the previous tab can differ on CI.
   // The modal scene uses an explicit background position in every viewport.
   await page.locator('app-control-gallery').evaluate((element) => element.scrollTo(0, 0));

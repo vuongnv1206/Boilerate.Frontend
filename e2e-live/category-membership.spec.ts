@@ -75,10 +75,8 @@ test('live category: metadata and product membership save, reload and removal pe
     await expect(page.locator('#category-name')).toHaveValue(created.name);
     const chips = page.getByLabel('Sản phẩm đã chọn', { exact: true });
     await expect(chips).toContainText('Chưa có sản phẩm được chọn');
-    await page
-      .getByRole('searchbox', { name: 'Tìm sản phẩm để thêm vào danh mục' })
-      .fill(item.name);
-    await page.getByRole('option', { name: `${item.name} ${item.slug}`, exact: true }).click();
+    await page.getByRole('combobox', { name: 'Tìm sản phẩm để thêm vào danh mục' }).fill(item.name);
+    await page.getByRole('option', { name: item.name, exact: true }).click();
     await page.locator('#category-name').fill(`${created.name} saved`);
     const saved = page.waitForResponse(
       (response) =>
@@ -130,10 +128,8 @@ test('live category: a concurrent product change preserves the draft until expli
     await expect(page.getByLabel('Sản phẩm đã chọn', { exact: true })).toContainText(
       'Chưa có sản phẩm được chọn',
     );
-    await page
-      .getByRole('searchbox', { name: 'Tìm sản phẩm để thêm vào danh mục' })
-      .fill(item.name);
-    await page.getByRole('option', { name: `${item.name} ${item.slug}`, exact: true }).click();
+    await page.getByRole('combobox', { name: 'Tìm sản phẩm để thêm vào danh mục' }).fill(item.name);
+    await page.getByRole('option', { name: item.name, exact: true }).click();
     await page.locator('#category-description').fill('Metadata saved before membership conflict');
     await membership(liveApi, concurrent.id, await product(liveApi, item.id), true);
 

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Subject, of, throwError } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthSession } from '@core/auth/auth-session';
 import { CartDto, SaveCartRequest } from '@models/cart.dto';
@@ -16,6 +17,9 @@ describe('CartStore', () => {
       version: 'v1',
       items: [],
       subtotal: 0,
+      discountCode: null,
+      discountAmount: 0,
+      discountError: null,
       shippingAmount: 0,
       total: 0,
       canCheckout: false,
@@ -98,6 +102,9 @@ describe('CartStore', () => {
         },
       ],
       subtotal: 200000,
+      discountCode: null,
+      discountAmount: 0,
+      discountError: null,
       shippingAmount: 30000,
       total: 230000,
       canCheckout: true,
@@ -137,6 +144,113 @@ describe('CartStore', () => {
     expect(cartService.getCart).toHaveBeenCalled();
     expect(store.itemCount()).toBe(1);
     expect(store.totalAmount()).toBe(230000);
+    expect(store.canCheckout()).toBe(true);
+  });
+
+  it.each([false, true])(
+    'uses server quote for discount and removes it (signed in: %s)',
+    (signedIn) => {
+      const cart: CartDto = {
+        id: 'cart',
+        version: 'v1',
+        items: [
+          {
+            variantId: 'v',
+            quantity: 1,
+            name: 'Sản phẩm',
+            sku: 'S',
+            unitPrice: 100,
+            isAvailable: true,
+            fulfillmentKind: ProductFulfillmentKind.Physical,
+          },
+        ],
+        subtotal: 100,
+        discountCode: null,
+        discountAmount: 0,
+        discountError: null,
+        shippingAmount: 0,
+        total: 100,
+        canCheckout: true,
+        hasDigitalItems: false,
+      };
+      const response = new Subject<CartDto>();
+      const api = {
+        getCart: vi.fn(() => of(cart)),
+        getGuestCart: vi.fn(() => of(cart)),
+        setDiscount: vi.fn(() => response),
+      };
+      TestBed.configureTestingModule({
+        providers: [
+          { provide: AuthSession, useValue: { signedIn: () => signedIn } },
+          { provide: CartService, useValue: api },
+          CartStore,
+        ],
+      });
+      const store = TestBed.inject(CartStore);
+      store.loadCart();
+      store.setDiscount('SAVE10');
+      expect(api.setDiscount).toHaveBeenCalledWith({ version: 'v1', code: 'SAVE10' }, !signedIn);
+      expect(store.canCheckout()).toBe(false);
+      response.next({
+        ...cart,
+        version: 'v2',
+        discountCode: 'SAVE10',
+        discountAmount: 10,
+        total: 90,
+      });
+      response.complete();
+      expect(store.discountAmount()).toBe(10);
+      expect(store.totalAmount()).toBe(90);
+      expect(store.canCheckout()).toBe(true);
+      store.setDiscount(null);
+      expect(api.setDiscount).toHaveBeenLastCalledWith({ version: 'v2', code: null }, !signedIn);
+    },
+  );
+
+  it('blocks checkout on an uncertain discount mutation until the cart is reloaded', () => {
+    const cart: CartDto = {
+      id: 'cart',
+      version: 'v1',
+      items: [
+        {
+          variantId: 'v',
+          quantity: 1,
+          name: 'Sản phẩm',
+          sku: 'S',
+          unitPrice: 100,
+          isAvailable: true,
+          fulfillmentKind: ProductFulfillmentKind.Physical,
+        },
+      ],
+      subtotal: 100,
+      discountCode: null,
+      discountAmount: 0,
+      discountError: null,
+      shippingAmount: 0,
+      total: 100,
+      canCheckout: true,
+      hasDigitalItems: false,
+    };
+    const api = {
+      getGuestCart: vi.fn(() => of(cart)),
+      setDiscount: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 0 }))),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AuthSession, useValue: { signedIn: () => false } },
+        { provide: CartService, useValue: api },
+        CartStore,
+      ],
+    });
+    const store = TestBed.inject(CartStore);
+    store.loadCart();
+    store.setDiscount('SAVE10');
+    expect(store.discountUncertain()).toBe(true);
+    expect(store.canCheckout()).toBe(false);
+    store.setDiscount('SAVE10');
+    expect(api.setDiscount).toHaveBeenCalledTimes(1);
+    store.loadCart();
+    expect(store.discountUncertain()).toBe(false);
     expect(store.canCheckout()).toBe(true);
   });
 });

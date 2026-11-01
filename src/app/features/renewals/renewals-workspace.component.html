@@ -54,6 +54,14 @@
           appendTo="body"
         />
       </label>
+      @if (store.selectedQueue(); as queue) {
+        <div class="collection-queue-filter" role="group" aria-label="Nhóm gia hạn đang chọn">
+          <span>{{ queueLabels[queue] }}</span>
+          <button pButton severity="secondary" text type="button" (click)="clearQueue()">
+            Xóa nhóm
+          </button>
+        </div>
+      }
       @if (store.loading()) {
         <p class="renewal-items-message" role="status">Đang tải yêu cầu gia hạn…</p>
       }

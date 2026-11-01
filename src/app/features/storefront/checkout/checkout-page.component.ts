@@ -10,15 +10,16 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { AuthSession } from '@core/auth/auth-session';
 import { CheckoutRequest } from '@models/checkout.dto';
-import { OrderPaymentMethod } from '@models/order.dto';
+import { OrderPaymentMethod, ProductFulfillmentKind } from '@models/order.dto';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { CartStore } from '@stores/cart.store';
 import { CustomerOrderStore } from '@stores/customer-order.store';
+import { DiscountCodeComponent } from '../discount-code/discount-code.component';
 
 @Component({
   selector: 'app-checkout-page',
   standalone: true,
-  imports: [RouterLink, DecimalPipe, Icon],
+  imports: [RouterLink, DecimalPipe, Icon, DiscountCodeComponent],
   templateUrl: './checkout-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,6 +36,11 @@ export class CheckoutPageComponent implements OnInit {
   readonly selectedPaymentMethod = signal<OrderPaymentMethod>(OrderPaymentMethod.Prepaid);
   readonly verificationCode = signal('');
   readonly pendingCheckout = signal<CheckoutRequest | null>(null);
+  readonly hasPhysicalItems = computed(() =>
+    this.cartStore
+      .cart()
+      .items.some((item) => item.fulfillmentKind === ProductFulfillmentKind.Physical),
+  );
 
   readonly canSubmit = computed(() => {
     const hasName = this.recipientName().trim().length > 0;
@@ -43,12 +49,12 @@ export class CheckoutPageComponent implements OnInit {
     const emailVerified =
       this.session.signedIn() ||
       this.customerOrderStore.verifiedEmail()?.toLowerCase() === this.email().trim().toLowerCase();
-    const isDigital = this.cartStore.hasDigitalItems();
-    const hasAddress = isDigital || this.shippingAddress().trim().length > 0;
+    const hasDigitalItems = this.cartStore.hasDigitalItems();
+    const hasAddress = !this.hasPhysicalItems() || this.shippingAddress().trim().length > 0;
     const validMethod =
       (this.selectedPaymentMethod() === OrderPaymentMethod.Prepaid &&
         this.customerOrderStore.paymentSettings()?.bankTransferEnabled === true) ||
-      (!isDigital && this.selectedPaymentMethod() === OrderPaymentMethod.CashOnDelivery);
+      (!hasDigitalItems && this.selectedPaymentMethod() === OrderPaymentMethod.CashOnDelivery);
 
     return (
       hasName &&

@@ -40,7 +40,6 @@
           @if (order.expiresAt) {
             · Hết hạn {{ order.expiresAt | date: 'dd/MM/yyyy HH:mm' }}
           }
-          · Phiên bản dữ liệu {{ order.version }}
         </p>
       </div>
       <div class="order-action-bar">
@@ -112,6 +111,7 @@
             <p-table
               [value]="order.items.slice()"
               dataKey="id"
+              style="display: block; min-width: 760px"
               tableStyleClass="content-table order-items-table"
               [tableStyle]="{ 'min-width': '760px' }"
             >
@@ -153,8 +153,16 @@
             <span>Tạm tính</span
             ><strong>{{
               order.subtotal | currency: order.currency : 'symbol-narrow' : '1.0-0'
-            }}</strong
-            ><span>Phí vận chuyển</span
+            }}</strong>
+            @if (order.discountAmount > 0) {
+              <span>Giảm giá{{ order.discountCode ? ' (' + order.discountCode + ')' : '' }}</span>
+              <strong
+                >−{{
+                  order.discountAmount | currency: order.currency : 'symbol-narrow' : '1.0-0'
+                }}</strong
+              >
+            }
+            <span>Phí vận chuyển</span
             ><strong>{{
               order.shippingAmount | currency: order.currency : 'symbol-narrow' : '1.0-0'
             }}</strong
@@ -838,8 +846,6 @@
             <dd>{{ paymentStatusLabels[order.paymentStatus] }}</dd>
             <dt>Tiến độ xử lý</dt>
             <dd>{{ fulfillmentStatusLabels[order.fulfillmentStatus] }}</dd>
-            <dt>Phiên bản dữ liệu</dt>
-            <dd class="monospace">{{ order.version }}</dd>
           </dl>
         </section>
         <section class="inspector-card">

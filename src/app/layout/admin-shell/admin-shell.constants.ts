@@ -2,7 +2,7 @@ import type { ThemeMode } from '@core/theme/theme-controller';
 
 export const ADMIN_LAYOUT = {
   mobileQuery: '(max-width: 760px)',
-  railWidth: 44,
+  railWidth: 48,
   panelMin: 200,
   panelDefault: 240,
   panelMax: 320,

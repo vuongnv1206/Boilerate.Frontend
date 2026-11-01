@@ -1,7 +1,7 @@
 <div class="storefront-page my-orders-page">
   <div class="orders-header">
     <div>
-      <p class="store-eyebrow"><span></span> ORDER HISTORY</p>
+      <p class="store-eyebrow"><span></span> THEO DÕI ĐƠN HÀNG</p>
       <h1 class="page-title">Đơn hàng của tôi</h1>
     </div>
     <a routerLink="/shop/products" class="continue-shopping">
@@ -12,7 +12,7 @@
   @if (!session.signedIn() && !customerOrderStore.verifiedEmail()) {
     <section class="orders-verify-card" aria-labelledby="orders-verify-title">
       <div class="orders-verify-icon"><ui-icon name="mail" [size]="23" /></div>
-      <p class="store-eyebrow"><span></span> SECURE ACCESS</p>
+      <p class="store-eyebrow"><span></span> XÁC MINH EMAIL</p>
       <h2 id="orders-verify-title">Đơn hàng gắn với email của bạn</h2>
       <p>Nhập email đã dùng khi đặt hàng để nhận mã xác minh một lần. Không cần tạo tài khoản.</p>
       <div class="form-group">
@@ -23,6 +23,7 @@
           class="form-control"
           autocomplete="email"
           [value]="email()"
+          [attr.aria-describedby]="customerOrderStore.error() ? 'orders-access-error' : null"
           (input)="onEmailChange($event)"
         />
       </div>
@@ -37,12 +38,15 @@
             autocomplete="one-time-code"
             maxlength="6"
             [value]="code()"
+            [attr.aria-describedby]="customerOrderStore.error() ? 'orders-access-error' : null"
             (input)="code.set($any($event.target).value)"
           />
         </div>
       }
       @if (customerOrderStore.error()) {
-        <p class="form-error" role="alert">{{ customerOrderStore.error() }}</p>
+        <p id="orders-access-error" class="form-error" role="alert">
+          {{ customerOrderStore.error() }}
+        </p>
       }
       <div class="form-actions">
         @if (!customerOrderStore.codeSent()) {
@@ -75,18 +79,20 @@
       </div>
     </section>
   } @else if (customerOrderStore.loading()) {
-    <div class="orders-loading">
+    <div class="orders-loading" role="status" aria-busy="true">
       <p>Đang tải danh sách đơn hàng...</p>
     </div>
   } @else if (customerOrderStore.error()) {
-    <div class="orders-error">
+    <div class="orders-error" role="alert">
       <p>{{ customerOrderStore.error() }}</p>
-      <button type="button" class="retry-btn" (click)="onRetry()">Thử lại</button>
+      <button type="button" class="store-button store-button-secondary" (click)="onRetry()">
+        Thử lại
+      </button>
     </div>
   } @else if (customerOrderStore.myOrders().items.length === 0) {
     <div class="orders-empty">
       <div class="empty-icon"><ui-icon name="receipt" [size]="29" /></div>
-      <p class="store-eyebrow"><span></span> NOTHING HERE YET</p>
+      <p class="store-eyebrow"><span></span> ĐƠN HÀNG CỦA BẠN</p>
       <h2>Chưa có đơn hàng nào</h2>
       <p>Những đơn bạn đặt bằng email đã xác minh sẽ xuất hiện tại đây.</p>
       <a routerLink="/shop/products" class="store-button store-button-primary shop-now-btn">

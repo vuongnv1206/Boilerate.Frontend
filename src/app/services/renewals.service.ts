@@ -7,6 +7,7 @@ import {
   RenewalContentDto,
   RenewalHistoryDto,
   RenewalPage,
+  RenewalQueue,
   RenewalStatus,
   ReleaseRenewalRequest,
   StartRenewalRequest,
@@ -17,9 +18,18 @@ import {
 export class RenewalsService {
   private readonly api = inject(ApiClient);
 
-  list(page: number, status: RenewalStatus | null): Observable<RenewalPage> {
+  list(
+    page: number,
+    status: RenewalStatus | null,
+    queue: RenewalQueue | null = null,
+  ): Observable<RenewalPage> {
     return this.api.get<RenewalPage>('admin/renewals', {
-      params: { page, size: 20, ...(status === null ? {} : { status }) },
+      params: {
+        page,
+        size: 20,
+        ...(status === null ? {} : { status }),
+        ...(queue ? { queue } : {}),
+      },
     });
   }
 

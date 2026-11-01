@@ -10,11 +10,11 @@
   </div>
 
   @if (customerOrderStore.loading()) {
-    <div class="order-loading">
+    <div class="order-loading" role="status" aria-busy="true">
       <p>Đang tải chi tiết đơn hàng...</p>
     </div>
   } @else if (customerOrderStore.error()) {
-    <div class="order-error">
+    <div class="order-error" role="alert">
       <p>{{ customerOrderStore.error() }}</p>
       <a routerLink="/shop/orders" class="back-link">Quay lại danh sách đơn hàng</a>
     </div>
@@ -156,15 +156,20 @@
     <div class="order-details-grid">
       <div class="order-items-card">
         <h2>Chi tiết sản phẩm</h2>
-        <div class="order-items-table-wrapper">
+        <div
+          class="order-items-table-wrapper"
+          role="region"
+          aria-label="Chi tiết sản phẩm trong đơn hàng"
+          tabindex="0"
+        >
           <table class="order-items-table">
             <thead>
               <tr>
-                <th>Sản phẩm</th>
-                <th>Phân loại</th>
-                <th class="col-price">Đơn giá</th>
-                <th class="col-qty">Số lượng</th>
-                <th class="col-total">Thành tiền</th>
+                <th scope="col">Sản phẩm</th>
+                <th scope="col">Phân loại</th>
+                <th scope="col" class="col-price">Đơn giá</th>
+                <th scope="col" class="col-qty">Số lượng</th>
+                <th scope="col" class="col-total">Thành tiền</th>
               </tr>
             </thead>
             <tbody>
@@ -217,6 +222,12 @@
             <span>Tạm tính</span>
             <span>{{ order.subtotal | number: '1.0-0' }} ₫</span>
           </div>
+          @if (order.discountAmount > 0) {
+            <div class="cost-row">
+              <span>Giảm giá{{ order.discountCode ? ' (' + order.discountCode + ')' : '' }}</span>
+              <span>−{{ order.discountAmount | number: '1.0-0' }} ₫</span>
+            </div>
+          }
           <div class="cost-row">
             <span>Phí giao hàng</span>
             @if (order.shippingAmount > 0) {

@@ -1,14 +1,13 @@
 <div class="storefront-page catalog-page">
   <section class="shop-hero" aria-labelledby="shop-hero-title">
     <div class="shop-hero-copy">
-      <p class="store-eyebrow"><span></span> BOILERATE STORE · ĐƯỢC CHỌN LỌC</p>
-      <h1 id="shop-hero-title">Đồ tốt cho <em>nhịp sống số.</em></h1>
+      <p class="store-eyebrow"><span></span> CỬA HÀNG BOILERATE</p>
+      <h1 id="shop-hero-title">Điều bạn cần, <em>theo cách của bạn.</em></h1>
       <p class="shop-hero-subtitle">
-        Từ những vật dụng dùng mỗi ngày đến bản quyền số cần cho công việc — tìm món phù hợp với
-        bạn.
+        Khám phá hàng vật lý, nội dung số và dịch vụ trong cùng một cửa hàng.
       </p>
-      <a class="shop-hero-link" href="#product-catalog">
-        Khám phá bộ sưu tập <ui-icon name="arrow-right" [size]="16" />
+      <a class="store-button store-button-primary shop-hero-link" href="#product-catalog">
+        Xem sản phẩm <ui-icon name="arrow-right" [size]="16" />
       </a>
       <div class="shop-hero-notes" aria-label="Danh mục sản phẩm">
         <span><ui-icon name="box" [size]="15" /> Hàng vật lý</span>
@@ -16,28 +15,41 @@
       </div>
     </div>
 
-    <div class="shop-hero-art" aria-hidden="true">
-      <div class="hero-art-orbit"></div>
-      <figure class="hero-art-card hero-art-card-main">
-        <img src="/images/lamp.svg" alt="" />
-        <figcaption>Không gian sống</figcaption>
-      </figure>
-      <figure class="hero-art-card hero-art-card-secondary">
-        <img src="/images/headphones.svg" alt="" />
-        <figcaption>Công nghệ</figcaption>
-      </figure>
-      <figure class="hero-art-card hero-art-card-tertiary">
-        <img src="/images/notebook.svg" alt="" />
-        <figcaption>Ý tưởng mới</figcaption>
-      </figure>
-      <span class="hero-art-index">01 — 08</span>
-    </div>
+    @if (storefrontStore.page().items[0]; as featured) {
+      <a class="shop-featured" [routerLink]="['/shop/products', featured.slug]">
+        <div class="shop-featured-image">
+          @if (getProductImageSource(featured); as imageSource) {
+            <img [src]="imageSource" alt="" (error)="onProductImageError($event, featured)" />
+            <div class="product-image-empty" aria-hidden="true">
+              <ui-icon name="image" [size]="26" />
+              <span>Hình ảnh đang cập nhật</span>
+            </div>
+          } @else {
+            <div class="product-image-empty" aria-hidden="true">
+              <ui-icon name="image" [size]="26" />
+              <span>Hình ảnh đang cập nhật</span>
+            </div>
+          }
+        </div>
+        <div class="shop-featured-caption">
+          <span
+            ><small>KHÁM PHÁ SẢN PHẨM</small><strong>{{ featured.name }}</strong></span
+          >
+          <ui-icon name="arrow-up-right" [size]="18" />
+        </div>
+      </a>
+    } @else {
+      <div class="shop-hero-empty" aria-hidden="true">
+        <span>Boilerate</span>
+        <small>Không gian cho những lựa chọn của bạn.</small>
+      </div>
+    }
   </section>
 
   <section id="product-catalog" class="catalog-section" aria-labelledby="catalog-title">
     <div class="catalog-section-heading">
       <div>
-        <p class="store-eyebrow"><span></span> THE COLLECTION</p>
+        <p class="store-eyebrow"><span></span> SẢN PHẨM</p>
         <h2 id="catalog-title">Khám phá cửa hàng</h2>
       </div>
       @if (!storefrontStore.loading() && !storefrontStore.error()) {
@@ -53,7 +65,7 @@
           aria-label="Tìm sản phẩm theo tên"
           type="search"
           autocomplete="off"
-          placeholder="Tìm sản phẩm theo tên..."
+          placeholder="Tìm sản phẩm…"
           [value]="storefrontStore.searchQuery()"
           (input)="onSearchInput($event)"
         />

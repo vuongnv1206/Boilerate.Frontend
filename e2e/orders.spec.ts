@@ -12,6 +12,8 @@ test('shipping: partial dispatch, delivery, preserved draft and COD status', asy
   await ready(page, `/admin/orders/${ORDER_ID}`);
   await page.getByRole('button', { name: 'Tạo lần giao', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Tạo lần giao hàng' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).not.toHaveClass(/p-dialog-enter-active/u);
   await dialog
     .getByLabel('Hãng vận chuyển *')
     .fill('Đơn vị vận chuyển có tên dài để kiểm tra tablet');
@@ -22,12 +24,16 @@ test('shipping: partial dispatch, delivery, preserved draft and COD status', asy
   await expect(page.locator('.shipment-card')).toHaveCount(1);
   expect(api.shipments[0]?.items).toEqual([{ orderItemId: 'line-a', quantity: 1 }]);
   await page.getByRole('button', { name: 'Tạo lần giao', exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog).not.toHaveClass(/p-dialog-enter-active/u);
   await expect(dialog.getByLabel('Số lượng giao: Túi vải phiên bản có tên dài')).toHaveAttribute(
     'max',
     '1',
   );
   await dialog.getByLabel('Hãng vận chuyển *').fill('Bản nháp tiếp theo');
   await dialog.getByLabel('Mã vận chuyển *').fill('DRAFT-002');
+  await expect(dialog.getByLabel('Hãng vận chuyển *')).toHaveValue('Bản nháp tiếp theo');
+  await expect(dialog.getByLabel('Mã vận chuyển *')).toHaveValue('DRAFT-002');
   await dialog.getByLabel('Số lượng giao: Sổ tay').fill('1');
   await dialog.getByRole('button', { name: 'Đóng', exact: true }).click();
   await page.getByRole('button', { name: 'Xác nhận đã giao', exact: true }).click();
@@ -98,8 +104,12 @@ test('shipping: lost dispatch response freezes payload and retries one operation
   await ready(page, `/admin/orders/${ORDER_ID}`);
   await page.getByRole('button', { name: 'Tạo lần giao', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Tạo lần giao hàng' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).not.toHaveClass(/p-dialog-enter-active/u);
   await dialog.getByLabel('Hãng vận chuyển *').fill('Hãng A');
   await dialog.getByLabel('Mã vận chuyển *').fill('LOST-001');
+  await expect(dialog.getByLabel('Hãng vận chuyển *')).toHaveValue('Hãng A');
+  await expect(dialog.getByLabel('Mã vận chuyển *')).toHaveValue('LOST-001');
   await dialog.getByLabel('Số lượng giao: Túi vải phiên bản có tên dài').fill('2');
   await dialog.getByRole('button', { name: 'Tạo đợt giao hàng', exact: true }).click();
   await expect(dialog.getByRole('button', { name: 'Kiểm tra lại yêu cầu đã gửi' })).toBeEnabled();

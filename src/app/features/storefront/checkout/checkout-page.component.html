@@ -1,7 +1,7 @@
 <div class="storefront-page checkout-page">
   <div class="checkout-header">
     <div>
-      <p class="store-eyebrow"><span></span> ALMOST THERE</p>
+      <p class="store-eyebrow"><span></span> THÔNG TIN ĐẶT HÀNG</p>
       <h1 class="page-title">Xác nhận &amp; Đặt hàng</h1>
     </div>
     <a routerLink="/shop/cart" class="back-to-cart">
@@ -101,13 +101,14 @@
               required
               [value]="email()"
               [disabled]="pendingCheckout() !== null"
+              [attr.aria-describedby]="!session.signedIn() ? 'checkout-email-hint' : null"
               (input)="onEmailChange($event)"
             />
             @if (
               !session.signedIn() &&
               customerOrderStore.verifiedEmail()?.toLowerCase() !== email().trim().toLowerCase()
             ) {
-              <small class="form-hint">
+              <small id="checkout-email-hint" class="form-hint">
                 <ui-icon name="mail" [size]="14" /> Xác minh email bằng mã 6 chữ số trước khi đặt
                 hàng.
               </small>
@@ -165,7 +166,7 @@
                 </button>
               }
             } @else if (!session.signedIn()) {
-              <small class="form-hint verified-hint">
+              <small id="checkout-email-hint" class="form-hint verified-hint">
                 <ui-icon name="check-circle" [size]="14" /> Email đã được xác minh. Phiên truy cập
                 đơn hàng được bảo vệ trong trình duyệt này.
               </small>
@@ -175,7 +176,7 @@
           <div class="form-group address-field">
             <label for="shippingAddress">
               Địa chỉ nhận hàng
-              @if (!cartStore.hasDigitalItems()) {
+              @if (hasPhysicalItems()) {
                 <span class="required">*</span>
               }
             </label>
@@ -187,10 +188,16 @@
               placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
               [value]="shippingAddress()"
               [disabled]="pendingCheckout() !== null"
+              [required]="hasPhysicalItems()"
+              [attr.aria-describedby]="
+                cartStore.hasDigitalItems() && !hasPhysicalItems() ? 'checkout-address-hint' : null
+              "
               (input)="shippingAddress.set($any($event.target).value)"
             ></textarea>
-            @if (cartStore.hasDigitalItems()) {
-              <small class="form-hint">Đơn hàng số không cần địa chỉ giao hàng vật lý.</small>
+            @if (cartStore.hasDigitalItems() && !hasPhysicalItems()) {
+              <small id="checkout-address-hint" class="form-hint">
+                Đơn hàng chỉ gồm sản phẩm số không cần địa chỉ giao hàng vật lý.
+              </small>
             }
           </div>
         </section>
@@ -288,8 +295,9 @@
 
     <aside class="checkout-summary-section" aria-labelledby="checkout-summary-title">
       <div class="summary-card">
-        <p class="store-eyebrow"><span></span> ORDER SUMMARY</p>
+        <p class="store-eyebrow"><span></span> ĐƠN HÀNG CỦA BẠN</p>
         <h2 class="summary-title" id="checkout-summary-title">Đơn hàng của bạn</h2>
+        <app-discount-code [disabled]="pendingCheckout() !== null" />
         <div class="summary-items-list">
           @for (item of cartStore.cart().items; track item.variantId) {
             <div class="summary-item-row">
@@ -310,6 +318,12 @@
           <span>Tạm tính</span>
           <span>{{ cartStore.subtotalAmount() | number: '1.0-0' }} ₫</span>
         </div>
+        @if (cartStore.discountAmount() > 0) {
+          <div class="summary-row">
+            <span>Giảm giá</span>
+            <span>−{{ cartStore.discountAmount() | number: '1.0-0' }} ₫</span>
+          </div>
+        }
         <div class="summary-row">
           <span>Phí vận chuyển</span>
           @if (cartStore.shippingAmount() > 0) {

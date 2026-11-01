@@ -3,8 +3,15 @@ import {
   OrderPaymentMethod,
   OrderPaymentStatus,
   OrderStatus,
+  OrderQueue,
   ShipmentStatus,
 } from '@models/order.dto';
+
+export const ORDER_QUEUE_LABELS: Readonly<Record<OrderQueue, string>> = {
+  'awaiting-payment': 'Đơn chờ thanh toán',
+  'awaiting-processing': 'Đơn chờ hoàn tất',
+  'needs-review': 'Đơn cần kiểm tra',
+};
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.PendingPayment]: 'Chờ thanh toán',

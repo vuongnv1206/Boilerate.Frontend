@@ -69,6 +69,8 @@ describe('CustomerOrderStore', () => {
       status: OrderStatus.Completed,
       paymentMethod: OrderPaymentMethod.Prepaid,
       subtotal: 500000,
+      discountCode: null,
+      discountAmount: 0,
       shippingAmount: 0,
       total: 500000,
       currency: 'VND',

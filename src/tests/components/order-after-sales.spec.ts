@@ -31,6 +31,8 @@ const order = (
   status: OrderStatus.AwaitingProcessing,
   paymentMethod: method,
   subtotal: 300,
+  discountCode: null,
+  discountAmount: 0,
   shippingAmount: 0,
   total: 300,
   currency: 'VND',

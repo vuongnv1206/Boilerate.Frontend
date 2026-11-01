@@ -1,7 +1,7 @@
 <div class="storefront-page cart-page">
   <div class="cart-header">
     <div>
-      <p class="store-eyebrow"><span></span> YOUR SELECTION</p>
+      <p class="store-eyebrow"><span></span> LỰA CHỌN CỦA BẠN</p>
       <h1 class="page-title">Giỏ hàng</h1>
     </div>
     <a routerLink="/shop/products" class="continue-shopping">
@@ -10,7 +10,7 @@
   </div>
 
   <nav class="purchase-progress" aria-label="Tiến trình đặt hàng">
-    <span class="progress-step current"><span>01</span> Giỏ hàng</span>
+    <span class="progress-step current" aria-current="step"><span>01</span> Giỏ hàng</span>
     <span class="progress-line"></span>
     <span class="progress-step"><span>02</span> Thông tin & thanh toán</span>
     <span class="progress-line"></span>
@@ -38,7 +38,7 @@
       <div class="empty-icon"><ui-icon name="shopping-bag" [size]="29" /></div>
       <p class="store-eyebrow"><span></span> BẮT ĐẦU TỪ ĐÂY</p>
       <h2>Giỏ hàng đang chờ bạn</h2>
-      <p>Thêm một sản phẩm bạn thích, chúng tôi sẽ giữ lựa chọn trong giỏ hàng này.</p>
+      <p>Thêm sản phẩm yêu thích để bắt đầu đặt hàng.</p>
       <a routerLink="/shop/products" class="store-button store-button-primary shop-now-btn">
         Khám phá sản phẩm <ui-icon name="arrow-right" [size]="16" />
       </a>
@@ -186,12 +186,31 @@
 
       <aside class="cart-summary-section" aria-labelledby="cart-summary-title">
         <div class="summary-card">
-          <p class="store-eyebrow"><span></span> ORDER SUMMARY</p>
+          <p class="store-eyebrow"><span></span> ĐƠN HÀNG CỦA BẠN</p>
           <h2 class="summary-title" id="cart-summary-title">Tóm tắt đơn hàng</h2>
+          <app-discount-code />
+          @if (cartStore.quoteNeedsReview()) {
+            <div class="discount-code-review" role="alert">
+              <p>Giỏ hàng đã thay đổi. Vui lòng kiểm tra lại tổng tiền.</p>
+              <button
+                type="button"
+                class="store-button store-button-secondary"
+                (click)="cartStore.acknowledgeUpdatedQuote()"
+              >
+                Đã kiểm tra
+              </button>
+            </div>
+          }
           <div class="summary-row">
             <span>Tạm tính</span>
             <span>{{ cartStore.subtotalAmount() | number: '1.0-0' }} ₫</span>
           </div>
+          @if (cartStore.discountAmount() > 0) {
+            <div class="summary-row">
+              <span>Giảm giá</span>
+              <span>−{{ cartStore.discountAmount() | number: '1.0-0' }} ₫</span>
+            </div>
+          }
           <div class="summary-row">
             <span>Phí vận chuyển</span>
             @if (cartStore.shippingAmount() > 0) {
@@ -208,7 +227,7 @@
           <button
             type="button"
             class="store-button store-button-primary checkout-btn"
-            [disabled]="!cartStore.canCheckout()"
+            [disabled]="!cartStore.canCheckout() || cartStore.quoteNeedsReview()"
             (click)="onProceedToCheckout()"
           >
             Tiến hành đặt hàng <ui-icon name="arrow-right" [size]="16" />

@@ -1,4 +1,9 @@
-import { RenewalOutcome, RenewalStatus } from '@models/renewal.dto';
+import { RenewalOutcome, RenewalQueue, RenewalStatus } from '@models/renewal.dto';
+
+export const RENEWAL_QUEUE_LABELS: Readonly<Record<RenewalQueue, string>> = {
+  'awaiting-work': 'Gia hạn chờ thực hiện',
+  'pending-verification': 'Gia hạn chờ xác minh',
+};
 
 export const RENEWAL_STATUS_LABELS: Readonly<Record<RenewalStatus, string>> = {
   [RenewalStatus.AwaitingTarget]: 'Chờ khách nhập tài khoản',

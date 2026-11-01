@@ -15,16 +15,22 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
-import { distinctUntilChanged, filter, map } from 'rxjs';
-import { RenewalStatus } from '@models/renewal.dto';
+import { filter, map } from 'rxjs';
+import { RenewalQueue, RenewalStatus } from '@models/renewal.dto';
 import {
   RENEWAL_STATUS_FILTER_OPTIONS,
   RENEWAL_STATUS_LABELS,
+  RENEWAL_QUEUE_LABELS,
   renewalStatusTone,
 } from '@constants/renewal.constants';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { StatusBadge } from '@shared/ui/status-badge/status-badge.component';
 import { RenewalsStore } from '@stores/renewals.store';
+import {
+  readRenewalListQuery,
+  renewalListQueryParams,
+  sameRenewalQueryParams,
+} from '@utils/renewal-query.util';
 
 @Component({
   selector: 'app-renewals-workspace',
@@ -53,6 +59,7 @@ export class RenewalsWorkspace implements OnInit {
   readonly statusLabels = RENEWAL_STATUS_LABELS;
   readonly statusTone = renewalStatusTone;
   readonly statusOptions = RENEWAL_STATUS_FILTER_OPTIONS;
+  readonly queueLabels = RENEWAL_QUEUE_LABELS;
 
   constructor() {
     effect(() => {
@@ -73,47 +80,23 @@ export class RenewalsWorkspace implements OnInit {
         this.panelOpen.set(false);
       });
 
-    this.route.queryParamMap
+    this.route.queryParams
       .pipe(
-        map((params) => {
-          const rawPage = Number(params.get('page') ?? 1);
-          const rawStatus = params.get('status');
-          const status = rawStatus === null ? null : (Number(rawStatus) as RenewalStatus);
-          return {
-            page: Number.isSafeInteger(rawPage) && rawPage > 0 ? rawPage : 1,
-            status:
-              status !== null && Object.values(RenewalStatus).includes(status) ? status : null,
-          };
-        }),
-        distinctUntilChanged(
-          (left, right) => left.page === right.page && left.status === right.status,
-        ),
+        map((params) => readRenewalListQuery(params)),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(({ page, status }) => {
+      .subscribe(({ page, status, queue }) => {
         const params = this.route.snapshot.queryParams;
-        const normalizedPage = page > 1 ? String(page) : null;
-        const normalizedStatus = status === null ? null : String(status);
-        if (
-          (params['page'] ?? null) !== normalizedPage ||
-          (params['status'] ?? null) !== normalizedStatus
-        ) {
-          this.updateQuery(page, status, true);
+        if (!sameRenewalQueryParams(params, renewalListQueryParams({ page, status, queue }))) {
+          this.updateQuery(page, status, true, queue);
           return;
         }
-        this.store.loadPage(page, status);
+        this.store.loadPage(page, status, queue);
       });
   }
 
   routeQuery(): Record<string, string | number> {
-    const params = this.route.snapshot.queryParams;
-    const rawPage = Number(params['page'] ?? 1);
-    const rawStatus = Number(params['status']);
-    const page = Number.isSafeInteger(rawPage) && rawPage > 1 ? rawPage : 1;
-    const status = Object.values(RenewalStatus).includes(rawStatus as RenewalStatus)
-      ? (rawStatus as RenewalStatus)
-      : null;
-    return { ...(page > 1 ? { page } : {}), ...(status !== null ? { status } : {}) };
+    return renewalListQueryParams(readRenewalListQuery(this.route.snapshot.queryParams));
   }
 
   setStatus(value: string | number | null): void {
@@ -125,15 +108,24 @@ export class RenewalsWorkspace implements OnInit {
     this.updateQuery(page, this.store.selectedStatus());
   }
 
+  clearQueue(): void {
+    this.updateQuery(1, this.store.selectedStatus(), false, null);
+  }
+
   closePanel(): void {
     this.panelOpen.set(false);
     this.itemsToggle()?.nativeElement.focus();
   }
 
-  private updateQuery(page: number, status: RenewalStatus | null, replaceUrl = false): void {
+  private updateQuery(
+    page: number,
+    status: RenewalStatus | null,
+    replaceUrl = false,
+    queue: RenewalQueue | null = this.store.selectedQueue(),
+  ): void {
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { page: page > 1 ? page : null, status },
+      queryParams: renewalListQueryParams({ page, status, queue }),
       replaceUrl,
     });
   }

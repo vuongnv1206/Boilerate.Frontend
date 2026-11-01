@@ -21,6 +21,16 @@ export const routes: Routes = [
       import('./layout/admin-shell/admin-shell.component').then((m) => m.AdminShell),
     children: [
       {
+        path: 'overview',
+        loadChildren: () =>
+          import('./features/overview/overview.routes').then((m) => m.OVERVIEW_ROUTES),
+      },
+      {
+        path: 'discounts',
+        loadChildren: () =>
+          import('./features/discounts/discounts.routes').then((m) => m.DISCOUNT_ROUTES),
+      },
+      {
         path: 'storefront-settings',
         loadChildren: () =>
           import('./features/storefront-settings/storefront-settings.routes').then(

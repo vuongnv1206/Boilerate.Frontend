@@ -21,6 +21,7 @@ import {
   RenewalContentDto,
   RenewalHistoryDto,
   RenewalPage,
+  RenewalQueue,
   RenewalStatus,
   ReleaseRenewalRequest,
   StartRenewalRequest,
@@ -42,6 +43,7 @@ export class RenewalsStore {
   private readonly pageRequests = new Subject<{
     page: number;
     status: RenewalStatus | null;
+    queue: RenewalQueue | null;
     afterWrite: boolean;
   }>();
   private readonly detailRequests = new Subject<{
@@ -66,6 +68,7 @@ export class RenewalsStore {
     pageSize: 20,
   });
   private readonly selectedStatusState = signal<RenewalStatus | null>(null);
+  private readonly selectedQueueState = signal<RenewalQueue | null>(null);
   private readonly loadingState = signal(false);
   private readonly errorState = signal('');
   private readonly pageCorrectionState = signal<number | null>(null);
@@ -82,6 +85,7 @@ export class RenewalsStore {
   private readonly revealedEvidenceState = signal<Record<string, RenewalContentDto>>({});
   readonly page = this.pageState.asReadonly();
   readonly selectedStatus = this.selectedStatusState.asReadonly();
+  readonly selectedQueue = this.selectedQueueState.asReadonly();
   readonly loading = this.loadingState.asReadonly();
   readonly error = this.errorState.asReadonly();
   readonly pageCorrection = this.pageCorrectionState.asReadonly();
@@ -108,10 +112,10 @@ export class RenewalsStore {
   constructor() {
     this.pageRequests
       .pipe(
-        switchMap(({ page, status, afterWrite }) => {
+        switchMap(({ page, status, queue, afterWrite }) => {
           this.loadingState.set(true);
           this.errorState.set('');
-          return this.service.list(page, status).pipe(
+          return this.service.list(page, status, queue).pipe(
             catchError((error: unknown) => {
               const message =
                 error instanceof ApiError ? error.message : 'Không thể tải danh sách gia hạn.';
@@ -200,13 +204,14 @@ export class RenewalsStore {
     });
   }
 
-  loadPage(page = 1, status = this.selectedStatus()): void {
+  loadPage(page = 1, status = this.selectedStatus(), queue = this.selectedQueue()): void {
     const safePage = Number.isSafeInteger(page) && page > 0 ? page : 1;
     this.requestedPage = safePage;
     this.selectedStatusState.set(status);
+    this.selectedQueueState.set(queue);
     this.pageCorrectionState.set(null);
     this.clearRevealedContent();
-    this.pageRequests.next({ page: safePage, status, afterWrite: false });
+    this.pageRequests.next({ page: safePage, status, queue, afterWrite: false });
   }
 
   loadDetail(id: string, preserveFailure = false): void {
@@ -404,6 +409,7 @@ export class RenewalsStore {
     this.pageRequests.next({
       page: this.requestedPage,
       status: this.selectedStatus(),
+      queue: this.selectedQueue(),
       afterWrite,
     });
   }

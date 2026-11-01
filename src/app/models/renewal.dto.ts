@@ -61,6 +61,14 @@ export interface RenewalPage {
   readonly pageSize: number;
 }
 
+export type RenewalQueue = 'awaiting-work' | 'pending-verification';
+
+export interface RenewalListQuery {
+  readonly page: number;
+  readonly status: RenewalStatus | null;
+  readonly queue: RenewalQueue | null;
+}
+
 export interface ClaimRenewalRequest {
   readonly version: string;
   readonly operationId: string;

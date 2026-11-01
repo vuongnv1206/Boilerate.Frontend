@@ -26,6 +26,8 @@ const order = (version = 'v1'): OrderDto => ({
   status: OrderStatus.AwaitingProcessing,
   paymentMethod: OrderPaymentMethod.CashOnDelivery,
   subtotal: 300,
+  discountCode: null,
+  discountAmount: 0,
   shippingAmount: 0,
   total: 300,
   currency: 'VND',

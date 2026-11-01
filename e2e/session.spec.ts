@@ -47,6 +47,8 @@ test('session: logout removes the cookie and reload stays on login', async ({ pa
   await page.reload();
   await expect(page.locator('#login-email')).toBeVisible();
   await expect(page.locator('.workspace')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: '← Về cửa hàng' })).toHaveAttribute('href', '/shop');
+  await expect(page).toHaveScreenshot('login.png');
 });
 
 test('session: a revoked cookie returns to login and keeps the requested URL', async ({

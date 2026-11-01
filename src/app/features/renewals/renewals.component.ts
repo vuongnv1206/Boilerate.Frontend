@@ -7,13 +7,15 @@ import { Table } from 'primeng/table';
 import { ContentState } from '@shared/ui/content-state/content-state.component';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { StatusBadge } from '@shared/ui/status-badge/status-badge.component';
-import { RenewalStatus } from '@models/renewal.dto';
+import { RenewalQueue, RenewalStatus } from '@models/renewal.dto';
 import {
   RENEWAL_STATUS_FILTER_OPTIONS,
   RENEWAL_STATUS_LABELS,
+  RENEWAL_QUEUE_LABELS,
   renewalStatusTone,
 } from '@constants/renewal.constants';
 import { RenewalsStore } from '@stores/renewals.store';
+import { readRenewalListQuery, renewalListQueryParams } from '@utils/renewal-query.util';
 
 @Component({
   selector: 'app-renewals',
@@ -39,6 +41,7 @@ export class Renewals {
   readonly statuses = RENEWAL_STATUS_LABELS;
   readonly statusTone = renewalStatusTone;
   readonly statusOptions = RENEWAL_STATUS_FILTER_OPTIONS;
+  readonly queueLabels = RENEWAL_QUEUE_LABELS;
   readonly statusFilter = computed(() => this.store.selectedStatus()?.toString() ?? '');
 
   statusLabel(value: RenewalStatus): string {
@@ -46,13 +49,7 @@ export class Renewals {
   }
 
   routeQuery(): Record<string, string | number> {
-    const rawPage = Number(this.route.snapshot.queryParams['page'] ?? 1);
-    const rawStatus = Number(this.route.snapshot.queryParams['status']);
-    const page = Number.isSafeInteger(rawPage) && rawPage > 1 ? rawPage : 1;
-    const status = Object.values(RenewalStatus).includes(rawStatus as RenewalStatus)
-      ? (rawStatus as RenewalStatus)
-      : null;
-    return { ...(page > 1 ? { page } : {}), ...(status !== null ? { status } : {}) };
+    return renewalListQueryParams(readRenewalListQuery(this.route.snapshot.queryParams));
   }
 
   rangeStart(): number {
@@ -85,13 +82,19 @@ export class Renewals {
       void this.updateQuery(this.store.page().pageNumber + 1, this.store.selectedStatus());
   }
 
-  updateQuery(page: number, status: RenewalStatus | null): Promise<boolean> {
-    const queryParams = { page: page > 1 ? page : null, status: status ?? null };
+  clearQueue(): void {
+    void this.updateQuery(1, this.store.selectedStatus(), null);
+  }
+
+  updateQuery(
+    page: number,
+    status: RenewalStatus | null,
+    queue: RenewalQueue | null = this.store.selectedQueue(),
+  ): Promise<boolean> {
+    const queryParams = renewalListQueryParams({ page, status, queue });
     return this.router.navigate([], {
       relativeTo: this.route,
       queryParams,
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
     });
   }
 }

@@ -6,6 +6,8 @@ function cartDto(
   kind: Kind,
   lines: readonly { variantId: string; quantity: number }[],
   version: number,
+  includePhysical = false,
+  discountCode: string | null = null,
 ) {
   const unitPrice = 123000;
   const items = lines.map((line) => ({
@@ -16,16 +18,33 @@ function cartDto(
     isAvailable: true,
     fulfillmentKind: kind === 'physical' ? 1 : 2,
   }));
+  if (kind === 'digital' && includePhysical && items.length > 0) {
+    items.push({
+      variantId: 'variant-shirt-mixed',
+      quantity: 1,
+      name: 'Áo thun trong giỏ hỗn hợp',
+      sku: 'SHIRT-MIXED',
+      unitPrice,
+      isAvailable: true,
+      fulfillmentKind: 1,
+    });
+  }
   const subtotal = items.reduce((total, item) => total + item.quantity * unitPrice, 0);
-  const shippingAmount = kind === 'physical' ? 30000 : 0;
+  const shippingAmount = kind === 'physical' || (includePhysical && items.length > 0) ? 30000 : 0;
+  const discountAmount = discountCode === 'SAVE10' ? Math.floor(subtotal / 10) : 0;
+  const discountError =
+    discountCode && discountCode !== 'SAVE10' ? 'Mã giảm giá không tồn tại.' : null;
   return {
     id: 'cart-guest-1',
     version: `cart-v${version}`,
     items,
     subtotal,
+    discountCode,
+    discountAmount,
+    discountError,
     shippingAmount,
-    total: subtotal + shippingAmount,
-    canCheckout: true,
+    total: subtotal + shippingAmount - discountAmount,
+    canCheckout: discountError === null,
     hasDigitalItems: kind === 'digital',
   };
 }
@@ -38,13 +57,14 @@ async function installStorefront(
     firstCheckoutConflicts?: boolean;
     bankTransferEnabled?: boolean;
     wrongOtp?: boolean;
+    mixedCart?: boolean;
   } = {},
 ) {
   const variantId = kind === 'physical' ? 'variant-shirt-1' : 'variant-license-1';
   const productId = kind === 'physical' ? 'product-shirt-1' : 'product-license-1';
   const slug = kind === 'physical' ? 'ao-thun-thu-nghiem' : 'ban-quyen-thu-nghiem';
   const name = kind === 'physical' ? 'Áo thun thử nghiệm' : 'Bản quyền phần mềm thử nghiệm';
-  let cart = cartDto(kind, [], 1);
+  let cart = cartDto(kind, [], 1, options.mixedCart);
   let version = 1;
   let order: Record<string, unknown> | null = null;
 
@@ -105,7 +125,14 @@ async function installStorefront(
     const body = route.request().postDataJSON() as {
       items: { variantId: string; quantity: number }[];
     };
-    cart = cartDto(kind, body.items, ++version);
+    cart = cartDto(kind, body.items, ++version, options.mixedCart, cart.discountCode);
+    return route.fulfill({ json: cart });
+  });
+  await page.route('**/api/storefront/cart/discount', async (route) => {
+    const body = route.request().postDataJSON() as { code: string | null };
+    const code = body.code?.trim().toUpperCase() || null;
+    const lines = cart.items.filter((item) => item.variantId !== 'variant-shirt-mixed');
+    cart = cartDto(kind, lines, ++version, options.mixedCart, code);
     return route.fulfill({ json: cart });
   });
   await page.route('**/api/storefront/settings', (route) =>
@@ -150,6 +177,8 @@ async function installStorefront(
       status: body['paymentMethod'] === 2 ? 2 : 1,
       paymentMethod: body['paymentMethod'],
       subtotal: cart.subtotal,
+      discountCode: cart.discountCode,
+      discountAmount: cart.discountAmount,
       shippingAmount: cart.shippingAmount,
       total: cart.total,
       currency: 'VND',
@@ -187,7 +216,7 @@ async function installStorefront(
 }
 
 async function reachCheckout(page: Page) {
-  const productLink = page.getByRole('link', {
+  const productLink = page.locator('.product-card').getByRole('link', {
     name: /Bản quyền phần mềm thử nghiệm|Áo thun thử nghiệm/,
   });
   await productLink.focus();
@@ -437,6 +466,50 @@ test('guest checkout verifies email before placing a COD physical order', async 
   });
 });
 
+test('discount quote survives reload and checkout uses the server total', async ({
+  page,
+}, testInfo) => {
+  let request: Record<string, unknown> | null = null;
+  await installStorefront(page, 'physical', (body) => {
+    request = body;
+  });
+  await reachCheckout(page);
+  const field = page.getByLabel('Mã giảm giá', { exact: true });
+  await field.fill('save10');
+  await page.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+  await expect(page.getByText('Đã áp dụng mã SAVE10.')).toBeVisible();
+  await expect(page.getByText('−12.300 ₫')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('discount-checkout.png') });
+  await page.reload();
+  await expect(page.getByText('Đã áp dụng mã SAVE10.')).toBeVisible();
+  await page.getByRole('button', { name: 'Bỏ mã giảm giá', exact: true }).click();
+  await expect(page.getByText('Đã áp dụng mã SAVE10.')).toHaveCount(0);
+  await field.fill('SAVE10');
+  await page.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+  await expect(page.getByText('Đã áp dụng mã SAVE10.')).toBeVisible();
+  await verifyEmail(page);
+  await page.getByLabel('Họ và tên').fill('Nguyễn Thị Bích Ngọc');
+  await page.getByLabel('Số điện thoại').fill('0901234567');
+  await page.getByLabel('Địa chỉ nhận hàng').fill('12 Đường Nguyễn Huệ, Đà Nẵng');
+  await page.getByLabel(/Thu hộ tiền mặt khi nhận hàng/).check();
+  await page.getByRole('button', { name: /Đặt hàng ngay/ }).click();
+  await expect(page.getByText('Giảm giá (SAVE10)')).toBeVisible();
+  expect(request).toMatchObject({ expectedTotal: 140700 });
+});
+
+test('invalid discount blocks checkout without removing the cart', async ({ page }) => {
+  await installStorefront(page, 'physical', () => undefined);
+  await reachCheckout(page);
+  await page.getByLabel('Mã giảm giá', { exact: true }).fill('UNKNOWN');
+  await page.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Mã giảm giá không tồn tại.');
+  await expect(page.getByText('Áo thun thử nghiệm')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Đặt hàng ngay/ })).toBeDisabled();
+  await page.getByRole('button', { name: 'Bỏ mã giảm giá', exact: true }).click();
+  await expect(page.getByRole('alert')).not.toBeVisible();
+  await expect(page.getByText('Áo thun thử nghiệm')).toBeVisible();
+});
+
 test('invalid OTP keeps email unverified and blocks checkout', async ({ page }) => {
   await installStorefront(page, 'physical', () => undefined, { wrongOtp: true });
   await reachCheckout(page);
@@ -511,7 +584,10 @@ test('storefront catalog and detail keep image fallbacks and purchase states leg
   await expect(page.locator('.product-card')).toHaveCount(1);
   expect(requests.at(-1)).toMatchObject({ search: 'tai nghe' });
 
-  await page.getByRole('link', { name: /Tai nghe chụp tai/ }).click();
+  await page
+    .locator('.product-card')
+    .getByRole('link', { name: /Tai nghe chụp tai/ })
+    .click();
   await expect(page.getByRole('heading', { name: /Tai nghe chụp tai/ })).toBeVisible();
   await page.getByRole('button', { name: 'Màu xanh' }).click();
   await expect(page.getByText('1.590.000 ₫')).toBeVisible();
@@ -563,6 +639,38 @@ test('digital products require prepaid and display configured manual transfer in
     email: 'buyer@example.test',
     expectedTotal: 123000,
     shippingAddress: null,
+  });
+});
+
+test('a mixed physical and digital cart requires a delivery address and prepaid payment', async ({
+  page,
+}) => {
+  let request: Record<string, unknown> | null = null;
+  await installStorefront(
+    page,
+    'digital',
+    (body) => {
+      request = body;
+    },
+    { mixedCart: true },
+  );
+  await reachCheckout(page);
+  await verifyEmail(page);
+  await page.getByLabel('Họ và tên').fill('Lê Minh Anh');
+  await page.getByLabel('Số điện thoại').fill('0912345678');
+  const address = page.getByLabel('Địa chỉ nhận hàng');
+  const submit = page.getByRole('button', { name: /Đặt hàng ngay/ });
+  await expect(address).toHaveAttribute('required', '');
+  await expect(page.getByLabel(/Thu hộ tiền mặt khi nhận hàng/)).toBeDisabled();
+  await expect(submit).toBeDisabled();
+  await address.fill('12 Đường Nguyễn Huệ, Đà Nẵng');
+  await expect(submit).toBeEnabled();
+  await submit.click();
+  await expect(page.getByRole('heading', { name: /Đơn hàng #GUEST-1001/ })).toBeVisible();
+  expect(request).toMatchObject({
+    paymentMethod: 1,
+    expectedTotal: 276000,
+    shippingAddress: '12 Đường Nguyễn Huệ, Đà Nẵng',
   });
 });
 

@@ -48,13 +48,13 @@
             </p>
           }
           <div class="settings-enabled-field">
+            <label for="settings-bank-transfer">Bật chuyển khoản</label>
             <p-toggleswitch
               inputId="settings-bank-transfer"
               [ngModel]="draft.bankTransferEnabled"
               (ngModelChange)="store.set('bankTransferEnabled', $event)"
               [disabled]="!canEdit() || store.saving()"
             />
-            <label for="settings-bank-transfer">Bật chuyển khoản</label>
           </div>
           <div class="field-row">
             <ui-form-field forId="settings-bank-name" label="Ngân hàng" [required]="true">

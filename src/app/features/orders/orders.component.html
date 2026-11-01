@@ -97,6 +97,14 @@
       >Đơn hàng giữ nguyên thông tin tại checkout; chỉ cập nhật qua thao tác nghiệp vụ.</span
     >
   </header>
+  @if (store.query().queue; as queue) {
+    <div class="collection-queue-filter" role="group" aria-label="Nhóm đơn hàng đang chọn">
+      <span>{{ queueLabels[queue] }}</span>
+      <button pButton severity="secondary" text type="button" (click)="clearQueue()">
+        Xóa nhóm
+      </button>
+    </div>
+  }
   @if (store.loading()) {
     <ui-content-state
       kind="loading"

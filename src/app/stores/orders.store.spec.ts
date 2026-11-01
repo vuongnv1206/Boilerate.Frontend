@@ -20,6 +20,8 @@ const order = (version = 'v2'): OrderDto => ({
   status: OrderStatus.Cancelled,
   paymentMethod: OrderPaymentMethod.Prepaid,
   subtotal: 100,
+  discountCode: null,
+  discountAmount: 0,
   shippingAmount: 0,
   total: 100,
   currency: 'VND',
@@ -52,7 +54,13 @@ describe('OrdersStore canonical rail refresh', () => {
       providers: [OrdersStore, { provide: OrdersService, useValue: service }],
     });
     store = TestBed.inject(OrdersStore);
-    query = { ...store.query(), status: OrderStatus.AwaitingProcessing, q: 'Khách', page: 2 };
+    query = {
+      ...store.query(),
+      queue: 'awaiting-processing',
+      status: OrderStatus.AwaitingProcessing,
+      q: 'Khách',
+      page: 2,
+    };
   });
   afterEach(() => TestBed.resetTestingModule());
 

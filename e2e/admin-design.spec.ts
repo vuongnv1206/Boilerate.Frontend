@@ -34,6 +34,14 @@ test('admin design: order detail presents long customer and item values', async 
   await expect(page.locator('.order-inspector')).toContainText('Chưa thanh toán');
   await expect(page.getByRole('button', { name: 'Tạo lần giao', exact: true })).toBeEnabled();
   await expect(page).toHaveScreenshot('admin-order-detail.png');
+  const items = page.getByRole('region', { name: 'Sản phẩm trong đơn hàng' });
+  const overflows = await items.evaluate((element) => element.scrollWidth > element.clientWidth);
+  if (page.viewportSize()!.width === 1024) expect(overflows).toBe(true);
+  if (overflows) {
+    await items.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => items.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  }
 });
 
 test('admin design: renewal verification uses the shared detail and form layout', async ({
@@ -49,6 +57,23 @@ test('admin design: renewal verification uses the shared detail and form layout'
     page.getByRole('button', { name: 'Lưu kết quả xác minh', exact: true }),
   ).toBeVisible();
   await expect(page).toHaveScreenshot('admin-renewal-detail.png');
+});
+
+test('admin design: order detail shows the stored discount and final total', async ({
+  page,
+  context,
+  catalog,
+}) => {
+  catalog.setPermissions(SHIPPING_GRANTS);
+  const api = await installOrdersApi(context);
+  api.order.discountCode = 'SAVE10';
+  api.order.discountAmount = 30000;
+  api.order.total = 270000;
+  await ready(page, `/admin/orders/${ORDER_ID}`);
+  const totals = page.locator('.order-totals');
+  await expect(totals).toContainText('Giảm giá (SAVE10)');
+  await expect(totals).toContainText('30.000');
+  await expect(totals).toContainText('270.000');
 });
 
 test('admin design: role permissions keep grouped controls and action labels readable', async ({

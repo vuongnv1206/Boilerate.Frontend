@@ -112,12 +112,12 @@ describe('RenewalsStore canonical reads and request ownership', () => {
     service.claim.mockReturnValue(response);
     service.history.mockReturnValue(history);
     const result = firstValueFrom(store.execute('a', command));
-    store.loadPage(3, RenewalStatus.Claimed);
+    store.loadPage(3, RenewalStatus.Claimed, 'awaiting-work');
     response.next(record('a', RenewalStatus.Claimed));
     response.complete();
     expect((await result).renewal.status).toBe(RenewalStatus.Claimed);
     expect(store.commandBusy()).toBe(false);
-    expect(service.list).toHaveBeenLastCalledWith(3, RenewalStatus.Claimed);
+    expect(service.list).toHaveBeenLastCalledWith(3, RenewalStatus.Claimed, 'awaiting-work');
     expect(store.historyLoading()).toBe(true);
     history.next([entry('claim')]);
     history.complete();

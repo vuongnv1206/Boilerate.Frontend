@@ -3,11 +3,12 @@ import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/cor
 import { Router, RouterLink } from '@angular/router';
 import { Icon } from '@shared/ui/icon/icon.component';
 import { CartStore } from '@stores/cart.store';
+import { DiscountCodeComponent } from '../discount-code/discount-code.component';
 
 @Component({
   selector: 'app-cart-page',
   standalone: true,
-  imports: [RouterLink, DecimalPipe, Icon],
+  imports: [RouterLink, DecimalPipe, Icon, DiscountCodeComponent],
   templateUrl: './cart-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -61,6 +61,24 @@ export class AdminShell {
   private readonly router = inject(Router);
   private readonly session = inject(AuthSession);
   readonly canCreateProduct = computed(() => this.session.can('Product', 'Create'));
+  readonly operationLinks = computed(() =>
+    this.navigation
+      .collections()
+      .filter((link) => ['overview', 'orders', 'renewals', 'discounts'].includes(link.key)),
+  );
+  readonly catalogLinks = computed(() =>
+    this.navigation
+      .collections()
+      .filter(
+        (link) =>
+          !['overview', 'orders', 'renewals', 'discounts', 'storefront-settings'].includes(
+            link.key,
+          ),
+      ),
+  );
+  readonly settingsLinks = computed(() =>
+    this.navigation.collections().filter((link) => link.key === 'storefront-settings'),
+  );
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly panelToggle = viewChild<ElementRef<HTMLButtonElement>>('panelToggle');
@@ -69,8 +87,6 @@ export class AdminShell {
   private readonly mobileQuery = window.matchMedia(ADMIN_LAYOUT.mobileQuery);
   readonly isMobile = signal(this.mobileQuery.matches);
   readonly currentUrl = signal(this.router.url);
-  readonly isGallery = computed(() => this.currentUrl().includes('/controls'));
-  readonly isSystem = computed(() => this.currentUrl().includes('/system'));
   readonly sidebarWidth = signal(
     Math.min(
       ADMIN_LAYOUT.panelMax,

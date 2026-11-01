@@ -127,6 +127,23 @@ describe('Workspace navigation accessibility', () => {
     expect(host.querySelector('.collection-nav a')?.getAttribute('href')).toBe('/example');
   });
 
+  it('groups available operations and sends the brand to the permission-aware admin home', () => {
+    collections.set([
+      { key: 'overview', label: 'Tổng quan', icon: 'layers', path: '/admin/overview' },
+      { key: 'orders', label: 'Đơn hàng', icon: 'box', path: '/admin/orders' },
+    ]);
+    TestBed.overrideProvider(AuthSession, {
+      useValue: { can: () => false, signOut: () => of(undefined) },
+    });
+    const fixture = TestBed.createComponent(AdminShell);
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('.brand-mark')?.getAttribute('href')).toBe('/admin');
+    expect(host.querySelector('[aria-label="Vận hành"]')?.textContent).toContain('Đơn hàng');
+    expect(host.querySelector('a[href="/admin/collections/products"]')).toBeNull();
+    expect(host.querySelector('.workspace-status')?.textContent).not.toContain('Nhấn Lưu');
+  });
+
   it('clamps keyboard resizing and restores layout preferences after recreation', () => {
     mobile = false;
     const fixture = TestBed.createComponent(AdminShell);

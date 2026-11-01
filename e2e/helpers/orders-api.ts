@@ -57,6 +57,8 @@ export async function installOrdersApi(context: BrowserContext, multiple = false
     status: 2,
     paymentMethod: 2,
     subtotal: 300000,
+    discountCode: null as string | null,
+    discountAmount: 0,
     shippingAmount: 0,
     total: 300000,
     currency: 'VND',
@@ -140,8 +142,21 @@ export async function installOrdersApi(context: BrowserContext, multiple = false
     if (method === 'GET') {
       if (path === 'admin/orders') {
         const search = (url.searchParams.get('search') ?? '').toLocaleLowerCase('vi-VN');
+        const queue = url.searchParams.get('queue');
         const filtered = orders.filter(
           (item) =>
+            (queue === null ||
+              (queue === 'awaiting-payment' &&
+                item.status === 1 &&
+                item.paymentStatus === 1 &&
+                (!item.expiresAt || new Date(item.expiresAt) > new Date())) ||
+              (queue === 'awaiting-processing' &&
+                item.status === 2 &&
+                [1, 3].includes(item.fulfillmentStatus)) ||
+              (queue === 'needs-review' &&
+                item.status !== 6 &&
+                item.paymentStatus === 2 &&
+                item.fulfillmentStatus === 2)) &&
             `${item.number} ${item.recipientName} ${item.email} ${item.phone}`
               .toLocaleLowerCase('vi-VN')
               .includes(search) &&
