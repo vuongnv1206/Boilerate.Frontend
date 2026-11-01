@@ -26,7 +26,7 @@ Mỗi phần có route `new` và `:id` cho màn thêm/sửa. Lưu chỉ báo th�
 
 ### Danh mục trong workspace
 
-Editor theo ảnh Webflow có Basic info (Name, Slug, preview path, Description), Product search với các chip thêm/bỏ, Item details (Parent category, thứ tự, trạng thái, ID), Activity và thao tác cuối trang. Parent là trường riêng của shop. Sitemap indexing/Published/Queued to publish không có trong API hiện tại nên không hiện.
+Editor danh mục có Thông tin cơ bản (tên, slug, đường dẫn xem trước, mô tả), tìm sản phẩm với các chip thêm/bỏ, Chi tiết danh mục (danh mục cha, thứ tự, trạng thái, ID), Hoạt động và thao tác cuối trang. Danh mục cha là trường riêng của shop. Sitemap indexing/Published/Queued to publish không có trong API hiện tại nên không hiện.
 
 Danh sách/rail giữ phân cấp, tìm kiếm và số sản phẩm. Product membership được tìm bằng `ProductsService.search`; editor hydrate toàn bộ sản phẩm đã liên kết để giữ chip qua trang kết quả. Lưu metadata danh mục trước nếu có thay đổi, sau đó gửi delta tới `PUT /api/categories/{id}/products`; mỗi delta mang Product.Version, giữ nguyên các Category khác, giới hạn1.000 delta/lần và rollback cả batch nếu có conflict. Metadata dùng `Category.Update/Create`; tìm kiếm yêu cầu `Product.View`, gán/bỏ cần `Product.Update`. Người có `Product.View/Update` được sửa liên kết của danh mục đang có dù không có `Category.Update`; form metadata vẫn chỉ đọc.
 
@@ -62,9 +62,9 @@ BE quyết định authorization cuối cùng. FE có route/menu/action/store pe
 
 ## SKU, lựa chọn và tồn
 
-### Editor theo Webflow (2026-10-22)
+### Editor sản phẩm (mốc 2026-10-22)
 
-Giữ icon rail, nav CMS và rail sản phẩm/search/phân trang. Editor dùng chung control, typography và semantic tokens của Admin; các token editor ánh xạ về hệ surface/border/accent chung trong cả hai theme. Metadata nằm cuối form. Quy chuẩn thị giác hiện tại nằm trong [DESIGN.md](../../DESIGN.md).
+Workspace hiện dùng điều hướng theo nhóm và quyền, cùng rail sản phẩm có tìm kiếm/phân trang. Editor dùng chung control, typography và semantic tokens của Admin; các token editor ánh xạ về hệ surface/border/accent chung trong cả hai theme. Metadata nằm cuối form. Quy chuẩn thị giác hiện tại nằm trong [DESIGN.md](../../DESIGN.md).
 
 Option thu gọn tên/giá trị; mở tên bên trái, chip bên phải, Hủy/Xong/trash. Enter/Tab thêm, double-click/menu đổi tên, menu/Backspace xóa. Xong tự tạo tổ hợp; không có nút generate hoặc ô mã kỹ thuật. Ba nhóm/50 biến thể, giữ dữ liệu cũ trên50. Mã type/field/choice/option/value tự sinh, không có control nhập mã.
 

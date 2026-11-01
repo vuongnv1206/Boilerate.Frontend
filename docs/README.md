@@ -2,20 +2,22 @@
 
 Đọc [README](../README.md) để chạy ứng dụng, [PRODUCT](../PRODUCT.md) để hiểu phạm vi và [DESIGN](../DESIGN.md) để làm giao diện.
 
-| Cần tìm                                      | Tài liệu                                                                                                                      |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Cấu trúc, trách nhiệm và luồng dữ liệu       | [Kiến trúc](architecture.md)                                                                                                  |
-| Folder, naming, component/store/service      | [Quy chuẩn codebase và triển khai FE](coding-rules.md)                                                                        |
-| Tokens và style dùng chung                   | [Quy tắc SCSS](scss-rules.md)                                                                                                 |
-| Danh sách và thêm/sửa Catalog qua API        | [Collections](features/live-admin-collections.md)                                                                             |
-| Quản trị đơn hàng theo workspace             | [Admin Orders](features/admin-orders.md)                                                                                      |
-| Claim, xử lý và xác minh gia hạn             | [Gia hạn thủ công](features/admin-renewals.md)                                                                                |
-| Nhóm chức năng, vai trò và gán quyền         | [Quản trị hệ thống](features/system-administration.md)                                                                        |
-| Đăng nhập, khôi phục phiên và đăng xuất      | [Giữ phiên](features/persistent-session.md)                                                                                   |
-| Storefront khách mua và cài đặt chuyển khoản | [Storefront](features/storefront.md)                                                                                          |
-| Các tính năng đã triển khai theo mốc         | [Lịch sử tính năng](history/README.md)                                                                                        |
-| Bằng chứng tích hợp theo phiên bản           | [Đồng bộ Admin và live SQL Server](verification/2026-10-25-admin-design.md); các báo cáo mốc cũ được dẫn từ feature tương ứng |
-| Nguồn thiết kế và giấy phép                  | [Tham chiếu](../design/references/README.md), [third-party notices](../THIRD_PARTY_NOTICES.md)                                |
+| Cần tìm                                      | Tài liệu                                                                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Cấu trúc, trách nhiệm và luồng dữ liệu       | [Kiến trúc](architecture.md)                                                                                            |
+| Folder, naming, component/store/service      | [Quy chuẩn codebase và triển khai FE](coding-rules.md)                                                                  |
+| Tokens và style dùng chung                   | [Quy tắc SCSS](scss-rules.md)                                                                                           |
+| Việc cần xử lý, thu tiền và cảnh báo kho     | [Tổng quan vận hành](features/admin-overview.md), [bằng chứng local](verification/2026-10-26-admin-overview.md)         |
+| Danh sách và thêm/sửa Catalog qua API        | [Collections](features/live-admin-collections.md)                                                                       |
+| Quản lý mã giảm giá trong Admin              | [Mã giảm giá](features/admin-discounts.md)                                                                              |
+| Quản trị đơn hàng theo workspace             | [Admin Orders](features/admin-orders.md)                                                                                |
+| Claim, xử lý và xác minh gia hạn             | [Gia hạn thủ công](features/admin-renewals.md)                                                                          |
+| Nhóm chức năng, vai trò và gán quyền         | [Quản trị hệ thống](features/system-administration.md)                                                                  |
+| Đăng nhập, khôi phục phiên và đăng xuất      | [Giữ phiên](features/persistent-session.md)                                                                             |
+| Storefront khách mua và cài đặt chuyển khoản | [Storefront](features/storefront.md)                                                                                    |
+| Các tính năng đã triển khai theo mốc         | [Lịch sử tính năng](history/README.md)                                                                                  |
+| Bằng chứng tích hợp theo phiên bản           | [Thiết kế Claude](verification/2026-10-29-claude-redesign.md), [đồng bộ Admin](verification/2026-10-25-admin-design.md) |
+| Nguồn thiết kế và giấy phép                  | [Tham chiếu](../design/references/README.md), [third-party notices](../THIRD_PARTY_NOTICES.md)                          |
 
 ## Quy tắc duy trì docs
 

@@ -18,7 +18,7 @@ Current user priority (2026-10-20): web first. Required browser verification and
 
 ## UI implementation
 
-- Webflow CMS/Ecommerce workspace is the priority reference. Preserve the compact rail, context panel, thin topbar and local toolbar. Collections editors keep record navigation beside the form and metadata at its end; operational detail screens may use a supporting inspector. Follow the screen patterns in DESIGN.md for all admin areas, including system administration and payment settings.
+- The approved Claude-inspired palette and product patterns in DESIGN.md apply across Admin, login and storefront. The admin workspace uses grouped, permission-aware navigation and compact controls; the storefront uses a more spacious product-led layout. Collections editors keep record navigation beside the form and metadata at its end; operational detail screens may use a supporting inspector.
 - Use semantic theme and motion tokens; avoid per-screen hard-coded colors. Overlay controls must inherit the root theme even when appended to `body`.
 - Every input has a visible label and associated error/help text. Every icon-only action has an accessible name. Keep visible keyboard focus and coherent tab order.
 - Handle long Vietnamese text, keyboard-only interaction, empty results and small viewports. Honor reduced motion. Do not add decorative page-load choreography.

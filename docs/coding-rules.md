@@ -2,7 +2,7 @@
 
 Đây là rulebook chính cho cách viết, review và mở rộng FE Boilerate. Áp dụng cho source hiện tại và màn mới. [Kiến trúc](architecture.md) chỉ là bản đồ triển khai; [DESIGN](../DESIGN.md) và [SCSS](scss-rules.md) sở hữu tokens và diện mạo. Không tạo bộ coding rules riêng cho từng feature hoặc công cụ.
 
-Giữ Angular 22, PrimeNG, standalone, strict TypeScript/templates và hướng Webflow. Các bài học từ Môi Trường được áp dụng ở mức nguyên tắc: kiểm chứng contract trước khi viết, mỗi dữ liệu có owner rõ, nghiệp vụ độc lập, shared có phạm vi và kiểm tra xuyên suốt luồng được gọi. Không mang các lớp repository/base CRUD hay kiểu `any` của Angular cũ sang đây.
+Giữ Angular 22, PrimeNG, standalone, strict TypeScript/templates và hệ thiết kế Claude-inspired trong DESIGN.md. Các bài học từ Môi Trường được áp dụng ở mức nguyên tắc: kiểm chứng contract trước khi viết, mỗi dữ liệu có owner rõ, nghiệp vụ độc lập, shared có phạm vi và kiểm tra xuyên suốt luồng được gọi. Không mang các lớp repository/base CRUD hay kiểu `any` của Angular cũ sang đây.
 
 ## 1. Cấu trúc cố định và nơi đặt code
 
@@ -165,7 +165,7 @@ Chỉ tạo utility khi thuật toán thuần có tên nêu mục đích và có
 
 Tạo pipe khi phép biến đổi chỉ phục vụ template và pure, được dùng thực tế nhiều nơi; không gọi API hoặc giấu quyền/nghiệp vụ trong pipe. Chuyển đổi payload/field/date thuộc contract ở form/service tương ứng. Tạo service cho endpoint hoặc hạ tầng có DI thực sự; không tạo service chỉ để bọc một hàm thuần.
 
-SCSS chung và semantic tokens sở hữu diện mạo, layout classes dùng lại tại màn. Màn mới dùng `.component.ts/.component.html`; bố cục đặc thù nếu cần thêm vào partial SCSS có phạm vi theo [SCSS rules](scss-rules.md), không sinh stylesheet riêng mặc định. Không rải màu, override internals vendor hoặc `::ng-deep` theo màn. Control dùng API PrimeNG trực tiếp; theme overlays kiểm ở root/body.
+SCSS chung và semantic tokens sở hữu diện mạo, layout classes dùng lại tại màn. Màn mới dùng `.component.ts/.component.html`; bố cục đặc thù nếu cần thêm vào partial SCSS có phạm vi theo [SCSS rules](scss-rules.md), không sinh stylesheet riêng mặc định. Không rải màu, override internals vendor hoặc `::ng-deep` theo màn. Control Admin dùng API PrimeNG trực tiếp; control HTML ở storefront dùng style chung có phạm vi. Kiểm theme overlays ở root/body.
 
 ## 9. Ví dụ triển khai trọn luồng: Category
 

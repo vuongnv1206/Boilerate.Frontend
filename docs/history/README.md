@@ -2,6 +2,14 @@
 
 Chỉ ghi các khả năng đã triển khai theo mốc. Chi tiết sửa code tra trong Git; cách ghi tài liệu theo [quy tắc docs](../README.md#quy-tắc-duy-trì-docs).
 
+## 29/10/2026 — Thiết kế chung cho toàn sản phẩm
+
+Admin, storefront và đăng nhập dùng palette Claude, token và preset chung; storefront có kiểu chữ và bố cục riêng cho hành trình mua. Navigation Admin theo quyền, trạng thái và các lớp phủ được đồng bộ. Xem [DESIGN.md](../../DESIGN.md) và [bằng chứng local](../verification/2026-10-29-claude-redesign.md).
+
+## 27/10/2026 — Tổng quan vận hành Admin
+
+Trang đầu Admin tổng hợp các việc cần xử lý, tiền nhận/hoàn theo ngày Việt Nam và SKU cần bổ sung. Tài chính có quyền riêng; queue dùng chung với Orders/Gia hạn và giữ qua detail/Back. Xem [hành vi](../features/admin-overview.md), [hợp đồng BE](../../../Boilerate/docs/backend/features/admin-overview.md) và [bằng chứng local](../verification/2026-10-26-admin-overview.md).
+
 ## 25/10/2026 — Thống nhất toàn bộ giao diện Admin
 
 Catalog, Đơn hàng, Gia hạn, Hệ thống và Cài đặt thanh toán dùng chung control PrimeNG, typography, toolbar, bảng và trạng thái Light/Dark. Settings có khóa nhập khi đang lưu; phân quyền giữ trạng thái chọn một phần cho bàn phím và trình đọc màn hình. [DESIGN.md](../../DESIGN.md) là chuẩn chung; phạm vi kiểm chứng và giới hạn môi trường tại [báo cáo đồng bộ Admin](../verification/2026-10-25-admin-design.md).

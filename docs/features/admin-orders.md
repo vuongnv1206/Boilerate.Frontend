@@ -12,7 +12,7 @@
 Module nằm tại `/admin/orders` và `/admin/orders/:id`, dùng cùng workspace admin:
 
 - Navigation chỉ hiện khi có `Order.View`.
-- List gọi server-side query với `q`, `status`, `paymentStatus`, `fulfillmentStatus`, `createdFrom`, `createdTo`, `page`, `pageSize`; đổi filter reset page 1 và giữ query trong URL.
+- List gọi server-side query với `q`, `status`, `paymentStatus`, `fulfillmentStatus`, `createdFrom`, `createdTo`, `queue`, `page`, `pageSize`; đổi filter reset page 1 và giữ query trong URL. Queue `awaiting-payment`, `awaiting-processing`, `needs-review` từ [Tổng quan](admin-overview.md) kết hợp AND với bộ lọc khác; chip có thể xóa, giữ qua detail/Back.
 - Toolbar, bộ lọc, bảng, phân trang và trạng thái dùng cùng mẫu Catalog Products. Hai nhóm trạng thái được tách nhãn: vòng đời đơn hàng và tiến độ thực hiện đơn.
 - Cột list gồm mã đơn, người nhận, tổng tiền, thanh toán, tiến độ thực hiện, trạng thái đơn, ngày tạo và hết hạn.
 - Detail giữ rail/context cạnh nội dung và dùng chung thanh record với các màn quản trị. OrderItem vẫn là snapshot chỉ đọc.

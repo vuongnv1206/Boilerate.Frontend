@@ -2,7 +2,7 @@
 
 This file records design-research provenance for the admin UI foundation, reviewed 2026-10-19. Runtime package licenses are supplied by their installed packages and lockfile; this list does not replace those licenses.
 
-The storefront self-hosts Instrument Sans Variable via `@fontsource-variable/instrument-sans`; its package license and font metadata are distributed with the installed package. Inter Variable remains self-hosted through `@fontsource-variable/inter`.
+Inter Variable is self-hosted through `@fontsource-variable/inter`. Storefront headings use Noto Serif Variable through `@fontsource-variable/noto-serif`, distributed under SIL Open Font License 1.1; the installed package includes its license and metadata. Instrument Sans was used for the earlier storefront design and remains recorded in its package metadata.
 
 ## PrimeUI runtime license
 
@@ -16,7 +16,7 @@ Sources: [Intro to Webflow](https://help.webflow.com/hc/en-us/articles/339612601
 
 ## GetDesign and user-provided local references
 
-The local repository `D:\MyCode\get-design` at Git commit `f3c8f6c841f795b32eb369649ad9ec172626edab` identifies its remote as [nuocftraik/get-design](https://github.com/nuocftraik/get-design). The Webflow analysis at `design-systems/webflow/DESIGN.md` and selected files under `skills/` were read. [getdesign.md](https://getdesign.md/) is the user-requested public collection. The local source did not include a discovered root license in the targeted file inventory; no license permission is inferred from that absence.
+The local repository `D:\MyCode\get-design` at Git commit `f3c8f6c841f795b32eb369649ad9ec172626edab` identifies its remote as [nuocftraik/get-design](https://github.com/nuocftraik/get-design). The current palette refers to `design-systems/claude/DESIGN.md`; the earlier Webflow analysis and selected files under `skills/` were also read. [getdesign.md](https://getdesign.md/) is the user-requested public collection. The local source did not include a discovered root license in the targeted file inventory; no license permission is inferred from that absence.
 
 This project contains independently written notes and links, not a copied analysis, library, template or script. Originals remain unchanged at the user-provided location.
 

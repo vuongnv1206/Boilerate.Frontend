@@ -8,7 +8,9 @@
 
 ## Phạm vi
 
-Route `/admin/renewals` có danh sách lọc trạng thái, phân trang qua query URL và chi tiết `/admin/renewals/:id`. Thanh công cụ, bảng, trạng thái, phân trang và thanh tiêu đề chi tiết theo mẫu Products. Khi mở chi tiết, rail giữ bộ lọc/trang hiện tại để chuyển giữa các yêu cầu; Back và tải lại giữ query. BE chỉ có lọc theo trạng thái/trang, vì vậy không hiển thị ô tìm kiếm không được API hỗ trợ. Detail hiển thị snapshot, các lần gia hạn và lịch sử. Hành động gồm nhận xử lý/nhận lại khi hết thời hạn, trả yêu cầu về hàng chờ, bắt đầu một lần gia hạn và xác minh kết quả. Nhân viên thực hiện công việc với nhà cung cấp ngoài hệ thống; FE không tự gọi dịch vụ gia hạn.
+Route `/admin/renewals` có danh sách lọc trạng thái/queue, phân trang qua query URL và chi tiết `/admin/renewals/:id`. Thanh công cụ, bảng, trạng thái, phân trang và thanh tiêu đề chi tiết theo mẫu Products. Khi mở chi tiết, rail giữ bộ lọc/trang hiện tại để chuyển giữa các yêu cầu; Back và tải lại giữ query. Không hiển thị ô tìm kiếm vì BE chưa hỗ trợ. Detail hiển thị snapshot, các lần gia hạn và lịch sử. Hành động gồm nhận xử lý/nhận lại khi hết thời hạn, trả yêu cầu về hàng chờ, bắt đầu một lần gia hạn và xác minh kết quả. Nhân viên thực hiện công việc với nhà cung cấp ngoài hệ thống; FE không tự gọi dịch vụ gia hạn.
+
+Queue `awaiting-work` hoặc `pending-verification` từ [Tổng quan](admin-overview.md) kết hợp AND với trạng thái, hiện chip có thể xóa và giữ qua detail/Back. Chờ xác minh vẫn gồm yêu cầu thuộc đơn đã đóng; điều kiện count/list dùng chung ở BE. URL không hợp lệ được chuẩn hóa trước khi tải danh sách.
 
 Nhãn trạng thái mô tả quy trình: chờ khách nhập tài khoản đích → chờ nhân viên nhận xử lý → đang xử lý → chờ xác minh kết quả → đã xác nhận gia hạn. Trạng thái chờ xác minh không được nhận lại hoặc bắt đầu lần xử lý mới; nhân viên có quyền Verify ghi kết quả và hạn mới nếu gia hạn thành công.
 

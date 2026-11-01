@@ -1,145 +1,115 @@
-# Boilerate Admin — Design system
+# Boilerate — Hệ thiết kế sản phẩm
 
-> Các phần workspace dưới đây là quy chuẩn cho Admin và Collections. Storefront khách mua dùng hệ giao diện riêng tại mục [Storefront editorial](#storefront-editorial), không dùng chrome, mật độ dữ liệu hoặc control workspace của Admin.
+Đây là nguồn chuẩn thị giác cho Admin, đăng nhập, các trạng thái lỗi và cửa hàng khách mua. [PRODUCT.md](PRODUCT.md) giữ mục tiêu sản phẩm; [docs tính năng](docs/README.md) giữ hợp đồng và hành vi nghiệp vụ. Điều chỉnh token và mẫu chung ở đây trước khi tạo biến thể cho một màn riêng.
 
-Đây là chuẩn thị giác duy nhất cho toàn bộ Admin: đăng nhập, shell, Products, Categories, Product types, Orders, Renewals, quản trị hệ thống, cài đặt nhận tiền và Gallery. [PRODUCT.md](PRODUCT.md) giữ phạm vi, [tài liệu tính năng](docs/README.md) giữ hành vi và [nguồn tham chiếu](design/references/README.md) giữ provenance. Màn mới dùng các mẫu dưới đây; cập nhật chuẩn chung trước khi tạo biến thể.
+## 1. Định hướng
 
-## 1. Định hướng và độ tin cậy của tham chiếu
+Bảng màu giấy ấm, charcoal và terracotta được chọn từ [Claude trong GetDesign](D:/MyCode/get-design/design-systems/claude/DESIGN.md). Đây là cảm hứng về màu và sắc thái, không phải nhận diện thương hiệu của Boilerate hay tài sản được sao chép. Đọc các ghi chú [tham chiếu](design/references/README.md) và [nguồn bên thứ ba](THIRD_PARTY_NOTICES.md) khi dùng tài nguyên.
 
-Tham chiếu chính là Webflow **CMS/Ecommerce workspace**, với chrome compact và dữ liệu là trọng tâm. Tài liệu Webflow hiện hành xác nhận top navigation/context bar, công cụ bên trái và panel bên phải; luồng CMS mở Collection rồi mở item để chỉnh. Chúng là cơ sở bố cục và tương tác, không cung cấp một bộ design tokens có thể sao chép trực tiếp. [Intro to Webflow](https://help.webflow.com/hc/en-us/articles/33961260162323-Intro-to-Webflow), [content editor](https://help.webflow.com/hc/en-us/articles/33961251014931-Edit-site-content-as-a-content-editor).
+Chủ shop và nhân viên thường làm việc liên tục với bảng, form và trạng thái đơn; giao diện vận hành phải dễ quét và ổn định. Khách mua cần nhận biết sản phẩm, giá và bước thanh toán; storefront có nhiều khoảng thở hơn, nhưng dùng cùng ngôn ngữ màu, focus và trạng thái. Giữ nội dung tiếng Việt ngắn, rõ, ưu tiên động từ gắn với hành động.
 
-Webflow đã có lựa chọn System/Light/Dark cho giao diện; dự án áp dụng ba lựa chọn này. Không thêm các biến thể độ sáng Darker/Brighter trong mốc đầu. [Webflow theme update](https://webflow.com/updates/light-and-dark-themes-across-webflow).
+Impeccable product hỗ trợ rà soát phân cấp, tương tác và accessibility. frontend-design hướng dẫn composition cho cửa hàng; brand-guidelines là nguồn tham khảo vai trò màu. Typography, khoảng cách và trạng thái được lựa chọn theo ngữ cảnh của sản phẩm.
 
-Các kích thước dưới đây là **baseline triển khai do dự án chọn**, dựa trên cấu trúc và tỷ lệ quan sát; chưa phải số đo pixel từ ảnh Webflow. Giữ cơ chế điều chỉnh tập trung bằng tokens. Ảnh bản dựng sẽ là baseline hồi quy của dự án; không gọi đó là ảnh tham chiếu chính chủ hoặc bằng chứng pixel-perfect.
+## 2. Màu và theme
 
-GetDesign Webflow trong thư viện local phân tích website marketing. Chỉ dùng màu nhấn, tính sắc nét và radius để tham khảo; typography hero, hover dịch 6px và bóng nhiều lớp không đưa vào admin. Impeccable `product` bổ sung hướng dẫn về mật độ và tính quen thuộc; phần motion bổ sung thời lượng, easing và reduced motion. [Provenance](THIRD_PARTY_NOTICES.md).
+Ba lớp **primitive → semantic → component** dùng chung cho layout và PrimeNG. Thư mục src/styles/tokens sở hữu giá trị; WorkspacePreset ánh xạ semantic tokens sang control. Hệ thống không tạo palette riêng theo màn.
 
-## 2. Workspace và tỷ lệ
+| Vai trò                | Light   | Dark    |
+| ---------------------- | ------- | ------- |
+| Canvas                 | #f5f4ed | #141413 |
+| Surface                | #faf9f5 | #22221f |
+| Surface nâng/hover     | #efede5 | #30302e |
+| Text chính             | #141413 | #f0eee6 |
+| Text phụ               | #5e5d59 | #b0aea5 |
+| Viền phân vùng         | #e2dfd4 | #484740 |
+| Viền input             | #8e8b80 | #858279 |
+| Nhấn thương hiệu       | #c96442 | #d97757 |
+| Action/link            | #a94c30 | #d97757 |
+| Chữ trên nền nhấn nhạt | #923e28 | #f0b69e |
+| Chữ trên action        | #faf9f5 | #141413 |
 
-| Vùng               | Baseline                                                             | Hành vi                                                                                                                |
-| ------------------ | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Icon rail          | 44px                                                                 | Full-height; logo dự án, action icon có tooltip; trạng thái active rõ                                                  |
-| Topbar             | 44px                                                                 | Mỏng, tên workspace và ngữ cảnh; action ngắn gọn phía phải                                                             |
-| Panel ngữ cảnh     | 240px, min 200px, max 320px                                          | Điều hướng theo nhóm; kéo mép phải để resize; thu gọn và nhớ kích thước                                                |
-| Toolbar vùng chính | Tối thiểu 48px, tự tăng khi cần wrap                                 | Tiêu đề, search/filter và action của màn hiện tại; header chi tiết có dòng ngữ cảnh có thể cao hơn                     |
-| Rail bản ghi       | 218px desktop; 240px overlay tablet                                  | Products, Categories, Product types, Orders và Renewals giữ danh sách cạnh bản ghi; tablet mở bằng panel có focus trap |
-| Inspector          | 280px khi màn chi tiết cần thông tin phụ                             | Orders/Renewals giữ thông tin vận hành ở cạnh nội dung; co xuống dưới ở tablet                                         |
-| Control            | 34px chuẩn desktop; 30px cho biến thể compact                        | Form, toolbar và bảng dùng cùng nhịp; textarea/đa dòng tự mở rộng                                                      |
-| Bảng               | Header tối thiểu 34px; dòng tối thiểu 62px (68px từ viewport 1500px) | Tên chính 13px, metadata 11–12px; viền ngang mảnh; số căn phải; nội dung nhiều dòng tự tăng chiều cao                  |
+Terracotta trên diện tích lớn cần dùng có chủ đích. Với chữ thường và nút Light, dùng màu action đậm hơn; #c96442 với chữ sáng không đạt tương phản chữ thường 4.5:1. Dùng `--accent-ink` cho chữ trên `--accent-soft`, và `--on-accent` trên nền `--accent` ở cả hai theme. Trạng thái thành công, cảnh báo và lỗi có token riêng và kèm chữ hoặc icon.
 
-Shell chiếm viewport, tránh scroll cả document trên desktop. Panel và phần nội dung cuộn trong vùng sở hữu; header/toolbar giữ ổn định. List dùng hết vùng chính, không bọc trong card lớn. Catalog editor giữ rail sản phẩm bên trái; metadata nằm ở cuối form và không lặp thành inspector.
+System/Light/Dark là lựa chọn đồng cấp; System theo OS và cập nhật khi OS đổi. Preference lưu cục bộ, xử lý storage không khả dụng và không gây đổi dữ liệu. Các overlay gắn body kế thừa theme từ root. Đo tương phản chữ thường tối thiểu 4.5:1, chữ lớn 3:1 và biên/focus cần nhận biết tối thiểu 3:1 với nền kề.
 
-Mốc responsive triển khai: tối đa 1150px, rail bản ghi chuyển thành panel overlay; tối đa 1040px, inspector chi tiết xuống dưới nội dung; tối đa 760px, toolbar và form co lại. Rail/action vẫn truy cập được; bảng được cuộn ngang trong container có tên truy cập. Không ẩn dữ liệu quan trọng chỉ để làm ảnh gọn. Mobile chưa thuộc mốc nghiệm thu hiện tại; không suy kết quả desktop/tablet thành bằng chứng mobile.
+## 3. Typography, nhịp và hình dáng
 
-Resize có pointer capture/cleanup; giới hạn min/max và bảo vệ khi storage không khả dụng. Separator có accessible name, `role="separator"`, giá trị hiện tại và hỗ trợ ArrowLeft/ArrowRight; có nút thu gọn/mở thay cho kéo. Preference không chứa nội dung form.
+Inter Variable tự host dùng cho body, label, control, bảng và số liệu. Noto Serif Variable tự host, có Latin/Latin-ext/Vietnamese và license OFL, dùng cho tiêu đề lớn storefront. Không dùng font hoặc logo độc quyền của nguồn tham chiếu. Font có fallback phù hợp và font-display: swap; không tải toàn bộ subset vào mỗi trang.
 
-## 3. Typography, spacing và hình dáng
+| Vai trò                  | Quy chuẩn                                                                   |
+| ------------------------ | --------------------------------------------------------------------------- |
+| Admin: tiêu đề trang     | 20–24px, 600, line-height 1.25–1.35                                         |
+| Admin: section/record    | 14–16px, 600, line-height 1.4                                               |
+| Admin: body/control      | 14px, line-height 1.45–1.5                                                  |
+| Admin: label/helper      | 13px / 12px; helper và lỗi không bị thu nhỏ riêng theo màn                  |
+| Storefront: tiêu đề lớn  | Noto Serif, 34–56px; hero catalog 44–70px, line-height 1.1–1.2              |
+| Storefront: body/control | Inter 16px cho body/input, nút 15px, label/bảng 14px, helper tối thiểu 13px |
 
-- Dùng Inter Variable tự host cho Admin; fallback `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`. Instrument Sans thuộc storefront, không đưa vào tiêu đề Admin.
-- Body/control 14px, line-height 1.45–1.5; label 13px; hint/caption/lỗi 12px; tên chính trong list và rail 13px, thông tin phụ rail 12px; section title 14px/600. Tiêu đề trang độc lập 20–23px/600; tiêu đề bản ghi và danh sách compact nằm trong toolbar 15px/600. Tối thiểu 11px chỉ dành cho chrome/metadata phụ; không thu nhỏ label, input hoặc lỗi theo từng màn.
-- Spacing scale: 4, 8, 12, 16, 20, 24, 32px. Toolbar có thể dùng khoảng 6px giữa icon và chữ. Form label cách input 6px, trường cách nhau 16px.
-- Radius chính 6px; nhóm panel 0; badge theo preset; dialog tối đa 8px. Icon cùng hệ outline, 16px phổ biến, stroke nhất quán. Không dùng nhiều emoji thay icon.
-- Viền 1px ngăn vùng; bóng chỉ để tách overlay nổi. Tránh gradient, glass, card bóng đậm và góc pill trên control vận hành.
+Chữ số tiền và bảng dùng tabular numerals; chữ Việt dài wrap hoặc có cách đọc đầy đủ. Kích thước nhãn biểu đồ phải còn dễ đọc ở tablet, không chỉ dựa vào SVG co tỷ lệ; bảng dữ liệu cung cấp giá trị tương đương.
 
-## 4. Theme và tokens
+Spacing dùng 4/8/12/16/20/24/32/48px. Control Admin cao 36px, biến thể compact có tên 32px; form mua hàng dùng mục tiêu tương tác ít nhất 44px. Radius control chung 8px, overlay tối đa 12px; ảnh và khối nội dung storefront có thể 12–16px. Bảng dùng header tối thiểu 36px, hàng cơ sở 62px và tự tăng với nội dung dài; breakpoint rộng có thể dùng 68px qua token chung. Viền 1px và thay đổi surface tạo phân cấp; shadow chỉ dành cho overlay hoặc nội dung nổi thực sự.
 
-Ba lớp: **primitive → semantic → component**. Primitive định nghĩa thang neutral, blue và semantic status; semantic đặt tên theo vai trò; component map vào PrimeNG preset và UI riêng. Light/Dark thay semantic values, không đổi cấu trúc màn.
+## 4. Bố cục sản phẩm
 
-| Vai trò                    | Light baseline              | Dark baseline |
-| -------------------------- | --------------------------- | ------------- |
-| Canvas                     | `#f7f7f8`                   | `#1b1b1d`     |
-| Surface/panel              | `#ffffff`                   | `#242426`     |
-| Surface nhô/hover          | `#efeff1`                   | `#2e2e31`     |
-| Text chính                 | `#242427`                   | `#eeeeef`     |
-| Text phụ                   | `#5e5e65`                   | `#b4b4bd`     |
-| Text muted                 | `#73737b`                   | `#96969f`     |
-| Border phân vùng           | `#dedee3`                   | `#39393e`     |
-| Border input cần nhận biết | `#92929b`                   | `#73737d`     |
-| Accent/selection           | Webflow-like blue `#146ef5` | `#77a8ff`     |
-| Chữ trên accent            | `#ffffff`                   | `#081a36`     |
+### Admin
 
-Bảng đồng bộ tokens triển khai, có thể tinh chỉnh qua kiểm tra. Màu nhấn dùng cho primary action, active selection và focus. Status có cả chữ/icon, không chỉ chấm màu. Button và chip có nền accent dùng `on-accent` theo theme: text trắng trong Light, text xanh rất đậm trong Dark để giữ tương phản. Các token `editor-*` ánh xạ về semantic surface/border/accent chung, không mở một palette riêng cho editor.
+Workspace có rail/sidebar điều hướng, panel theo ngữ cảnh, topbar và vùng nội dung. Các nhóm Vận hành, Danh mục và Hệ thống dựa trên quyền; logo và điểm vào workspace dẫn tới chức năng hợp lệ đầu tiên. Toolbar chứa tiêu đề, tìm/lọc và thao tác của màn; mỗi vùng cuộn có chủ sở hữu rõ, không che action chính.
 
-Geometry dùng chung ở `src/styles/tokens/_index.scss`: `control-height`, `control-height-compact`, `record-toolbar-height`, `record-rail-width`, `record-rail-overlay-width`, `table-header-height`, `table-row-height` và `inspector-width`. Biến thể bảng rộng đổi `table-row-height` trong vùng Admin; không viết lại chiều cao ở từng bảng.
+| Mẫu               | Màn                                                           | Thành phần chính                                                                   |
+| ----------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Tổng quan         | Overview                                                      | Nhóm việc, chỉ số và biểu đồ tiền, bảng tồn; trạng thái và quyền độc lập theo phần |
+| Danh sách         | Products, Categories, Product types, Orders, Renewals, System | Toolbar, tìm/lọc, bảng, selection và pagination                                    |
+| Editor            | Collections, System                                           | Rail bản ghi khi cần, toolbar và form nhóm rõ; metadata Catalog ở cuối form        |
+| Chi tiết vận hành | Orders, Renewals                                              | Thông tin, lịch sử và action theo quyền; inspector chỉ khi hữu ích                 |
+| Settings          | Cài đặt thanh toán                                            | Form theo nhóm, trạng thái lưu và lỗi độc lập                                      |
+| Công cụ           | UI Kit                                                        | Control thật cùng preset sản phẩm, đủ trạng thái và overlay                        |
 
-Theme state là `system | light | dark`, mặc định `system`. Đọc preference và media query trước paint, đặt root theme/color-scheme; ứng dụng dùng cùng nguồn state, theo dõi system khi ở chế độ system, và nhận thay đổi giữa tab. Storage hỏng/không cho phép phải fallback an toàn. Dialog/menu/select/datepicker/tooltip/toast appended vào body vẫn theo root theme.
+Resize/collapse panel có giá trị và accessible name; thao tác kéo có lựa chọn bàn phím và cleanup. Rail bản ghi có thể chuyển thành drawer ở tablet. Footer và help mô tả đúng ngữ cảnh; màn chỉ đọc không hứa hẹn thao tác lưu. Giữ query tìm/lọc/trang, dirty guard và draft theo hợp đồng từng feature.
 
-Target: chữ thường 4.5:1, chữ lớn 3:1; focus/icon/border cần thiết nhận biết control 3:1 với nền kề. Viền phân vùng trang trí có thể nhẹ hơn. [WCAG text](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html), [non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html).
+### Storefront editorial
 
-## 5. Bộ control và trạng thái
+Header/footer cửa hàng dùng cùng palette nhưng không mang chrome Admin. Catalog ưu tiên tìm và chọn sản phẩm, ảnh thật và giá rõ; product detail ghép gallery, lựa chọn, tồn và action mua. Cart, checkout, OTP, My Orders và order detail thể hiện bước hiện tại, chi phí, kết quả và cách tiếp tục. Ảnh API là nguồn chính, fallback có ý nghĩa; nội dung không tự bịa khuyến mãi, đánh giá hoặc tồn.
 
-PrimeNG Angular components cung cấp hành vi; `WorkspacePreset` và semantic tokens quyết định diện mạo. Dùng trực tiếp `pButton`, `pInputText`, `pTextarea`, `p-inputnumber`, `p-select`, `p-multiselect`, `p-checkbox`, `p-toggleswitch`, `p-datepicker`, `p-table` và `p-tag` trong các màn đã chuẩn hóa. Dùng chung token cho table/pagination, tabs, dialog/drawer, tooltip, toast/message và upload khi có trong gallery. SCSS của màn chỉ giữ bố cục; không chồng màu, viền, radius, focus hoặc kích thước riêng lên từng control.
+### Đăng nhập và lỗi
 
-| Trạng thái           | Quy tắc                                                                                 |
-| -------------------- | --------------------------------------------------------------------------------------- |
-| Default/hover/active | Viền và nền thay nhẹ; geometry ổn định; primary action giữ màu nhấn                     |
-| Focus                | Ring 2px rõ, không bị vùng overflow cắt; keyboard không phụ thuộc hover                 |
-| Disabled             | Vẫn đọc được; không nhận thao tác; không chỉ giả lập bằng CSS                           |
-| Readonly             | Giá trị vẫn chọn/copy được khi control hỗ trợ; khác disabled                            |
-| Invalid              | Viền semantic danger + thông báo ngay dưới trường; `aria-invalid` và `aria-describedby` |
-| Loading              | Cấm submit lặp, giữ nhãn ngữ cảnh; skeleton cho vùng dữ liệu nếu cần                    |
-| Selected             | Nền tint và indicator rõ; checkbox/bảng có tên truy cập                                 |
+Login và forbidden dùng chung typography, focus, label và feedback; khôi phục phiên/deep link giữ hành vi hiện tại. Forbidden cung cấp đường tới chức năng được phép. Loading, restore lỗi và retry phải có thông báo phù hợp, không hiển thị dữ liệu chưa được quyền xem.
 
-Mỗi trường có visible label. Placeholder chỉ gợi ý. Overlay có tên, Escape, focus trap/return theo hành vi PrimeNG; dropdown không bị bảng/panel clip. Tabs có key navigation và selected state. Error/toast không lấy focus đột ngột; trạng thái lưu dùng vùng thông báo phù hợp.
+Desktop 1440×900 và tablet 1024×768 là viewport nghiệm thu; mobile giữ bố cục co nhỏ cơ bản và chưa thuộc đợt tối ưu. Mốc tablet của các rail và inspector cần giữ nội dung và action truy cập được. Bảng rộng cuộn trong vùng có tên truy cập, không dùng document overflow để che cột.
 
-Control gallery phải cho thử trạng thái thay vì chỉ vẽ ảnh. Giữ gallery như công cụ review nội bộ, tách khỏi Catalog demo qua route riêng.
+## 5. Components và trạng thái
 
-## 6. Danh sách, editor và ngôn ngữ UI
+Admin dùng control PrimeNG trực tiếp; preset và token quyết định diện mạo của button, input, textarea, select/multiselect, checkbox, switch, datepicker, table, pagination, tabs, tag, dialog/drawer, tooltip, toast/message và upload. UI Kit cho thử từng biến thể thật, không chỉ ảnh mô phỏng. Storefront dùng các control HTML có ngữ nghĩa và style dùng chung trong phạm vi cửa hàng, cùng token cho màu, trạng thái và focus.
 
-Danh sách: breadcrumb/tiêu đề, search tiếng Việt, filter trạng thái, chọn dòng, count và pagination. Cột tên có link mở editor; checkbox không vô tình mở dòng. Không có kết quả thì giữ query/filter và cho cách xóa bộ lọc.
+- **Navigation và toolbar:** nhóm chức năng theo quyền; logo dẫn về điểm vào Admin phù hợp. Tiêu đề và thao tác của bản ghi nằm gần nội dung đang xử lý; tìm kiếm, lọc và pagination giữ ngữ cảnh URL. Chỉ hiện thao tác người dùng có quyền thực hiện.
+- **Bảng và ma trận quyền:** dùng chiều cao hàng chung, cho phép nội dung dài xuống dòng và cuộn trong vùng có tên truy cập khi cần. Căn số liệu nhất quán, giữ header rõ và hiển thị trạng thái bằng chữ. Ma trận quyền giữ nhóm chức năng và nhãn hành động dễ quét; thao tác trên nhóm đang lọc phải giữ các quyền bị ẩn.
+- **Form:** nhóm các trường theo việc cần làm, đặt metadata Catalog cuối form. Label hiển thị độc lập với placeholder; liên kết mô tả và lỗi với trường tương ứng. Giữ bản nhập khi validation, mạng hoặc xung đột thất bại; thông báo lưu chỉ xuất hiện sau phản hồi thành công.
+- **Dialog, drawer và popover:** dùng overlay của thư viện với tên truy cập và Escape. Dialog/drawer dạng modal giữ focus bên trong và trả focus khi đóng; popover và dropdown mở ngoài vùng cuộn, không bị cắt và kế thừa theme root.
+- **Thông báo và biểu đồ:** thông báo theo đúng vùng dữ liệu, có hành động thử lại khi phù hợp và không chỉ dựa vào màu. Biểu đồ phải đọc được nhãn ở tablet, có bảng dữ liệu tương đương và truy cập bằng bàn phím.
 
-Editor: quay lại danh sách, tên bản ghi, save status và action ở toolbar; form nhóm trường rõ; ảnh, options và bảng variants dùng chung bản nhập, metadata ở cuối. Collections lưu qua API thật; chỉ báo thành công sau phản hồi server. Validation chặn lưu thiếu trường; dirty state không bị mất âm thầm khi chuyển màn. Giữ trạng thái tìm/lọc/phân trang khi quay lại nếu màn hiện tại hỗ trợ. Gallery tiếp tục là nơi thử control.
+| Trạng thái                       | Hành vi và phản hồi                                                                          |
+| -------------------------------- | -------------------------------------------------------------------------------------------- |
+| Default, hover, active, selected | Giữ geometry; nhấn thể hiện trọng tâm hoặc lựa chọn, không chỉ dựa vào màu                   |
+| Focus                            | Ring tối thiểu 2px rõ, không bị clip; thao tác đầy đủ bằng bàn phím                          |
+| Disabled / readonly              | Disabled không thao tác; readonly vẫn có thể đọc và copy nếu control hỗ trợ                  |
+| Loading / saving                 | Thông báo theo vùng, giữ ngữ cảnh, chặn gửi lặp                                              |
+| Empty / filter-empty             | Giải thích trạng thái và cung cấp hành động phù hợp hoặc xóa lọc                             |
+| Error / retry / forbidden        | Thông điệp an toàn, có retry theo vùng khi thích hợp; phần không được quyền ẩn               |
+| Invalid / conflict               | Label và lỗi liên kết bằng aria-invalid/aria-describedby; giữ draft và chỉ ra cách xử lý 409 |
+| Dirty / saved                    | Cảnh báo rời màn khi có thay đổi chưa lưu; chỉ báo đã lưu sau phản hồi server                |
 
-Copy dùng tiếng Việt tự nhiên, ngắn gọn; tên nút là động từ gắn đối tượng. Nội dung dài wrap ở form, ellipsis ở cột có cách đọc đầy đủ. Ngày/số tiền theo locale Việt Nam; fixture phải có dấu và tên dài.
+Thông báo lưu/lỗi không chiếm focus bất ngờ. Quyền thao tác được kiểm ở cả UI và BE; dữ liệu tài chính, hàng số và gia hạn tuân theo hợp đồng hiện hành.
 
-## 7. Motion
+## 6. Motion và style ownership
 
-| Token  | Thời lượng | Dùng cho                               |
-| ------ | ---------- | -------------------------------------- |
-| Fast   | 120ms      | Hover, press, màu/viền, trạng thái nhỏ |
-| Normal | 180ms      | Theme, tab, popover, phản hồi lưu      |
-| Panel  | 240ms      | Drawer, panel mở/đóng                  |
+Tokens motion hiện tại 120/180/240ms cho phản hồi nhỏ, thay trạng thái và panel; ưu tiên opacity/transform. Kéo resize bám pointer, không tween; prefers-reduced-motion rút ngắn chuyển động mà vẫn giữ phản hồi trạng thái. Không thêm animation mở trang làm chậm thao tác Admin.
 
-Easing chuẩn `cubic-bezier(0.2, 0, 0, 1)` cho enter; exit ngắn hơn hoặc bằng enter. Ưu tiên opacity/transform. Không animate width khi người dùng đang kéo separator, tránh lag giữa pointer và panel. Không stagger hàng dữ liệu hay chạy animation trang lúc người dùng cần nhập.
+- Tokens và geometry: src/styles/tokens; preset PrimeNG: src/app/core/theme/workspace-preset.ts.
+- Danh sách, toolbar, khung bản ghi và form: src/styles/admin/_collections.scss, _forms.scss; style màn chỉ mô tả composition đặc thù.
+- Storefront: src/styles/storefront, chia theo chrome, catalog/product, checkout và orders; nạp khi vào StorefrontShell. Selector phạm vi `.storefront-app`; overlay gắn body dùng class riêng và token/preset root.
+- Không dùng ::ng-deep, selector trần toàn cục hoặc override !important để thắng preset. Các ngoại lệ [hidden] và reduced motion có thể dùng khi cần giữ hành vi accessibility.
 
-Animation bình thường **bật mặc định**; không thêm switch giảm chuyển động hoặc yêu cầu người dùng đổi OS để nghiệm thu. CSS `prefers-reduced-motion: reduce` vẫn là fallback accessibility, rút ngắn chuyển động khi hệ điều hành yêu cầu; focus, loading label và save feedback vẫn hiểu được. OS-emulated reduced-motion QA đang hoãn. MotionSites là nguồn cảm hứng chuyển động, không quyết định stack Angular hoặc thêm thư viện nặng. Chưa có benchmark motion đo từ nguồn đó.
+## 7. Kiểm chứng
 
-## 8. Review trước khi mở rộng màn
+Review UI Kit, Tổng quan, list/editor Catalog, Orders/Renewals, System, settings, login/forbidden và hành trình mua ở 1440×900 và 1024×768, Light/Dark/System. Kiểm tra dialog/dropdown gắn body, panel resize/collapse, scroll, keyboard/focus, nội dung Việt dài và đủ trạng thái. Chạy FE check, browser E2E và live acceptance trên SQL Server test cô lập; soát permission, deep link/Back, save/dirty guard, 409 và lỗi mạng.
 
-- Soát list, editor và ít nhất một overlay ở Light/Dark cùng viewport desktop 1440×900 và tablet 1024×768. Mobile hoãn theo yêu cầu hiện tại.
-- Kiểm tra panel resize/collapse/reload, theme reload/system change, search/filter/page/selection, dirty/save và validation.
-- Dùng bàn phím mở/đóng overlay và quay lại focus; kiểm tra tiếng Việt dài và normal motion đang bật. Giữ fallback reduced motion trong CSS; không yêu cầu OS-QA ở mốc này theo lựa chọn người dùng.
-- Chụp ảnh bản dựng sau khi tương tác ổn định; soát tỷ lệ, alignment, contrast và các vùng scroll. Ảnh Webflow công khai có thể khác phiên bản/viewport: ghi rõ nguồn và giới hạn so sánh.
-- Báo cáo kết quả thực sự chạy và khoảng trống trong bàn giao; chỉ giữ bằng chứng lâu dài khi cần theo [quy tắc docs](docs/README.md#quy-tắc-duy-trì-docs). Nghiệm thu thiết kế với người dùng và nghiệm thu deployment là trạng thái riêng.
-
-## 9. Mẫu màn Admin và nơi sở hữu style
-
-| Mẫu                  | Áp dụng                                                                    | Quy tắc bố cục                                                                                                                       |
-| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Danh sách            | Products, Categories, Product types, Orders, Renewals và quản trị hệ thống | Toolbar compact chứa tiêu đề, tìm/lọc và action; bảng chiếm vùng còn lại; thông báo và phân trang dùng cùng nhịp                     |
-| Editor Collections   | Products, Categories, Product types                                        | Rail bản ghi bên trái, toolbar trên, form cuộn riêng; metadata ở cuối form; không thêm inspector lặp thông tin                       |
-| Chi tiết vận hành    | Orders, Renewals                                                           | Header giữ ngữ cảnh và action; nội dung và inspector là section phẳng, phân cách bằng viền; không dùng card bo lớn hoặc đổ bóng      |
-| Quản trị hệ thống    | Users, Roles, Functions, Actions và nhóm chức năng                         | List dùng mẫu danh sách; editor giữ nav nhóm khi cần, form và bảng quyền cùng typography/control; nhóm quyền không tạo palette riêng |
-| Cài đặt nhận tiền    | Storefront settings trong Admin                                            | Header có action lưu; form theo nhóm, label/helper và control Admin; trạng thái loading/error/success theo chuẩn chung               |
-| Gallery và đăng nhập | Control preview, login                                                     | Dùng cùng preset, font, label và trạng thái; Gallery giữ các biến thể thử nghiệm có tên rõ                                           |
-
-Products giữ options dạng chip input Hủy/Xong, variants inline Hoàn tác/Đóng, một Save chung và lifecycle ở footer. Các composite chip input dùng semantic form tokens, ring focus trên nhóm và input compact 30px; đó là biến thể được đặt tên, không là lý do thu nhỏ các trường khác. Giá trị readonly vẫn đọc/copy được khi control hỗ trợ. Categories giữ picker sản phẩm nhiều lựa chọn và trạng thái membership riêng theo contract; Product types giữ schema builder và sản phẩm liên quan. Việc thống nhất giao diện không đổi các luồng lưu hay quyền.
-
-- `src/styles/tokens/_index.scss` sở hữu giá trị semantic/geometry; `WorkspacePreset` sở hữu diện mạo và trạng thái PrimeNG. `src/styles/primeng/_index.scss` chỉ giữ layout và adapter overlay chung.
-- `_collections.scss` sở hữu list, toolbar, bảng và khung bản ghi; `_forms.scss` sở hữu nhịp form. Các màn dùng `collection-screen` và các class chung, không dựng một bộ form/button khác.
-- `_catalog.scss` sở hữu rail/list Products; `_catalog-editor.scss` sở hữu composition editor, options, variants và metadata. Không định nghĩa lại editor ở cả hai file hoặc dựa vào import sau để sửa hình dáng control.
-- Các file `_categories`, `_product-types`, `_orders`, `_renewals`, `_system` và `_storefront-settings` chỉ giữ bố cục nghiệp vụ. Selector phải có phạm vi màn/chrome rõ; overlay appended vào body dùng class riêng hoặc token. Không để `.field`, `.eyebrow`, `.error` hay `.success` trần trở thành chuẩn toàn ứng dụng.
-- Native-control fallback trong `styles/base/_controls.scss` chỉ phục vụ phần còn dùng native như chrome/storefront; các màn Admin dùng PrimeNG trực tiếp. Không thêm `!important`, palette riêng hoặc stylesheet component mới để thắng lớp chung.
-
-## Storefront editorial
-
-Storefront dành cho khách mua, dùng chung API và theme với Admin nhưng giữ bố cục tạp chí thương mại: nhiều khoảng thở, ảnh sản phẩm làm trọng tâm, tiêu đề display lớn, đường nét gọn và nội dung tiếng Việt dễ quét. Tham khảo Webflow Marketing từ `get-design/design-systems/webflow/DESIGN.md` và hướng sáng tạo của skill `frontend-design`; đây là nguồn cảm hứng, không sao chép template, mã hay tài sản. Xem provenance tại [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md).
-
-- Instrument Sans Variable dùng cho heading/display; Inter Variable hiện có dùng cho body, form và điều khiển. Font được tự host; không dùng Visual Sans hoặc font Webflow độc quyền.
-- Canvas sáng theo semantic surface tokens, chữ đậm và màu xanh `#146ef5` là điểm nhấn. Dark theme chuyển qua semantic values hiện có; trạng thái success/warning/danger dùng token có cả chữ và nền dễ phân biệt. Nền phụ/gradient chỉ phục vụ hero nhẹ, không dùng glass hoặc bóng nặng.
-- Header và footer là chrome cửa hàng, không có rail/panel admin. Catalog có hero, search/danh mục, lưới bốn cột desktop và ba cột tablet; tỷ lệ ảnh cố định. Trang chi tiết ghép gallery với giá, phân loại, tồn kho và thao tác mua. Giỏ, checkout, xác minh OTP và đơn hàng ưu tiên thứ tự đọc, trạng thái và tổng tiền.
-- API media là nguồn ảnh chính; dùng SVG theo ngữ nghĩa trong `public/images` khi thiếu/lỗi, rồi hiển thị trạng thái ảnh chung. Không tự thêm đánh giá, khan hiếm hoặc khuyến mãi không có dữ liệu.
-- Control storefront có hit target phù hợp thao tác mua, visible label, ring focus rõ và trạng thái disabled/loading/error. Bảng giỏ/chi tiết đơn cuộn trong vùng có tên truy cập; chữ tiếng Việt dài được wrap, đặc biệt ở địa chỉ, hướng dẫn chuyển khoản và nội dung số.
-- Desktop 1440×900 và tablet 1024×768 là viewport nghiệm thu. Layout giữ khả năng co nhỏ cơ bản, nhưng tối ưu mobile chưa thuộc mốc này. Light/Dark được kiểm trên storefront; reduced motion theo `prefers-reduced-motion`.
-
-SCSS storefront được tập trung ở `src/styles/storefront/_index.scss`; các semantic values lấy từ `src/styles/tokens/_index.scss`. Khi sửa màn mua hàng, giữ contract checkout/OTP, COD, chuyển khoản xác nhận thủ công, thanh toán và điều kiện mở hàng số tại [feature storefront](docs/features/storefront.md).
+Review ảnh thực tế trước khi cập nhật baseline. Đo bundle/CSS/font và giữ nguyên budget; ghi rõ kết quả thực chạy, source, môi trường và các phạm vi chưa nghiệm thu trong báo cáo theo [quy tắc docs](docs/README.md#quy-tắc-duy-trì-docs).

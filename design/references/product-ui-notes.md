@@ -1,6 +1,6 @@
 # Selected product UI guidance
 
-Original project notes informed by the local Impeccable references listed in [provenance](README.md). These notes apply the user's Webflow direction and do not import another framework or workflow.
+Original project notes informed by the local Impeccable references listed in [provenance](README.md). These notes apply the approved warm product design and do not import another framework or workflow.
 
 ## Product UI
 
