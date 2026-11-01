@@ -4,10 +4,14 @@ import { THEME_STORAGE_KEY, ThemeController } from './theme-controller';
 
 describe('ThemeController', () => {
   let systemChange: ((event: MediaQueryListEvent) => void) | undefined;
+  let themeColor: HTMLMetaElement;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
     localStorage.clear();
+    themeColor = document.createElement('meta');
+    themeColor.name = 'theme-color';
+    document.head.prepend(themeColor);
     systemChange = undefined;
     vi.stubGlobal(
       'matchMedia',
@@ -23,6 +27,7 @@ describe('ThemeController', () => {
   });
 
   afterEach(() => {
+    themeColor.remove();
     TestBed.resetTestingModule();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
@@ -40,6 +45,9 @@ describe('ThemeController', () => {
     expect(theme.resolved()).toBe('dark');
     expect(document.documentElement.classList.contains('app-dark')).toBe(true);
     expect(document.documentElement.style.colorScheme).toBe('dark');
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
+      '#141413',
+    );
   });
 
   it('follows OS changes only when system mode is selected', () => {
@@ -51,6 +59,9 @@ describe('ThemeController', () => {
     systemChange?.({ matches: true } as MediaQueryListEvent);
     expect(theme.resolved()).toBe('light');
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
+      '#f5f4ed',
+    );
   });
 
   it('synchronizes another tab and falls back to system for a cleared preference', () => {

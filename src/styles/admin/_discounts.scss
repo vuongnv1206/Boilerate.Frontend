@@ -1,0 +1,28 @@
+.collection-screen {
+  .discount-editor-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--control-height-compact);
+    height: var(--control-height-compact);
+    border-radius: var(--radius);
+    color: var(--text-2);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--text-1);
+      background: var(--surface-2);
+    }
+  }
+
+  .discount-editor-title {
+    flex: 1;
+  }
+
+  .discount-editor-body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+}

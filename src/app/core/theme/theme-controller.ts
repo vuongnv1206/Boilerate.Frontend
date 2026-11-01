@@ -75,6 +75,6 @@ export class ThemeController {
     root.style.colorScheme = theme;
     this.document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', theme === 'dark' ? '#1b1b1d' : '#f7f7f8');
+      ?.setAttribute('content', theme === 'dark' ? '#141413' : '#f5f4ed');
   }
 }

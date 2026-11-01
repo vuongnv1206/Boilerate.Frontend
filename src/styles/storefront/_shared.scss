@@ -1,0 +1,212 @@
+@layer app {
+  .storefront-app {
+    .store-button {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 0 15px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.3;
+      text-align: center;
+      text-decoration: none;
+      transition:
+        transform 120ms ease,
+        background 120ms ease,
+        border-color 120ms ease,
+        color 120ms ease;
+
+      &:active:not(:disabled) {
+        transform: translateY(1px);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        border-color: var(--border);
+        background: var(--surface-2);
+        color: var(--text-2);
+        opacity: 1;
+      }
+    }
+
+    .store-button-primary {
+      background: var(--accent);
+      color: var(--on-accent);
+
+      &:hover:not(:disabled) {
+        background: var(--accent-hover);
+      }
+    }
+
+    .store-button-secondary {
+      border-color: var(--field-border);
+      background: var(--store-raised);
+      color: var(--store-text);
+
+      &:hover:not(:disabled) {
+        border-color: var(--store-accent-ink);
+        color: var(--store-accent-ink);
+      }
+    }
+
+    .catalog-state {
+      display: flex;
+      min-height: 185px;
+      align-items: center;
+      gap: 18px;
+      padding: 28px;
+      border: 1px solid var(--store-line);
+      background: var(--store-panel);
+
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h2,
+      h3 {
+        font-family: var(--font-ui);
+        font-size: 20px;
+        letter-spacing: -0.03em;
+      }
+
+      p {
+        margin-top: 5px;
+        color: var(--store-muted);
+        font-size: 15px;
+      }
+    }
+
+    .catalog-state-error > ui-icon {
+      color: var(--danger);
+    }
+
+    .catalog-state-empty {
+      min-height: 250px;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+
+      .store-eyebrow {
+        margin-top: 8px;
+      }
+    }
+
+    .breadcrumbs {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      color: var(--store-muted);
+      font-size: 13px;
+
+      a {
+        color: var(--store-muted);
+        text-decoration: none;
+
+        &:hover {
+          color: var(--store-accent-ink);
+        }
+      }
+
+      .current {
+        overflow: hidden;
+        color: var(--store-text);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .added-toast {
+      display: flex;
+      min-height: 52px;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding: 10px 15px;
+      border: 1px solid color-mix(in srgb, var(--success) 32%, var(--store-line));
+      background: var(--store-success-soft);
+      color: var(--success);
+      font-size: 14px;
+    }
+
+    .toast-icon {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--success);
+      color: var(--store-canvas);
+    }
+
+    .toast-link {
+      margin-left: auto;
+      color: var(--success);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .detail-loading {
+      display: grid;
+      grid-template-columns: 1fr 0.85fr;
+      gap: 7%;
+    }
+
+    .detail-skeleton-image,
+    .detail-skeleton-copy,
+    .product-skeleton .skeleton-image,
+    .product-skeleton .skeleton-copy,
+    .product-skeleton .skeleton-price,
+    .cart-skeleton-row {
+      background: linear-gradient(
+        90deg,
+        var(--store-panel),
+        var(--store-raised),
+        var(--store-panel)
+      );
+      background-size: 200% 100%;
+      animation: storefront-shimmer 1.4s ease-in-out infinite;
+    }
+
+    .detail-skeleton-image {
+      aspect-ratio: 1 / 0.87;
+    }
+
+    .detail-skeleton-copy {
+      min-height: 300px;
+    }
+
+    .product-skeleton {
+      .skeleton-image {
+        aspect-ratio: 1.08;
+      }
+
+      .skeleton-copy {
+        width: 72%;
+        height: 16px;
+        margin-top: 16px;
+      }
+
+      .skeleton-price {
+        width: 43%;
+        height: 13px;
+        margin-top: 11px;
+      }
+    }
+
+    @keyframes storefront-shimmer {
+      to {
+        background-position: -200% 0;
+      }
+    }
+  }
+}

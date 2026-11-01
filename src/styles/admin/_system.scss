@@ -41,6 +41,7 @@
       align-items: center;
       gap: 10px;
       padding: 12px;
+      min-height: 44px;
       border: 1px solid transparent;
       border-radius: var(--radius);
       color: var(--text-2);
@@ -48,8 +49,12 @@
       text-align: left;
       cursor: pointer;
     }
+    button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
     button.selected {
-      color: var(--accent);
+      color: var(--accent-ink);
       border-color: var(--accent);
       background: var(--accent-soft);
       font-weight: 600;
@@ -68,8 +73,8 @@
     border: 0;
   }
   .system-eyebrow {
-    color: var(--accent);
-    font-size: 11px;
+    color: var(--accent-ink);
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.7px;
   }
@@ -87,14 +92,14 @@
     border-bottom: 1px solid var(--border);
     h2 {
       margin: 4px 0 8px;
-      font-size: 14px;
+      font-size: 16px;
     }
     p {
       color: var(--text-2);
       margin: 0 0 6px;
     }
     .system-eyebrow {
-      color: var(--accent);
+      color: var(--accent-ink);
     }
   }
   .permission-search {
@@ -129,13 +134,17 @@
     color: var(--text-1);
     cursor: pointer;
     text-align: left;
+    &:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: -2px;
+    }
     > span {
       margin-left: auto;
-      color: var(--accent);
+      color: var(--accent-ink);
       background: var(--accent-soft);
       padding: 4px 8px;
       border-radius: var(--radius);
-      font-size: 11px;
+      font-size: 12px;
       white-space: nowrap;
     }
   }
@@ -175,7 +184,7 @@
       font-weight: 500;
     }
     code {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-3);
     }
   }
@@ -193,7 +202,7 @@
     &.selected {
       border-color: var(--accent);
       background: var(--accent-soft);
-      color: var(--accent);
+      color: var(--accent-ink);
     }
     &.inactive {
       border-style: dashed;
@@ -209,13 +218,13 @@
       display: block;
       margin-top: 3px;
       color: var(--text-3);
-      font-size: 11px;
+      font-size: 12px;
     }
     &:has(input:disabled) {
       cursor: default;
     }
     &:focus-within {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--focus-ring);
       outline-offset: 2px;
     }
   }
@@ -289,6 +298,10 @@
   padding: 10px;
   text-align: left;
   cursor: pointer;
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
   small {
     display: block;
     color: var(--text-3);

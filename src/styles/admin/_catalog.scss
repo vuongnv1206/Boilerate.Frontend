@@ -82,8 +82,8 @@
     }
     &[aria-current='page'] {
       background: var(--accent-soft);
-      color: var(--accent);
-      box-shadow: inset 2px 0 var(--accent);
+      color: var(--accent-ink);
+      font-weight: 600;
     }
   }
   .catalog-items-message {

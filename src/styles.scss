@@ -2,7 +2,6 @@
 @use 'styles/tokens';
 @use 'styles/motion';
 @import '@fontsource-variable/inter/wght.css';
-@import '@fontsource-variable/instrument-sans/wght.css';
 
 @layer reset, primeng, app;
 
@@ -14,5 +13,4 @@
   @include meta.load-css('styles/primeng');
   @include meta.load-css('styles/base/controls');
   @include meta.load-css('styles/admin');
-  @include meta.load-css('styles/storefront');
 }

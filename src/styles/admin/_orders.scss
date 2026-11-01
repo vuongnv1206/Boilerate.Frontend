@@ -6,8 +6,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--text-3);
-    font-size: 12px;
+    color: var(--text-2);
+    font-size: 13px;
   }
   .order-date-filter p-datepicker {
     width: 154px;
@@ -61,8 +61,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 48px;
-  padding: 8px 12px;
+  min-height: var(--record-toolbar-height);
+  padding: 8px 16px;
   gap: 8px;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
@@ -82,7 +82,7 @@
 }
 .order-item-search {
   display: block;
-  padding: 10px;
+  padding: 12px;
   border-bottom: 1px solid var(--border);
 }
 .order-item-search input {
@@ -96,8 +96,8 @@
 .order-items-list > a {
   display: grid;
   gap: 5px;
-  min-height: 62px;
-  padding: 8px 10px;
+  min-height: var(--table-row-height);
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   color: var(--text-2);
   font-size: 13px;
@@ -105,10 +105,14 @@
 .order-items-list > a:hover {
   background: var(--surface-2);
 }
+.order-items-list > a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
 .order-items-list > a[aria-current='page'] {
   background: var(--accent-soft);
-  color: var(--accent);
-  box-shadow: inset 2px 0 var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
 }
 .order-item-line {
   display: flex;
@@ -172,7 +176,7 @@
 }
 .order-title-row h1 {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   letter-spacing: -0.3px;
 }
 .order-detail-header p {
@@ -228,7 +232,7 @@
   border-bottom: 1px solid var(--border);
   background: var(--surface-0);
   border-radius: 0;
-  padding: 16px 0 24px;
+  padding: 20px 0 24px;
   box-shadow: none;
 }
 .order-card-heading {
@@ -241,9 +245,9 @@
 .admin-record-page .order-card h2,
 .admin-record-page .inspector-card h2 {
   margin: 4px 0 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 20px;
+  line-height: 24px;
 }
 .admin-record-page .eyebrow {
   display: block;
@@ -257,6 +261,10 @@
   border: 1px solid var(--border);
   padding: 4px 8px;
   border-radius: var(--radius);
+}
+.admin-record-page .table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
 }
 .order-items-table {
   min-width: 760px;
@@ -365,7 +373,7 @@
 .shipment-card {
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   padding: 14px;
 }
 .shipment-heading {
@@ -554,7 +562,7 @@
   align-items: flex-start;
   gap: 8px;
   color: var(--text-1);
-  font-size: 12px;
+  font-size: 13px;
 }
 .after-sales-cod-choice p-checkbox {
   margin-top: 2px;
@@ -562,7 +570,7 @@
 
 @media (max-width: 1040px) {
   .order-workspace-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .order-inspector {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -580,7 +588,7 @@
   }
   .order-items {
     position: absolute;
-    inset: 48px auto 0 0;
+    inset: var(--record-toolbar-height) auto 0 0;
     width: min(var(--record-rail-overlay-width), 85%);
     z-index: 22;
     display: none;
@@ -592,7 +600,7 @@
   .order-items-backdrop {
     position: absolute;
     z-index: 21;
-    inset: 48px 0 0;
+    inset: var(--record-toolbar-height) 0 0;
     display: block;
     border: 0;
     background: var(--surface-0);

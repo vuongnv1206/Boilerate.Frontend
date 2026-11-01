@@ -31,8 +31,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 48px;
-  padding: 8px 12px;
+  min-height: var(--record-toolbar-height);
+  padding: 8px 16px;
   gap: 8px;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
@@ -53,7 +53,7 @@
 .renewal-item-filter {
   display: grid;
   gap: 5px;
-  padding: 10px;
+  padding: 12px;
   border-bottom: 1px solid var(--border);
   color: var(--text-3);
   font-size: 13px;
@@ -68,8 +68,8 @@
 .renewal-items-list > a {
   display: grid;
   gap: 5px;
-  min-height: 62px;
-  padding: 9px 10px;
+  min-height: var(--table-row-height);
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   color: var(--text-2);
   font-size: 13px;
@@ -77,10 +77,14 @@
 .renewal-items-list > a:hover {
   background: var(--surface-2);
 }
+.renewal-items-list > a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
 .renewal-items-list > a[aria-current='page'] {
   background: var(--accent-soft);
-  color: var(--accent);
-  box-shadow: inset 2px 0 var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
 }
 .renewal-item-heading {
   display: flex;
@@ -160,7 +164,7 @@
 }
 .renewal-detail-title-row h1 {
   margin: 3px 0 0;
-  font-size: 15px;
+  font-size: 16px;
   letter-spacing: -0.3px;
 }
 .renewal-detail-header p {
@@ -312,7 +316,7 @@
   }
   .renewal-items {
     position: absolute;
-    inset: 48px auto 0 0;
+    inset: var(--record-toolbar-height) auto 0 0;
     z-index: 22;
     display: none;
     width: min(var(--record-rail-overlay-width), 85%);
@@ -323,7 +327,7 @@
   }
   .renewal-items-backdrop {
     position: absolute;
-    inset: 48px 0 0;
+    inset: var(--record-toolbar-height) 0 0;
     z-index: 21;
     display: block;
     border: 0;
