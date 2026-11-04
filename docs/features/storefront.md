@@ -1,8 +1,8 @@
 # Storefront khách mua
 
 - Ngày bắt đầu: 2026-10-24
-- Cập nhật gần nhất: 2026-10-30
-- Trạng thái: Giao diện palette ấm đang được nâng cấp; kiểm chứng hiện tại ghi theo báo cáo đợt redesign, PostgreSQL runtime còn mở
+- Cập nhật gần nhất: 2026-11-04
+- Trạng thái: Đã hoàn thiện local, gồm mobile; kiểm chứng theo báo cáo 04/11, PostgreSQL runtime còn mở
 - Khu vực phụ trách: FE
 - Mốc roadmap: [Mốc sau — hành trình khách mua](../../PRODUCT.md#mốc-sau)
 - Hồ sơ liên quan: [BE API guest storefront](../../../Boilerate/docs/backend/features/guest-storefront.md), [điều phối chung](../../../Boilerate/docs/shared/features/guest-storefront-checkout.md)
@@ -31,7 +31,7 @@ Màn này dùng bố cục và control Admin theo [DESIGN.md](../../DESIGN.md), 
 
 Storefront dùng cùng palette giấy ấm/terracotta với Admin, với bố cục riêng ưu tiên hình ảnh và hành trình mua. Tiêu đề lớn dùng Noto Serif Variable; thông tin giao dịch và control dùng Inter Variable. Ảnh API được ưu tiên, sau đó là SVG theo ngữ nghĩa và trạng thái ảnh chung. Stylesheet được chia theo chrome, catalog/product, checkout và orders, nạp theo StorefrontShell. Quy chuẩn hiện tại nằm trong [DESIGN.md](../../DESIGN.md#storefront-editorial).
 
-Viewport nghiệm thu là desktop 1440×900 và tablet 1024×768, cả Light/Dark/System; mobile optimization hoãn. E2E kiểm keyboard/focus và tiếng Việt dài, API image, ảnh thiếu/hỏng, tìm kiếm/danh mục, variant hết hàng, giỏ rỗng, OTP sai, COD hàng số, stale total và thiếu cấu hình. Snapshot storefront gồm catalog, chi tiết hết hàng, giỏ rỗng, checkout xác minh và trạng thái My Orders. Live SQL Server/mail sink kiểm OTP, HttpOnly cookie, COD/My Orders, Admin settings và giao nội dung số sau xác nhận thanh toán. [Báo cáo 24/10](../verification/2026-10-24-guest-storefront.md) là bằng chứng của source cũ, không thay cho lượt kiểm chứng redesign mới.
+Viewport nghiệm thu là desktop 1440×900 và tablet 1024×768, cả Light/Dark/System; mobile storefront 390×844 và 360×800 thuộc đợt nâng cấp local 04/11, còn Admin mobile hoãn. E2E kiểm keyboard/focus và tiếng Việt dài, API image, ảnh thiếu/hỏng, tìm kiếm/danh mục, variant hết hàng, giỏ rỗng, OTP sai, COD hàng số, stale total và thiếu cấu hình. Snapshot storefront gồm catalog, chi tiết hết hàng, giỏ rỗng, checkout xác minh và trạng thái My Orders. Live SQL Server/mail sink kiểm OTP, HttpOnly cookie, COD/My Orders, Admin settings và giao nội dung số sau xác nhận thanh toán. [Báo cáo 24/10](../verification/2026-10-24-guest-storefront.md) là bằng chứng của source cũ, không thay cho lượt kiểm chứng redesign mới.
 
 ### 2026-10-24 — Nền hiện có, guest flow và settings
 
@@ -44,3 +44,7 @@ Viewport nghiệm thu là desktop 1440×900 và tablet 1024×768, cả Light/Dar
 
 - Làm mới giao diện khách mua từ catalog tới chi tiết đơn: hero, tìm kiếm/danh mục, lưới và gallery sản phẩm, giỏ/checkout/OTP, đơn hàng, shipment và giao hàng số. Thêm fallback SVG khi catalog thiếu ảnh hoặc media API lỗi; giữ nguyên logic/API checkout và thông tin thanh toán.
 - Kiểm chứng trực quan theo Light/Dark ở desktop 1440×900 và tablet 1024×768, cùng storefront E2E và live SQL Server acceptance; đây là kết quả của mốc 24/10.
+
+## Hoàn thiện local 04/11
+
+Theo [hồ sơ nâng cấp](local-usability-upgrade.md): query catalog và trang đơn nằm trong URL; thêm giỏ chỉ báo thành công sau API, kiểm số lượng theo BE; dữ liệu giao hàng/nội dung số có lỗi và retry riêng. Hủy đơn dùng xác nhận theo theme, trạng thái đơn tách khỏi thanh toán/giao hàng. Đã kiểm chứng theo [báo cáo 04/11](../verification/2026-11-04-local-usability.md).

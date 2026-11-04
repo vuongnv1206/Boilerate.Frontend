@@ -58,15 +58,17 @@ describe('CartStore', () => {
     store.loadCart();
     expect(cartService.getGuestCart).toHaveBeenCalled();
 
-    store.addToCart({
-      variantId: 'var-1',
-      productId: 'prod-1',
-      name: 'Key Phần mềm',
-      sku: 'KEY-01',
-      unitPrice: 150000,
-      quantity: 2,
-      isDigital: true,
-    });
+    store
+      .addToCart({
+        variantId: 'var-1',
+        productId: 'prod-1',
+        name: 'Key Phần mềm',
+        sku: 'KEY-01',
+        unitPrice: 150000,
+        quantity: 2,
+        isDigital: true,
+      })
+      .subscribe();
 
     expect(store.itemCount()).toBe(2);
     expect(cartService.saveGuestCart).toHaveBeenCalled();
@@ -253,4 +255,80 @@ describe('CartStore', () => {
     expect(store.discountUncertain()).toBe(false);
     expect(store.canCheckout()).toBe(true);
   });
+  it('never emits success on a failed save and blocks competing saves', () => {
+    const response = new Subject<CartDto>();
+    const cart: CartDto = {
+      id: 'c',
+      version: 'v1',
+      items: [],
+      subtotal: 0,
+      discountCode: null,
+      discountAmount: 0,
+      discountError: null,
+      shippingAmount: 0,
+      total: 0,
+      canCheckout: false,
+      hasDigitalItems: false,
+    };
+    const api = { getGuestCart: vi.fn(() => of(cart)), saveGuestCart: vi.fn(() => response) };
+    TestBed.configureTestingModule({
+      providers: [
+        CartStore,
+        { provide: AuthSession, useValue: { signedIn: () => false } },
+        { provide: CartService, useValue: api },
+      ],
+    });
+    const store = TestBed.inject(CartStore);
+    store.loadCart();
+    const item = {
+      variantId: 'v',
+      productId: 'p',
+      name: 'Free',
+      sku: 'S',
+      unitPrice: 0,
+      quantity: 1,
+      isDigital: false,
+    };
+    const success = vi.fn();
+    store.addToCart(item).subscribe({ next: success, error: () => undefined });
+    store.addToCart(item).subscribe();
+    expect(api.saveGuestCart).toHaveBeenCalledTimes(1);
+    expect(success).not.toHaveBeenCalled();
+    response.error(new HttpErrorResponse({ status: 0 }));
+    expect(success).not.toHaveBeenCalled();
+    expect(store.cart()).toBe(cart);
+    expect(store.uncertain()).toBe(true);
+    expect(store.canCheckout()).toBe(false);
+    store.loadCart();
+    expect(store.uncertain()).toBe(false);
+  });
+
+  it.each([0, 1000, 1.5, NaN, Infinity])(
+    'rejects invalid quantity %s before sending',
+    (quantity) => {
+      const api = { saveGuestCart: vi.fn() };
+      TestBed.configureTestingModule({
+        providers: [
+          CartStore,
+          { provide: AuthSession, useValue: { signedIn: () => false } },
+          { provide: CartService, useValue: api },
+        ],
+      });
+      const store = TestBed.inject(CartStore);
+      const error = vi.fn();
+      store
+        .addToCart({
+          variantId: 'v',
+          productId: 'p',
+          name: 'P',
+          sku: 'S',
+          unitPrice: 0,
+          quantity,
+          isDigital: false,
+        })
+        .subscribe({ error });
+      expect(error).toHaveBeenCalled();
+      expect(api.saveGuestCart).not.toHaveBeenCalled();
+    },
+  );
 });

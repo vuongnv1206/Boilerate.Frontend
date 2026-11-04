@@ -595,3 +595,30 @@
   color: var(--text-2);
   font-size: 13px;
 }
+
+// Keep operational actions reachable with long labels and narrow content panes.
+.admin-record-header,
+.collection-screen .collection-toolbar,
+.system-screen .system-list-toolbar {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+.admin-record-header h1,
+.collection-screen .field label,
+.system-screen .field label {
+  overflow-wrap: anywhere;
+}
+.admin-record-header > div:first-child {
+  min-width: 0;
+}
+@media (max-width: 1150px) {
+  .admin-record-header {
+    align-items: flex-start;
+  }
+  .admin-record-header .order-action-bar,
+  .admin-record-header .renewal-action-bar {
+    justify-content: flex-start;
+    width: 100%;
+    margin-left: 0;
+  }
+}

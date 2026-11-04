@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
+import { Observable, Subscription, catchError, map, of, tap, throwError } from 'rxjs';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { CheckoutRequest } from '@models/checkout.dto';
 import { DigitalDeliveryDto } from '@models/digital-delivery.dto';
@@ -16,6 +16,27 @@ const EMPTY_PAGE: OrderPage = {
 
 @Injectable({ providedIn: 'root' })
 export class CustomerOrderStore {
+  private readonly reads: Partial<
+    Record<'list' | 'order' | 'deliveries' | 'shipments' | 'settings' | 'access', Subscription>
+  > = {};
+  private readonly deliveriesLoadingState = signal(false);
+  private readonly deliveriesErrorState = signal('');
+  private readonly shipmentsLoadingState = signal(false);
+  private readonly shipmentsErrorState = signal('');
+  private readonly settingsLoadingState = signal(false);
+  private readonly settingsErrorState = signal('');
+  private readonly detailLoadingState = signal(false);
+  private readonly detailErrorState = signal('');
+  private readonly commandErrorState = signal('');
+  readonly deliveriesLoading = this.deliveriesLoadingState.asReadonly();
+  readonly deliveriesError = this.deliveriesErrorState.asReadonly();
+  readonly shipmentsLoading = this.shipmentsLoadingState.asReadonly();
+  readonly shipmentsError = this.shipmentsErrorState.asReadonly();
+  readonly settingsLoading = this.settingsLoadingState.asReadonly();
+  readonly settingsError = this.settingsErrorState.asReadonly();
+  readonly detailLoading = this.detailLoadingState.asReadonly();
+  readonly detailError = this.detailErrorState.asReadonly();
+  readonly commandError = this.commandErrorState.asReadonly();
   private readonly orderService = inject(CustomerOrdersService);
 
   private readonly myOrdersState = signal<OrderPage>(EMPTY_PAGE);
@@ -49,17 +70,17 @@ export class CustomerOrderStore {
     () => this.currentOrderState()?.paymentStatus === OrderPaymentStatus.Paid,
   );
 
-  restoreGuestAccess() {
-    this.orderService
+  restoreGuestAccess(page?: number) {
+    this.reads.access?.unsubscribe();
+    this.reads.access = this.orderService
       .getVerifiedEmail()
       .pipe(
         tap((result) => {
           this.verifiedEmailState.set(result.email);
-          this.loadMyOrders();
+          if (page !== undefined) this.loadMyOrders(page);
         }),
         catchError(() => {
-          this.verifiedEmailState.set(null);
-          this.myOrdersState.set(EMPTY_PAGE);
+          this.resetGuestAccess();
           return of(null);
         }),
       )
@@ -102,24 +123,30 @@ export class CustomerOrderStore {
   }
 
   resetGuestAccess() {
+    this.reads.access?.unsubscribe();
+    this.reads.list?.unsubscribe();
+    this.stopOrderReads();
+    this.myOrdersState.set(EMPTY_PAGE);
+    this.loadingState.set(false);
     this.verifiedEmailState.set(null);
     this.codeSentState.set(false);
   }
 
   loadPaymentSettings() {
-    this.orderService
+    this.reads.settings?.unsubscribe();
+    this.settingsLoadingState.set(true);
+    this.settingsErrorState.set('');
+    this.paymentSettingsState.set(null);
+    this.reads.settings = this.orderService
       .getPaymentSettings()
       .pipe(
-        tap((settings) => this.paymentSettingsState.set(settings)),
-        catchError(() => {
-          this.paymentSettingsState.set({
-            bankName: null,
-            accountNumber: null,
-            accountHolder: null,
-            branch: null,
-            instructions: null,
-            bankTransferEnabled: false,
-          });
+        tap((settings) => {
+          this.paymentSettingsState.set(settings);
+          this.settingsLoadingState.set(false);
+        }),
+        catchError((err: unknown) => {
+          this.settingsLoadingState.set(false);
+          this.settingsErrorState.set(normalizeApiError(err).message);
           return of(null);
         }),
       )
@@ -127,9 +154,10 @@ export class CustomerOrderStore {
   }
 
   loadMyOrders(page = 1, size = 20) {
+    this.reads.list?.unsubscribe();
     this.loadingState.set(true);
     this.errorState.set('');
-    this.orderService
+    this.reads.list = this.orderService
       .getMyOrders(page, size)
       .pipe(
         tap((pageData) => {
@@ -146,18 +174,20 @@ export class CustomerOrderStore {
   }
 
   loadOrder(id: string) {
-    this.loadingState.set(true);
-    this.errorState.set('');
+    this.detailLoadingState.set(true);
+    this.detailErrorState.set('');
+    this.stopOrderReads();
+    this.commandErrorState.set('');
     this.currentOrderState.set(null);
     this.digitalDeliveriesState.set([]);
     this.shipmentsState.set([]);
 
-    this.orderService
+    this.reads.order = this.orderService
       .getOrder(id)
       .pipe(
         tap((order) => {
           this.currentOrderState.set(order);
-          this.loadingState.set(false);
+          this.detailLoadingState.set(false);
 
           if (order.paymentStatus === OrderPaymentStatus.Paid) {
             this.loadDeliveries(id);
@@ -165,8 +195,8 @@ export class CustomerOrderStore {
           this.loadShipments(id);
         }),
         catchError((err: unknown) => {
-          this.errorState.set(normalizeApiError(err).message);
-          this.loadingState.set(false);
+          this.detailErrorState.set(normalizeApiError(err).message);
+          this.detailLoadingState.set(false);
           return of(null);
         }),
       )
@@ -194,17 +224,18 @@ export class CustomerOrderStore {
   }
 
   cancelOrder(id: string, version: string) {
+    if (this.submittingState()) return;
     this.submittingState.set(true);
-    this.errorState.set('');
+    this.commandErrorState.set('');
     this.orderService
       .cancelOrder(id, version)
       .pipe(
         tap((updated) => {
-          this.currentOrderState.set(updated);
+          if (this.currentOrderState()?.id === id) this.currentOrderState.set(updated);
           this.submittingState.set(false);
         }),
         catchError((err: unknown) => {
-          this.errorState.set(normalizeApiError(err).message);
+          this.commandErrorState.set(normalizeApiError(err).message);
           this.submittingState.set(false);
           return of(null);
         }),
@@ -212,22 +243,58 @@ export class CustomerOrderStore {
       .subscribe();
   }
 
-  loadDeliveries(orderId: string) {
-    this.orderService
+  stopOrderReads(): void {
+    for (const key of ['order', 'deliveries', 'shipments'] as const) this.reads[key]?.unsubscribe();
+    this.currentOrderState.set(null);
+    this.digitalDeliveriesState.set([]);
+    this.shipmentsState.set([]);
+    this.deliveriesLoadingState.set(false);
+    this.shipmentsLoadingState.set(false);
+    this.deliveriesErrorState.set('');
+    this.shipmentsErrorState.set('');
+  }
+
+  stopListReads(): void {
+    this.reads.list?.unsubscribe();
+    this.reads.access?.unsubscribe();
+  }
+
+  loadDeliveries(orderId: string): void {
+    this.reads.deliveries?.unsubscribe();
+    this.deliveriesLoadingState.set(true);
+    this.deliveriesErrorState.set('');
+    this.reads.deliveries = this.orderService
       .getDigitalDeliveries(orderId)
       .pipe(
-        tap((deliveries) => this.digitalDeliveriesState.set(deliveries)),
-        catchError(() => of([])),
+        tap((deliveries) => {
+          this.digitalDeliveriesState.set(deliveries);
+          this.deliveriesLoadingState.set(false);
+        }),
+        catchError((err: unknown) => {
+          this.deliveriesLoadingState.set(false);
+          this.deliveriesErrorState.set(normalizeApiError(err).message);
+          return of([]);
+        }),
       )
       .subscribe();
   }
 
-  loadShipments(orderId: string) {
-    this.orderService
+  loadShipments(orderId: string): void {
+    this.reads.shipments?.unsubscribe();
+    this.shipmentsLoadingState.set(true);
+    this.shipmentsErrorState.set('');
+    this.reads.shipments = this.orderService
       .getMyShipments(orderId)
       .pipe(
-        tap((shipments) => this.shipmentsState.set(shipments)),
-        catchError(() => of([])),
+        tap((shipments) => {
+          this.shipmentsState.set(shipments);
+          this.shipmentsLoadingState.set(false);
+        }),
+        catchError((err: unknown) => {
+          this.shipmentsLoadingState.set(false);
+          this.shipmentsErrorState.set(normalizeApiError(err).message);
+          return of([]);
+        }),
       )
       .subscribe();
   }

@@ -16,7 +16,11 @@
     </div>
 
     @if (storefrontStore.page().items[0]; as featured) {
-      <a class="shop-featured" [routerLink]="['/shop/products', featured.slug]">
+      <a
+        class="shop-featured"
+        [routerLink]="['/shop/products', featured.slug]"
+        queryParamsHandling="preserve"
+      >
         <div class="shop-featured-image">
           @if (getProductImageSource(featured); as imageSource) {
             <img [src]="imageSource" alt="" (error)="onProductImageError($event, featured)" />
@@ -66,7 +70,7 @@
           type="search"
           autocomplete="off"
           placeholder="Tìm sản phẩm…"
-          [value]="storefrontStore.searchQuery()"
+          [value]="searchDraft()"
           (input)="onSearchInput($event)"
         />
         <span class="search-shortcut" aria-hidden="true">⌕</span>
@@ -134,7 +138,11 @@
       <div class="products-grid">
         @for (product of storefrontStore.page().items; track product.id) {
           <article class="product-card" [attr.data-product-id]="product.id">
-            <a [routerLink]="['/shop/products', product.slug]" class="product-card-link">
+            <a
+              [routerLink]="['/shop/products', product.slug]"
+              queryParamsHandling="preserve"
+              class="product-card-link"
+            >
               <div class="product-image-frame">
                 @if (getProductImageSource(product); as imageSource) {
                   <img

@@ -132,8 +132,66 @@
       }
 
       .shop-featured {
-        width: min(100%, 420px);
-        justify-self: center;
+        display: none;
+      }
+      .shop-hero {
+        padding: 16px 0 24px;
+      }
+      .shop-hero-copy h1 {
+        font-size: 38px;
+      }
+      .shop-hero-notes {
+        display: none;
+      }
+      .catalog-section {
+        padding-top: 24px;
+      }
+      .category-chips {
+        max-width: 100%;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 5px;
+      }
+      .category-chip {
+        flex: 0 0 auto;
+        min-height: 44px;
+      }
+      .nav-link,
+      .cart-btn,
+      .staff-link,
+      .qty-btn,
+      .thumb-btn,
+      .option-chip,
+      .delete-item-btn {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      .form-control {
+        font-size: 16px;
+      }
+      .catalog-pagination {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .product-name,
+      .item-name,
+      .delivery-secret,
+      .field-data,
+      .order-number {
+        overflow-wrap: anywhere;
+      }
+      .purchase-actions {
+        grid-template-columns: 1fr;
+      }
+      .product-gallery,
+      .product-info-panel,
+      .checkout-form-section,
+      .cart-items-section,
+      .order-card {
+        min-width: 0;
+      }
+      .storefront-header {
+        position: static;
       }
 
       .catalog-section {
@@ -219,7 +277,47 @@
       }
 
       .cart-table {
-        min-width: 650px;
+        min-width: 0;
+        display: block;
+      }
+
+      .cart-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        clip-path: inset(50%);
+        overflow: hidden;
+      }
+
+      .cart-table tbody {
+        display: grid;
+        gap: 16px;
+      }
+      .cart-table .cart-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding: 12px;
+        border: 1px solid var(--store-line);
+        border-radius: var(--radius);
+      }
+      .cart-table td {
+        min-width: 0;
+        border: 0;
+        padding: 8px 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      .cart-table .col-product {
+        grid-column: 1 / -1;
+      }
+      .cart-table .col-total {
+        font-weight: 700;
+      }
+      .cart-table .col-action {
+        justify-self: end;
+      }
+      .cart-table .qty-control {
+        min-height: 44px;
       }
 
       .form-row {
@@ -350,7 +448,7 @@
       }
 
       .purchase-actions {
-        grid-template-columns: 112px 1fr;
+        grid-template-columns: 1fr;
       }
 
       .store-button {

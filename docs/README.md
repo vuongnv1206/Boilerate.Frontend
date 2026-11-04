@@ -27,3 +27,5 @@
 - **Kiểm chứng** thường báo ngay trong phần bàn giao. Chỉ giữ báo cáo lâu dài cho mốc cần bằng chứng tích hợp/nghiệm thu: source, môi trường cần thiết, kết quả cuối, cách chạy lại và giới hạn. Không giữ nhật ký từng vòng fail/retry, log dài hoặc tạo báo cáo cho mọi lần chạy. Raw logs/ảnh ở `artifacts/` bị ignore.
 - Một thông tin có một nơi sở hữu: quy chuẩn ở tài liệu quy chuẩn, hành vi ở feature, bằng chứng ở báo cáo. README và lịch sử chỉ tóm tắt hoặc dẫn link. Không sao chép bảng commit, số test hay kết quả CI khắp các file.
 - Phân biệt code đã có, kiểm chứng của một phiên bản và nghiệm thu triển khai. Báo cáo cũ không xác nhận checkout hiện tại; không ghi tích hợp BE thành công nếu source BE chưa có hợp đồng tương ứng.
+
+Đợt nâng cấp: [trải nghiệm local Admin và storefront](features/local-usability-upgrade.md).

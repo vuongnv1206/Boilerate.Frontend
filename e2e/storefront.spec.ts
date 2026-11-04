@@ -240,8 +240,8 @@ async function reachCheckout(page: Page) {
 async function installCatalogPreview(page: Page) {
   const categories = [
     {
-      id: 'category-home',
-      version: 'category-home-v1',
+      id: 'a1111111-1111-4111-8111-111111111111',
+      version: 'a1111111-1111-4111-8111-111111111111-v1',
       name: 'Không gian sống',
       slug: 'khong-gian-song',
       description: null,
@@ -250,8 +250,8 @@ async function installCatalogPreview(page: Page) {
       isActive: true,
     },
     {
-      id: 'category-work',
-      version: 'category-work-v1',
+      id: 'a2222222-2222-4222-8222-222222222222',
+      version: 'a2222222-2222-4222-8222-222222222222-v1',
       name: 'Công nghệ & làm việc',
       slug: 'cong-nghe-lam-viec',
       description: null,
@@ -270,7 +270,7 @@ async function installCatalogPreview(page: Page) {
       inStock: true,
       fulfillmentKind: 1,
       thumbnailMediaId: 'catalog-camera',
-      categoryId: 'category-home',
+      categoryId: 'a1111111-1111-4111-8111-111111111111',
     },
     {
       id: 'product-notebook',
@@ -281,7 +281,7 @@ async function installCatalogPreview(page: Page) {
       inStock: true,
       fulfillmentKind: 1,
       thumbnailMediaId: null,
-      categoryId: 'category-work',
+      categoryId: 'a2222222-2222-4222-8222-222222222222',
     },
     {
       id: 'product-chair',
@@ -292,7 +292,7 @@ async function installCatalogPreview(page: Page) {
       inStock: true,
       fulfillmentKind: 1,
       thumbnailMediaId: 'broken-catalog-image',
-      categoryId: 'category-home',
+      categoryId: 'a1111111-1111-4111-8111-111111111111',
     },
     {
       id: 'product-headphones',
@@ -303,7 +303,7 @@ async function installCatalogPreview(page: Page) {
       inStock: true,
       fulfillmentKind: 1,
       thumbnailMediaId: null,
-      categoryId: 'category-work',
+      categoryId: 'a2222222-2222-4222-8222-222222222222',
     },
   ];
   const requests: Record<string, unknown>[] = [];
@@ -315,7 +315,7 @@ async function installCatalogPreview(page: Page) {
     description: 'Thiết kế thoải mái cho những phiên làm việc dài. Mô tả hỗ trợ tiếng Việt có dấu.',
     status: 2,
     version: 'product-v1',
-    categoryIds: ['category-work'],
+    categoryIds: ['a2222222-2222-4222-8222-222222222222'],
     options: [
       {
         id: 'option-color',
@@ -578,7 +578,7 @@ test('storefront catalog and detail keep image fallbacks and purchase states leg
 
   await page.getByRole('button', { name: 'Không gian sống' }).click();
   await expect(page.locator('.product-card')).toHaveCount(2);
-  expect(requests.at(-1)).toMatchObject({ categoryId: 'category-home' });
+  expect(requests.at(-1)).toMatchObject({ categoryId: 'a1111111-1111-4111-8111-111111111111' });
   await page.getByRole('button', { name: 'Tất cả' }).click();
   await page.getByRole('searchbox', { name: /Tìm sản phẩm/ }).fill('tai nghe');
   await expect(page.locator('.product-card')).toHaveCount(1);
@@ -604,7 +604,7 @@ test('storefront catalog and detail keep image fallbacks and purchase states leg
     inStock: true,
     fulfillmentKind: 1,
     thumbnailMediaId: 'broken-catalog-image',
-    categoryId: 'category-work',
+    categoryId: 'a2222222-2222-4222-8222-222222222222',
   });
   await page
     .getByRole('navigation', { name: 'Điều hướng cửa hàng' })
@@ -708,4 +708,215 @@ test('prepaid checkout stays disabled until transfer settings are configured', a
   await page.getByLabel('Số điện thoại').fill('0912345678');
   await expect(page.getByText(/Chuyển khoản hiện chưa được cấu hình/)).toBeVisible();
   await expect(page.getByRole('button', { name: /Đặt hàng ngay/ })).toBeDisabled();
+});
+
+test('catalog query survives reload and product round-trip', async ({ page }) => {
+  await installCatalogPreview(page);
+  await page.getByRole('searchbox', { name: 'Tìm sản phẩm theo tên' }).fill('tai nghe');
+  await expect(page).toHaveURL(/search=tai/);
+  await page.reload();
+  await expect(page.getByRole('searchbox', { name: 'Tìm sản phẩm theo tên' })).toHaveValue(
+    'tai nghe',
+  );
+  await page.locator('.product-card a').click();
+  await page.locator('.breadcrumbs').getByRole('link', { name: 'Sản phẩm', exact: true }).click();
+  await expect(page.getByRole('searchbox', { name: 'Tìm sản phẩm theo tên' })).toHaveValue(
+    'tai nghe',
+  );
+  await expect(page.locator('.product-card')).toHaveCount(1);
+});
+
+test('failed add-to-cart never announces success and offers recovery', async ({ page }) => {
+  await installStorefront(page, 'physical', () => undefined);
+  await page.locator('.product-card a').click();
+  await page.route('**/api/storefront/cart', (route) =>
+    route.request().method() === 'GET'
+      ? route.fallback()
+      : route.fulfill({ status: 503, json: { detail: 'Save unavailable' } }),
+  );
+  await page.getByRole('button', { name: /Thêm vào giỏ hàng/ }).click();
+  await expect(page.getByRole('alert')).toContainText('Chưa xác nhận được thay đổi');
+  await expect(page.locator('.added-toast')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Tải lại giỏ hàng' }).click();
+  await expect(page.getByRole('button', { name: /Thêm vào giỏ hàng/ })).toBeEnabled();
+});
+
+test('older orders are reachable and a failed delivery section can be retried', async ({
+  page,
+}) => {
+  await page.route('**/api/storefront/cart', (route) =>
+    route.fulfill({ json: cartDto('physical', [], 1) }),
+  );
+  await page.route('**/api/storefront/access/me', (route) =>
+    route.fulfill({ json: { email: 'buyer@example.test' } }),
+  );
+  const order = {
+    id: 'older-order',
+    number: 'OLDER-21',
+    version: 'v1',
+    status: 5,
+    paymentStatus: 2,
+    fulfillmentStatus: 4,
+    paymentMethod: 1,
+    total: 0,
+    subtotal: 0,
+    discountAmount: 0,
+    shippingAmount: 0,
+    currency: 'VND',
+    createdOn: '2026-11-01T00:00:00Z',
+    recipientName: 'Nguyễn Văn Khách',
+    email: 'buyer@example.test',
+    phone: '0900000000',
+    items: [],
+    physicalDispatchStarted: false,
+  };
+  await page.route('**/api/storefront/orders?*', (route) => {
+    const pageNumber = Number(new URL(route.request().url()).searchParams.get('page'));
+    return route.fulfill({
+      json: {
+        items: [{ ...order, number: pageNumber === 2 ? 'OLDER-21' : 'NEW-1' }],
+        total: 21,
+        pageNumber,
+        pageSize: 20,
+      },
+    });
+  });
+  await page.route('**/api/storefront/settings', (route) =>
+    route.fulfill({ json: { bankTransferEnabled: false } }),
+  );
+  await page.route('**/api/storefront/orders/older-order', (route) =>
+    route.fulfill({ json: order }),
+  );
+  await page.route('**/api/storefront/orders/older-order/shipments', (route) =>
+    route.fulfill({ status: 503 }),
+  );
+  let attempts = 0;
+  await page.route('**/api/storefront/orders/older-order/digital-deliveries', (route) =>
+    ++attempts === 1 ? route.fulfill({ status: 503 }) : route.fulfill({ json: [] }),
+  );
+  await page.goto('/shop/orders');
+  await page.getByRole('button', { name: 'Trang sau' }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await page.getByRole('link', { name: 'Xem chi tiết' }).click();
+  await expect(page.getByText(/Chưa tải được nội dung số:/)).toBeVisible();
+  await page.getByRole('button', { name: 'Thử lại nội dung số' }).click();
+  await expect(page.getByText(/Chưa tải được nội dung số:/)).toHaveCount(0);
+  await expect(page.getByText(/Chưa tải được giao hàng:/)).toBeVisible();
+  await page.getByRole('link', { name: 'Đơn hàng của tôi', exact: true }).last().click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page.getByText('Đơn hàng #OLDER-21')).toBeVisible();
+});
+
+test('storefront remains usable at the touch viewport and reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installCatalogPreview(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await page.getByRole('searchbox', { name: 'Tìm sản phẩm theo tên' }).fill('tai nghe');
+  await expect(page.locator('.product-card')).toHaveCount(1);
+  await page.locator('.product-card a').click();
+  const add = page.getByRole('button', { name: /Thêm vào giỏ hàng/ });
+  await expect(add).toBeEnabled();
+  expect((await add.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});
+
+test('cancel confirmation uses the theme and inactive orders stop prompting transfer', async ({
+  page,
+}) => {
+  await installStorefront(page, 'physical', () => undefined);
+  let order = {
+    id: 'cancel-demo',
+    number: 'CANCEL-DEMO',
+    version: 'v1',
+    status: 1,
+    paymentStatus: 1,
+    fulfillmentStatus: 1,
+    paymentMethod: 1,
+    total: 100,
+    subtotal: 100,
+    discountAmount: 0,
+    shippingAmount: 0,
+    currency: 'VND',
+    createdOn: '2026-11-01T00:00:00Z',
+    recipientName: 'Nguyễn Văn Khách',
+    email: 'buyer@example.test',
+    phone: '0900000000',
+    items: [],
+    physicalDispatchStarted: false,
+  };
+  await page.route('**/api/storefront/orders/cancel-demo', (route) =>
+    route.fulfill({ json: order }),
+  );
+  await page.route('**/api/storefront/orders/cancel-demo/cancel', (route) => {
+    order = { ...order, version: 'v2', status: 3 };
+    return route.fulfill({ json: order });
+  });
+  await page.goto('/shop/orders/cancel-demo');
+  await page.getByRole('button', { name: 'Hủy đơn hàng', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Hủy đơn hàng' });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await page.getByRole('button', { name: 'Hủy đơn hàng', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Xác nhận hủy' }).click();
+  await expect(page.getByText('Đã hủy', { exact: true })).toBeVisible();
+  await expect(page.locator('.bank-transfer-card')).toHaveCount(0);
+  await expect(page.getByText(/Nếu đã chuyển tiền/)).toBeVisible();
+  order = { ...order, status: 4 };
+  await page.reload();
+  await expect(page.locator('.bank-transfer-card')).toHaveCount(0);
+  await expect(page.getByText('Đã hết hạn', { exact: true })).toBeVisible();
+});
+
+test('lost checkout response requires an explicit retry with the same operation and payload', async ({
+  page,
+}) => {
+  await installStorefront(page, 'physical', () => undefined);
+  const requests: Record<string, unknown>[] = [];
+  let saved: Record<string, unknown> | null = null;
+  await page.route('**/api/storefront/checkout', (route) => {
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    requests.push(body);
+    if (requests.length === 1) return route.abort('failed');
+    saved = {
+      ...body,
+      id: 'replayed',
+      number: 'REPLAY-1',
+      version: 'v1',
+      status: 2,
+      paymentStatus: 1,
+      fulfillmentStatus: 1,
+      total: body['expectedTotal'],
+      subtotal: 123000,
+      discountAmount: 0,
+      shippingAmount: 30000,
+      currency: 'VND',
+      createdOn: '2026-11-01T00:00:00Z',
+      items: [],
+      physicalDispatchStarted: false,
+    };
+    return route.fulfill({ json: saved });
+  });
+  await page.route('**/api/storefront/orders/replayed', (route) => route.fulfill({ json: saved }));
+  await reachCheckout(page);
+  await verifyEmail(page);
+  await page.getByLabel('Họ và tên').fill('Nguyễn Thị Bích Ngọc');
+  await page.getByLabel('Số điện thoại').fill('0912345678');
+  await page.getByLabel('Địa chỉ nhận hàng').fill('12 Nguyễn Huệ');
+  await page.getByLabel(/Thu hộ tiền mặt khi nhận hàng/).check();
+  const submit = page.getByRole('button', { name: /Đặt hàng ngay/ });
+  await submit.click();
+  await expect(page.getByRole('alert')).toContainText('Chưa thể hoàn tất đặt hàng');
+  expect(requests).toHaveLength(1);
+  await expect(page.getByLabel('Họ và tên')).toBeDisabled();
+  await expect(submit).toBeEnabled();
+  await submit.click();
+  await expect(page.getByRole('heading', { name: 'Đơn hàng #REPLAY-1' })).toBeVisible();
+  expect(requests).toHaveLength(2);
+  expect(requests[1]).toEqual(requests[0]);
+  expect(requests[0]?.['operationId']).toMatch(/^[0-9a-f-]{36}$/);
 });

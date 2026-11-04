@@ -30,6 +30,21 @@ export default defineConfig({
         use: { viewport, colorScheme: colorScheme as 'light' | 'dark' },
       })),
     ),
+    ...['light', 'dark'].flatMap((colorScheme) =>
+      [
+        { name: 'shop-mobile', viewport: { width: 390, height: 844 } },
+        { name: 'shop-narrow', viewport: { width: 360, height: 800 } },
+      ].map(({ name, viewport }) => ({
+        name: `${name}-${colorScheme}`,
+        testMatch: /storefront.*\.spec\.ts/,
+        use: {
+          viewport,
+          isMobile: true,
+          hasTouch: true,
+          colorScheme: colorScheme as 'light' | 'dark',
+        },
+      })),
+    ),
   ],
   webServer: {
     command: 'node scripts/serve-dist.mjs',

@@ -74,7 +74,7 @@ Header/footer cửa hàng dùng cùng palette nhưng không mang chrome Admin. C
 
 Login và forbidden dùng chung typography, focus, label và feedback; khôi phục phiên/deep link giữ hành vi hiện tại. Forbidden cung cấp đường tới chức năng được phép. Loading, restore lỗi và retry phải có thông báo phù hợp, không hiển thị dữ liệu chưa được quyền xem.
 
-Desktop 1440×900 và tablet 1024×768 là viewport nghiệm thu; mobile giữ bố cục co nhỏ cơ bản và chưa thuộc đợt tối ưu. Mốc tablet của các rail và inspector cần giữ nội dung và action truy cập được. Bảng rộng cuộn trong vùng có tên truy cập, không dùng document overflow để che cột.
+Desktop 1440×900 và tablet 1024×768 là viewport nghiệm thu; storefront bổ sung mobile 390×844 và 360×800, Admin mobile chưa thuộc đợt tối ưu. Mốc tablet của các rail và inspector cần giữ nội dung và action truy cập được. Bảng rộng cuộn trong vùng có tên truy cập, không dùng document overflow để che cột.
 
 ## 5. Components và trạng thái
 

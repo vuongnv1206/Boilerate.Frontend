@@ -2,11 +2,14 @@ import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { timer } from 'rxjs';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProductFulfillmentKind } from '@enums/product.enum';
 import { ProductDto } from '@models/product.dto';
@@ -19,6 +22,7 @@ import { getStorefrontProductFallbackImage } from '@utils/storefront-image.util'
   selector: 'app-product-detail',
   standalone: true,
   imports: [RouterLink, DecimalPipe, Icon],
+  providers: [StorefrontStore],
   templateUrl: './product-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -27,6 +31,8 @@ export class ProductDetailComponent implements OnInit {
   readonly cartStore = inject(CartStore);
   private readonly route = inject(ActivatedRoute);
 
+  private readonly destroyRef = inject(DestroyRef);
+  readonly addedQuantity = signal(0);
   readonly quantity = signal(1);
   readonly activeImageId = signal<string | null>(null);
   readonly addedNotification = signal(false);
@@ -36,19 +42,26 @@ export class ProductDetailComponent implements OnInit {
     return (
       variant !== null &&
       !this.cartStore.loading() &&
+      !this.cartStore.uncertain() &&
+      !this.cartStore.discountBusy() &&
+      !this.cartStore.discountUncertain() &&
+      variant.isActive &&
       variant.inStock &&
       variant.price !== null &&
       variant.price !== undefined &&
-      this.quantity() > 0
+      Number.isInteger(this.quantity()) &&
+      this.quantity() > 0 &&
+      this.quantity() <= 999
     );
   });
 
   ngOnInit() {
-    this.route.paramMap.subscribe((params) => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const slug = params.get('slug');
       if (slug) {
         this.storefrontStore.loadProductBySlug(slug);
         this.quantity.set(1);
+        this.activeImageId.set(null);
         this.addedNotification.set(false);
       }
     });
@@ -65,7 +78,7 @@ export class ProductDetailComponent implements OnInit {
   }
 
   onIncreaseQty() {
-    this.quantity.update((q) => q + 1);
+    this.quantity.update((q) => Math.min(999, q + 1));
   }
 
   onDecreaseQty() {
@@ -74,8 +87,8 @@ export class ProductDetailComponent implements OnInit {
 
   onQtyChange(event: Event) {
     const target = event.target as HTMLInputElement;
-    const val = parseInt(target.value, 10);
-    this.quantity.set(isNaN(val) || val < 1 ? 1 : val);
+    const val = Number(target.value);
+    this.quantity.set(val);
   }
 
   getProductImageSource(product: ProductDto): string | null {
@@ -107,24 +120,35 @@ export class ProductDetailComponent implements OnInit {
 
   onAddToCart(product: ProductDto) {
     const variant = this.storefrontStore.selectedVariant();
-    if (!variant || !variant.price) return;
+    if (!this.canAddToCart() || !variant || variant.price === null || variant.price === undefined)
+      return;
 
     const isDigital = product.fulfillmentKind !== ProductFulfillmentKind.Physical;
 
-    this.cartStore.addToCart({
-      variantId: variant.id,
-      productId: product.id,
-      name: `${product.name} - ${variant.sku}`,
-      sku: variant.sku,
-      unitPrice: variant.price,
-      quantity: this.quantity(),
-      isDigital,
-    });
-
-    this.addedNotification.set(true);
-    setTimeout(() => {
-      this.addedNotification.set(false);
-    }, 4000);
+    const quantity = this.quantity();
+    this.addedNotification.set(false);
+    this.cartStore
+      .addToCart({
+        variantId: variant.id,
+        productId: product.id,
+        name: `${product.name} - ${variant.sku}`,
+        sku: variant.sku,
+        unitPrice: variant.price,
+        quantity,
+        isDigital,
+      })
+      .subscribe({
+        next: () => {
+          if (this.destroyRef.destroyed || this.storefrontStore.productDetail()?.id !== product.id)
+            return;
+          this.addedQuantity.set(quantity);
+          this.addedNotification.set(true);
+          timer(4000)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => this.addedNotification.set(false));
+        },
+        error: () => undefined,
+      });
   }
 
   isDigital(kind: ProductFulfillmentKind): boolean {

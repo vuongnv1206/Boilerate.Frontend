@@ -2,21 +2,23 @@
   <div class="breadcrumbs">
     <a routerLink="/shop">Trang chủ</a>
     <span class="separator">/</span>
-    <a routerLink="/shop/orders">Đơn hàng của tôi</a>
+    <a routerLink="/shop/orders" queryParamsHandling="preserve">Đơn hàng của tôi</a>
     @if (customerOrderStore.currentOrder(); as order) {
       <span class="separator">/</span>
       <span class="current">#{{ order.number }}</span>
     }
   </div>
 
-  @if (customerOrderStore.loading()) {
+  @if (customerOrderStore.detailLoading()) {
     <div class="order-loading" role="status" aria-busy="true">
       <p>Đang tải chi tiết đơn hàng...</p>
     </div>
-  } @else if (customerOrderStore.error()) {
+  } @else if (customerOrderStore.detailError()) {
     <div class="order-error" role="alert">
-      <p>{{ customerOrderStore.error() }}</p>
-      <a routerLink="/shop/orders" class="back-link">Quay lại danh sách đơn hàng</a>
+      <p>{{ customerOrderStore.detailError() }}</p>
+      <a routerLink="/shop/orders" queryParamsHandling="preserve" class="back-link"
+        >Quay lại danh sách đơn hàng</a
+      >
     </div>
   } @else if (customerOrderStore.currentOrder(); as order) {
     <!-- Order Banner -->
@@ -27,6 +29,7 @@
           <span class="banner-date">Đặt ngày {{ order.createdOn | date: 'dd/MM/yyyy HH:mm' }}</span>
         </div>
         <div class="banner-badges">
+          <span class="badge">{{ getOrderStatusLabel(order.status) }}</span>
           <span
             class="badge payment"
             [class.paid]="order.paymentStatus === 2"
@@ -42,7 +45,7 @@
     </div>
 
     <!-- Bank Transfer Instructions (if Prepaid and Unpaid) -->
-    @if (order.paymentMethod === 1 && order.paymentStatus === 1) {
+    @if (canShowTransfer(order)) {
       <div class="bank-transfer-card">
         <div class="bank-header">
           <ui-icon name="bank" [size]="20" />
@@ -53,7 +56,22 @@
           công; nội dung số chỉ khả dụng sau khi đơn được đánh dấu đã thanh toán.
         </p>
 
-        @if (customerOrderStore.paymentSettings(); as bankInfo) {
+        @if (customerOrderStore.settingsLoading()) {
+          <p role="status">Đang tải thông tin chuyển khoản…</p>
+        } @else if (customerOrderStore.settingsError()) {
+          <p class="form-error" role="alert">{{ customerOrderStore.settingsError() }}</p>
+          <button
+            type="button"
+            class="store-button store-button-secondary"
+            (click)="customerOrderStore.loadPaymentSettings()"
+          >
+            Thử lại cấu hình thanh toán
+          </button>
+        } @else if (!customerOrderStore.paymentSettings()?.bankTransferEnabled) {
+          <p role="status">
+            Chuyển khoản hiện chưa khả dụng. Vui lòng liên hệ cửa hàng trước khi thanh toán.
+          </p>
+        } @else if (customerOrderStore.paymentSettings(); as bankInfo) {
           <div class="bank-details-grid">
             <div class="bank-field">
               <span class="field-title">Ngân hàng:</span>
@@ -94,6 +112,77 @@
       </div>
     }
 
+    @if (isInactiveUnpaid(order)) {
+      <p class="form-error" role="status">
+        Đơn đã hủy hoặc hết hạn. Nếu đã chuyển tiền, vui lòng liên hệ cửa hàng để đối soát trước khi
+        tiếp tục.
+      </p>
+    }
+    @if (customerOrderStore.commandError()) {
+      <p class="form-error" role="alert">{{ customerOrderStore.commandError() }}</p>
+      <button
+        type="button"
+        class="store-button store-button-secondary"
+        (click)="customerOrderStore.loadOrder(order.id)"
+      >
+        Tải lại đơn hàng
+      </button>
+    }
+    @if (customerOrderStore.deliveriesLoading()) {
+      <p role="status">Đang tải nội dung số…</p>
+    }
+    @if (customerOrderStore.deliveriesError()) {
+      <p class="form-error" role="alert">
+        Chưa tải được nội dung số: {{ customerOrderStore.deliveriesError() }}
+      </p>
+      <button
+        type="button"
+        class="store-button store-button-secondary"
+        (click)="customerOrderStore.loadDeliveries(order.id)"
+      >
+        Thử lại nội dung số
+      </button>
+    }
+    @if (customerOrderStore.shipmentsLoading()) {
+      <p role="status">Đang tải giao hàng…</p>
+    }
+    @if (customerOrderStore.shipmentsError()) {
+      <p class="form-error" role="alert">
+        Chưa tải được giao hàng: {{ customerOrderStore.shipmentsError() }}
+      </p>
+      <button
+        type="button"
+        class="store-button store-button-secondary"
+        (click)="customerOrderStore.loadShipments(order.id)"
+      >
+        Thử lại giao hàng
+      </button>
+    }
+    <p-dialog
+      header="Hủy đơn hàng"
+      [visible]="cancelConfirmation()"
+      (visibleChange)="cancelConfirmation.set($event)"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '410px', maxWidth: '92vw' }"
+    >
+      <p>Bạn muốn hủy đơn hàng #{{ order.number }}?</p>
+      <ng-template #footer>
+        <button
+          type="button"
+          pButton
+          severity="secondary"
+          outlined
+          (click)="cancelConfirmation.set(false)"
+        >
+          Giữ đơn hàng
+        </button>
+        <button type="button" pButton severity="danger" (click)="confirmCancel()">
+          Xác nhận hủy
+        </button>
+      </ng-template>
+    </p-dialog>
     <!-- Digital Deliveries Card (Keys / License / Links) -->
     @if (order.paymentStatus === 2 && customerOrderStore.hasDigitalDeliveries()) {
       <div class="digital-delivery-card">

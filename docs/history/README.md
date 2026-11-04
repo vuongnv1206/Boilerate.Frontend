@@ -2,6 +2,10 @@
 
 Chỉ ghi các khả năng đã triển khai theo mốc. Chi tiết sửa code tra trong Git; cách ghi tài liệu theo [quy tắc docs](../README.md#quy-tắc-duy-trì-docs).
 
+## 04/11/2026 — Hoàn thiện hành trình mua và mobile
+
+Catalog giữ query/Back; thêm giỏ theo kết quả API, xử lý phân loại không tồn tại và giới hạn số lượng. Khách xem được đơn ở trang sau, retry độc lập nội dung số/giao hàng và hủy bằng xác nhận theo theme. Mobile có bố cục mua một cột; Admin giữ hành động thuận tiện ở tablet. Xem [phạm vi](../features/local-usability-upgrade.md) và [kiểm chứng local](../verification/2026-11-04-local-usability.md).
+
 ## 29/10/2026 — Thiết kế chung cho toàn sản phẩm
 
 Admin, storefront và đăng nhập dùng palette Claude, token và preset chung; storefront có kiểu chữ và bố cục riêng cho hành trình mua. Navigation Admin theo quyền, trạng thái và các lớp phủ được đồng bộ. Xem [DESIGN.md](../../DESIGN.md) và [bằng chứng local](../verification/2026-10-29-claude-redesign.md).

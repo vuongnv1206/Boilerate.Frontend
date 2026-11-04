@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProductFulfillmentKind, ProductStatus } from '@enums/product.enum';
 import { ProductDto, ProductPage } from '@models/product.dto';
@@ -8,6 +8,29 @@ import { StorefrontStore } from '@stores/storefront.store';
 
 describe('StorefrontStore', () => {
   afterEach(() => TestBed.resetTestingModule());
+
+  it('ignores obsolete searches and keeps detail loading independent', () => {
+    const first = new Subject<ProductPage>();
+    const second = new Subject<ProductPage>();
+    const detail = new Subject<ProductDto>();
+    const service = {
+      searchProducts: vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second),
+      getProductBySlug: vi.fn(() => detail),
+    };
+    TestBed.configureTestingModule({
+      providers: [StorefrontStore, { provide: StorefrontService, useValue: service }],
+    });
+    const store = TestBed.inject(StorefrontStore);
+    store.search({ search: 'old' });
+    store.search({ search: 'new' });
+    store.loadProductBySlug('product');
+    const page: ProductPage = { items: [], total: 2, pageNumber: 1, pageSize: 20 };
+    second.next(page);
+    first.next({ ...page, total: 99 });
+    expect(store.page().total).toBe(2);
+    expect(store.loading()).toBe(false);
+    expect(store.detailLoading()).toBe(true);
+  });
 
   it('loads categories and searches products', () => {
     const mockPage: ProductPage = {
@@ -123,5 +146,7 @@ describe('StorefrontStore', () => {
     store.selectOption('opt-color', 'val-red');
     expect(store.selectedVariant()?.sku).toBe('POLO-RED');
     expect(store.selectedVariant()?.inStock).toBe(false);
+    store.selectOption('opt-color', 'missing');
+    expect(store.selectedVariant()).toBeNull();
   });
 });

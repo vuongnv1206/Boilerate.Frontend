@@ -2,26 +2,29 @@
   <nav class="breadcrumbs" aria-label="Đường dẫn">
     <a routerLink="/shop">Cửa hàng</a>
     <ui-icon name="chevron-right" [size]="13" />
-    <a routerLink="/shop/products">Sản phẩm</a>
+    <a routerLink="/shop/products" queryParamsHandling="preserve">Sản phẩm</a>
     @if (storefrontStore.productDetail(); as product) {
       <ui-icon name="chevron-right" [size]="13" />
       <span class="current">{{ product.name }}</span>
     }
   </nav>
 
-  @if (storefrontStore.loading()) {
+  @if (storefrontStore.detailLoading()) {
     <div class="detail-loading" aria-busy="true">
       <div class="detail-skeleton-image"></div>
       <div class="detail-skeleton-copy"></div>
     </div>
-  } @else if (storefrontStore.error()) {
+  } @else if (storefrontStore.detailError()) {
     <div class="catalog-state catalog-state-error" role="alert">
       <ui-icon name="alert" [size]="24" />
       <div>
         <h2>Chưa thể tải sản phẩm</h2>
-        <p>{{ storefrontStore.error() }}</p>
+        <p>{{ storefrontStore.detailError() }}</p>
       </div>
-      <a routerLink="/shop/products" class="store-button store-button-secondary"
+      <a
+        routerLink="/shop/products"
+        queryParamsHandling="preserve"
+        class="store-button store-button-secondary"
         >Quay lại cửa hàng</a
       >
     </div>
@@ -29,7 +32,7 @@
     @if (addedNotification()) {
       <div class="added-toast" role="status">
         <span class="toast-icon"><ui-icon name="check" [size]="15" /></span>
-        <span>Đã thêm {{ quantity() }} sản phẩm vào giỏ hàng.</span>
+        <span>Đã thêm {{ addedQuantity() }} sản phẩm vào giỏ hàng.</span>
         <a routerLink="/shop/cart" class="toast-link">Xem giỏ hàng</a>
       </div>
     }
@@ -136,11 +139,28 @@
         <div class="stock-status-box">
           @if (storefrontStore.selectedVariant()?.inStock) {
             <span class="status-indicator in-stock"><span></span> Còn hàng</span>
+          } @else if (!storefrontStore.selectedVariant()) {
+            <span class="status-indicator out-of-stock">Không có phân loại phù hợp</span>
           } @else {
             <span class="status-indicator out-of-stock"><span></span> Tạm hết hàng</span>
           }
         </div>
 
+        @if (cartStore.saveError()) {
+          <p class="form-error" role="alert">{{ cartStore.saveError() }}</p>
+          @if (cartStore.uncertain()) {
+            <button
+              type="button"
+              class="store-button store-button-secondary"
+              (click)="cartStore.loadCart()"
+            >
+              Tải lại giỏ hàng
+            </button>
+          }
+        }
+        @if (!canAddToCart() && (quantity() < 1 || quantity() > 999 || quantity() % 1 !== 0)) {
+          <p class="form-error" role="alert">Số lượng phải là số nguyên từ 1 đến 999.</p>
+        }
         <div class="purchase-actions">
           <div class="quantity-control" aria-label="Số lượng">
             <button
@@ -158,13 +178,14 @@
               aria-label="Số lượng sản phẩm"
               [value]="quantity()"
               min="1"
-              max="99"
+              max="999"
               (change)="onQtyChange($event)"
             />
             <button
               type="button"
               class="qty-btn"
               aria-label="Tăng số lượng"
+              [disabled]="quantity() >= 999"
               (click)="onIncreaseQty()"
             >
               +

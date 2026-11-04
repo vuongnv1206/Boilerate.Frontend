@@ -1,5 +1,5 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { catchError, of, tap } from 'rxjs';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { Subscription, catchError, of, tap } from 'rxjs';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { CategoryDto } from '@models/category.dto';
 import { ProductDto, ProductPage, ProductSearch, ProductVariant } from '@models/product.dto';
@@ -15,6 +15,20 @@ const EMPTY_PAGE: ProductPage = {
 @Injectable({ providedIn: 'root' })
 export class StorefrontStore {
   private readonly storefrontService = inject(StorefrontService);
+
+  private searchSubscription?: Subscription;
+  private detailSubscription?: Subscription;
+  private readonly detailLoadingState = signal(false);
+  private readonly detailErrorState = signal('');
+  readonly detailLoading = this.detailLoadingState.asReadonly();
+  readonly detailError = this.detailErrorState.asReadonly();
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => {
+      this.searchSubscription?.unsubscribe();
+      this.detailSubscription?.unsubscribe();
+    });
+  }
 
   private readonly pageState = signal<ProductPage>(EMPTY_PAGE);
   private readonly categoriesState = signal<readonly CategoryDto[]>([]);
@@ -59,7 +73,8 @@ export class StorefrontStore {
       this.searchQueryState.set(options.search);
     }
 
-    const currentPage = options?.pageNumber ?? 1;
+    this.searchSubscription?.unsubscribe();
+    const currentPage = options?.pageNumber ?? this.pageState().pageNumber;
     const request: ProductSearch = {
       pageNumber: currentPage,
       pageSize: 20,
@@ -71,7 +86,7 @@ export class StorefrontStore {
 
     this.loadingState.set(true);
     this.errorState.set('');
-    this.storefrontService
+    this.searchSubscription = this.storefrontService
       .searchProducts(request)
       .pipe(
         tap((result) => {
@@ -88,18 +103,19 @@ export class StorefrontStore {
   }
 
   loadProductBySlug(slug: string) {
-    this.loadingState.set(true);
-    this.errorState.set('');
+    this.detailSubscription?.unsubscribe();
+    this.detailLoadingState.set(true);
+    this.detailErrorState.set('');
     this.productDetailState.set(null);
     this.selectedVariantState.set(null);
     this.selectedOptionsState.set({});
 
-    this.storefrontService
+    this.detailSubscription = this.storefrontService
       .getProductBySlug(slug)
       .pipe(
         tap((product) => {
           this.productDetailState.set(product);
-          this.loadingState.set(false);
+          this.detailLoadingState.set(false);
           // Pick default variant or first variant
           const defaultVariant =
             product.variants.find((v) => v.isDefault) ?? product.variants[0] ?? null;
@@ -114,8 +130,8 @@ export class StorefrontStore {
           }
         }),
         catchError((err: unknown) => {
-          this.errorState.set(normalizeApiError(err).message);
-          this.loadingState.set(false);
+          this.detailErrorState.set(normalizeApiError(err).message);
+          this.detailLoadingState.set(false);
           return of(null);
         }),
       )
@@ -130,12 +146,13 @@ export class StorefrontStore {
     if (!product) return;
 
     // Find variant matching updated selections
-    const match = product.variants.find((v) =>
-      v.selections.every((s) => updated[s.optionId] === s.optionValueId),
+    const match = product.variants.find(
+      (v) =>
+        v.isActive &&
+        v.selections.length === Object.keys(updated).length &&
+        v.selections.every((s) => updated[s.optionId] === s.optionValueId),
     );
-    if (match) {
-      this.selectedVariantState.set(match);
-    }
+    this.selectedVariantState.set(match ?? null);
   }
 
   selectVariant(variant: ProductVariant) {

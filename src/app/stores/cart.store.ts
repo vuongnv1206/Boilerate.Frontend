@@ -1,5 +1,15 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { catchError, of, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  Subscription,
+  catchError,
+  defer,
+  finalize,
+  of,
+  tap,
+  throwError,
+} from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { CartDto, CartLineInput, GuestCartItem, SaveCartRequest } from '@models/cart.dto';
@@ -27,6 +37,10 @@ export class CartStore {
 
   private readonly cartState = signal<CartDto>(EMPTY_CART);
   private readonly loadingState = signal(false);
+  private readonly savingState = signal(false);
+  private readonly saveErrorState = signal('');
+  private readonly uncertainState = signal(false);
+  private readSubscription?: Subscription;
   private readonly errorState = signal('');
   private readonly quoteReviewState = signal(false);
   private readonly discountBusyState = signal(false);
@@ -34,7 +48,11 @@ export class CartStore {
   private readonly discountUncertainState = signal(false);
 
   readonly cart = this.cartState.asReadonly();
-  readonly loading = this.loadingState.asReadonly();
+  readonly loading = computed(() => this.loadingState() || this.savingState());
+  readonly reading = this.loadingState.asReadonly();
+  readonly saving = this.savingState.asReadonly();
+  readonly saveError = this.saveErrorState.asReadonly();
+  readonly uncertain = this.uncertainState.asReadonly();
   readonly error = this.errorState.asReadonly();
   readonly quoteNeedsReview = this.quoteReviewState.asReadonly();
   readonly discountBusy = this.discountBusyState.asReadonly();
@@ -70,23 +88,29 @@ export class CartStore {
     () =>
       this.cartState().canCheckout &&
       this.cartState().items.length > 0 &&
-      !this.loadingState() &&
+      !this.loading() &&
+      !this.errorState() &&
+      !this.uncertainState() &&
       !this.discountBusyState() &&
       !this.discountUncertainState(),
   );
 
   loadCart() {
+    if (this.savingState() || this.discountBusyState()) return;
+    this.readSubscription?.unsubscribe();
     this.loadingState.set(true);
     this.errorState.set('');
     const request = this.session.signedIn()
       ? this.cartService.getCart()
       : this.cartService.getGuestCart();
-    request
+    this.readSubscription = request
       .pipe(
         tap((cart) => {
           this.cartState.set(cart);
           this.loadingState.set(false);
           this.discountUncertainState.set(false);
+          this.uncertainState.set(false);
+          this.saveErrorState.set('');
           this.discountErrorState.set('');
         }),
         catchError((err: unknown) => {
@@ -98,19 +122,21 @@ export class CartStore {
       .subscribe();
   }
 
-  addToCart(item: GuestCartItem) {
-    const lines = this.cartState().items.map((line) => ({
-      variantId: line.variantId,
-      quantity: line.quantity,
-    }));
-    const existingIndex = lines.findIndex((line) => line.variantId === item.variantId);
-    const updated =
-      existingIndex >= 0
-        ? lines.map((line, index) =>
-            index === existingIndex ? { ...line, quantity: line.quantity + item.quantity } : line,
-          )
-        : [...lines, { variantId: item.variantId, quantity: item.quantity }];
-    this.saveLines(updated);
+  addToCart(item: GuestCartItem): Observable<CartDto> {
+    return defer(() => {
+      const lines = this.cartState().items.map((line) => ({
+        variantId: line.variantId,
+        quantity: line.quantity,
+      }));
+      const existingIndex = lines.findIndex((line) => line.variantId === item.variantId);
+      const updated =
+        existingIndex >= 0
+          ? lines.map((line, index) =>
+              index === existingIndex ? { ...line, quantity: line.quantity + item.quantity } : line,
+            )
+          : [...lines, { variantId: item.variantId, quantity: item.quantity }];
+      return this.saveLines(updated);
+    });
   }
 
   updateQuantity(variantId: string, quantity: number) {
@@ -123,7 +149,7 @@ export class CartStore {
         variantId: item.variantId,
         quantity: item.variantId === variantId ? quantity : item.quantity,
       })),
-    );
+    ).subscribe({ error: () => undefined });
   }
 
   removeItem(variantId: string) {
@@ -131,7 +157,7 @@ export class CartStore {
       this.cartState()
         .items.filter((item) => item.variantId !== variantId)
         .map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
-    );
+    ).subscribe({ error: () => undefined });
   }
 
   syncGuestCartOnLogin() {
@@ -146,7 +172,13 @@ export class CartStore {
   }
 
   setDiscount(code: string | null) {
-    if (this.loadingState() || this.discountBusyState() || this.discountUncertainState()) return;
+    if (
+      this.loading() ||
+      this.uncertainState() ||
+      this.discountBusyState() ||
+      this.discountUncertainState()
+    )
+      return;
     this.discountBusyState.set(true);
     this.discountErrorState.set('');
     this.cartService
@@ -184,26 +216,49 @@ export class CartStore {
     this.loadCart();
   }
 
-  private saveLines(items: readonly CartLineInput[]) {
-    if (this.discountBusyState() || this.discountUncertainState()) return;
-    const request: SaveCartRequest = { version: this.cartState().version, items };
-    this.loadingState.set(true);
-    this.errorState.set('');
-    const save = this.session.signedIn()
-      ? this.cartService.saveCart(request)
-      : this.cartService.saveGuestCart(request);
-    save
-      .pipe(
-        tap((cart) => {
-          this.cartState.set(cart);
-          this.loadingState.set(false);
-        }),
-        catchError((err: unknown) => {
-          this.errorState.set(normalizeApiError(err).message);
-          this.loadingState.set(false);
-          return of(this.cartState());
-        }),
+  private saveLines(items: readonly CartLineInput[]): Observable<CartDto> {
+    return defer(() => {
+      if (
+        this.loading() ||
+        this.discountBusyState() ||
+        this.discountUncertainState() ||
+        this.uncertainState()
       )
-      .subscribe();
+        return EMPTY;
+      if (
+        items.length > 50 ||
+        items.some(
+          (item) => !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 999,
+        )
+      ) {
+        const message = 'Giỏ hàng tối đa 50 phân loại, số lượng mỗi phân loại từ 1 đến 999.';
+        this.saveErrorState.set(message);
+        return throwError(() => new Error(message));
+      }
+      this.readSubscription?.unsubscribe();
+      const request: SaveCartRequest = { version: this.cartState().version, items };
+      this.savingState.set(true);
+      this.saveErrorState.set('');
+      const save = this.session.signedIn()
+        ? this.cartService.saveCart(request)
+        : this.cartService.saveGuestCart(request);
+      return save.pipe(
+        tap((cart) => this.cartState.set(cart)),
+        catchError((err: unknown) => {
+          const error = normalizeApiError(err);
+          this.saveErrorState.set(error.message);
+          this.savingState.set(false);
+          if (error.kind === 'network' || error.kind === 'server') {
+            this.uncertainState.set(true);
+            this.saveErrorState.set(
+              'Chưa xác nhận được thay đổi. Hãy tải lại giỏ hàng trước khi tiếp tục.',
+            );
+          }
+          if (error.kind === 'conflict') this.refreshAfterConflict();
+          return throwError(() => err);
+        }),
+        finalize(() => this.savingState.set(false)),
+      );
+    });
   }
 }

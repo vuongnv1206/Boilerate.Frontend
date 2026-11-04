@@ -43,3 +43,7 @@ The project keeps independently worded, task-specific summaries in [product-ui-n
 - Shell and control dimensions in DESIGN are project baselines, not measurements of a reference product.
 - Reference sources were read for structure and behavior. The initial pass did not establish a pixel-level match to every Webflow light/dark overlay.
 - Report UI checks in the handoff; keep durable evidence only when needed under the [documentation rules](../../docs/README.md#quy-tắc-duy-trì-docs). Raw screenshots/logs stay in ignored artifacts.
+
+## Local installation — 2026-11-04
+
+The earlier research-only statements above describe the initial review. Full impeccable and frontend-design skill files are now installed under Frontend/.agents/skills/. See [installation inventory](../../docs/skills/README.md) for source revision, file hashes and redistribution limits.

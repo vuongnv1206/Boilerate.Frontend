@@ -6,7 +6,7 @@ type AcceptanceMail = { to: string[]; subject: string; body: string | null };
 
 async function beginGuestCheckout(page: Page, name: string) {
   await page.goto('/shop/products');
-  await page.getByRole('link', { name }).click();
+  await page.locator('.product-card').getByRole('link', { name }).click();
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
   await expect(page.getByText(/nội dung tiếng Việt dài để rà bố cục/)).toBeVisible();
   const add = page.getByRole('button', { name: /Thêm vào giỏ hàng/ });

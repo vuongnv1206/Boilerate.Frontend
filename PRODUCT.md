@@ -4,6 +4,8 @@
 
 ## Mốc hiện tại
 
+Ngày 04/11/2026: [nâng cấp trải nghiệm local](docs/features/local-usability-upgrade.md) đã triển khai, gồm Admin desktop/tablet và storefront mobile. [Báo cáo kiểm chứng](docs/verification/2026-11-04-local-usability.md) ghi rõ từng lượt chạy lại và giới hạn; chưa deploy.
+
 Đối chiếu 01/11/2026: mã giảm giá đã tích hợp Admin/giỏ/checkout; hồi quy local trên build cuối đã hoàn tất. Phạm vi, source/build và giới hạn tại [kiểm chứng mã giảm giá](docs/features/admin-discounts.md#kiểm-chứng-ngày-01112026). Chưa commit/release hoặc triển khai staging.
 
 Đối chiếu ngày **27/10/2026**, [Tổng quan vận hành](docs/features/admin-overview.md) đã có source, FE/BE checks và SQL Server integration; đang hoàn tất hồi quy browser/live trên build cố định. Database `BoilerateDevelopment` đã backup/verify và áp index migration `AdminOverviewIndexes`; chỉ thêm `FinancialSummary.View` cho Admin, giữ 55 grant cũ. Admin dùng DESIGN.md. Function `StorefrontSettings` vẫn chưa đăng ký trong ACL local. PostgreSQL runtime, SMTP thật và staging chưa xác nhận. Xem [bằng chứng và giới hạn](docs/verification/2026-10-26-admin-overview.md).
@@ -35,6 +37,8 @@ Kết quả kiểm tra hiện tại và phạm vi áp dụng nằm tại [báo c
 
 ## Mốc sau
 
+Đợt 04/11: [hoàn thiện local và mobile storefront](docs/features/local-usability-upgrade.md) đã kiểm chứng local theo báo cáo riêng; các kết quả cũ không thay thế bằng chứng đợt này.
+
 Thứ tự sau mốc Tổng quan ngày 27/10/2026. Ưu tiên chốt artifact đã kiểm chứng và đưa vào môi trường vận hành. Phần BE và vận hành theo [roadmap BE](../Boilerate/docs/backend/roadmap.md).
 
 | Ưu tiên                | Công việc                                                                                                                        | Điều kiện hoàn tất                                                                                       |
@@ -48,8 +52,8 @@ RenewalsStore hiện đã cập nhật detail, history state và trang danh sác
 
 Recovery cần đối soát tiền, hàng và gia hạn đã thực hiện ngoài recovery point, đồng thời kiểm lại phiên/quyền trước mở traffic. Runner operations hiện yêu cầu cả MSSQL/PostgreSQL cho Recovery/Container; nghiệm thu MSSQL cần chọn đúng ca hoặc bổ sung lựa chọn provider, ghi rõ giới hạn kết quả. PostgreSQL parity là mốc riêng khi có nhu cầu triển khai hoặc cam kết hỗ trợ provider đó.
 
-Mobile, CSV, payment gateway/carrier tự động, page builder và các mở rộng ngoài MVP tiếp tục để sau. Giữ cảnh báo bundle trong báo cáo; tối ưu sau khi chốt artifact, không nâng budget chỉ để che cảnh báo.
+Admin mobile, CSV, payment gateway/carrier tự động, page builder và các mở rộng ngoài MVP tiếp tục để sau. Giữ cảnh báo bundle trong báo cáo; tối ưu sau khi chốt artifact, không nâng budget chỉ để che cảnh báo.
 
 ## Tiêu chí đánh giá trải nghiệm
 
-Người dùng đăng nhập, mở danh sách, tìm/lọc/chọn dòng, mở editor, chỉnh giá trị và nhận phản hồi từ API sau khi lưu. Điều hướng và overlay hoạt động bằng bàn phím; kiểm tra chữ tiếng Việt dài, cả hai theme và animation bình thường. Mobile và kiểm tra reduced motion trên hệ điều hành được hoãn theo yêu cầu hiện tại.
+Người dùng đăng nhập, mở danh sách, tìm/lọc/chọn dòng, mở editor, chỉnh giá trị và nhận phản hồi từ API sau khi lưu. Điều hướng và overlay hoạt động bằng bàn phím; kiểm tra chữ tiếng Việt dài, cả hai theme và animation bình thường. Storefront bổ sung mobile 390×844 và 360×800; kiểm reduced motion bằng browser. Admin mobile tiếp tục hoãn.

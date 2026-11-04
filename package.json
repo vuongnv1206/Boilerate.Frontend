@@ -17,6 +17,7 @@
     "check": "npm run format:check && npm run lint && npm run test && npm run build",
     "test:e2e": "playwright test --project=desktop-light --project=desktop-dark --project=tablet-light --project=tablet-dark",
     "test:e2e:live": "node scripts/live-acceptance.mjs",
+    "test:e2e:shop-mobile": "playwright test --project=shop-mobile-light --project=shop-mobile-dark --project=shop-narrow-light --project=shop-narrow-dark",
     "test:e2e:mobile": "playwright test --project=mobile-light --project=mobile-dark",
     "test:e2e:all": "playwright test",
     "test:e2e:update": "npm run test:e2e -- --update-snapshots",

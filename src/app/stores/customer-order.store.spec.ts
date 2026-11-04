@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   OrderDto,
@@ -112,5 +112,30 @@ describe('CustomerOrderStore', () => {
     expect(store.isPaid()).toBe(true);
     expect(store.hasDigitalDeliveries()).toBe(true);
     expect(store.digitalDeliveries()[0]?.content).toBe('KEY-ABCD-1234');
+  });
+  it('keeps secondary failures distinct and ignores an old order response', () => {
+    const old = new Subject<OrderDto>();
+    const current = new Subject<OrderDto>();
+    const api = {
+      getOrder: vi.fn().mockReturnValueOnce(old).mockReturnValueOnce(current),
+      getMyShipments: vi.fn(() => throwError(() => new Error('network'))),
+      getDigitalDeliveries: vi.fn(() => throwError(() => new Error('network'))),
+    };
+    TestBed.configureTestingModule({
+      providers: [CustomerOrderStore, { provide: CustomerOrdersService, useValue: api }],
+    });
+    const store = TestBed.inject(CustomerOrderStore);
+    store.loadOrder('old');
+    store.loadOrder('new');
+    const order = { id: 'new', paymentStatus: OrderPaymentStatus.Paid } as OrderDto;
+    current.next(order);
+    old.next({ ...order, id: 'old' });
+    expect(store.currentOrder()?.id).toBe('new');
+    expect(store.detailError()).toBe('');
+    expect(store.deliveriesError()).not.toBe('');
+    expect(store.shipmentsError()).not.toBe('');
+    store.stopOrderReads();
+    expect(store.currentOrder()).toBeNull();
+    expect(store.digitalDeliveries()).toEqual([]);
   });
 });

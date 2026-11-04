@@ -9,6 +9,19 @@
     </a>
   </div>
 
+  @if (cartStore.saveError()) {
+    <div class="catalog-state catalog-state-error" role="alert">
+      <p>{{ cartStore.saveError() }}</p>
+      <button
+        type="button"
+        class="store-button store-button-secondary"
+        (click)="onRetry()"
+        [disabled]="cartStore.loading()"
+      >
+        Tải lại giỏ hàng
+      </button>
+    </div>
+  }
   <nav class="purchase-progress" aria-label="Tiến trình đặt hàng">
     <span class="progress-step current" aria-current="step"><span>01</span> Giỏ hàng</span>
     <span class="progress-line"></span>
@@ -17,7 +30,7 @@
     <span class="progress-step"><span>03</span> Hoàn tất</span>
   </nav>
 
-  @if (cartStore.loading()) {
+  @if (cartStore.reading()) {
     <div class="cart-loading" aria-busy="true">
       <div class="cart-skeleton-row"></div>
       <div class="cart-skeleton-row"></div>
@@ -88,7 +101,7 @@
                           type="button"
                           class="qty-btn"
                           [attr.aria-label]="'Giảm số lượng ' + item.name"
-                          [disabled]="item.quantity <= 1"
+                          [disabled]="item.quantity <= 1 || cartStore.loading()"
                           (click)="onUpdateQty(item.variantId, item.quantity - 1)"
                         >
                           −
@@ -98,6 +111,7 @@
                           type="button"
                           class="qty-btn"
                           [attr.aria-label]="'Tăng số lượng ' + item.name"
+                          [disabled]="item.quantity >= 999 || cartStore.loading()"
                           (click)="onUpdateQty(item.variantId, item.quantity + 1)"
                         >
                           +
@@ -141,7 +155,7 @@
                           type="button"
                           class="qty-btn"
                           [attr.aria-label]="'Giảm số lượng ' + item.name"
-                          [disabled]="item.quantity <= 1"
+                          [disabled]="item.quantity <= 1 || cartStore.loading()"
                           (click)="onUpdateQty(item.variantId, item.quantity - 1)"
                         >
                           −
@@ -151,6 +165,7 @@
                           type="button"
                           class="qty-btn"
                           [attr.aria-label]="'Tăng số lượng ' + item.name"
+                          [disabled]="item.quantity >= 999 || cartStore.loading()"
                           (click)="onUpdateQty(item.variantId, item.quantity + 1)"
                         >
                           +

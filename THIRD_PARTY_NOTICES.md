@@ -29,3 +29,7 @@ No original Impeccable script, skill or substantial reference text is distribute
 ## MotionSites
 
 [motionsites.ai](https://motionsites.ai/), including its Apps filter, is retained as the user's motion inspiration. This pass copied no code or assets and made no claim that project timing values were measured from MotionSites. Its requested URL timed out in one separate documentation web-fetch attempt; that limitation is recorded in [references](design/references/README.md).
+
+## Local installation — 2026-11-04
+
+The earlier research-only statements above describe the initial review. Full impeccable and frontend-design skill files are now installed under Frontend/.agents/skills/. See [installation inventory](docs/skills/README.md) for source revision, file hashes and redistribution limits.

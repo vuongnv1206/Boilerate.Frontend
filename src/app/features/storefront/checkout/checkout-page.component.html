@@ -45,6 +45,30 @@
     </div>
   }
 
+  @if (customerOrderStore.settingsError()) {
+    <div class="checkout-error-banner" role="alert">
+      <p>Chưa tải được cấu hình thanh toán: {{ customerOrderStore.settingsError() }}</p>
+      <button
+        type="button"
+        class="store-button store-button-secondary"
+        (click)="customerOrderStore.loadPaymentSettings()"
+      >
+        Thử lại cấu hình thanh toán
+      </button>
+    </div>
+  }
+  @if (cartStore.error() || cartStore.saveError()) {
+    <div class="checkout-error-banner" role="alert">
+      <p>{{ cartStore.error() || cartStore.saveError() }}</p>
+      <button
+        type="button"
+        class="store-button store-button-secondary"
+        (click)="cartStore.loadCart()"
+      >
+        Tải lại giỏ hàng
+      </button>
+    </div>
+  }
   <div class="checkout-layout">
     <div class="checkout-form-section">
       <form class="checkout-form" (submit)="$event.preventDefault(); onSubmit()">

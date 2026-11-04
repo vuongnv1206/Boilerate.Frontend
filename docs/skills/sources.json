@@ -1,0 +1,329 @@
+{
+  "installedOn": "2026-11-04",
+  "sourceRepository": "https://github.com/nuocftraik/get-design.git",
+  "sourceCommit": "f3c8f6c841f795b32eb369649ad9ec172626edab",
+  "files": [
+    {
+      "path": ".agents/skills/impeccable/agents/openai.yaml",
+      "source": ".agents/skills/impeccable/agents/openai.yaml",
+      "sha256": "cbd8bd68fa00935dd0f179adb169252629cf7ee443ea9dc7db77e7ef2cf77446",
+      "sourceSha256": "aa8140ebe247f42686ee1e0b6f0ca4c391493703bfd499613e4a3d4685691619"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/adapt.md",
+      "source": ".agents/skills/impeccable/reference/adapt.md",
+      "sha256": "6b3dfd7e0ad5dd7126bedbefe0a3e8eb019d2c1de6508117bbf39ad13f4420fb",
+      "sourceSha256": "7474c61ab9da57c9bbd1b23c3d0314d37712d5cabbb42806eb52afdfc3cde87b"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/animate.md",
+      "source": ".agents/skills/impeccable/reference/animate.md",
+      "sha256": "07afe59a7904b1f6a265d953546828a403dc9d3bf0c92906655c22b312d3342a",
+      "sourceSha256": "571fa5815cd98308bb8e6d7703f8f60c615201e40ab4d41652c4449cbc4ae533"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/audit.md",
+      "source": ".agents/skills/impeccable/reference/audit.md",
+      "sha256": "903bcc61aa8a69850da3af132cefee750fb6473c6dd65fe3ac1f12530456046e",
+      "sourceSha256": "9ba9dcccefc15b0cf82f4245c7ea8905d71440df9190dadcbd8ee3bba8c3eac8"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/bolder.md",
+      "source": ".agents/skills/impeccable/reference/bolder.md",
+      "sha256": "826743d6c04791e73eb74a2ff69414fada1e33765740e5c75343e01302f959e9",
+      "sourceSha256": "df18d1a35bb97227f6b20bd8138f9026185e9d1f0d30dd934453ed38ca1ddfc4"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/brand.md",
+      "source": ".agents/skills/impeccable/reference/brand.md",
+      "sha256": "93f96410bc4302fe94721e6e9a400aaf15ecc6cb0a0a9e5a20bfecc888552934",
+      "sourceSha256": "471444cfded9c5bb113b756e5c2751a6c999525161643a8d3a9b0eb0b66baf34"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/clarify.md",
+      "source": ".agents/skills/impeccable/reference/clarify.md",
+      "sha256": "6b99c57de45a6fa31a30119a71e7fcfa91c18ddc72730d171aea0eddcda72ae4",
+      "sourceSha256": "2e8ee8740fb188690db1c648e651b974e44d83a97b9c72617f367d698ae6a576"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/cognitive-load.md",
+      "source": ".agents/skills/impeccable/reference/cognitive-load.md",
+      "sha256": "7653f0a2f60f6d0471581f4b84c24df5408e70f8e2b727a6cdf3872dcf42676f",
+      "sourceSha256": "391d0e54c121159728add60b5f0a494ca384e7dadd72e6c3522fb99f736b7990"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/color-and-contrast.md",
+      "source": ".agents/skills/impeccable/reference/color-and-contrast.md",
+      "sha256": "3113174f4b0047027338a904e2b0c0084b353f0d5a0e2a94e21d8bf0c3e7e05f",
+      "sourceSha256": "81979798162d44c699a82f0407dd31ec7355bbf170f9bc0cc87f5a94e6b0592b"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/colorize.md",
+      "source": ".agents/skills/impeccable/reference/colorize.md",
+      "sha256": "b12592856fd82699bd27891c95d8609fda2053e7dfe6fd59f97659ac64b66f80",
+      "sourceSha256": "ff7609ef1ca32a6aac2759ff260e74faf66157f65a55d86344010f9eac5c010f"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/craft.md",
+      "source": ".agents/skills/impeccable/reference/craft.md",
+      "sha256": "66f196f028761b2def0c0d0e7909b956aa6d8da0609c0482bcf3a39a6ebb0495",
+      "sourceSha256": "2746627d2e523c0859c30120aacc151c06f31e71bbd68cab106f1a548b9da2a4"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/critique.md",
+      "source": ".agents/skills/impeccable/reference/critique.md",
+      "sha256": "f5ee2cbf5bc6244cdf50a20c57c6ff45c4264500982be93a67ee3232efd57a41",
+      "sourceSha256": "142f232d61cb3a27942ea32eafd1d249e8baac14962d50fad0dbe0d8749ed1f2"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/delight.md",
+      "source": ".agents/skills/impeccable/reference/delight.md",
+      "sha256": "4a28b407abcc8e1ecb330c214419aa0a614d40b8e42c3bbbcaa8615d9ce8a52a",
+      "sourceSha256": "be3bd81b1f17cc56747f211011433057184b76af9225c201e205865ce56dc227"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/distill.md",
+      "source": ".agents/skills/impeccable/reference/distill.md",
+      "sha256": "b09448c3ec1630017857051bf6b1b256de7ec5495bf7fb0d39995c5e706c7c48",
+      "sourceSha256": "7d1246474410fa0fffe900b97ed23df654fb7c816f2f4e605076e978da32ae5a"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/document.md",
+      "source": ".agents/skills/impeccable/reference/document.md",
+      "sha256": "db9f27e99ad21a5bb747d575b4b9d97ef7627a0368de030c9a08c024eb59aec5",
+      "sourceSha256": "7f679847d8b00a3d4ff2f9c913f7901566a791a0e07d11a5a5ff1aefafd14d96"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/extract.md",
+      "source": ".agents/skills/impeccable/reference/extract.md",
+      "sha256": "93319824dedd5508d0d2565e6eef85f0b13fe19a2de89b305e89aa241e9498b6",
+      "sourceSha256": "67556641485a6f65275fe00551ab01c6dea4d2baae1f304745953a52cbe81176"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/harden.md",
+      "source": ".agents/skills/impeccable/reference/harden.md",
+      "sha256": "adb732a8becc385b157e22d874d5ec2517f03e6b1a2b01cc41d0c4b612440dba",
+      "sourceSha256": "b4ece5a6cb3d1e1f25f2059bc2e1608804ed40352e5ac3747591968617167733"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/heuristics-scoring.md",
+      "source": ".agents/skills/impeccable/reference/heuristics-scoring.md",
+      "sha256": "c047724521f6f73e2eecacf62e77498848370a8e4a0b32c900bd87ae9f1134ea",
+      "sourceSha256": "b8cd6d25784e090d8272a428551277a5f7da1797ec843a8f338e142a193b3c7f"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/interaction-design.md",
+      "source": ".agents/skills/impeccable/reference/interaction-design.md",
+      "sha256": "7f545df683b1897460cdc8d94adfa1410c4c4a23fdb1545fbe95dc6e9af1b486",
+      "sourceSha256": "227e9f79d92724afdac14a1e0c4c8dc0210faf2f6a16518495551af0101fae91"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/layout.md",
+      "source": ".agents/skills/impeccable/reference/layout.md",
+      "sha256": "e67ad4015aad1a3ec774c804cbcff7f1a3f4e9a2d4bf3598f1c8370e88e77d2e",
+      "sourceSha256": "c30de5e6b15e530b2d7459759dca554b409bc0efb5858835a4a9bac21da07d2b"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/live.md",
+      "source": ".agents/skills/impeccable/reference/live.md",
+      "sha256": "4c1e0e2ce7d0f2e27715afbeeeb31a12f4e4f54c1d30f1e8ace89e7848ec26b4",
+      "sourceSha256": "4f38a4d9f9be278bc490cf3f3ccee1e77120dab182b446f3bfdd608459ef0a92"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/motion-design.md",
+      "source": ".agents/skills/impeccable/reference/motion-design.md",
+      "sha256": "c35a59b5f795721c914cfccf9b470e89a5010c563cd85ab46a67031531678f3f",
+      "sourceSha256": "03e84a02508291e294b42505b592fdf484a868beac09e59fe8bb0169e70e8acb"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/onboard.md",
+      "source": ".agents/skills/impeccable/reference/onboard.md",
+      "sha256": "ae2e9890e30cd6cad6408155b429fc822719996e3bff951ceddf61a095df1133",
+      "sourceSha256": "8149037902fce66382169a86234e54278b4270ea2116b533987741345101d42f"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/optimize.md",
+      "source": ".agents/skills/impeccable/reference/optimize.md",
+      "sha256": "fc94feda53427cacd3620859afff2ccba65d395797ab1a56f0e0251b501d2256",
+      "sourceSha256": "bc6e8f692998ba34d853a3e305f6cb0ef6ebcf284c262c9954770e64996dc455"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/overdrive.md",
+      "source": ".agents/skills/impeccable/reference/overdrive.md",
+      "sha256": "cc5d797297b450eb79783cd08ae29518b32fbe7f5bdea2b2eadc8b881a704643",
+      "sourceSha256": "ad092a88c5674692ffb967415c29ba1f4aab3f68202cf74ab380b4712ba64e70"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/personas.md",
+      "source": ".agents/skills/impeccable/reference/personas.md",
+      "sha256": "ebe587eeca9acd60143512e6b57235cdb31b8263c2d4ef28c0b0784980ca134a",
+      "sourceSha256": "65433a7261b583ea346be08286991679532743c7721e66d54086498605766efa"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/polish.md",
+      "source": ".agents/skills/impeccable/reference/polish.md",
+      "sha256": "3a3bdadacd3a8f2d0cb8dcdd278ccd4494e30dd0a13da3deb84b60aca4f5661c",
+      "sourceSha256": "13e5c7fb30ee735abb81f243d5751e5c248a055a6329fee5f7e9d02e433cf465"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/product.md",
+      "source": ".agents/skills/impeccable/reference/product.md",
+      "sha256": "74c4063cda1aff10d45b6e3b92cd2fd61e1ed0550ba5d7a0331dff5958029fec",
+      "sourceSha256": "ccf3fc2c42511f0f882916f9c97429e861e64dba767bf4256cee6a3ec9d99324"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/quieter.md",
+      "source": ".agents/skills/impeccable/reference/quieter.md",
+      "sha256": "ecb4a53ecd33b32d303d403205fa4707042b7a7093bb92374827aa4b8ffc50ad",
+      "sourceSha256": "a2b95f6d4b3089379c6a79cf1c27c9f96798c3f92b0b5c4d6c3e09b73c03540c"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/responsive-design.md",
+      "source": ".agents/skills/impeccable/reference/responsive-design.md",
+      "sha256": "5add44195a42cf7fa82aecadaad79b8875446b930e06d087d73f3722533fd95a",
+      "sourceSha256": "712d9c0776d22a420ebc7b2f82d9446ad4621597694f32ca046e371d293f35b6"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/shape.md",
+      "source": ".agents/skills/impeccable/reference/shape.md",
+      "sha256": "f67e01467372934f8de7a0f79f672c11c61a7661d2eca1ab0cc524c2eec0e7be",
+      "sourceSha256": "8099ac40395b0cb1fd44975a507a85bb202eec0b1464fd733f294c1fb04ca3ef"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/spatial-design.md",
+      "source": ".agents/skills/impeccable/reference/spatial-design.md",
+      "sha256": "10c743ee8245fc1be9e8af2b79dd08b0dae19fcde33d46c9730c000d7e13b7cd",
+      "sourceSha256": "c76eb186ddf04c03470f1efca0feeb85db14d53b6a6b770f524b51e6a23754e8"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/teach.md",
+      "source": ".agents/skills/impeccable/reference/teach.md",
+      "sha256": "67c2061f6fdf3b72641c2b24c52a2607a89da1aa62a2645e30a1e999d53ca352",
+      "sourceSha256": "44bd71ada49ecb5902ec0e553e86dd6ecf98e41a364a145cfd8a0d44b2a715aa"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/typeset.md",
+      "source": ".agents/skills/impeccable/reference/typeset.md",
+      "sha256": "b30e50cbb418899e4a3d817c5845481c67adf74a7878a7f8e1d791148b0d6fa2",
+      "sourceSha256": "7e6660fdae6510940d9c5b4fbf69ae6f89460ce3e2a35bb8d57725be44147379"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/typography.md",
+      "source": ".agents/skills/impeccable/reference/typography.md",
+      "sha256": "48df5e595ee4ccc9691845785d2ea3f53ac1096cf3128fc4fec1537273746a99",
+      "sourceSha256": "a43c6d57c7f2429425b6c5b9f5aabfc5df4ad8462eef25cf998899f0894e1a1b"
+    },
+    {
+      "path": ".agents/skills/impeccable/reference/ux-writing.md",
+      "source": ".agents/skills/impeccable/reference/ux-writing.md",
+      "sha256": "0cd5e958d92be6e2331cb199d6ed5d98597aa20ec4922d4c3df56e7753cfc00c",
+      "sourceSha256": "122312381a5c93a7a7a3d73742d219c1061bd2a025938d2c042cd5eb7c105523"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/cleanup-deprecated.mjs",
+      "source": ".agents/skills/impeccable/scripts/cleanup-deprecated.mjs",
+      "sha256": "5b1a36e3241e14ba8645881e8f07255748ca7f7a158a11e1df99043357a4b6d2",
+      "sourceSha256": "760239ecdf087884e65909d2970585a5de151481e2975df99e1cef0165bbcea4"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/command-metadata.json",
+      "source": ".agents/skills/impeccable/scripts/command-metadata.json",
+      "sha256": "f123f30283341e2035477582d696763826725d0ef328ec3a19963f6d60cba89c",
+      "sourceSha256": "b13e280eb1c3b0d266e6f8eec1eff2f4f72e79036227ec0e315c9cfa8e688a9a"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/design-parser.mjs",
+      "source": ".agents/skills/impeccable/scripts/design-parser.mjs",
+      "sha256": "6e7b463344cdf59353acaf48f554ac0aad5a0a46cb1237a0d1a697ddc7759eab",
+      "sourceSha256": "68fc4377416f40c82b1f48431f2733f0c942a4d434a9997a7f35519f2acc9b3c"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/detect-csp.mjs",
+      "source": ".agents/skills/impeccable/scripts/detect-csp.mjs",
+      "sha256": "2d80520bef13cb93107699714bc0d2be5a2787a9aa079ecec91b94508a8125a4",
+      "sourceSha256": "459f264db8c7012a036a09f15b968183e12f6355531b2f89c05e8a8252fb69f6"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/is-generated.mjs",
+      "source": ".agents/skills/impeccable/scripts/is-generated.mjs",
+      "sha256": "ed5b0b00e99ed385db541c7a068cb85f72456a4b6aa7a5460037d24b58bd90cd",
+      "sourceSha256": "9bfc362760af813feb8f04b24f8a3173ae21d892ff88246592a6071975c60afc"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/live-accept.mjs",
+      "source": ".agents/skills/impeccable/scripts/live-accept.mjs",
+      "sha256": "fcaa0ee8f35af9613f85361a7d2a070f7da3842f0ed9043604c08f9b9c5eeb45",
+      "sourceSha256": "dcc4c1517abcb3a407a37b64b4b3cb7e413715d06149d95e3893c85b43e945d4"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/live-browser.js",
+      "source": ".agents/skills/impeccable/scripts/live-browser.js",
+      "sha256": "cec85e9a21ee43d0750a844815223e29b4f95f7576f5fb6d6d2bdea910c49562",
+      "sourceSha256": "949716d27b83a4904e20850b783408dc0ff9a85ec63014d228ffefbf1b3adc42"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/live-inject.mjs",
+      "source": ".agents/skills/impeccable/scripts/live-inject.mjs",
+      "sha256": "18e049dcb9823173a5bfdfbf602866aced4e23ea5c2ff9196f7d5e249ddae6e0",
+      "sourceSha256": "de65948cebde7fce3b2ec2f2c3da7291f3046688c5d53bc29de831a1e7d755b8"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/live-poll.mjs",
+      "source": ".agents/skills/impeccable/scripts/live-poll.mjs",
+      "sha256": "c450d6240cdd3409784a9950c64a764c4cf01680c19b72cd96f85e7d3231518e",
+      "sourceSha256": "17fbe728cc7174ffbd459f578703c0214e47c1005ee03c7c08522d2f6b522ca5"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/live-server.mjs",
+      "source": ".agents/skills/impeccable/scripts/live-server.mjs",
+      "sha256": "120b8098670645b404fa47167354598388bb5d3bd2fda4c1465a3922df60b137",
+      "sourceSha256": "50a7d45abd895665dd32daf841a5b2a2ae0a9a1b312d720a9a836914a7ff9cc7"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/live-wrap.mjs",
+      "source": ".agents/skills/impeccable/scripts/live-wrap.mjs",
+      "sha256": "bbbd0ccea8f84bbc7466dc0c350ebbe475fb592c112240f8aaac0d33d81b5173",
+      "sourceSha256": "6d9652e36d392806c039383c970ff6e48f437dac1361a28fb914cad9f240fce0"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/live.mjs",
+      "source": ".agents/skills/impeccable/scripts/live.mjs",
+      "sha256": "ea2648d8a65a544d77916abd584d6ad870ed1ca496351f3bbb9d0e24e814a5a6",
+      "sourceSha256": "45f7a3dd2c69a19b8ae4a07ff20ece2c99e535842dc30ed6b4a32dbce0a2f895"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/load-context.mjs",
+      "source": ".agents/skills/impeccable/scripts/load-context.mjs",
+      "sha256": "28fb64cd16a9e9f6cde3a34bed00bc4798ee83d0eb064150cca958c9a34271af",
+      "sourceSha256": "a0187c598b34b6422fedf8e78692de407095bb70837a14ebdc85eabc8fdc8c90"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/modern-screenshot.umd.js",
+      "source": ".agents/skills/impeccable/scripts/modern-screenshot.umd.js",
+      "sha256": "bb36665889124a0b6e15f16045265737449c3bdcf2712cdb08af3cfa01563e2b",
+      "sourceSha256": "9b0dc34415466edac6e6802574006608b5e5c0da9fdcb7b2651dbd1ea06713a6"
+    },
+    {
+      "path": ".agents/skills/impeccable/scripts/pin.mjs",
+      "source": ".agents/skills/impeccable/scripts/pin.mjs",
+      "sha256": "89a7056adfaca280519a1cc679b2e33f083300c3ed02a4fe7c71cf4d8c443bb6",
+      "sourceSha256": "1b584f598546e30d88c5250c00a8dd5eaec9a5579878676f9711491101281d0b"
+    },
+    {
+      "path": ".agents/skills/impeccable/SKILL.md",
+      "source": ".agents/skills/impeccable/SKILL.md",
+      "sha256": "383a0988b45c728a8580ab39dd006aeb3aab28efe83398bf87dfd807777492cf",
+      "sourceSha256": "d80295241f7110adf5391bd60b6e1829a01660b84e50ad43a1fb54ce0a9152bf"
+    },
+    {
+      "path": ".agents/skills/frontend-design/SKILL.md",
+      "source": "skills/frontend-design.md",
+      "sha256": "0355c9f37357c56a3985c939e32f90a7e6f5fc942cdc46f14569732db6501867",
+      "sourceSha256": "550c4f343853d315a0a65a8ac3c64582fda6baa1239036f70cfde9836cbec832"
+    }
+  ],
+  "localAdaptations": [
+    "frontend-design: moved upstream source frontmatter field into metadata.source for Codex validation; body unchanged.",
+    "Normalize installed text files to LF for Git portability; remove trailing whitespace in impeccable reference/document.md, harden.md and optimize.md. sourceSha256 preserves the original source bytes."
+  ]
+}
