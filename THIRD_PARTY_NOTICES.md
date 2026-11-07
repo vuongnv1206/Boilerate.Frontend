@@ -1,6 +1,6 @@
 # Third-party references
 
-This file records design-research provenance for the admin UI foundation, reviewed 2026-10-19. Runtime package licenses are supplied by their installed packages and lockfile; this list does not replace those licenses.
+This file records design-research provenance for the UI foundation, reviewed 2026-10-19. Runtime package licenses are supplied by their installed packages and lockfile; this list does not replace those licenses.
 
 Inter Variable is self-hosted through `@fontsource-variable/inter`. Storefront headings use Noto Serif Variable through `@fontsource-variable/noto-serif`, distributed under SIL Open Font License 1.1; the installed package includes its license and metadata. Instrument Sans was used for the earlier storefront design and remains recorded in its package metadata.
 
@@ -14,22 +14,8 @@ Webflow interface documentation and public illustrations were consulted for work
 
 Sources: [Intro to Webflow](https://help.webflow.com/hc/en-us/articles/33961260162323-Intro-to-Webflow), [content editor](https://help.webflow.com/hc/en-us/articles/33961251014931-Edit-site-content-as-a-content-editor), [Collection items overview](https://help.webflow.com/hc/en-us/articles/33961289539347-Collection-items-overview), [CMS Collections](https://help.webflow.com/hc/en-us/articles/33961244391059-Manage-CMS-Collections), [theme update](https://webflow.com/updates/light-and-dark-themes-across-webflow).
 
-## GetDesign and user-provided local references
+## GetDesign, Impeccable and MotionSites
 
-The local repository `D:\MyCode\get-design` at Git commit `f3c8f6c841f795b32eb369649ad9ec172626edab` identifies its remote as [nuocftraik/get-design](https://github.com/nuocftraik/get-design). The current palette refers to `design-systems/claude/DESIGN.md`; the earlier Webflow analysis and selected files under `skills/` were also read. [getdesign.md](https://getdesign.md/) is the user-requested public collection. The local source did not include a discovered root license in the targeted file inventory; no license permission is inferred from that absence.
+The warm paper, charcoal and terracotta palette direction was informed by the Claude design system study in [nuocftraik/get-design](https://github.com/nuocftraik/get-design) ([getdesign.md](https://getdesign.md/)). Product hierarchy, contrast and motion guidance consulted [pbakaus/impeccable](https://github.com/pbakaus/impeccable), and [motionsites.ai](https://motionsites.ai/) served as motion inspiration without copying code or assets.
 
-This project contains independently written notes and links, not a copied analysis, library, template or script. Originals remain unchanged at the user-provided location.
-
-## Impeccable
-
-Selected product, interaction, contrast and motion references were read from `D:\MyCode\get-design\.agents\skills\impeccable\reference\`. The local `skills-lock.json` identifies [pbakaus/impeccable](https://github.com/pbakaus/impeccable) as its upstream with computed hash `6894a8e7c14df9b063925cb134c73b2ca8c912c015710ac36f2f250d7c7ab998`. This is provenance from that lockfile, not a verified upstream revision or a license assertion.
-
-No original Impeccable script, skill or substantial reference text is distributed in the Frontend project. [Selected notes](design/references/product-ui-notes.md) and [admin-ui-design](.agents/skills/admin-ui-design/SKILL.md) were authored for the approved Angular/PrimeNG workspace.
-
-## MotionSites
-
-[motionsites.ai](https://motionsites.ai/), including its Apps filter, is retained as the user's motion inspiration. This pass copied no code or assets and made no claim that project timing values were measured from MotionSites. Its requested URL timed out in one separate documentation web-fetch attempt; that limitation is recorded in [references](design/references/README.md).
-
-## Local installation — 2026-11-04
-
-The earlier research-only statements above describe the initial review. Full impeccable and frontend-design skill files are now installed under Frontend/.agents/skills/. See [installation inventory](docs/skills/README.md) for source revision, file hashes and redistribution limits.
+Full `impeccable` and `frontend-design` skill bundles are installed locally under `Frontend/.agents/skills/`, alongside the project-specific [admin-ui-design](.agents/skills/admin-ui-design/SKILL.md). Consolidated provenance, upstream commit hashes, SHA-256 checksums and redistribution boundaries are maintained in [../docs/references/design-and-skills.md](../docs/references/design-and-skills.md) and [../docs/references/skill-sources.json](../docs/references/skill-sources.json).

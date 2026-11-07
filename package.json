@@ -13,7 +13,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false",
     "lint": "eslint src && npm run test:architecture",
-    "format:check": "prettier --check src public scripts e2e e2e-live docs .github playwright.config.ts playwright.live.config.ts angular.json tsconfig*.json package.json eslint.config.mjs vitest-base.config.mts",
+    "format:check": "prettier --check src public scripts e2e e2e-live .github playwright.config.ts playwright.live.config.ts angular.json tsconfig*.json package.json eslint.config.mjs vitest-base.config.mts",
     "check": "npm run format:check && npm run lint && npm run test && npm run build",
     "test:e2e": "playwright test --project=desktop-light --project=desktop-dark --project=tablet-light --project=tablet-dark",
     "test:e2e:live": "node scripts/live-acceptance.mjs",

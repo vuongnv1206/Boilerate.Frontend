@@ -1,10 +1,10 @@
 # Boilerate — Hệ thiết kế sản phẩm
 
-Đây là nguồn chuẩn thị giác cho Admin, đăng nhập, các trạng thái lỗi và cửa hàng khách mua. [PRODUCT.md](PRODUCT.md) giữ mục tiêu sản phẩm; [docs tính năng](docs/README.md) giữ hợp đồng và hành vi nghiệp vụ. Điều chỉnh token và mẫu chung ở đây trước khi tạo biến thể cho một màn riêng.
+Đây là nguồn chuẩn thị giác cho Admin, đăng nhập, các trạng thái lỗi và cửa hàng khách mua. [PRODUCT.md](PRODUCT.md) giữ mục tiêu sản phẩm; [tài liệu dự án](../docs/README.md) giữ hợp đồng và hành vi nghiệp vụ. Điều chỉnh token và mẫu chung ở đây trước khi tạo biến thể cho một màn riêng.
 
 ## 1. Định hướng
 
-Bảng màu giấy ấm, charcoal và terracotta được chọn từ [Claude trong GetDesign](D:/MyCode/get-design/design-systems/claude/DESIGN.md). Đây là cảm hứng về màu và sắc thái, không phải nhận diện thương hiệu của Boilerate hay tài sản được sao chép. Đọc các ghi chú [tham chiếu](design/references/README.md) và [nguồn bên thứ ba](THIRD_PARTY_NOTICES.md) khi dùng tài nguyên.
+Bảng màu giấy ấm, charcoal và terracotta được chọn từ Claude trong GetDesign. Đây là cảm hứng về màu và sắc thái, không phải nhận diện thương hiệu của Boilerate hay tài sản được sao chép. Đọc các ghi chú [tham chiếu thiết kế & skills](../docs/references/design-and-skills.md) và [nguồn bên thứ ba](THIRD_PARTY_NOTICES.md) khi dùng tài nguyên.
 
 Chủ shop và nhân viên thường làm việc liên tục với bảng, form và trạng thái đơn; giao diện vận hành phải dễ quét và ổn định. Khách mua cần nhận biết sản phẩm, giá và bước thanh toán; storefront có nhiều khoảng thở hơn, nhưng dùng cùng ngôn ngữ màu, focus và trạng thái. Giữ nội dung tiếng Việt ngắn, rõ, ưu tiên động từ gắn với hành động.
 
@@ -112,4 +112,4 @@ Tokens motion hiện tại 120/180/240ms cho phản hồi nhỏ, thay trạng th
 
 Review UI Kit, Tổng quan, list/editor Catalog, Orders/Renewals, System, settings, login/forbidden và hành trình mua ở 1440×900 và 1024×768, Light/Dark/System. Kiểm tra dialog/dropdown gắn body, panel resize/collapse, scroll, keyboard/focus, nội dung Việt dài và đủ trạng thái. Chạy FE check, browser E2E và live acceptance trên SQL Server test cô lập; soát permission, deep link/Back, save/dirty guard, 409 và lỗi mạng.
 
-Review ảnh thực tế trước khi cập nhật baseline. Đo bundle/CSS/font và giữ nguyên budget; ghi rõ kết quả thực chạy, source, môi trường và các phạm vi chưa nghiệm thu trong báo cáo theo [quy tắc docs](docs/README.md#quy-tắc-duy-trì-docs).
+Review ảnh thực tế trước khi cập nhật baseline. Đo bundle/CSS/font và giữ nguyên budget; ghi rõ kết quả thực chạy, source, môi trường và các phạm vi chưa nghiệm thu trong báo cáo theo [quy trình tài liệu](../agents/workflow-and-docs.md).
