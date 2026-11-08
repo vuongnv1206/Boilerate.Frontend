@@ -1,0 +1,286 @@
+@if (loading()) {
+  <ui-content-state
+    kind="loading"
+    layout="page"
+    title="Đang tải đơn hàng"
+    message="Đang mở workspace đơn hàng."
+  />
+} @else if (errorMessage()) {
+  <ui-content-state
+    kind="error"
+    layout="page"
+    title="Không thể tải đơn hàng"
+    [message]="errorMessage()"
+  >
+    <button pButton type="button" severity="secondary" outlined (click)="reload()">Tải lại</button>
+  </ui-content-state>
+} @else if (order(); as currentOrder) {
+  <section class="order-detail-page admin-record-page" aria-labelledby="order-detail-title">
+    <header class="order-detail-header admin-record-header">
+      <div>
+        <a class="order-back-link" [routerLink]="['/admin/orders']" [queryParams]="backQuery()">
+          <ui-icon name="arrow-left" [size]="14" /> Quay lại đơn hàng
+        </a>
+        <div class="order-title-row">
+          <h1 id="order-detail-title">{{ currentOrder.number }}</h1>
+          <ui-status-badge
+            [tone]="
+              currentOrder.status === status.Completed
+                ? 'success'
+                : currentOrder.status === status.Cancelled || currentOrder.status === status.Expired
+                  ? 'muted'
+                  : 'neutral'
+            "
+            >{{ statusLabels[currentOrder.status] }}</ui-status-badge
+          >
+        </div>
+        <p>
+          Tạo lúc {{ currentOrder.createdOn | date: 'dd/MM/yyyy HH:mm' }}
+          @if (currentOrder.expiresAt) {
+            · Hết hạn {{ currentOrder.expiresAt | date: 'dd/MM/yyyy HH:mm' }}
+          }
+        </p>
+      </div>
+      <app-order-payment-panel
+        [order]="currentOrder"
+        [externalBusy]="cancelBusy() || shippingBusy() || afterSalesBusy()"
+        (orderUpdated)="onPaymentOrderUpdated($event)"
+        (actionFailed)="onPanelActionFailed($event)"
+        (actionStarted)="clearActionError()"
+        (busyChanged)="paymentBusy.set($event)"
+      >
+        @if (canCancelPermission()) {
+          <button
+            pButton
+            type="button"
+            severity="danger"
+            outlined
+            [disabled]="!canCancelOrder() || anyBusy()"
+            [title]="
+              canCancelOrder()
+                ? 'Hủy đơn hàng'
+                : 'Chỉ đơn chưa thanh toán và chưa bắt đầu giao hàng mới được hủy'
+            "
+            (click)="cancelDialog.set(true)"
+          >
+            Hủy đơn
+          </button>
+        }
+      </app-order-payment-panel>
+    </header>
+    @if (actionError()) {
+      <div class="order-action-message" role="alert">
+        <ui-icon name="alert" [size]="15" />{{ actionError() }}
+      </div>
+    }
+    <div class="order-workspace-grid admin-record-body">
+      <main class="order-main-column">
+        <section class="order-card">
+          <div class="order-card-heading">
+            <div>
+              <span class="eyebrow">Thông tin tại thời điểm đặt hàng</span>
+              <h2>Sản phẩm trong đơn</h2>
+            </div>
+            <span class="order-readonly-note">Chỉ đọc</span>
+          </div>
+          <div class="table-scroll" role="region" aria-label="Sản phẩm trong đơn hàng" tabindex="0">
+            <p-table
+              [value]="currentOrder.items.slice()"
+              dataKey="id"
+              style="display: block; min-width: 760px"
+              tableStyleClass="content-table order-items-table"
+              [tableStyle]="{ 'min-width': '760px' }"
+            >
+              <ng-template #header>
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th>SKU</th>
+                  <th>Cách giao</th>
+                  <th>Đơn giá</th>
+                  <th>SL</th>
+                  <th>Thành tiền</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-item>
+                <tr>
+                  <td>
+                    <strong>{{ item.name }}</strong>
+                    <span class="order-contact">{{
+                      item.optionDescription || 'Không có option'
+                    }}</span>
+                  </td>
+                  <td>{{ item.sku }}</td>
+                  <td>{{ fulfillmentLabel(item.fulfillmentKind) }}</td>
+                  <td>
+                    {{
+                      item.unitPrice | currency: currentOrder.currency : 'symbol-narrow' : '1.0-0'
+                    }}
+                  </td>
+                  <td>{{ item.quantity }}</td>
+                  <td>
+                    {{
+                      item.unitPrice * item.quantity
+                        | currency: currentOrder.currency : 'symbol-narrow' : '1.0-0'
+                    }}
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+          <div class="order-totals">
+            <span>Tạm tính</span>
+            <strong>{{
+              currentOrder.subtotal | currency: currentOrder.currency : 'symbol-narrow' : '1.0-0'
+            }}</strong>
+            @if (currentOrder.discountAmount > 0) {
+              <span
+                >Giảm giá{{
+                  currentOrder.discountCode ? ' (' + currentOrder.discountCode + ')' : ''
+                }}</span
+              >
+              <strong
+                >−{{
+                  currentOrder.discountAmount
+                    | currency: currentOrder.currency : 'symbol-narrow' : '1.0-0'
+                }}</strong
+              >
+            }
+            <span>Phí vận chuyển</span>
+            <strong>{{
+              currentOrder.shippingAmount
+                | currency: currentOrder.currency : 'symbol-narrow' : '1.0-0'
+            }}</strong>
+            <span class="total-label">Tổng tiền</span>
+            <strong class="total-value">{{
+              currentOrder.total | currency: currentOrder.currency : 'symbol-narrow' : '1.0-0'
+            }}</strong>
+          </div>
+        </section>
+
+        <section class="order-card">
+          <div class="order-card-heading">
+            <div>
+              <span class="eyebrow">Diễn biến</span>
+              <h2>Lịch sử đơn hàng</h2>
+            </div>
+          </div>
+          @if (historyLoading()) {
+            <p class="order-muted">Đang tải lịch sử đơn hàng…</p>
+          } @else if (historyError()) {
+            <p class="order-form-error" role="alert">{{ historyError() }}</p>
+            <button pButton severity="secondary" outlined type="button" (click)="reloadHistory()">
+              Tải lại lịch sử
+            </button>
+          } @else {
+            <ol class="order-timeline">
+              @for (entry of history(); track entry.id) {
+                <li>
+                  <span class="timeline-dot"></span>
+                  <div>
+                    <strong>{{ entry.safeSummary }}</strong>
+                    <span
+                      >{{ entry.actorDisplayName || 'Hệ thống' }} ·
+                      {{ entry.occurredAtUtc | date: 'dd/MM/yyyy HH:mm:ss' }}</span
+                    >
+                  </div>
+                </li>
+              } @empty {
+                <li class="order-muted">Chưa có lịch sử hiển thị.</li>
+              }
+            </ol>
+          }
+        </section>
+
+        <app-order-shipments-panel
+          [order]="currentOrder"
+          [externalBusy]="cancelBusy() || paymentBusy()"
+          [dialogError]="actionError()"
+          (shipmentsChanged)="shipments.set($event)"
+          (orderMutated)="onSubpanelMutated($event)"
+          (actionFailed)="onPanelActionFailed($event)"
+          (actionStarted)="clearActionError()"
+          (busyChanged)="shippingBusy.set($event)"
+        />
+
+        <app-order-after-sales-panel
+          [order]="currentOrder"
+          [shipments]="shipments()"
+          (orderMutated)="onSubpanelMutated($event)"
+          (busyChanged)="afterSalesBusy.set($event)"
+        />
+
+        <app-order-renewals-panel
+          [order]="currentOrder"
+          [externalBusy]="anyBusy()"
+          (orderMutated)="onRenewalsMutated()"
+        />
+      </main>
+
+      <aside class="order-inspector">
+        <section class="inspector-card">
+          <span class="eyebrow">Người nhận</span>
+          <h2>{{ currentOrder.recipientName }}</h2>
+          <dl>
+            <dt>Email</dt>
+            <dd>{{ currentOrder.email }}</dd>
+            <dt>Số điện thoại</dt>
+            <dd>{{ currentOrder.phone }}</dd>
+            <dt>Địa chỉ</dt>
+            <dd>{{ currentOrder.shippingAddress || 'Không có địa chỉ giao hàng' }}</dd>
+          </dl>
+        </section>
+        <section class="inspector-card">
+          <span class="eyebrow">Trạng thái</span>
+          <dl>
+            <dt>Phương thức</dt>
+            <dd>{{ paymentMethodLabels[currentOrder.paymentMethod] }}</dd>
+            <dt>Thanh toán</dt>
+            <dd>{{ paymentStatusLabels[currentOrder.paymentStatus] }}</dd>
+            <dt>Tiến độ xử lý</dt>
+            <dd>{{ fulfillmentStatusLabels[currentOrder.fulfillmentStatus] }}</dd>
+          </dl>
+        </section>
+        <section class="inspector-card">
+          <span class="eyebrow">Bất biến</span>
+          <p class="order-muted">
+            Đơn hàng và các dòng sản phẩm giữ nguyên thông tin lúc checkout. Không sửa trực tiếp.
+          </p>
+        </section>
+      </aside>
+    </div>
+  </section>
+}
+
+<p-dialog
+  header="Hủy đơn hàng"
+  [visible]="cancelDialog()"
+  (visibleChange)="cancelDialog.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '420px', maxWidth: '92vw' }"
+>
+  <p>Đơn hàng sẽ chuyển sang trạng thái đã hủy; thông tin lúc đặt hàng vẫn được lưu.</p>
+  <div class="dialog-actions">
+    <button pButton type="button" severity="secondary" outlined (click)="cancelDialog.set(false)">
+      Đóng
+    </button>
+    <button
+      pButton
+      type="button"
+      severity="danger"
+      outlined
+      [disabled]="anyBusy()"
+      (click)="confirmCancel()"
+    >
+      Xác nhận hủy
+    </button>
+  </div>
+</p-dialog>
+
+<ui-confirm-dialog
+  title="Rời khỏi đơn hàng?"
+  message="Bản nháp giao hàng, hoàn tiền, đổi trả hoặc yêu cầu chưa xác nhận sẽ không còn được giữ trên màn hình. Hãy đối chiếu kết quả trước khi tạo thao tác mới."
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

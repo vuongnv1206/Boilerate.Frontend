@@ -1,0 +1,457 @@
+<section class="editor-page product-type-editor-workspace" aria-labelledby="product-type-heading">
+  <header class="editor-toolbar product-type-editor-toolbar">
+    <a
+      class="product-type-editor-back"
+      routerLink="/admin/collections/product-types"
+      queryParamsHandling="preserve"
+      aria-label="Quay lại danh sách loại sản phẩm"
+    >
+      <ui-icon name="arrow-left" [size]="14" />
+    </a>
+    <div class="product-type-editor-title">
+      <h1 id="product-type-heading">{{ record()?.name || 'Thêm loại sản phẩm' }}</h1>
+      @if (record()) {
+        <span class="product-type-publish-state" [class.inactive]="!form.controls.isActive.value">
+          <span aria-hidden="true"></span
+          >{{ form.controls.isActive.value ? 'Hoạt động' : 'Đã tắt' }}
+        </span>
+      }
+      <p class="editor-save-status" aria-live="polite">
+        {{
+          saving()
+            ? 'Đang lưu…'
+            : saved() || (!!record() && !form.dirty)
+              ? 'Đã lưu vào cửa hàng'
+              : 'Thay đổi chỉ được ghi khi bấm Lưu'
+        }}
+      </p>
+    </div>
+    <div class="editor-actions">
+      <button
+        pButton
+        severity="primary"
+        (click)="save()"
+        [disabled]="!canWrite() || loading() || saving() || !ready()"
+      >
+        {{ saving() ? 'Đang lưu…' : 'Lưu' }}
+      </button>
+    </div>
+  </header>
+  @if (summary().length) {
+    <ui-form-error-summary [messages]="summary()" />
+  }
+  @if (error()) {
+    <div class="editor-notice" role="alert">
+      {{ error() }}
+      @if (!saving()) {
+        <button pButton severity="secondary" outlined (click)="retry()">Tải lại</button>
+      }
+    </div>
+  }
+  @if (loading()) {
+    <ui-content-state kind="loading" title="Đang tải loại sản phẩm" layout="page" />
+  } @else if (ready()) {
+    <div class="product-type-editor-body">
+      <main class="product-type-editor-main">
+        <form class="editor-form" [formGroup]="form" novalidate>
+          <fieldset class="save-lock" [disabled]="saving() || !canWrite()">
+            <section class="form-section product-type-basic-section">
+              <h2>Thông tin cơ bản</h2>
+              <p>Mỗi loại sản phẩm định nghĩa bộ thuộc tính dùng khi tạo sản phẩm.</p>
+
+              <ui-form-field
+                class="field"
+                forId="product-type-name"
+                label="Tên loại"
+                [required]="true"
+                hint="Tên dễ nhận biết khi tạo sản phẩm."
+                [error]="
+                  serverError('name') ||
+                  (invalid('name') ? 'Nhập tên loại, tối đa 256 ký tự.' : null)
+                "
+              >
+                <input
+                  pInputText
+                  id="product-type-name"
+                  formControlName="name"
+                  [maxlength]="limits.name"
+                  [attr.aria-invalid]="invalid('name')"
+                  aria-describedby="product-type-name-hint product-type-name-error"
+                />
+              </ui-form-field>
+              <div class="field product-type-code-field">
+                <label for="product-type-code">Mã hệ thống</label>
+                <output id="product-type-code">{{ form.controls.code.value }}</output>
+                <ui-field-message tone="help">
+                  Mã được tạo tự động và dùng để nhận diện loại sản phẩm trong hệ thống.
+                </ui-field-message>
+              </div>
+              @if (!!record()) {
+                <label class="check-field" for="product-type-active">
+                  <p-checkbox
+                    inputId="product-type-active"
+                    [binary]="true"
+                    formControlName="isActive"
+                  />
+                  Đang hoạt động
+                </label>
+              }
+            </section>
+            <section class="schema-section" [formGroup]="form">
+              <div class="section-heading">
+                <div>
+                  <h2>Thuộc tính sản phẩm</h2>
+                  <p>
+                    Định nghĩa tối đa {{ limits.fields }} thuộc tính. Kiểu dữ liệu và yêu cầu bắt
+                    buộc của thuộc tính đã tạo được giữ cố định.
+                  </p>
+                </div>
+                <button
+                  pButton
+                  severity="secondary"
+                  outlined
+                  type="button"
+                  (click)="addField()"
+                  [disabled]="saving() || form.controls.fields.length >= limits.fields"
+                >
+                  Thêm thuộc tính
+                </button>
+              </div>
+              @if (!!record()) {
+                <p class="schema-help">
+                  Thuộc tính thêm vào loại đã tồn tại luôn là tùy chọn. Tắt thuộc tính hoặc lựa chọn
+                  cũ để giữ lịch sử sản phẩm.
+                </p>
+              }
+              @if (validation(form.controls.fields); as message) {
+                <ui-field-message tone="error">{{ message }}</ui-field-message>
+              }
+              <div formArrayName="fields">
+                @for (
+                  field of form.controls.fields.controls;
+                  track field;
+                  let fieldIndex = $index
+                ) {
+                  <fieldset class="schema-field" [formGroupName]="fieldIndex">
+                    <legend>{{ field.controls.label.value || 'Thuộc tính mới' }}</legend>
+                    <ui-field-message tone="error">{{
+                      validation(field.controls.code) ? validation(field.controls.code) : ''
+                    }}</ui-field-message>
+                    <ui-field-message tone="error">{{
+                      validation(field.controls.label)
+                        ? 'Nhãn thuộc tính: ' + validation(field.controls.label)
+                        : ''
+                    }}</ui-field-message>
+                    @if (validation(field); as message) {
+                      <ui-field-message tone="error">{{ message }}</ui-field-message>
+                    }
+                    @if (validation(field.controls.helpText); as message) {
+                      <ui-field-message tone="error">{{ message }}</ui-field-message>
+                    }
+                    @if (validation(field.controls.sortOrder); as message) {
+                      <ui-field-message tone="error">{{ message }}</ui-field-message>
+                    }
+                    @if (validation(field.controls.dataType); as message) {
+                      <ui-field-message tone="error">{{ message }}</ui-field-message>
+                    }
+                    <div class="field-row">
+                      <div class="field">
+                        <label [for]="'field-type-' + fieldIndex">Kiểu dữ liệu</label>
+                        @if (field.controls.id.value) {
+                          <output [id]="'field-type-' + fieldIndex">{{
+                            typeLabel(field.controls.dataType.value)
+                          }}</output>
+                        } @else {
+                          <p-select
+                            [inputId]="'field-type-' + fieldIndex"
+                            formControlName="dataType"
+                            [options]="fieldTypes"
+                            optionLabel="label"
+                            optionValue="value"
+                            appendTo="body"
+                            (onChange)="changeFieldType(fieldIndex)"
+                          >
+                          </p-select>
+                        }
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label [for]="'field-label-' + fieldIndex">Nhãn hiển thị *</label
+                      ><input
+                        pInputText
+                        [id]="'field-label-' + fieldIndex"
+                        formControlName="label"
+                        [maxlength]="limits.label"
+                      />
+                    </div>
+                    <div class="field">
+                      <label [for]="'field-help-' + fieldIndex">Hướng dẫn nhập</label
+                      ><input
+                        pInputText
+                        [id]="'field-help-' + fieldIndex"
+                        formControlName="helpText"
+                        [maxlength]="limits.help"
+                      />
+                    </div>
+                    <div class="field-options">
+                      @if (!record() && !field.controls.id.value) {
+                        <label class="check-field" [for]="'field-required-' + fieldIndex">
+                          <p-checkbox
+                            [inputId]="'field-required-' + fieldIndex"
+                            [binary]="true"
+                            formControlName="isRequired"
+                          />Bắt buộc
+                        </label>
+                      } @else {
+                        <span class="schema-help">{{
+                          field.controls.isRequired.value ? 'Bắt buộc' : 'Tùy chọn'
+                        }}</span>
+                      }
+                      <label class="check-field" [for]="'field-filter-' + fieldIndex">
+                        <p-checkbox
+                          [inputId]="'field-filter-' + fieldIndex"
+                          [binary]="true"
+                          formControlName="isFilterable"
+                        />Dùng làm bộ lọc
+                      </label>
+                      @if (field.controls.id.value) {
+                        <label class="check-field" [for]="'field-active-' + fieldIndex">
+                          <p-checkbox
+                            [inputId]="'field-active-' + fieldIndex"
+                            [binary]="true"
+                            formControlName="isActive"
+                          />Hoạt động
+                        </label>
+                      }
+                    </div>
+                    @if (field.controls.id.value) {
+                      <div class="field">
+                        <label [for]="'field-order-' + fieldIndex">Thứ tự</label
+                        ><p-inputnumber
+                          [inputId]="'field-order-' + fieldIndex"
+                          [min]="0"
+                          [step]="1"
+                          [useGrouping]="false"
+                          formControlName="sortOrder"
+                        />
+                      </div>
+                    }
+                    @if (field.controls.dataType.value === fieldType.Choice) {
+                      <div class="choices" formArrayName="choices">
+                        <h3>Các lựa chọn</h3>
+                        @if (validation(field.controls.choices); as message) {
+                          <ui-field-message tone="error">{{ message }}</ui-field-message>
+                        }
+                        @for (
+                          choice of field.controls.choices.controls;
+                          track choice;
+                          let choiceIndex = $index
+                        ) {
+                          <div class="choice-row" [formGroupName]="choiceIndex">
+                            <div class="field">
+                              <label [for]="'choice-label-' + fieldIndex + '-' + choiceIndex"
+                                >Nhãn *</label
+                              ><input
+                                pInputText
+                                [id]="'choice-label-' + fieldIndex + '-' + choiceIndex"
+                                formControlName="label"
+                                [maxlength]="limits.label"
+                              /><ui-field-message tone="error">{{
+                                validation(choice.controls.label)
+                              }}</ui-field-message>
+                            </div>
+                            @if (choice.controls.id.value) {
+                              <div class="field">
+                                <label [for]="'choice-order-' + fieldIndex + '-' + choiceIndex"
+                                  >Thứ tự</label
+                                ><p-inputnumber
+                                  [inputId]="'choice-order-' + fieldIndex + '-' + choiceIndex"
+                                  [min]="0"
+                                  [step]="1"
+                                  [useGrouping]="false"
+                                  formControlName="sortOrder"
+                                /><ui-field-message tone="error">{{
+                                  validation(choice.controls.sortOrder)
+                                }}</ui-field-message>
+                              </div>
+                              <label
+                                class="check-field"
+                                [for]="'choice-active-' + fieldIndex + '-' + choiceIndex"
+                                ><p-checkbox
+                                  [inputId]="'choice-active-' + fieldIndex + '-' + choiceIndex"
+                                  [binary]="true"
+                                  formControlName="isActive"
+                                />Hoạt động</label
+                              >
+                            } @else {
+                              <button
+                                pButton
+                                severity="secondary"
+                                outlined
+                                type="button"
+                                (click)="removeNewChoice(fieldIndex, choiceIndex)"
+                                [disabled]="saving() || !canWrite()"
+                                [attr.aria-label]="'Bỏ lựa chọn ' + (choiceIndex + 1)"
+                              >
+                                Bỏ
+                              </button>
+                            }
+                          </div>
+                        }
+                        <button
+                          pButton
+                          severity="secondary"
+                          outlined
+                          type="button"
+                          (click)="addChoice(fieldIndex)"
+                          [disabled]="
+                            !canWrite() ||
+                            saving() ||
+                            field.controls.choices.length >= limits.choices
+                          "
+                        >
+                          Thêm lựa chọn
+                        </button>
+                      </div>
+                    }
+                    @if (field.invalid && (field.touched || field.dirty)) {
+                      <ui-field-message tone="error"
+                        >Kiểm tra nhãn và các lựa chọn của thuộc tính này.</ui-field-message
+                      >
+                    }
+                    @if (!field.controls.id.value) {
+                      <button
+                        pButton
+                        severity="secondary"
+                        outlined
+                        class="remove-field"
+                        type="button"
+                        (click)="removeNewField(fieldIndex)"
+                        [disabled]="saving() || !canWrite()"
+                      >
+                        Bỏ thuộc tính mới
+                      </button>
+                    }
+                  </fieldset>
+                } @empty {
+                  <p class="schema-help">
+                    Loại sản phẩm này chưa có thuộc tính riêng. Anh có thể thêm sau.
+                  </p>
+                }
+              </div>
+            </section>
+          </fieldset>
+        </form>
+        <section class="product-type-linked-products" aria-labelledby="product-type-products-title">
+          <div class="product-type-section-heading">
+            <div>
+              <h2 id="product-type-products-title">Sản phẩm</h2>
+              <p>Sản phẩm được gán loại khi tạo và giữ nguyên bộ thuộc tính đã dùng.</p>
+            </div>
+            @if (record() && canViewProducts()) {
+              <a
+                pButton
+                severity="secondary"
+                outlined
+                routerLink="/admin/collections/products"
+                [queryParams]="{ productTypeId: record()!.id }"
+                >Mở danh sách</a
+              >
+            }
+          </div>
+          @if (!record()) {
+            <p class="product-type-linked-message">
+              Lưu loại sản phẩm để xem các sản phẩm liên quan.
+            </p>
+          } @else if (!canViewProducts()) {
+            <p class="product-type-linked-message">
+              Cần quyền Product.View để xem sản phẩm liên quan.
+            </p>
+          } @else if (productLoading()) {
+            <p class="product-type-linked-message" role="status">Đang tải sản phẩm…</p>
+          } @else if (productError()) {
+            <p class="product-type-linked-error" role="alert">
+              {{ productError() }}
+              <button pButton severity="secondary" outlined type="button" (click)="retryProducts()">
+                Tải lại
+              </button>
+            </p>
+          } @else {
+            <div class="product-type-linked-list">
+              @for (product of linkedProducts(); track product.id) {
+                <a
+                  [routerLink]="['/admin/collections/products', product.id]"
+                  [queryParams]="{ productTypeId: record()!.id }"
+                  [title]="product.name"
+                >
+                  <span>{{ product.name }}</span>
+                  <small>{{ product.slug }}</small>
+                </a>
+              } @empty {
+                <p class="product-type-linked-message">Chưa có sản phẩm thuộc loại này.</p>
+              }
+            </div>
+            @if (linkedProductCount() > linkedProducts().length) {
+              <p class="product-type-linked-message">
+                Hiển thị {{ linkedProducts().length }} trong {{ linkedProductCount() }} sản phẩm.
+              </p>
+            }
+          }
+        </section>
+        <section class="product-type-item-details" aria-labelledby="product-type-details-title">
+          <h2 id="product-type-details-title">Thông tin bản ghi</h2>
+          <dl>
+            <div>
+              <dt>Trạng thái</dt>
+              <dd>{{ form.controls.isActive.value ? 'Hoạt động' : 'Đã tắt' }}</dd>
+            </div>
+            <div>
+              <dt>Số thuộc tính</dt>
+              <dd>{{ form.controls.fields.length }}</dd>
+            </div>
+            <div>
+              <dt>ID</dt>
+              <dd>{{ record()?.id || 'Chưa tạo' }}</dd>
+            </div>
+          </dl>
+          <p>Kiểu dữ liệu của thuộc tính đã tạo được giữ nguyên để bảo toàn dữ liệu sản phẩm.</p>
+        </section>
+        @if (record(); as currentRecord) {
+          <section class="product-type-activity" aria-labelledby="product-type-activity-title">
+            <h2 id="product-type-activity-title">Hoạt động</h2>
+            @if (currentRecord.lastModifiedOn || currentRecord.createdOn) {
+              <p>
+                Cập nhật gần nhất
+                {{
+                  currentRecord.lastModifiedOn || currentRecord.createdOn | date: 'd/M/yyyy, HH:mm'
+                }}
+              </p>
+            }
+            @if (currentRecord.createdOn) {
+              <p>Tạo lúc {{ currentRecord.createdOn | date: 'd/M/yyyy, HH:mm' }}</p>
+            }
+          </section>
+        }
+        @if (record() && canCreate()) {
+          <footer class="product-type-editor-footer">
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              type="button"
+              (click)="duplicate()"
+              [disabled]="saving() || loading()"
+            >
+              Sao chép loại sản phẩm
+            </button>
+          </footer>
+        }
+      </main>
+    </div>
+  }
+</section>
+<ui-confirm-dialog
+  title="Rời khỏi màn hình?"
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

@@ -1,0 +1,126 @@
+<div class="orders-workspace" [class.order-detail-open]="editorId() !== null">
+  @if (editorId() !== null) {
+    <button
+      #itemsToggle
+      pButton
+      severity="secondary"
+      outlined
+      class="order-items-toggle"
+      type="button"
+      (click)="panelOpen.set(!panelOpen())"
+      [attr.aria-expanded]="panelOpen()"
+      aria-controls="order-items"
+    >
+      <ui-icon name="panel-left" [size]="14" />Danh sách đơn hàng
+    </button>
+    @if (panelOpen()) {
+      <button
+        pButton
+        text
+        class="order-items-backdrop"
+        type="button"
+        aria-label="Đóng danh sách đơn hàng"
+        (click)="closePanel()"
+      ></button>
+    }
+    <aside
+      class="order-items"
+      [class.order-items-open]="panelOpen()"
+      id="order-items"
+      aria-label="Chuyển đơn hàng"
+      tabindex="-1"
+      [attr.role]="panelOpen() ? 'dialog' : null"
+      [attr.aria-modal]="panelOpen() ? true : null"
+      [cdkTrapFocus]="panelOpen()"
+      [cdkTrapFocusAutoCapture]="panelOpen()"
+      (keydown.escape)="closePanel()"
+    >
+      <header>
+        <a routerLink="/admin/orders" [queryParams]="routeQuery()" (click)="panelOpen.set(false)"
+          >Đơn hàng <span>{{ page().total }}</span></a
+        >
+      </header>
+      <label class="order-item-search" for="order-rail-search">
+        <span class="sr-only">Tìm trong đơn hàng</span>
+        <input
+          pInputText
+          id="order-rail-search"
+          type="search"
+          [value]="query().q"
+          #itemSearch
+          (input)="search(itemSearch.value)"
+          placeholder="Mã đơn, email, điện thoại…"
+        />
+      </label>
+      @if (loading()) {
+        <p class="order-items-message" role="status">Đang tải đơn hàng…</p>
+      }
+      @if (errorMessage()) {
+        <div class="order-items-message" role="alert">
+          {{ errorMessage() }}
+          <button pButton severity="secondary" outlined type="button" (click)="load()">
+            Thử lại
+          </button>
+        </div>
+      }
+      <nav class="order-items-list" aria-label="Đơn hàng trong bộ lọc">
+        @for (item of page().items; track item.id) {
+          <a
+            [routerLink]="['/admin/orders', item.id]"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            [attr.aria-current]="editorId() === item.id ? 'page' : null"
+            [title]="item.recipientName + ' · ' + item.email"
+          >
+            <span class="order-item-line">
+              <strong>{{ item.number }}</strong>
+              <ui-status-badge [tone]="statusTone(item.status)">
+                {{ statusLabels[item.status] }}
+              </ui-status-badge>
+            </span>
+            <span class="order-item-customer">{{ item.recipientName }}</span>
+            <small>
+              {{ item.total | currency: item.currency : 'symbol-narrow' : '1.0-0' }}
+              · {{ item.createdOn | date: 'd/M/yy' }}
+            </small>
+          </a>
+        } @empty {
+          @if (!loading() && !errorMessage()) {
+            <p class="order-items-message">Không có đơn trong trang hiện tại.</p>
+          }
+        }
+      </nav>
+      <footer>
+        <button
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
+          type="button"
+          aria-label="Trang đơn hàng trước"
+          [disabled]="page().pageNumber <= 1 || loading()"
+          (click)="setPage(page().pageNumber - 1)"
+        >
+          <ui-icon name="chevron-left" [size]="14" /></button
+        ><span>{{ page().pageNumber }} / {{ pageCount() }}</span
+        ><button
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
+          type="button"
+          aria-label="Trang đơn hàng sau"
+          [disabled]="page().pageNumber >= pageCount() || loading()"
+          (click)="setPage(page().pageNumber + 1)"
+        >
+          <ui-icon name="chevron-right" [size]="14" />
+        </button>
+      </footer>
+    </aside>
+  }
+  <div class="orders-workspace-content" [attr.inert]="panelOpen() ? '' : null">
+    <router-outlet />
+  </div>
+</div>

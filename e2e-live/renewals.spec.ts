@@ -2,7 +2,7 @@ import type {
   RenewalAdminDto,
   RenewalHistoryDto,
   StartRenewalRequest,
-} from '../src/app/models/renewal.dto';
+} from '../src/app/modules/renewals/models/renewal.dto';
 import { test, expect, signInAs, apiAs } from './fixtures';
 
 test('live renewal: processor starts once, verifier records actual result and reveal follows independent permissions', async ({

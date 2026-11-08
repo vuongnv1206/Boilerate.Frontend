@@ -1,0 +1,459 @@
+<section class="order-card after-sales-card">
+  <div class="order-card-heading">
+    <div>
+      <span class="eyebrow">Hậu mãi</span>
+      <h2>Đổi trả & hoàn tiền</h2>
+    </div>
+    @if (afterSales(); as summary) {
+      <div class="after-sales-actions">
+        @if (canRefund() && !summary.closed && summary.refundableAmount > 0) {
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            type="button"
+            [disabled]="working() || pendingReturn() !== null"
+            (click)="openRefundForm()"
+          >
+            {{ pendingRefund() ? 'Kiểm tra yêu cầu hoàn' : 'Ghi nhận hoàn tiền' }}
+          </button>
+        }
+        @if (canReceiveReturn() && !summary.closed && returnableLines().length > 0) {
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            type="button"
+            [disabled]="working() || pendingRefund() !== null"
+            (click)="openReturnForm()"
+          >
+            {{ pendingReturn() ? 'Kiểm tra yêu cầu trả hàng' : 'Nhận hàng trả về' }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+  @if (!canViewAfterSales()) {
+    <p class="order-muted">Tài khoản của bạn chưa được cấp quyền xem thông tin hậu mãi.</p>
+  } @else if (loading()) {
+    <p class="order-muted">Đang tải thông tin hậu mãi…</p>
+  } @else if (afterSalesError()) {
+    <p class="order-form-error" role="alert">{{ afterSalesError() }}</p>
+    <button pButton severity="secondary" outlined type="button" (click)="reloadAfterSales()">
+      Tải lại thông tin hậu mãi
+    </button>
+  } @else if (afterSales(); as summary) {
+    <div class="after-sales-summary">
+      <span>
+        Đã nhận
+        <strong>{{
+          summary.receivedAmount | currency: order().currency : 'symbol-narrow' : '1.0-0'
+        }}</strong>
+      </span>
+      <span>
+        Đã hoàn
+        <strong>{{
+          summary.refundedAmount | currency: order().currency : 'symbol-narrow' : '1.0-0'
+        }}</strong>
+      </span>
+      <span>
+        Còn có thể hoàn
+        <strong>{{
+          summary.refundableAmount | currency: order().currency : 'symbol-narrow' : '1.0-0'
+        }}</strong>
+      </span>
+      @if (summary.closed) {
+        <span class="after-sales-closed">Đơn đã đóng</span>
+      }
+    </div>
+    @if (actionError()) {
+      <div class="order-action-message" role="alert">
+        <ui-icon name="alert" [size]="15" />{{ actionError() }}
+        @if (actionFailure() === 'uncertain' && pendingRefund()) {
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            type="button"
+            [disabled]="working()"
+            (click)="submitRefund()"
+          >
+            Thử lại đúng khoản hoàn
+          </button>
+        }
+        @if (actionFailure() === 'uncertain' && pendingReturn()) {
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            type="button"
+            [disabled]="working()"
+            (click)="submitReturn()"
+          >
+            Thử lại đúng phiếu nhận
+          </button>
+        }
+      </div>
+    }
+    @if (order().currency.toUpperCase() !== 'VND' && canRefund()) {
+      <p class="order-muted">API hiện chỉ ghi nhận hoàn tiền VND.</p>
+    }
+    <div class="after-sales-ledgers">
+      <section>
+        <h3>Các khoản đã hoàn</h3>
+        @if (summary.refunds.length) {
+          <div class="table-scroll" role="region" aria-label="Các khoản đã hoàn" tabindex="0">
+            <p-table
+              [value]="summary.refunds.slice()"
+              dataKey="id"
+              tableStyleClass="content-table after-sales-table"
+              [tableStyle]="{ 'min-width': '760px' }"
+            >
+              <ng-template #header>
+                <tr>
+                  <th>Chứng từ</th>
+                  <th>Số tiền</th>
+                  <th>Nguồn</th>
+                  <th>Lý do</th>
+                  <th>Thời điểm</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-refund>
+                <tr>
+                  <td>{{ refund.reference }}</td>
+                  <td>
+                    {{ refund.amount | currency: refund.currency : 'symbol-narrow' : '1.0-0' }}
+                  </td>
+                  <td>
+                    {{ refund.source === 'ManualBankTransfer' ? 'Chuyển khoản' : 'Tiền mặt' }}
+                  </td>
+                  <td>{{ refund.reason }}</td>
+                  <td>{{ refund.refundedAtUtc | date: 'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        } @else {
+          <p class="order-muted">Chưa ghi nhận khoản hoàn nào.</p>
+        }
+      </section>
+      <section>
+        <h3>Phiếu nhận hàng trả</h3>
+        @if (summary.returns.length) {
+          <div class="table-scroll" role="region" aria-label="Phiếu nhận hàng trả" tabindex="0">
+            <p-table
+              [value]="summary.returns.slice()"
+              dataKey="id"
+              tableStyleClass="content-table after-sales-table"
+              [tableStyle]="{ 'min-width': '760px' }"
+            >
+              <ng-template #header>
+                <tr>
+                  <th>Chứng từ</th>
+                  <th>Số lượng nhận</th>
+                  <th>Nhập kho</th>
+                  <th>Lý do</th>
+                  <th>Thời điểm</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-receipt>
+                <tr>
+                  <td>{{ receipt.reference }}</td>
+                  <td>{{ returnQuantity(receipt) }}</td>
+                  <td>{{ restockQuantity(receipt) }}</td>
+                  <td>
+                    {{ receipt.reason
+                    }}{{ receipt.closeRemainingCod ? ' · đã đóng COD còn lại' : '' }}
+                  </td>
+                  <td>{{ receipt.receivedAtUtc | date: 'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        } @else {
+          <p class="order-muted">Chưa nhận hàng trả.</p>
+        }
+      </section>
+    </div>
+
+    @if (refundFormOpen()) {
+      <form class="after-sales-form" (submit)="$event.preventDefault(); submitRefund()">
+        <div class="after-sales-form-heading">
+          <h3>Ghi nhận khoản đã hoàn thực tế</h3>
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            type="button"
+            [disabled]="pendingRefund() !== null"
+            (click)="closeRefundForm()"
+          >
+            Đóng
+          </button>
+        </div>
+        <p class="order-muted">
+          Đây là ghi sổ khoản đã hoàn bên ngoài. Màn hình không chuyển tiền.
+        </p>
+        <div class="order-form-grid">
+          <label for="refund-reference">
+            Mã chứng từ
+            <input
+              pInputText
+              id="refund-reference"
+              [ngModel]="refundReference()"
+              (ngModelChange)="refundReference.set($event); markRefundDirty()"
+              name="refundReference"
+              maxlength="100"
+              pattern="[A-Za-z0-9._-]+"
+              [disabled]="pendingRefund() !== null"
+            />
+          </label>
+          <label for="refund-amount">
+            Số tiền VND
+            <input
+              pInputText
+              type="number"
+              id="refund-amount"
+              min="1"
+              step="1"
+              [max]="summary.refundableAmount"
+              [ngModel]="refundAmount()"
+              (ngModelChange)="refundAmount.set(+$event); markRefundDirty()"
+              name="refundAmount"
+              [disabled]="pendingRefund() !== null"
+            />
+          </label>
+          <label for="refund-at">
+            Thời điểm hoàn
+            <p-datepicker
+              inputId="refund-at"
+              [ngModel]="refundDateValue()"
+              (ngModelChange)="setRefundDateTime($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [showTime]="true"
+              hourFormat="24"
+              appendTo="body"
+              name="refundAt"
+              [disabled]="pendingRefund() !== null"
+            />
+          </label>
+          <label for="refund-source">
+            Nguồn
+            <p-select
+              inputId="refund-source"
+              [options]="refundSourceOptions"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="refundSource()"
+              (ngModelChange)="refundSource.set($event); markRefundDirty()"
+              [ngModelOptions]="{ standalone: true }"
+              name="refundSource"
+              [disabled]="pendingRefund() !== null"
+              appendTo="body"
+            />
+          </label>
+          <label class="after-sales-wide-field" for="refund-reason">
+            Lý do
+            <input
+              pInputText
+              id="refund-reason"
+              [ngModel]="refundReason()"
+              (ngModelChange)="refundReason.set($event); markRefundDirty()"
+              name="refundReason"
+              maxlength="1000"
+              [disabled]="pendingRefund() !== null"
+            />
+          </label>
+        </div>
+        <div class="dialog-actions">
+          @if (pendingRefund()) {
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              type="button"
+              [disabled]="working()"
+              (click)="submitRefund()"
+            >
+              Thử lại đúng yêu cầu
+            </button>
+          }
+          <button
+            pButton
+            severity="primary"
+            type="submit"
+            [disabled]="working() || pendingRefund() !== null || !refundCanSubmit()"
+          >
+            {{ working() ? 'Đang lưu…' : 'Lưu khoản hoàn' }}
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (returnFormOpen()) {
+      <form class="after-sales-form" (submit)="$event.preventDefault(); submitReturn()">
+        <div class="after-sales-form-heading">
+          <h3>Nhận hàng vật lý đã trả</h3>
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            type="button"
+            [disabled]="pendingReturn() !== null"
+            (click)="closeReturnForm()"
+          >
+            Đóng
+          </button>
+        </div>
+        <p class="order-muted">
+          Chọn số lượng đã nhận theo từng đợt giao. Chỉ nhập kho phần còn bán được.
+        </p>
+        @if (!canViewShipping() || shipments() === null) {
+          <p class="order-muted">Cần quyền xem giao hàng để đối chiếu các mặt hàng đã xuất.</p>
+        } @else {
+          <div class="table-scroll" role="region" aria-label="Mặt hàng nhận trả" tabindex="0">
+            <p-table
+              [value]="returnableLines().slice()"
+              tableStyleClass="content-table after-sales-table return-entry-table"
+              [tableStyle]="{ 'min-width': '720px' }"
+            >
+              <ng-template #header>
+                <tr>
+                  <th>Đợt giao / SKU</th>
+                  <th>Còn có thể nhận</th>
+                  <th>Đã nhận lần này</th>
+                  <th>Nhập kho</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-line>
+                <tr>
+                  <td>
+                    <strong>{{ line.name }}</strong>
+                    <span class="order-contact">
+                      {{ line.carrier }} · {{ line.trackingNumber }} · {{ line.sku }}
+                    </span>
+                  </td>
+                  <td>{{ line.remaining }}</td>
+                  <td>
+                    <input
+                      pInputText
+                      type="number"
+                      [id]="'return-quantity-' + line.shipmentId + '-' + line.orderItemId"
+                      aria-label="Số lượng nhận"
+                      min="0"
+                      step="1"
+                      [max]="line.remaining"
+                      [ngModel]="
+                        returnQuantities()[returnLineKey(line.shipmentId, line.orderItemId)] ?? 0
+                      "
+                      (ngModelChange)="setReturnQuantity(line.shipmentId, line.orderItemId, $event)"
+                      [name]="'return-' + line.shipmentId + line.orderItemId"
+                      [disabled]="pendingReturn() !== null"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      pInputText
+                      type="number"
+                      [id]="'restock-quantity-' + line.shipmentId + '-' + line.orderItemId"
+                      aria-label="Số lượng nhập kho"
+                      min="0"
+                      step="1"
+                      [max]="
+                        returnQuantities()[returnLineKey(line.shipmentId, line.orderItemId)] ?? 0
+                      "
+                      [ngModel]="
+                        restockQuantities()[returnLineKey(line.shipmentId, line.orderItemId)] ?? 0
+                      "
+                      (ngModelChange)="
+                        setRestockQuantity(line.shipmentId, line.orderItemId, $event)
+                      "
+                      [name]="'restock-' + line.shipmentId + line.orderItemId"
+                      [disabled]="pendingReturn() !== null || !canAdjustInventory()"
+                    />
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="4">Không còn số lượng đã xuất để nhận lại.</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+          @if (!canAdjustInventory()) {
+            <p class="order-muted">Thiếu Inventory.Adjust: số lượng nhập kho bị khóa ở 0.</p>
+          }
+        }
+        <div class="order-form-grid after-sales-return-meta">
+          <label for="return-reference">
+            Mã chứng từ
+            <input
+              pInputText
+              id="return-reference"
+              [ngModel]="returnReference()"
+              (ngModelChange)="returnReference.set($event); markReturnDirty()"
+              name="returnReference"
+              maxlength="100"
+              pattern="[A-Za-z0-9._-]+"
+              [disabled]="pendingReturn() !== null"
+            />
+          </label>
+          <label for="return-reason">
+            Lý do
+            <input
+              pInputText
+              id="return-reason"
+              [ngModel]="returnReason()"
+              (ngModelChange)="returnReason.set($event); markReturnDirty()"
+              name="returnReason"
+              maxlength="1000"
+              [disabled]="pendingReturn() !== null"
+            />
+          </label>
+        </div>
+        @if (
+          order().paymentMethod === paymentMethodCode.CashOnDelivery &&
+          order().paymentStatus === paymentStatusCode.Unpaid
+        ) {
+          <label class="after-sales-cod-choice" for="close-remaining-cod">
+            <p-checkbox
+              inputId="close-remaining-cod"
+              [binary]="true"
+              [ngModel]="closeRemainingCod()"
+              (ngModelChange)="closeRemainingCod.set($event); markReturnDirty()"
+              [ngModelOptions]="{ standalone: true }"
+              name="closeRemainingCod"
+              [disabled]="pendingReturn() !== null || !returnSelectionCompletesDispatched()"
+            />
+            Đã nhận lại toàn bộ hàng đã xuất; đóng COD còn lại của đơn
+          </label>
+        }
+        <div class="dialog-actions">
+          @if (pendingReturn()) {
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              type="button"
+              [disabled]="working()"
+              (click)="submitReturn()"
+            >
+              Thử lại đúng yêu cầu
+            </button>
+          }
+          <button
+            pButton
+            severity="primary"
+            type="submit"
+            [disabled]="working() || pendingReturn() !== null || !returnCanSubmit()"
+          >
+            {{ working() ? 'Đang lưu…' : 'Lưu phiếu nhận' }}
+          </button>
+        </div>
+      </form>
+    }
+  } @else {
+    <p class="order-muted">Chưa có dữ liệu hậu mãi.</p>
+  }
+</section>

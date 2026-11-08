@@ -1,0 +1,12 @@
+<ui-content-state
+  kind="error"
+  layout="page"
+  title="Không có quyền truy cập"
+  message="Tài khoản của bạn chưa được cấp quyền cho chức năng này. Hãy chọn chức năng được phép hoặc liên hệ người quản trị."
+>
+  @if (canReturn()) {
+    <a pButton severity="secondary" outlined routerLink="/admin">Về trang được phép</a>
+  } @else {
+    <a pButton severity="secondary" outlined routerLink="/shop">Đến cửa hàng</a>
+  }
+</ui-content-state>

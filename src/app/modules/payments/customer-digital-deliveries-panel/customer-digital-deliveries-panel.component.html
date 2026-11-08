@@ -1,0 +1,39 @@
+@if (loading()) {
+  <p role="status">Đang tải nội dung số…</p>
+}
+@if (errorMessage()) {
+  <p class="form-error" role="alert">Chưa tải được nội dung số: {{ errorMessage() }}</p>
+  <button type="button" class="store-button store-button-secondary" (click)="reload()">
+    Thử lại nội dung số
+  </button>
+}
+@if (paid() && deliveries().length > 0) {
+  <div class="digital-delivery-card">
+    <div class="digital-header">
+      <ui-icon name="key" [size]="20" />
+      <h2>Nội dung bản quyền số đã bàn giao</h2>
+    </div>
+    <p class="digital-hint">
+      Dưới đây là thông tin kích hoạt / liên kết tài nguyên số của đơn hàng:
+    </p>
+
+    <div class="deliveries-list">
+      @for (delivery of deliveries(); track delivery.id) {
+        <div class="delivery-item">
+          <div class="delivery-item-header">
+            <span class="item-seq">#{{ delivery.sequence }}</span>
+            <span class="item-status">Đã kích hoạt</span>
+          </div>
+          <div class="delivery-content-box">
+            <ui-secret-reveal
+              [label]="'Nội dung #' + delivery.sequence"
+              [value]="isHidden(delivery.id) ? null : delivery.content"
+              (hideRequested)="hideDelivery(delivery.id)"
+              (revealRequested)="revealDelivery(delivery.id)"
+            />
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

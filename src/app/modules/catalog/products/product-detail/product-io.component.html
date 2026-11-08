@@ -1,0 +1,478 @@
+<section class="editor-page catalog-product-editor" aria-labelledby="editor-title">
+  <header class="editor-toolbar">
+    <a
+      class="catalog-back"
+      routerLink="/admin/collections/products"
+      [queryParams]="{ duplicateFrom: null }"
+      queryParamsHandling="merge"
+      ><ui-icon name="arrow-left" [size]="14" />Sản phẩm</a
+    >
+    <div class="editor-title-wrap">
+      <h1 id="editor-title">{{ title() }}</h1>
+      <div class="editor-save-status" role="status">
+        {{
+          busy()
+            ? 'Đang lưu…'
+            : dirty()
+              ? 'Có thay đổi chưa lưu'
+              : isNew()
+                ? 'Sản phẩm mới'
+                : 'Đã lưu'
+        }}
+      </div>
+    </div>
+    <div class="editor-actions">
+      <span class="wf-status">{{
+        dirty() ? 'Chưa lưu' : item() ? statuses[item()!.status] : 'Bản nháp'
+      }}</span
+      ><button
+        pButton
+        severity="primary"
+        [disabled]="
+          !canWrite() ||
+          busy() ||
+          loading() ||
+          schemaLoading() ||
+          !schema() ||
+          commerceBusy() ||
+          mediaBusy()
+        "
+        (click)="save()"
+      >
+        {{ busy() ? 'Đang lưu…' : 'Lưu' }}
+      </button>
+    </div>
+  </header>
+  @if (summary().length) {
+    <ui-form-error-summary [messages]="summary()" />
+  }
+  @if (notice()) {
+    <div class="editor-notice" role="status">
+      <ui-icon name="check-circle" [size]="14" /><span>{{ notice() }}</span
+      ><button
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        aria-label="Đóng thông báo"
+        (click)="dismissNotice()"
+      >
+        <ui-icon name="close" [size]="12" />
+      </button>
+    </div>
+  }
+  @if (error() && loaded()) {
+    <div class="editor-error" role="alert">
+      <span>{{ error() }}</span
+      ><button
+        pButton
+        severity="secondary"
+        outlined
+        size="small"
+        [disabled]="busy()"
+        (click)="reloadCanonical()"
+      >
+        Tải bản mới, giữ nội dung nhập
+      </button>
+    </div>
+  }
+  @if (loading()) {
+    <ui-content-state
+      kind="loading"
+      layout="page"
+      title="Đang tải sản phẩm"
+      message="Vui lòng đợi trong giây lát."
+    />
+  } @else if (!loaded()) {
+    <ui-content-state kind="error" layout="page" title="Không thể tải sản phẩm" [message]="error()"
+      ><button pButton severity="secondary" outlined (click)="retry()">
+        Thử lại
+      </button></ui-content-state
+    >
+  } @else {
+    <div class="editor-body catalog-editor-body">
+      <div class="editor-fields">
+        <div class="form-scroll">
+          <form class="editor-form" [formGroup]="form" (submit)="$event.preventDefault()">
+            <fieldset
+              class="product-content-fieldset"
+              [disabled]="commerceBusy() || mediaBusy() || busy()"
+              [inert]="commerceBusy() || mediaBusy() || busy()"
+            >
+              <section class="form-section" aria-labelledby="product-content-title">
+                <h2 id="product-content-title">Thông tin cơ bản</h2>
+                <div class="field">
+                  <label class="field-label" for="product-type"
+                    >Loại sản phẩm <span class="required">*</span></label
+                  ><p-select
+                    inputId="product-type"
+                    formControlName="productTypeId"
+                    [options]="typeOptions()"
+                    optionLabel="name"
+                    optionValue="id"
+                    appendTo="body"
+                    aria-describedby="product-type-error"
+                  /><ui-field-message id="product-type-error" tone="error">{{
+                    errorMessageFor(form.controls.productTypeId)
+                  }}</ui-field-message>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="product-fulfillment">Cách cung cấp</label
+                  ><p-select
+                    inputId="product-fulfillment"
+                    formControlName="fulfillmentKind"
+                    [options]="fulfillmentOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    appendTo="body"
+                  />
+                </div>
+                <ui-form-field
+                  class="field"
+                  forId="product-name"
+                  label="Tên sản phẩm"
+                  [required]="true"
+                  [error]="errorMessageFor(form.controls.name)"
+                >
+                  <input
+                    pInputText
+                    id="product-name"
+                    formControlName="name"
+                    [maxLength]="limits.name"
+                    [attr.aria-invalid]="!!errorMessageFor(form.controls.name)"
+                    aria-describedby="product-name-error"
+                  />
+                </ui-form-field>
+                <div class="field">
+                  <label class="field-label" for="product-slug"
+                    >Đường dẫn <span class="required">*</span></label
+                  >
+                  <div class="slug-input">
+                    <span>/products/</span
+                    ><input
+                      pInputText
+                      id="product-slug"
+                      formControlName="slug"
+                      [maxLength]="limits.slug"
+                      aria-describedby="product-slug-error"
+                      [attr.aria-invalid]="!!errorMessageFor(form.controls.slug)"
+                    />
+                  </div>
+                  <ui-field-message id="product-slug-error" tone="error">{{
+                    errorMessageFor(form.controls.slug)
+                  }}</ui-field-message>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="product-description">Mô tả</label
+                  ><textarea
+                    pTextarea
+                    id="product-description"
+                    formControlName="description"
+                    rows="3"
+                    [maxLength]="limits.description"
+                    aria-describedby="product-description-error"
+                  ></textarea
+                  ><ui-field-message id="product-description-error" tone="error">{{
+                    errorMessageFor(form.controls.description)
+                  }}</ui-field-message>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="product-categories">Danh mục</label
+                  ><p-multiselect
+                    inputId="product-categories"
+                    formControlName="categoryIds"
+                    [options]="categoryOptions()"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    appendTo="body"
+                    placeholder="Chọn danh mục"
+                    aria-describedby="product-categories-error"
+                  /><ui-field-message id="product-categories-error" tone="error">{{
+                    errorMessageFor(form.controls.categoryIds)
+                  }}</ui-field-message>
+                </div>
+              </section>
+            </fieldset>
+          </form>
+          <app-product-commerce-panel
+            [product]="item()"
+            [form]="form"
+            [canWrite]="canWrite()"
+            [canPrice]="canPrice()"
+            [catalogBusy]="busy()"
+            [blocked]="form.dirty || busy() || mediaBusy()"
+            [refreshProduct]="refreshProductFn"
+            (busyChange)="commerceBusy.set($event)"
+            (draftChange)="commerceDraft.set($event)"
+          />
+          <fieldset
+            class="product-content-fieldset"
+            [disabled]="commerceBusy() || mediaBusy() || busy()"
+            [inert]="commerceBusy() || mediaBusy() || busy()"
+          >
+            @if (schemaLoading()) {
+              <p class="section-description" role="status">Đang tải thuộc tính…</p>
+            }
+            @if (visibleFields().length) {
+              <section
+                class="form-section product-attributes-section"
+                aria-labelledby="product-fields-title"
+              >
+                <h2 id="product-fields-title">Thuộc tính sản phẩm</h2>
+                @for (field of visibleFields(); track field.id) {
+                  @if (form.controls.fields.controls[field.id]; as control) {
+                    <div class="field">
+                      <label class="field-label" [for]="'product-field-' + field.id"
+                        >{{ field.label }}
+                        @if (field.isRequired) {
+                          <span class="required">*</span>
+                        }
+                        @if (!field.isActive) {
+                          <span class="inactive">Ngừng sử dụng</span>
+                        }
+                      </label>
+                      @switch (field.dataType) {
+                        @case (fieldType.Text) {
+                          <input
+                            pInputText
+                            [id]="'product-field-' + field.id"
+                            [formControl]="control"
+                            [attr.aria-describedby]="'product-field-error-' + field.id"
+                          />
+                        }
+                        @case (fieldType.Number) {
+                          <p-inputnumber
+                            [inputId]="'product-field-' + field.id"
+                            [disabled]="fieldDisabled(control)"
+                            [invalid]="!!errorMessageFor(control)"
+                            [ngModel]="control.value"
+                            (ngModelChange)="setFieldValue(control, $event)"
+                            [minFractionDigits]="0"
+                            [maxFractionDigits]="4"
+                            [step]="0.0001"
+                            [useGrouping]="false"
+                            [ngModelOptions]="{ standalone: true }"
+                            [ariaDescribedBy]="'product-field-error-' + field.id"
+                          />
+                        }
+                        @case (fieldType.Boolean) {
+                          <p-checkbox
+                            [inputId]="'product-field-' + field.id"
+                            [disabled]="fieldDisabled(control)"
+                            [invalid]="!!errorMessageFor(control)"
+                            [binary]="true"
+                            [ngModel]="control.value === true"
+                            (ngModelChange)="setFieldValue(control, $event)"
+                            [ngModelOptions]="{ standalone: true }"
+                            [pt]="{
+                              input: { 'aria-describedby': 'product-field-error-' + field.id },
+                            }"
+                          />
+                        }
+                        @case (fieldType.Date) {
+                          <p-datepicker
+                            [inputId]="'product-field-' + field.id"
+                            [disabled]="fieldDisabled(control)"
+                            [invalid]="!!errorMessageFor(control)"
+                            [ngModel]="dateValue(control.value)"
+                            (ngModelChange)="setDateValue(control, $event)"
+                            [ngModelOptions]="{ standalone: true }"
+                            dateFormat="yy-mm-dd"
+                            appendTo="body"
+                            [pt]="{
+                              pcInputText: {
+                                root: { 'aria-describedby': 'product-field-error-' + field.id },
+                              },
+                            }"
+                          />
+                        }
+                        @case (fieldType.Choice) {
+                          <p-select
+                            [inputId]="'product-field-' + field.id"
+                            [disabled]="fieldDisabled(control)"
+                            [invalid]="!!errorMessageFor(control)"
+                            [options]="choiceOptions(field)"
+                            optionLabel="label"
+                            optionValue="value"
+                            optionDisabled="disabled"
+                            [ngModel]="control.value"
+                            (ngModelChange)="setFieldValue(control, $event)"
+                            [ngModelOptions]="{ standalone: true }"
+                            placeholder="Chọn giá trị"
+                            [showClear]="!field.isRequired"
+                            appendTo="body"
+                            [pt]="{
+                              label: { 'aria-describedby': 'product-field-error-' + field.id },
+                            }"
+                          />
+                        }
+                      }
+                      @if (field.helpText) {
+                        <ui-field-message>{{ field.helpText }}</ui-field-message>
+                      }
+                      <ui-field-message [id]="'product-field-error-' + field.id" tone="error">{{
+                        errorMessageFor(control)
+                      }}</ui-field-message>
+                    </div>
+                  }
+                }
+              </section>
+            }
+          </fieldset>
+          @if (item(); as product) {
+            <section class="form-section catalog-editor-meta" aria-label="Thông tin bản ghi">
+              <h2>Chi tiết bản ghi</h2>
+              <dl>
+                <dt>Trạng thái</dt>
+                <dd>{{ statuses[product.status] }}</dd>
+                <dt>ID sản phẩm</dt>
+                <dd class="record-id">{{ product.id }}</dd>
+              </dl>
+              <h2 class="wf-activity-title">Hoạt động</h2>
+              <p>Tạo ngày {{ product.createdOn | date: 'dd/MM/yyyy HH:mm' }}</p>
+              <p>Chỉnh sửa lần cuối {{ product.modifiedOn | date: 'dd/MM/yyyy HH:mm' }}</p>
+              <div class="wf-lifecycle-actions">
+                @if (canPublish()) {
+                  <button
+                    pButton
+                    severity="secondary"
+                    outlined
+                    [disabled]="busy() || form.dirty"
+                    (click)="changeStatus(status.Archived)"
+                  >
+                    <ui-icon name="archive" [size]="13" />Lưu trữ
+                  </button>
+                }
+                @if (canDelete()) {
+                  <button
+                    pButton
+                    severity="secondary"
+                    outlined
+                    [disabled]="busy()"
+                    (click)="deleteVisible.set(true)"
+                  >
+                    <ui-icon name="trash" [size]="13" />Xóa
+                  </button>
+                }
+                @if (canCreate()) {
+                  <a
+                    pButton
+                    severity="secondary"
+                    outlined
+                    routerLink="/admin/collections/products/new"
+                    [queryParams]="{ duplicateFrom: product.id }"
+                    queryParamsHandling="merge"
+                    ><ui-icon name="copy" [size]="13" />Nhân bản</a
+                  >
+                }
+                @if (canPublish() && product.status !== status.Published) {
+                  <button
+                    pButton
+                    severity="secondary"
+                    outlined
+                    [disabled]="busy() || form.dirty"
+                    (click)="changeStatus(status.Published)"
+                  >
+                    Xuất bản
+                  </button>
+                }
+                @if (canPublish() && product.status === status.Published) {
+                  <button
+                    pButton
+                    severity="secondary"
+                    outlined
+                    [disabled]="busy() || form.dirty"
+                    (click)="changeStatus(status.Draft)"
+                  >
+                    Về bản nháp
+                  </button>
+                }
+                @if (form.dirty) {
+                  <button
+                    pButton
+                    severity="secondary"
+                    outlined
+                    [disabled]="busy()"
+                    (click)="discardChanges()"
+                  >
+                    Bỏ thay đổi
+                  </button>
+                }
+              </div>
+            </section>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</section>
+<p-dialog
+  header="Có thay đổi chưa lưu"
+  [visible]="leaveVisible()"
+  (visibleChange)="!$event && answerLeave('stay')"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!busy()"
+  [closeOnEscape]="!busy()"
+  [style]="{ width: '440px' }"
+>
+  <p>Nội dung đang nhập chưa được lưu. Bạn muốn xử lý thế nào?</p>
+  @if (error()) {
+    <p role="alert">{{ error() }}</p>
+  }
+  <ng-template #footer
+    ><button
+      pButton
+      severity="secondary"
+      outlined
+      [disabled]="busy()"
+      (click)="answerLeave('stay')"
+    >
+      Ở lại</button
+    ><button
+      pButton
+      severity="secondary"
+      outlined
+      [disabled]="busy()"
+      (click)="answerLeave('discard')"
+    >
+      Bỏ thay đổi</button
+    ><button
+      pButton
+      severity="primary"
+      [disabled]="!canWrite() || busy()"
+      (click)="answerLeave('save')"
+    >
+      Lưu và tiếp tục
+    </button></ng-template
+  >
+</p-dialog>
+
+<p-dialog
+  header="Xóa sản phẩm?"
+  [visible]="deleteVisible()"
+  (visibleChange)="deleteVisible.set($event)"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '420px' }"
+  ><p>Sản phẩm sẽ được gỡ khỏi catalog. Lịch sử đơn hàng và kho được giữ lại.</p>
+  <ng-template #footer
+    ><button
+      pButton
+      severity="secondary"
+      outlined
+      [disabled]="busy()"
+      (click)="deleteVisible.set(false)"
+    >
+      Hủy</button
+    ><button pButton severity="danger" outlined [disabled]="busy()" (click)="deleteProduct()">
+      Xóa sản phẩm
+    </button></ng-template
+  ></p-dialog
+>

@@ -1,0 +1,365 @@
+<div class="storefront-page checkout-page">
+  <div class="checkout-header">
+    <div>
+      <p class="store-eyebrow"><span></span> THÔNG TIN ĐẶT HÀNG</p>
+      <h1 class="page-title">Xác nhận &amp; Đặt hàng</h1>
+    </div>
+    <a routerLink="/shop/cart" class="back-to-cart">
+      <ui-icon name="arrow-left" [size]="15" /> Quay lại giỏ hàng
+    </a>
+  </div>
+
+  <nav class="purchase-progress" aria-label="Tiến trình đặt hàng">
+    <span class="progress-step complete"><span>01</span> Giỏ hàng</span>
+    <span class="progress-line active"></span>
+    <span class="progress-step current" aria-current="step"
+      ><span>02</span> Thông tin & thanh toán</span
+    >
+    <span class="progress-line"></span>
+    <span class="progress-step"><span>03</span> Hoàn tất</span>
+  </nav>
+
+  @if (actionError()) {
+    <div class="checkout-error-banner" role="alert">
+      <ui-icon name="alert" [size]="19" />
+      <div class="error-text">
+        <strong>Chưa thể hoàn tất đặt hàng</strong>
+        <p>{{ actionError() }}</p>
+      </div>
+    </div>
+  }
+  @if (cartService.quoteNeedsReview()) {
+    <div class="checkout-error-banner quote-review-banner" role="alert">
+      <ui-icon name="alert" [size]="19" />
+      <div class="error-text">
+        <strong>Tổng tiền hoặc tồn kho đã thay đổi.</strong>
+        <p>Giỏ hàng vẫn được giữ. Xem lại tổng mới trước khi gửi yêu cầu đặt hàng tiếp theo.</p>
+        <button
+          type="button"
+          class="store-button store-button-secondary"
+          (click)="acknowledgeQuote()"
+        >
+          Tôi đã xem lại tổng mới
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (settingsError()) {
+    <div class="checkout-error-banner" role="alert">
+      <p>Chưa tải được cấu hình thanh toán: {{ settingsError() }}</p>
+      <button
+        type="button"
+        class="store-button store-button-secondary"
+        (click)="loadPaymentSettings()"
+      >
+        Thử lại cấu hình thanh toán
+      </button>
+    </div>
+  }
+  @if (cartService.error() || cartService.saveError()) {
+    <div class="checkout-error-banner" role="alert">
+      <p>{{ cartService.error() || cartService.saveError() }}</p>
+      <button
+        type="button"
+        class="store-button store-button-secondary"
+        (click)="cartService.loadCart()"
+      >
+        Tải lại giỏ hàng
+      </button>
+    </div>
+  }
+  <div class="checkout-layout">
+    <div class="checkout-form-section">
+      <form class="checkout-form" (submit)="$event.preventDefault(); onSubmit()">
+        <section class="form-card" aria-labelledby="recipient-section-title">
+          <div class="form-section-heading">
+            <span class="form-step-index">01</span>
+            <div>
+              <h2 class="card-title" id="recipient-section-title">Thông tin người nhận</h2>
+              <p>Điền thông tin để cửa hàng xử lý đơn của bạn.</p>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="recipientName">Họ và tên <span class="required">*</span></label>
+              <input
+                id="recipientName"
+                type="text"
+                class="form-control"
+                placeholder="Nguyễn Văn A"
+                autocomplete="name"
+                required
+                [value]="recipientName()"
+                [disabled]="pendingCheckout() !== null"
+                (input)="onRecipientNameInput($event)"
+              />
+            </div>
+            <div class="form-group">
+              <label for="phone">Số điện thoại <span class="required">*</span></label>
+              <input
+                id="phone"
+                type="tel"
+                class="form-control"
+                placeholder="0912345678"
+                autocomplete="tel"
+                required
+                [value]="phone()"
+                [disabled]="pendingCheckout() !== null"
+                (input)="onPhoneInput($event)"
+              />
+            </div>
+          </div>
+
+          <div class="form-group email-verification-group">
+            <label for="email">
+              Email dùng để xác minh và nhận thông báo <span class="required">*</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              class="form-control"
+              placeholder="ban@example.com"
+              autocomplete="email"
+              required
+              [value]="email()"
+              [disabled]="pendingCheckout() !== null"
+              [attr.aria-describedby]="!session.signedIn() ? 'checkout-email-hint' : null"
+              (input)="onEmailChange($event)"
+            />
+            @if (
+              !session.signedIn() &&
+              guestAccess.verifiedEmail()?.toLowerCase() !== email().trim().toLowerCase()
+            ) {
+              <small id="checkout-email-hint" class="form-hint">
+                <ui-icon name="mail" [size]="14" /> Xác minh email bằng mã 6 chữ số trước khi đặt
+                hàng.
+              </small>
+              @if (guestAccess.codeSent()) {
+                <div class="otp-entry">
+                  <label for="verificationCode">Mã xác minh</label>
+                  <div class="otp-controls">
+                    <input
+                      id="verificationCode"
+                      type="text"
+                      class="form-control otp-input"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      maxlength="6"
+                      [value]="verificationCode()"
+                      [disabled]="pendingCheckout() !== null"
+                      (input)="onVerificationCodeInput($event)"
+                    />
+                    <button
+                      type="button"
+                      class="store-button store-button-primary"
+                      (click)="verifyEmailCode()"
+                      [disabled]="
+                        verificationCode().length !== 6 ||
+                        guestAccess.submitting() ||
+                        pendingCheckout() !== null
+                      "
+                    >
+                      Xác minh email
+                    </button>
+                    <button
+                      type="button"
+                      class="store-button store-button-secondary"
+                      (click)="requestEmailCode()"
+                      [disabled]="guestAccess.submitting() || pendingCheckout() !== null"
+                    >
+                      Gửi lại mã
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  class="store-button store-button-secondary send-code-btn"
+                  (click)="requestEmailCode()"
+                  [disabled]="
+                    !email().includes('@') || guestAccess.submitting() || pendingCheckout() !== null
+                  "
+                >
+                  <ui-icon name="mail" [size]="16" /> Gửi mã xác minh
+                </button>
+              }
+            } @else if (!session.signedIn()) {
+              <small id="checkout-email-hint" class="form-hint verified-hint">
+                <ui-icon name="check-circle" [size]="14" /> Email đã được xác minh. Phiên truy cập
+                đơn hàng được bảo vệ trong trình duyệt này.
+              </small>
+            }
+          </div>
+
+          <div class="form-group address-field">
+            <label for="shippingAddress">
+              Địa chỉ nhận hàng
+              @if (hasPhysicalItems()) {
+                <span class="required">*</span>
+              }
+            </label>
+            <textarea
+              id="shippingAddress"
+              class="form-control"
+              rows="3"
+              autocomplete="street-address"
+              placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
+              [value]="shippingAddress()"
+              [disabled]="pendingCheckout() !== null"
+              [required]="hasPhysicalItems()"
+              [attr.aria-describedby]="
+                cartService.hasDigitalItems() && !hasPhysicalItems()
+                  ? 'checkout-address-hint'
+                  : null
+              "
+              (input)="onShippingAddressInput($event)"
+            ></textarea>
+            @if (cartService.hasDigitalItems() && !hasPhysicalItems()) {
+              <small id="checkout-address-hint" class="form-hint">
+                Đơn hàng chỉ gồm sản phẩm số không cần địa chỉ giao hàng vật lý.
+              </small>
+            }
+          </div>
+        </section>
+
+        <section class="form-card" aria-labelledby="payment-section-title">
+          <div class="form-section-heading">
+            <span class="form-step-index">02</span>
+            <div>
+              <h2 class="card-title" id="payment-section-title">Phương thức thanh toán</h2>
+              <p>Chọn cách thanh toán phù hợp với đơn hàng.</p>
+            </div>
+          </div>
+
+          <div class="payment-options">
+            @if (paymentSettings()?.bankTransferEnabled) {
+              <label class="payment-option-label" [class.selected]="selectedPaymentMethod() === 1">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  [value]="1"
+                  [checked]="selectedPaymentMethod() === 1"
+                  [disabled]="pendingCheckout() !== null"
+                  (change)="onSelectPaymentMethod(1)"
+                />
+                <span class="payment-option-icon"><ui-icon name="bank" [size]="20" /></span>
+                <span class="payment-option-content">
+                  <span class="option-title">Chuyển khoản ngân hàng</span>
+                  <span class="option-desc">
+                    Nhân viên sẽ xác nhận tiền sau khi nhận được. Nội dung số chỉ mở sau khi đơn đã
+                    thanh toán.
+                  </span>
+                </span>
+                <span class="payment-option-check"><ui-icon name="check" [size]="16" /></span>
+              </label>
+            } @else {
+              <div class="payment-unavailable" role="status">
+                <ui-icon name="info" [size]="18" />
+                <p>
+                  Chuyển khoản hiện chưa được cấu hình. Có thể chọn COD cho đơn chỉ gồm hàng vật lý.
+                </p>
+              </div>
+            }
+
+            <label
+              class="payment-option-label"
+              [class.disabled]="cartService.hasDigitalItems()"
+              [class.selected]="selectedPaymentMethod() === 2"
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                [value]="2"
+                [disabled]="cartService.hasDigitalItems() || pendingCheckout() !== null"
+                [checked]="selectedPaymentMethod() === 2"
+                (change)="onSelectPaymentMethod(2)"
+              />
+              <span class="payment-option-icon"><ui-icon name="box" [size]="20" /></span>
+              <span class="payment-option-content">
+                <span class="option-title">Thu hộ tiền mặt khi nhận hàng (COD)</span>
+                @if (cartService.hasDigitalItems()) {
+                  <span class="option-desc cod-disabled-warning">
+                    Không áp dụng COD cho đơn có sản phẩm số. Hãy chọn chuyển khoản ngân hàng.
+                  </span>
+                } @else {
+                  <span class="option-desc"
+                    >Thanh toán cho đơn vị giao hàng khi nhận kiện hàng.</span
+                  >
+                }
+              </span>
+              <span class="payment-option-check"><ui-icon name="check" [size]="16" /></span>
+            </label>
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <button
+            type="submit"
+            class="store-button store-button-primary submit-order-btn"
+            [disabled]="!canSubmit() || cartService.checkoutSubmitting()"
+          >
+            @if (cartService.checkoutSubmitting()) {
+              <span class="button-loading-dot"></span> Đang xử lý đơn hàng...
+            } @else {
+              Đặt hàng ngay · {{ cartService.totalAmount() | number: '1.0-0' }} ₫
+              <ui-icon name="arrow-right" [size]="16" />
+            }
+          </button>
+          <p>
+            <ui-icon name="shield-check" [size]="15" /> Thông tin của bạn chỉ dùng để xử lý đơn
+            hàng.
+          </p>
+        </div>
+      </form>
+    </div>
+
+    <aside class="checkout-summary-section" aria-labelledby="checkout-summary-title">
+      <div class="summary-card">
+        <p class="store-eyebrow"><span></span> ĐƠN HÀNG CỦA BẠN</p>
+        <h2 class="summary-title" id="checkout-summary-title">Đơn hàng của bạn</h2>
+        <app-discount-code [disabled]="pendingCheckout() !== null" />
+        <div class="summary-items-list">
+          @for (item of cartService.cart().items; track item.variantId) {
+            <div class="summary-item-row">
+              <div class="item-name-qty">
+                <span class="item-name">{{ item.name }}</span>
+                <span class="item-qty">Số lượng {{ item.quantity }}</span>
+              </div>
+              <div class="item-price">
+                @if (item.unitPrice !== null) {
+                  {{ item.unitPrice * item.quantity | number: '1.0-0' }} ₫
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row">
+          <span>Tạm tính</span>
+          <span>{{ cartService.subtotalAmount() | number: '1.0-0' }} ₫</span>
+        </div>
+        @if (cartService.discountAmount() > 0) {
+          <div class="summary-row">
+            <span>Giảm giá</span>
+            <span>−{{ cartService.discountAmount() | number: '1.0-0' }} ₫</span>
+          </div>
+        }
+        <div class="summary-row">
+          <span>Phí vận chuyển</span>
+          @if (cartService.shippingAmount() > 0) {
+            <span>{{ cartService.shippingAmount() | number: '1.0-0' }} ₫</span>
+          } @else {
+            <span class="free-shipping">Miễn phí</span>
+          }
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row total-row">
+          <span>Tổng thanh toán</span>
+          <span class="total-value">{{ cartService.totalAmount() | number: '1.0-0' }} ₫</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>

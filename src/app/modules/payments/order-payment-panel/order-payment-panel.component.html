@@ -1,0 +1,122 @@
+<div class="order-action-bar">
+  <ng-content />
+  @if (canConfirmPayment()) {
+    <button
+      pButton
+      type="button"
+      severity="primary"
+      [disabled]="order().paymentStatus === paymentStatusCode.Paid || busy()"
+      [title]="
+        order().paymentStatus === paymentStatusCode.Paid
+          ? 'Đơn hàng đã được thanh toán'
+          : 'Xác nhận thanh toán'
+      "
+      (click)="openPayment()"
+    >
+      Xác nhận thanh toán
+    </button>
+  }
+  @if (canFulfill()) {
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      outlined
+      [disabled]="!canRetryFulfillment() || busy()"
+      [title]="
+        canRetryFulfillment()
+          ? 'Thử xử lý lại'
+          : 'Chỉ đơn đã thanh toán, chưa giao hàng và cần kiểm tra mới được thử lại'
+      "
+      (click)="retryFulfillment()"
+    >
+      Thử xử lý lại
+    </button>
+  }
+</div>
+
+<p-dialog
+  header="Xác nhận thanh toán"
+  [visible]="paymentDialog()"
+  (visibleChange)="paymentDialog.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  appendTo="body"
+  [style]="{ width: '520px', maxWidth: '92vw' }"
+>
+  <div class="order-form-grid">
+    <label for="payment-reference">
+      Mã giao dịch
+      <input
+        pInputText
+        id="payment-reference"
+        [ngModel]="paymentReference()"
+        (ngModelChange)="paymentReference.set($event)"
+      />
+    </label>
+    <ui-form-field forId="payment-amount" label="Số tiền" [required]="true">
+      <input
+        pInputText
+        type="number"
+        id="payment-amount"
+        min="0"
+        step="1"
+        [ngModel]="paymentAmount()"
+        (ngModelChange)="paymentAmount.set(+$event)"
+        [ngModelOptions]="{ standalone: true }"
+      />
+    </ui-form-field>
+    <label for="payment-currency">
+      Tiền tệ
+      <input
+        pInputText
+        id="payment-currency"
+        [ngModel]="paymentCurrency()"
+        (ngModelChange)="paymentCurrency.set($event)"
+      />
+    </label>
+    <label for="payment-received-at">
+      Thời điểm nhận tiền
+      <p-datepicker
+        inputId="payment-received-at"
+        [ngModel]="paymentDateValue()"
+        (ngModelChange)="setPaymentDateTime($event)"
+        [ngModelOptions]="{ standalone: true }"
+        [showTime]="true"
+        hourFormat="24"
+        appendTo="body"
+      />
+    </label>
+    <label for="payment-source">
+      Hình thức
+      <p-select
+        inputId="payment-source"
+        [options]="paymentSourceOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="paymentSource()"
+        (ngModelChange)="paymentSource.set($event)"
+        [ngModelOptions]="{ standalone: true }"
+        appendTo="body"
+      />
+    </label>
+  </div>
+  @if (errorMessage()) {
+    <p class="order-form-error">{{ errorMessage() }}</p>
+  }
+  <div class="dialog-actions">
+    <button pButton type="button" severity="secondary" outlined (click)="paymentDialog.set(false)">
+      Đóng
+    </button>
+    <button
+      pButton
+      type="button"
+      severity="primary"
+      [disabled]="busy() || !paymentReference().trim() || !paymentReceivedAt()"
+      (click)="submitPayment()"
+    >
+      {{ working() ? 'Đang gửi…' : 'Xác nhận' }}
+    </button>
+  </div>
+</p-dialog>

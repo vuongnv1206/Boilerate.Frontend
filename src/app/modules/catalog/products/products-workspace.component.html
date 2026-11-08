@@ -1,0 +1,140 @@
+<div class="catalog-workspace" [class.catalog-editor-open]="editorId() !== null">
+  @if (editorId() !== null && canView()) {
+    <button
+      pButton
+      severity="secondary"
+      outlined
+      class="catalog-items-toggle"
+      type="button"
+      (click)="panelOpen.set(!panelOpen())"
+      [attr.aria-expanded]="panelOpen()"
+      aria-controls="catalog-items"
+    >
+      <ui-icon name="panel-left" [size]="14" />Danh sách sản phẩm
+    </button>
+    @if (panelOpen()) {
+      <button
+        pButton
+        text
+        class="catalog-items-backdrop"
+        type="button"
+        aria-label="Đóng danh sách sản phẩm"
+        (click)="panelOpen.set(false)"
+      ></button>
+    }
+    <aside
+      class="catalog-items"
+      [class.catalog-items-open]="panelOpen()"
+      id="catalog-items"
+      aria-label="Chuyển sản phẩm"
+      tabindex="-1"
+      [attr.role]="panelOpen() ? 'dialog' : null"
+      [attr.aria-modal]="panelOpen() ? true : null"
+      [cdkTrapFocus]="panelOpen()"
+      [cdkTrapFocusAutoCapture]="panelOpen()"
+      (keydown.escape)="panelOpen.set(false)"
+    >
+      <header>
+        <a
+          routerLink="/admin/collections/products"
+          [queryParams]="routeQuery()"
+          (click)="panelOpen.set(false)"
+          >Sản phẩm <span>{{ page().total }}</span></a
+        >
+        @if (canCreate()) {
+          <a
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
+            routerLink="/admin/collections/products/new"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            aria-label="Thêm sản phẩm"
+            ><ui-icon name="plus" [size]="14"
+          /></a>
+        }
+      </header>
+      <label class="catalog-item-search" for="workspace-product-search">
+        <span class="sr-only">Tìm trong danh sách sản phẩm</span>
+        <input
+          pInputText
+          id="workspace-product-search"
+          type="search"
+          [value]="query()"
+          #itemSearch
+          (input)="search(itemSearch.value)"
+          placeholder="Tìm sản phẩm…"
+        />
+      </label>
+      @if (loading()) {
+        <p class="catalog-items-message" role="status">Đang tải…</p>
+      }
+      @if (listError()) {
+        <div class="catalog-items-message" role="alert">
+          {{ listError() }}
+          <button pButton severity="secondary" outlined type="button" (click)="load()">
+            Thử lại
+          </button>
+        </div>
+      }
+      <nav class="catalog-items-list" aria-label="Sản phẩm trong bộ lọc">
+        @for (item of page().items; track item.id) {
+          <a
+            [routerLink]="['/admin/collections/products', item.id]"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            [attr.aria-current]="editorId() === item.id ? 'page' : null"
+            [title]="item.name"
+          >
+            <span class="catalog-thumbnail">
+              @if (previews.url(item.thumbnailMediaId ?? null); as url) {
+                <img [src]="url" alt="" />
+              } @else {
+                <ui-icon name="image" [size]="16" />
+              }
+            </span>
+            <span>{{ item.name }}</span>
+          </a>
+        } @empty {
+          @if (!loading() && !listError()) {
+            <p class="catalog-items-message">Không có sản phẩm trong bộ lọc.</p>
+          }
+        }
+      </nav>
+      <footer>
+        <button
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
+          type="button"
+          aria-label="Trang sản phẩm trước"
+          [disabled]="page().pageNumber <= 1 || loading()"
+          (click)="setPage(page().pageNumber - 1)"
+        >
+          <ui-icon name="chevron-left" [size]="14" />
+        </button>
+        <span>{{ page().pageNumber }} / {{ pageCount() }}</span>
+        <button
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
+          type="button"
+          aria-label="Trang sản phẩm sau"
+          [disabled]="page().pageNumber >= pageCount() || loading()"
+          (click)="setPage(page().pageNumber + 1)"
+        >
+          <ui-icon name="chevron-right" [size]="14" />
+        </button>
+      </footer>
+    </aside>
+  }
+  <div class="catalog-workspace-content" [attr.inert]="panelOpen() ? '' : null">
+    <router-outlet />
+  </div>
+</div>

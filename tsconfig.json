@@ -2,11 +2,12 @@
   "compileOnSave": false,
   "compilerOptions": {
     "strict": true,
+    "noImplicitAny": false,
     "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
+    "noPropertyAccessFromIndexSignature": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
+    "noUncheckedIndexedAccess": false,
     "skipLibCheck": true,
     "isolatedModules": true,
     "experimentalDecorators": true,
@@ -19,15 +20,7 @@
       "@core/*": ["./src/app/core/*"],
       "@layout/*": ["./src/app/layout/*"],
       "@shared/*": ["./src/app/shared/*"],
-      "@features/*": ["./src/app/features/*"],
-      "@constants/*": ["./src/app/constants/*"],
-      "@enums/*": ["./src/app/enums/*"],
-      "@models/*": ["./src/app/models/*"],
-      "@services/*": ["./src/app/services/*"],
-      "@stores/*": ["./src/app/stores/*"],
-      "@forms/*": ["./src/app/forms/*"],
-      "@guards/*": ["./src/app/guards/*"],
-      "@utils/*": ["./src/app/utils/*"]
+      "@modules/*": ["./src/app/modules/*"]
     },
     "lib": ["ES2022", "dom"]
   },

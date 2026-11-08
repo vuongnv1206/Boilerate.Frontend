@@ -1,0 +1,214 @@
+<div class="storefront-page product-detail-page">
+  <nav class="breadcrumbs" aria-label="Đường dẫn">
+    <a routerLink="/shop">Cửa hàng</a>
+    <ui-icon name="chevron-right" [size]="13" />
+    <a routerLink="/shop/products" queryParamsHandling="preserve">Sản phẩm</a>
+    @if (productDetail(); as product) {
+      <ui-icon name="chevron-right" [size]="13" />
+      <span class="current">{{ product.name }}</span>
+    }
+  </nav>
+
+  @if (detailLoading()) {
+    <div class="detail-loading" aria-busy="true">
+      <div class="detail-skeleton-image"></div>
+      <div class="detail-skeleton-copy"></div>
+    </div>
+  } @else if (detailError()) {
+    <div class="catalog-state catalog-state-error" role="alert">
+      <ui-icon name="alert" [size]="24" />
+      <div>
+        <h2>Chưa thể tải sản phẩm</h2>
+        <p>{{ detailError() }}</p>
+      </div>
+      <a
+        routerLink="/shop/products"
+        queryParamsHandling="preserve"
+        class="store-button store-button-secondary"
+        >Quay lại cửa hàng</a
+      >
+    </div>
+  } @else if (productDetail(); as product) {
+    @if (addedNotification()) {
+      <div class="added-toast" role="status">
+        <span class="toast-icon"><ui-icon name="check" [size]="15" /></span>
+        <span>Đã thêm {{ addedQuantity() }} sản phẩm vào giỏ hàng.</span>
+        <a routerLink="/shop/cart" class="toast-link">Xem giỏ hàng</a>
+      </div>
+    }
+
+    <div class="product-layout">
+      <section class="product-gallery" aria-label="Hình ảnh sản phẩm">
+        <div class="gallery-main-image">
+          @if (getProductImageSource(product); as imageSource) {
+            <img
+              [src]="imageSource"
+              [alt]="product.name"
+              class="main-img"
+              (error)="onProductImageError($event, product)"
+            />
+            <div class="product-image-empty" aria-hidden="true">
+              <ui-icon name="image" [size]="28" />
+              <span>Hình ảnh đang cập nhật</span>
+            </div>
+          } @else {
+            <div class="product-image-empty">
+              <ui-icon name="image" [size]="28" />
+              <span>Hình ảnh đang cập nhật</span>
+            </div>
+          }
+        </div>
+
+        @if (product.media.length > 1) {
+          <div class="gallery-thumbnails" aria-label="Chọn ảnh sản phẩm">
+            @for (media of product.media; track media.mediaAssetId; let index = $index) {
+              <button
+                type="button"
+                class="thumb-btn"
+                [class.active]="activeImageId() === media.mediaAssetId"
+                [attr.aria-label]="'Xem ảnh ' + (index + 1) + ' của ' + product.name"
+                [attr.aria-pressed]="activeImageId() === media.mediaAssetId"
+                (click)="onSelectMedia(media.mediaAssetId)"
+              >
+                <img
+                  [src]="'/api/catalog/media/' + media.mediaAssetId"
+                  [alt]="media.altText || product.name"
+                  (error)="onThumbnailImageError($event)"
+                />
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="product-info-panel" aria-labelledby="product-title">
+        <div class="product-header">
+          <div class="product-meta-row">
+            <span class="fulfillment-tag" [class.digital]="isDigital(product.fulfillmentKind)">
+              <ui-icon [name]="isDigital(product.fulfillmentKind) ? 'key' : 'box'" [size]="14" />
+              {{ getFulfillmentLabel(product.fulfillmentKind) }}
+            </span>
+            @if (selectedVariant(); as variant) {
+              <span class="product-sku">SKU {{ variant.sku }}</span>
+            }
+          </div>
+          <h1 id="product-title" class="product-title">{{ product.name }}</h1>
+          <p class="product-intro">Giá và tình trạng hàng được cập nhật theo phân loại bạn chọn.</p>
+        </div>
+
+        <div class="product-pricing-box" aria-live="polite">
+          @if (selectedVariant()?.price !== null && selectedVariant()?.price !== undefined) {
+            <span class="current-price">{{ selectedVariant()?.price | number: '1.0-0' }} ₫</span>
+            @if (selectedVariant()?.compareAtPrice; as compare) {
+              <span class="compare-price">{{ compare | number: '1.0-0' }} ₫</span>
+            }
+          } @else {
+            <span class="current-price">Liên hệ</span>
+          }
+          <span class="price-caption">Giá theo phân loại đang chọn</span>
+        </div>
+
+        @if (product.options.length > 0) {
+          <div class="product-options">
+            @for (opt of product.options; track opt.id) {
+              <fieldset class="option-group">
+                <legend class="option-label">{{ opt.name }}</legend>
+                <div class="option-values">
+                  @for (val of opt.values; track val.id) {
+                    <button
+                      type="button"
+                      class="option-chip"
+                      [class.selected]="selectedOptions()[opt.id] === val.id"
+                      [attr.aria-pressed]="selectedOptions()[opt.id] === val.id"
+                      (click)="onSelectOption(opt.id, val.id)"
+                    >
+                      {{ val.label }}
+                    </button>
+                  }
+                </div>
+              </fieldset>
+            }
+          </div>
+        }
+
+        <div class="stock-status-box">
+          @if (selectedVariant()?.inStock) {
+            <span class="status-indicator in-stock"><span></span> Còn hàng</span>
+          } @else if (!selectedVariant()) {
+            <span class="status-indicator out-of-stock">Không có phân loại phù hợp</span>
+          } @else {
+            <span class="status-indicator out-of-stock"><span></span> Tạm hết hàng</span>
+          }
+        </div>
+
+        @if (cartService.saveError()) {
+          <p class="form-error" role="alert">{{ cartService.saveError() }}</p>
+          @if (cartService.uncertain()) {
+            <button
+              type="button"
+              class="store-button store-button-secondary"
+              (click)="cartService.loadCart()"
+            >
+              Tải lại giỏ hàng
+            </button>
+          }
+        }
+        @if (!canAddToCart() && (quantity() < 1 || quantity() > 999 || quantity() % 1 !== 0)) {
+          <p class="form-error" role="alert">Số lượng phải là số nguyên từ 1 đến 999.</p>
+        }
+        <div class="purchase-actions">
+          <div class="quantity-control" aria-label="Số lượng">
+            <button
+              type="button"
+              class="qty-btn"
+              aria-label="Giảm số lượng"
+              [disabled]="quantity() <= 1"
+              (click)="onDecreaseQty()"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              class="qty-input"
+              aria-label="Số lượng sản phẩm"
+              [value]="quantity()"
+              min="1"
+              max="999"
+              (change)="onQtyChange($event)"
+            />
+            <button
+              type="button"
+              class="qty-btn"
+              aria-label="Tăng số lượng"
+              [disabled]="quantity() >= 999"
+              (click)="onIncreaseQty()"
+            >
+              +
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="store-button store-button-primary add-to-cart-btn"
+            [disabled]="!canAddToCart()"
+            (click)="onAddToCart(product)"
+          >
+            <ui-icon name="shopping-bag" [size]="17" /> Thêm vào giỏ hàng
+          </button>
+        </div>
+
+        <div class="product-service-notes">
+          <p><ui-icon name="shield-check" [size]="17" /> Giá và tồn kho được xác nhận khi đặt</p>
+          <p><ui-icon name="receipt" [size]="17" /> Không cần tạo tài khoản để mua hàng</p>
+        </div>
+
+        @if (product.description) {
+          <div class="product-description">
+            <h2>Mô tả sản phẩm</h2>
+            <p>{{ product.description }}</p>
+          </div>
+        }
+      </section>
+    </div>
+  }
+</div>

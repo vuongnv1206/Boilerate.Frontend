@@ -1,6 +1,6 @@
 # Quy tắc Frontend (`Frontend/`)
 
-Đây là repository **Frontend `Angular 22` + `PrimeNG 22`**. Chỉ triển khai giao diện UI/UX (Admin & Storefront), client state (`signals` / stores) và tích hợp HTTP API tại đây — **tuyệt đối không viết server API, database hay tạo tài liệu nghiệp vụ rời trong repo này**.
+Đây là repository **Frontend `Angular 22` + `PrimeNG 22`**. Chỉ triển khai giao diện UI/UX (Admin & Storefront), client state (`signals` + generic base classes/services) và tích hợp HTTP/SignalR API tại đây — **tuyệt đối không viết server API, database hay tạo tài liệu nghiệp vụ rời trong repo này**.
 
 ## Đọc trước khi sửa code
 
@@ -12,6 +12,6 @@
 
 ## Nguyên tắc bắt buộc
 
-- **Cấu trúc & Kiến trúc**: Mỗi phân hệ chỉ có màn danh sách và màn `-io`; dùng `ChangeDetectionStrategy.OnPush` + `signals`; tuân thủ 43 quy tắc ranh giới lớp (`npm run test:architecture`) và hệ semantic tokens chung (kiểm tra cả `Light` và `Dark`).
-- **Môi trường Local**: Dev server chạy tại `http://localhost:4200` chuyển tiếp `/api/**` sang Backend SQL Server local tại `http://localhost:5000`; không dùng Docker hay cấu hình deployment tại giai đoạn này.
+- **Cấu trúc & Kiến trúc**: Tổ chức theo 14 Domain Modules (`src/app/modules/<domain>/`) khớp 1-1 với Backend; component con/dialog/panel nằm trực tiếp bên trong component cha (Parent-Child Nesting); kế thừa Generic Base Layer (`src/app/core/base/`); **không dùng Store (`*.store.ts`)**; dùng gói import chung `SHARED_IMPORTS`; dùng `constructor(...)` tường minh; không có file `*.spec.ts`; cho phép `any` linh hoạt; tuân thủ các quy tắc ranh giới lớp (`npm run test:architecture`) và hệ semantic tokens chung (kiểm tra cả `Light` và `Dark`).
+- **Môi trường Local**: Dev server chạy tại `http://localhost:4200` chuyển tiếp `/api/**` và `/hubs/**` sang Backend SQL Server local tại `http://localhost:5000`; không dùng Docker hay cấu hình deployment tại giai đoạn này.
 - **Giữ sạch repo**: Mọi tài liệu cập nhật tại `../docs/`; không tạo lại `Frontend/docs/` hay `Frontend/deployment/`, không để lại script `.mjs`/`.py` dùng một lần trong `artifacts/`. `AGENTS.md` và `CLAUDE.md` phải giống nhau 100%.

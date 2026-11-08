@@ -1,0 +1,66 @@
+<div class="discount-code">
+  <label for="discount-code-input">Mã giảm giá</label>
+  <div class="discount-code-controls">
+    <input
+      id="discount-code-input"
+      type="text"
+      autocomplete="off"
+      maxlength="32"
+      placeholder="Nhập mã"
+      [value]="code()"
+      [disabled]="
+        disabled() ||
+        cartService.loading() ||
+        cartService.discountLoading() ||
+        cartService.discountUncertain()
+      "
+      [attr.aria-invalid]="
+        cartService.cart().discountError || cartService.discountError() ? 'true' : null
+      "
+      aria-describedby="discount-code-message"
+      (input)="onInput($event)"
+      (keydown.enter)="$event.preventDefault(); apply()"
+    />
+    <button
+      type="button"
+      class="store-button store-button-secondary"
+      [disabled]="
+        disabled() ||
+        cartService.loading() ||
+        cartService.discountLoading() ||
+        cartService.discountUncertain() ||
+        !code().trim()
+      "
+      (click)="apply()"
+    >
+      {{ cartService.discountLoading() ? 'Đang kiểm tra…' : 'Áp dụng' }}
+    </button>
+  </div>
+  <div id="discount-code-message" aria-live="polite">
+    @if (cartService.discountError()) {
+      <p class="discount-code-error" role="alert">{{ cartService.discountError() }}</p>
+    } @else if (cartService.cart().discountError) {
+      <p class="discount-code-error" role="alert">{{ cartService.cart().discountError }}</p>
+    } @else if (cartService.cart().discountCode; as appliedCode) {
+      <p class="discount-code-applied">Đã áp dụng mã {{ appliedCode }}.</p>
+    }
+  </div>
+  @if (cartService.discountUncertain()) {
+    <button
+      type="button"
+      class="store-button store-button-secondary"
+      (click)="cartService.loadCart()"
+    >
+      Tải lại giỏ hàng
+    </button>
+  } @else if (cartService.cart().discountCode) {
+    <button
+      type="button"
+      class="discount-code-remove"
+      [disabled]="disabled() || cartService.loading() || cartService.discountLoading()"
+      (click)="remove()"
+    >
+      Bỏ mã giảm giá
+    </button>
+  }
+</div>

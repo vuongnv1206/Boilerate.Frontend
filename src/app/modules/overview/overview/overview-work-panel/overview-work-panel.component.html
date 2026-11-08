@@ -1,0 +1,115 @@
+﻿<section
+  class="overview-section"
+  aria-labelledby="overview-work-title"
+  [attr.aria-busy]="section().loading"
+>
+  <div class="overview-section-heading">
+    <div>
+      <h2 id="overview-work-title">Việc cần xử lý</h2>
+      <p>Trạng thái hiện tại, không phụ thuộc khoảng ngày báo cáo.</p>
+    </div>
+    <button
+      pButton
+      severity="secondary"
+      text
+      type="button"
+      aria-label="Tải lại công việc"
+      [disabled]="section().loading"
+      (click)="requestReload()"
+    >
+      <ui-icon name="clock" [size]="15" /> Tải lại
+    </button>
+  </div>
+  @if (section().error) {
+    <div class="overview-error" role="alert">
+      <p>{{ section().error }}</p>
+      <button pButton severity="secondary" outlined type="button" (click)="requestReload()">
+        Thử lại công việc
+      </button>
+    </div>
+  }
+  @if (section().loading && !section().data) {
+    <ui-content-state kind="loading" title="Đang tải công việc" />
+  }
+  @if (section().data; as work) {
+    <div class="overview-work-groups" role="group" aria-label="Nhóm công việc">
+      @for (group of groups(); track group.key) {
+        <button
+          type="button"
+          class="overview-work-group"
+          [class.active]="selectedWork().key === group.key"
+          [attr.aria-pressed]="selectedWork().key === group.key"
+          (click)="selectGroup(group.key)"
+        >
+          <span>{{ workLabels[group.key] }}</span
+          ><strong>{{ group.total | number }}</strong>
+        </button>
+      }
+    </div>
+    @if (selectedWork(); as group) {
+      <div class="overview-preview-heading">
+        <p>{{ workDescriptions[group.key] }}</p>
+        <a
+          pButton
+          severity="secondary"
+          text
+          [routerLink]="workListPath(group)"
+          [queryParams]="{ queue: workQueue(group) }"
+          >Xem tất cả <ui-icon name="arrow-right" [size]="14"
+        /></a>
+      </div>
+      @if (group.items.length) {
+        <div
+          class="overview-table-region"
+          role="region"
+          [attr.aria-label]="workLabels[group.key]"
+          tabindex="0"
+        >
+          <p-table
+            [value]="selectedWorkItems()"
+            tableStyleClass="content-table"
+            styleClass="overview-work-table"
+          >
+            <ng-template #header
+              ><tr>
+                <th scope="col">Bản ghi</th>
+                <th scope="col">Trạng thái</th>
+                <th scope="col">Tạo lúc</th>
+              </tr></ng-template
+            >
+            <ng-template #body let-item>
+              <tr>
+                <td>
+                  <a class="overview-record-link" [routerLink]="workItemPath(group, item)"
+                    >{{ item.orderNumber }}
+                    @if (item.name) {
+                      <span>· {{ item.name }}</span>
+                    }
+                  </a>
+                  @if (item.sku) {
+                    <small>{{ item.sku }}</small>
+                  }
+                </td>
+                <td>{{ workStatus(group, item) }}</td>
+                <td>{{ item.createdAtUtc | date: 'HH:mm dd/MM/yyyy' : '+0700' }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+        <p class="overview-caption">
+          Hiển thị {{ group.items.length }} bản ghi cũ nhất trong {{ group.total | number }} bản
+          ghi.
+        </p>
+      } @else {
+        <ui-content-state
+          kind="empty"
+          title="Không có việc trong nhóm này"
+          message="Các bản ghi mới sẽ xuất hiện sau khi cập nhật tổng quan."
+        />
+      }
+    }
+    <p class="overview-updated">
+      Cập nhật {{ work.generatedAtUtc | date: 'HH:mm:ss dd/MM/yyyy' : '+0700' }} · giờ Việt Nam
+    </p>
+  }
+</section>

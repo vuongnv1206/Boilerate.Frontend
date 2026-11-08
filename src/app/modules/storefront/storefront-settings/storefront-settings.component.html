@@ -1,0 +1,144 @@
+<section
+  class="storefront-settings-page admin-record-page"
+  aria-labelledby="storefront-settings-title"
+>
+  <header class="editor-toolbar admin-record-header">
+    <h1 id="storefront-settings-title">Thông tin nhận chuyển khoản</h1>
+    @if (canEdit()) {
+      <button
+        pButton
+        type="button"
+        (click)="save()"
+        [disabled]="loading() || saving() || !record()"
+      >
+        {{ saving() ? 'Đang lưu…' : 'Lưu cài đặt' }}
+      </button>
+    }
+  </header>
+  @if (loading()) {
+    <ui-content-state
+      kind="loading"
+      title="Đang tải cài đặt"
+      message="Đang lấy thông tin nhận chuyển khoản của cửa hàng."
+    />
+  } @else if (errorMessage() && !record()) {
+    <ui-content-state kind="error" title="Không tải được cài đặt" [message]="errorMessage()">
+      <button pButton type="button" severity="secondary" outlined (click)="load()">Thử lại</button>
+    </ui-content-state>
+  } @else if (record()) {
+    @if (errorMessage()) {
+      <p class="collection-notice error-notice" role="alert">{{ errorMessage() }}</p>
+    }
+    @if (summaryErrors().length) {
+      <ui-form-error-summary [messages]="summaryErrors()" />
+    }
+    @if (notice()) {
+      <p class="collection-notice success-notice" role="status">{{ notice() }}</p>
+    }
+    <div class="admin-record-body">
+      <div class="editor-form settings-form" [formGroup]="form">
+        <section class="form-section" aria-labelledby="bank-settings-title">
+          <h2 id="bank-settings-title">Tài khoản ngân hàng</h2>
+          <p class="settings-header-copy">
+            Khách chỉ nhìn thấy thông tin này khi cửa hàng bật chuyển khoản. Nhập chính xác thông
+            tin dùng để đối soát; nhân viên xác nhận khoản tiền thực nhận thủ công.
+          </p>
+          @if (!canEdit()) {
+            <p class="settings-note">
+              Bạn có quyền xem cài đặt. Liên hệ quản trị viên để cập nhật.
+            </p>
+          }
+          <div class="settings-enabled-field">
+            <label for="settings-bank-transfer">Bật chuyển khoản</label>
+            <p-toggleswitch
+              inputId="settings-bank-transfer"
+              formControlName="bankTransferEnabled"
+            />
+          </div>
+          <div class="field-row">
+            <ui-form-field
+              forId="settings-bank-name"
+              label="Ngân hàng"
+              [required]="true"
+              [error]="fieldError('bankName')"
+            >
+              <input
+                pInputText
+                id="settings-bank-name"
+                type="text"
+                maxlength="120"
+                autocomplete="organization"
+                formControlName="bankName"
+              />
+            </ui-form-field>
+            <ui-form-field
+              forId="settings-account-number"
+              label="Số tài khoản"
+              [required]="true"
+              [error]="fieldError('accountNumber')"
+            >
+              <input
+                pInputText
+                id="settings-account-number"
+                type="text"
+                maxlength="64"
+                inputmode="numeric"
+                autocomplete="off"
+                formControlName="accountNumber"
+              />
+            </ui-form-field>
+            <ui-form-field
+              forId="settings-account-holder"
+              label="Chủ tài khoản"
+              [required]="true"
+              [error]="fieldError('accountHolder')"
+            >
+              <input
+                pInputText
+                id="settings-account-holder"
+                type="text"
+                maxlength="160"
+                autocomplete="off"
+                formControlName="accountHolder"
+              />
+            </ui-form-field>
+            <ui-form-field forId="settings-branch" label="Chi nhánh" [error]="fieldError('branch')">
+              <input
+                pInputText
+                id="settings-branch"
+                type="text"
+                maxlength="160"
+                formControlName="branch"
+              />
+            </ui-form-field>
+          </div>
+          <ui-form-field
+            class="settings-wide-field"
+            forId="settings-instructions"
+            label="Hướng dẫn chuyển khoản"
+            [error]="fieldError('instructions')"
+          >
+            <textarea
+              pTextarea
+              id="settings-instructions"
+              rows="4"
+              maxlength="1000"
+              formControlName="instructions"
+            ></textarea>
+          </ui-form-field>
+        </section>
+        <p class="settings-note">
+          Chưa hỗ trợ mã QR hoặc tự động đối soát. Nhân viên xác nhận khoản tiền thực nhận trước khi
+          mở hàng số.
+        </p>
+      </div>
+    </div>
+  }
+</section>
+@if (leaveVisible()) {
+  <ui-confirm-dialog
+    [visible]="leaveVisible()"
+    title="Rời khỏi cài đặt thanh toán?"
+    (answered)="answerLeave($event)"
+  />
+}

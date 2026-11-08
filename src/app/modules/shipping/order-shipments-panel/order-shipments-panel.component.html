@@ -1,0 +1,254 @@
+<section class="order-card shipping-card">
+  <div class="order-card-heading">
+    <div>
+      <span class="eyebrow">Giao hàng</span>
+      <h2>Các đợt giao hàng</h2>
+    </div>
+    @if (canDispatchPermission()) {
+      <button
+        pButton
+        severity="primary"
+        type="button"
+        [disabled]="(!pendingDispatch() && !canDispatchNow()) || busy()"
+        [title]="
+          canDispatchNow()
+            ? 'Tạo lần giao hàng'
+            : 'Đơn chưa đủ điều kiện hoặc không còn số lượng vật lý để giao'
+        "
+        (click)="openDispatch()"
+      >
+        {{ pendingDispatch() ? 'Kiểm tra yêu cầu giao' : 'Tạo lần giao' }}
+      </button>
+    }
+  </div>
+  @if (
+    canDispatchPermission() &&
+    shipments() !== null &&
+    !canDispatchNow() &&
+    !busy() &&
+    !loading() &&
+    !shippingError()
+  ) {
+    <p class="order-muted">
+      Chưa thể tạo lần giao: đơn chưa sẵn sàng hoặc không còn số lượng vật lý cần giao.
+    </p>
+  }
+  @if (!canViewShipping()) {
+    <p class="order-muted">Tài khoản của bạn chưa được cấp quyền xem thông tin giao hàng.</p>
+  } @else if (loading()) {
+    <p class="order-muted">Đang tải các đợt giao hàng…</p>
+  } @else if (shippingError()) {
+    <p class="order-form-error" role="alert">{{ shippingError() }}</p>
+    <button pButton severity="secondary" outlined type="button" (click)="reloadShipments()">
+      Tải lại dữ liệu giao hàng
+    </button>
+  } @else if (shipments(); as shipmentItems) {
+    @if (shipmentItems.length === 0) {
+      <p class="order-muted">Chưa tạo đợt giao hàng nào.</p>
+    } @else {
+      <div class="shipment-list">
+        @for (shipment of shipmentItems; track shipment.id) {
+          <article class="shipment-card">
+            <div class="shipment-heading">
+              <div>
+                <strong>{{ shipment.carrier }}</strong>
+                <span class="shipment-tracking">{{ shipment.trackingNumber }}</span>
+              </div>
+              <ui-status-badge
+                [tone]="shipment.status === shipmentStatus.Delivered ? 'success' : 'warning'"
+              >
+                {{ shipmentStatusLabels[shipment.status] }}
+              </ui-status-badge>
+            </div>
+            <p class="order-muted">
+              Xuất lúc {{ shipment.dispatchedAtUtc | date: 'dd/MM/yyyy HH:mm' }}
+              @if (shipment.deliveredAtUtc) {
+                · Giao lúc {{ shipment.deliveredAtUtc | date: 'dd/MM/yyyy HH:mm' }}
+              }
+            </p>
+            <ul class="shipment-lines">
+              @for (line of shipment.items; track line.orderItemId) {
+                <li>
+                  <span>{{ shipmentLineLabel(line.orderItemId) }}</span>
+                  <strong>× {{ line.quantity }}</strong>
+                </li>
+              }
+            </ul>
+            @if (
+              canDeliverPermission() &&
+              (canDeliverShipment(shipment) || pendingDeliveries()[shipment.id])
+            ) {
+              <div class="shipment-actions">
+                <button
+                  pButton
+                  severity="secondary"
+                  outlined
+                  type="button"
+                  [disabled]="busy()"
+                  (click)="openDelivery(shipment)"
+                >
+                  {{
+                    pendingDeliveries()[shipment.id] ? 'Kiểm tra kết quả giao' : 'Xác nhận đã giao'
+                  }}
+                </button>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  } @else {
+    <p class="order-muted">Chưa có dữ liệu giao hàng.</p>
+  }
+</section>
+
+<p-dialog
+  header="Tạo lần giao hàng"
+  [visible]="dispatchDialog()"
+  (visibleChange)="dispatchDialog.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '620px', maxWidth: '94vw' }"
+>
+  <div class="order-form-grid">
+    <label for="dispatch-carrier">
+      Hãng vận chuyển *
+      <input
+        pInputText
+        id="dispatch-carrier"
+        required
+        aria-required="true"
+        maxlength="100"
+        [disabled]="dispatchLocked()"
+        [ngModel]="dispatchCarrier()"
+        (ngModelChange)="dispatchCarrier.set($event)"
+      />
+    </label>
+    <label for="dispatch-tracking-number">
+      Mã vận chuyển *
+      <input
+        pInputText
+        id="dispatch-tracking-number"
+        required
+        aria-required="true"
+        maxlength="100"
+        [disabled]="dispatchLocked()"
+        [ngModel]="dispatchTrackingNumber()"
+        (ngModelChange)="dispatchTrackingNumber.set($event)"
+      />
+    </label>
+  </div>
+  <div class="dispatch-lines">
+    <h3>Số lượng giao trong lần này</h3>
+    @if (pendingDispatch(); as pending) {
+      <p class="order-muted" role="status">
+        Yêu cầu đã gửi đang được giữ nguyên để kiểm tra kết quả. Gửi lại sẽ xác nhận cùng yêu cầu,
+        không tạo lần giao mới.
+      </p>
+      <ul class="shipment-lines">
+        @for (line of pending.items; track line.orderItemId) {
+          <li>
+            <span>{{ shipmentLineLabel(line.orderItemId) }}</span>
+            <strong>× {{ line.quantity }}</strong>
+          </li>
+        }
+      </ul>
+    } @else {
+      @for (line of dispatchableLines(); track line.orderItem.id) {
+        <label class="dispatch-line" [for]="'dispatch-quantity-' + line.orderItem.id">
+          <span>
+            {{ line.orderItem.name }}
+            <small>{{ line.orderItem.sku }} · còn {{ line.remaining }}</small>
+          </span>
+          <input
+            pInputText
+            type="number"
+            [id]="'dispatch-quantity-' + line.orderItem.id"
+            min="0"
+            step="1"
+            [disabled]="dispatchLocked()"
+            [max]="maxDispatchQuantity(line.remaining)"
+            [attr.aria-label]="'Số lượng giao: ' + line.orderItem.name"
+            [ngModel]="dispatchQuantities()[line.orderItem.id] ?? 0"
+            (ngModelChange)="setDispatchQuantity(line.orderItem.id, $event)"
+          />
+        </label>
+      }
+    }
+    @if (dispatchNotice()) {
+      <p class="order-muted" role="status">{{ dispatchNotice() }}</p>
+    }
+    <p class="order-muted">
+      Chọn ít nhất một dòng; mỗi lần giao tối đa 50 dòng và 999 sản phẩm trên một dòng.
+    </p>
+  </div>
+  @if (errorMessage() || dialogError()) {
+    <p class="order-form-error" role="alert">{{ errorMessage() || dialogError() }}</p>
+  }
+  <div class="dialog-actions">
+    <button pButton severity="secondary" outlined type="button" (click)="dispatchDialog.set(false)">
+      Đóng
+    </button>
+    <button
+      pButton
+      severity="primary"
+      type="button"
+      [disabled]="!dispatchCanSubmit() || busy()"
+      (click)="submitDispatch()"
+    >
+      {{
+        working()
+          ? 'Đang gửi…'
+          : pendingDispatch()
+            ? 'Kiểm tra lại yêu cầu đã gửi'
+            : 'Tạo đợt giao hàng'
+      }}
+    </button>
+  </div>
+</p-dialog>
+
+<p-dialog
+  header="Xác nhận giao thành công"
+  [visible]="deliveryTarget() !== null"
+  (visibleChange)="onDeliveryDialogVisibility($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '460px', maxWidth: '92vw' }"
+>
+  <p>
+    @if (deliveryTarget(); as target) {
+      @if (pendingDeliveries()[target.id]) {
+        Yêu cầu xác nhận giao đang chờ kiểm tra kết quả. Gửi lại sẽ dùng đúng yêu cầu trước.
+      }
+    }
+    @if (currentDeliveryTarget(); as shipment) {
+      @if (shipment.status === shipmentStatus.Delivered) {
+        Đợt giao hàng {{ shipment.carrier }} · {{ shipment.trackingNumber }} đã được ghi nhận là đã
+        giao.
+      } @else {
+        Đợt giao hàng {{ shipment.carrier }} · {{ shipment.trackingNumber }} sẽ được đánh dấu đã
+        giao.
+      }
+    }
+    Việc này không tự xác nhận khoản thu COD.
+  </p>
+  @if (errorMessage() || dialogError()) {
+    <p class="order-form-error" role="alert">{{ errorMessage() || dialogError() }}</p>
+  }
+  <div class="dialog-actions">
+    <button pButton severity="secondary" outlined type="button" (click)="deliveryTarget.set(null)">
+      Đóng
+    </button>
+    <button
+      pButton
+      severity="primary"
+      type="button"
+      [disabled]="!currentDeliveryCanSubmit() || busy()"
+      (click)="submitDelivery()"
+    >
+      {{ working() ? 'Đang gửi…' : 'Xác nhận đã giao' }}
+    </button>
+  </div>
+</p-dialog>

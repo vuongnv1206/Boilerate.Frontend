@@ -1,14 +1,13 @@
-import { CdkTrapFocus } from '@angular/cdk/a11y';
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
   HostListener,
+  Inject,
   Injector,
+  Optional,
   afterNextRender,
   computed,
-  inject,
   signal,
   viewChild,
 } from '@angular/core';
@@ -19,18 +18,18 @@ import {
   NavigationError,
   NavigationStart,
   Router,
-  RouterLink,
-  RouterLinkActive,
-  RouterOutlet,
 } from '@angular/router';
-import { Dialog } from 'primeng/dialog';
-import { ButtonDirective } from 'primeng/button';
+import { AuthSession } from '@core/auth/auth-session';
+import { WORKSPACE_NAVIGATION, WorkspaceNavigation } from '@core/navigation/workspace-navigation';
+import {
+  NOTIFICATION_BADGE,
+  NotificationBadgeState,
+} from '@core/realtime/notification-badge.token';
 import { ThemeController } from '@core/theme/theme-controller';
-import { WORKSPACE_NAVIGATION } from '@core/navigation/workspace-navigation';
-import { Icon } from '@shared/ui/icon/icon.component';
+import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { focusWhenVisible } from '@shared/ui/focus-when-visible';
 import { ADMIN_LAYOUT, ADMIN_THEME_OPTIONS } from './admin-shell.constants';
-import { AuthSession } from '@core/auth/auth-session';
+import { AdminStyles } from './admin-styles.component';
 
 function preference(key: string, fallback: string): string {
   try {
@@ -41,52 +40,24 @@ function preference(key: string, fallback: string): string {
 }
 
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-admin-shell',
-  imports: [
-    CdkTrapFocus,
-    RouterOutlet,
-    RouterLink,
-    RouterLinkActive,
-    Icon,
-    Dialog,
-    ButtonDirective,
-  ],
+  imports: [SHARED_IMPORTS, AdminStyles],
   templateUrl: './admin-shell.component.html',
   styleUrl: '../../../styles/admin/_shell.scss',
 })
 export class AdminShell {
-  readonly theme = inject(ThemeController);
-  readonly navigation = inject(WORKSPACE_NAVIGATION);
-  private readonly router = inject(Router);
-  private readonly session = inject(AuthSession);
-  readonly canCreateProduct = computed(() => this.session.can('Product', 'Create'));
-  readonly operationLinks = computed(() =>
-    this.navigation
-      .collections()
-      .filter((link) => ['overview', 'orders', 'renewals', 'discounts'].includes(link.key)),
-  );
-  readonly catalogLinks = computed(() =>
-    this.navigation
-      .collections()
-      .filter(
-        (link) =>
-          !['overview', 'orders', 'renewals', 'discounts', 'storefront-settings'].includes(
-            link.key,
-          ),
-      ),
-  );
-  readonly settingsLinks = computed(() =>
-    this.navigation.collections().filter((link) => link.key === 'storefront-settings'),
-  );
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly injector = inject(Injector);
+  // System variables
   private readonly panelToggle = viewChild<ElementRef<HTMLButtonElement>>('panelToggle');
   private readonly contextPanel = viewChild<ElementRef<HTMLElement>>('contextPanel');
   private focusAfterNavigation = false;
   private readonly mobileQuery = window.matchMedia(ADMIN_LAYOUT.mobileQuery);
+  private helpOpenedFromMobile = false;
+
+  // Business variables
+  readonly themeModes = ADMIN_THEME_OPTIONS;
+  readonly layout = ADMIN_LAYOUT;
   readonly isMobile = signal(this.mobileQuery.matches);
-  readonly currentUrl = signal(this.router.url);
+  readonly currentUrl = signal('');
   readonly sidebarWidth = signal(
     Math.min(
       ADMIN_LAYOUT.panelMax,
@@ -101,11 +72,48 @@ export class AdminShell {
   readonly mobileOpen = signal(false);
   readonly helpOpen = signal(false);
   readonly resizing = signal(false);
-  private helpOpenedFromMobile = false;
-  readonly themeModes = ADMIN_THEME_OPTIONS;
-  readonly layout = ADMIN_LAYOUT;
 
-  constructor() {
+  readonly unreadCount = computed(() => this.notificationBadge?.unreadCount() ?? 0);
+  readonly canCreateProduct = computed(() => this.session.can('Product', 'Create'));
+  readonly operationLinks = computed(() =>
+    this.navigation
+      .collections()
+      .filter((link) => ['overview', 'orders', 'renewals', 'discounts'].includes(link.key)),
+  );
+  readonly catalogLinks = computed(() =>
+    this.navigation
+      .collections()
+      .filter(
+        (link) =>
+          ![
+            'overview',
+            'orders',
+            'renewals',
+            'discounts',
+            'storefront-settings',
+            'outbox',
+          ].includes(link.key),
+      ),
+  );
+  readonly settingsLinks = computed(() =>
+    this.navigation
+      .collections()
+      .filter((link) => ['storefront-settings', 'outbox'].includes(link.key)),
+  );
+
+  constructor(
+    public readonly theme: ThemeController,
+    @Inject(WORKSPACE_NAVIGATION) public readonly navigation: WorkspaceNavigation,
+    @Optional()
+    @Inject(NOTIFICATION_BADGE)
+    public readonly notificationBadge: NotificationBadgeState | null,
+    private readonly router: Router,
+    private readonly session: AuthSession,
+    private readonly destroyRef: DestroyRef,
+    private readonly injector: Injector,
+  ) {
+    this.currentUrl.set(this.router.url);
+    this.notificationBadge?.refresh();
     const onViewportChange = (event: MediaQueryListEvent) => {
       this.isMobile.set(event.matches);
       if (!event.matches) this.mobileOpen.set(false);
@@ -114,7 +122,7 @@ export class AdminShell {
     this.destroyRef.onDestroy(() =>
       this.mobileQuery.removeEventListener('change', onViewportChange),
     );
-    this.router.events.pipe(takeUntilDestroyed()).subscribe((event) => {
+    this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       if (event instanceof NavigationStart && this.mobileOpen()) {
         this.focusAfterNavigation = true;
         this.mobileOpen.set(false);
@@ -139,7 +147,6 @@ export class AdminShell {
   }
 
   async signOut(): Promise<void> {
-    // Let the editor ask about unsaved changes before ending the session.
     if (await this.router.navigate(['/login'])) {
       this.session.signOut().subscribe();
     }

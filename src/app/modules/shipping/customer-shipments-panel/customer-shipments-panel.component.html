@@ -1,0 +1,40 @@
+@if (loading()) {
+  <p role="status">Đang tải giao hàng…</p>
+}
+@if (errorMessage()) {
+  <p class="form-error" role="alert">Chưa tải được giao hàng: {{ errorMessage() }}</p>
+  <button type="button" class="store-button store-button-secondary" (click)="reload()">
+    Thử lại giao hàng
+  </button>
+}
+@if (shipments().length > 0) {
+  <div class="shipment-card">
+    <div class="shipment-header">
+      <ui-icon name="truck" [size]="20" />
+      <h2>Thông tin giao vận kiện hàng</h2>
+    </div>
+    <div class="shipments-list">
+      @for (shipment of shipments(); track shipment.id) {
+        <div class="shipment-item">
+          <div class="shipment-info">
+            <span
+              >Đơn vị vận chuyển: <strong>{{ shipment.carrier }}</strong></span
+            >
+            <span>
+              Mã vận đơn:
+              <strong class="tracking-code">{{ shipment.trackingNumber }}</strong>
+            </span>
+            <span>
+              Trạng thái:
+              <strong>{{
+                shipment.status === shipmentStatus.Delivered
+                  ? 'Đã giao thành công'
+                  : 'Đang vận chuyển'
+              }}</strong>
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

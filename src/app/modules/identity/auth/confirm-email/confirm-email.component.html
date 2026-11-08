@@ -1,0 +1,76 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="confirm-account-heading">
+    <a class="auth-brand" routerLink="/shop" aria-label="Boilerate — cửa hàng">
+      <span>b</span> Boilerate
+    </a>
+    <p class="auth-eyebrow">Kích hoạt tài khoản</p>
+    <h1 id="confirm-account-heading" class="auth-title">Xác nhận thông tin liên hệ</h1>
+    <p class="auth-intro">Xác thực địa chỉ email hoặc số điện thoại bằng mã xác nhận đã cấp.</p>
+
+    @if (confirmedMessage(); as message) {
+      <div class="auth-success" role="status">
+        <p>{{ message }}</p>
+      </div>
+      <div class="auth-links">
+        <a class="auth-link" routerLink="/login">Đi tới đăng nhập</a>
+        <a class="auth-link" routerLink="/shop">← Về cửa hàng</a>
+      </div>
+    } @else {
+      <div class="auth-mode-tabs" role="group" aria-label="Phương thức xác nhận">
+        @for (option of modeOptions; track option.value) {
+          <button
+            type="button"
+            pButton
+            [severity]="form.controls.mode.value === option.value ? 'primary' : 'secondary'"
+            [outlined]="form.controls.mode.value !== option.value"
+            (click)="selectMode(option.value)"
+            [disabled]="confirming()"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="auth-field">
+          <label for="confirm-user-id">Mã người dùng (User ID) *</label>
+          <input
+            pInputText
+            id="confirm-user-id"
+            formControlName="userId"
+            autocomplete="off"
+            [attr.aria-invalid]="form.controls.userId.touched && form.controls.userId.invalid"
+          />
+        </div>
+
+        <div class="auth-field">
+          <label for="confirm-code">Mã xác nhận *</label>
+          <input
+            pInputText
+            id="confirm-code"
+            formControlName="code"
+            autocomplete="one-time-code"
+            [attr.aria-invalid]="form.controls.code.touched && form.controls.code.invalid"
+          />
+        </div>
+
+        @if (errorMessage(); as message) {
+          <p class="auth-error" role="alert">{{ message }}</p>
+        }
+
+        <p-button
+          type="submit"
+          label="Xác nhận"
+          [loading]="confirming()"
+          [disabled]="confirming()"
+          styleClass="auth-submit"
+        />
+
+        <div class="auth-links">
+          <a class="auth-link" routerLink="/login">Quay lại đăng nhập</a>
+          <a class="auth-link" routerLink="/shop">← Về cửa hàng</a>
+        </div>
+      </form>
+    }
+  </section>
+</main>

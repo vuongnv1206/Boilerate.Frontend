@@ -1,0 +1,59 @@
+<section class="overview-page" aria-labelledby="overview-title">
+  <header class="overview-header">
+    <div>
+      <h1 id="overview-title">Tổng quan vận hành</h1>
+      <p>Việc cần làm, thu tiền và tồn kho của cửa hàng.</p>
+    </div>
+    <button
+      pButton
+      severity="secondary"
+      outlined
+      type="button"
+      [disabled]="refreshing()"
+      (click)="refresh()"
+    >
+      <ui-icon name="clock" [size]="15" /> Cập nhật tổng quan
+    </button>
+  </header>
+
+  <div class="overview-scroll">
+    @if (!hasVisibleSection()) {
+      <ui-content-state
+        kind="empty"
+        title="Chưa có phần tổng quan được phép xem"
+        message="Quyền truy cập có thể đã thay đổi. Mở chức năng được phép từ điều hướng hoặc cập nhật lại tổng quan."
+        layout="page"
+      />
+    }
+
+    @if (workVisible()) {
+      <app-overview-work-panel
+        [section]="work()"
+        [groups]="workGroups()"
+        (reloadRequested)="reloadWork()"
+      />
+    }
+
+    @if (financeVisible()) {
+      <app-overview-finance-panel
+        [section]="finance()"
+        [query]="query()"
+        [today]="today()"
+        (reloadRequested)="reloadFinance()"
+        (dateRangeApplied)="onDateRangeApplied($event)"
+      />
+    }
+
+    @if (stockVisible()) {
+      <app-overview-stock-panel
+        [section]="stock()"
+        [query]="query()"
+        [canOpenProduct]="canOpenProduct()"
+        (reloadRequested)="reloadStock()"
+        (thresholdApplied)="onThresholdApplied($event)"
+        (pageChanged)="onPageChanged($event)"
+        (pageSizeChanged)="onPageSizeChanged($event)"
+      />
+    }
+  </div>
+</section>

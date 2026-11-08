@@ -2,6 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 const paths: Readonly<Record<string, readonly string[]>> = {
   user: ['M20 21v-2a7 7 0 0 0-14 0v2', 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z'],
+  'user-plus': [
+    'M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2',
+    'M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
+    'M20 8v6M17 11h6',
+  ],
   key: [
     'M21 2 11 12',
     'M7 16l-5 5',
@@ -9,6 +14,24 @@ const paths: Readonly<Record<string, readonly string[]>> = {
     'm9 9 6 6',
     'M16 7a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z',
   ],
+  lock: ['M5 11h14v10H5z', 'M8 11V7a4 4 0 0 1 8 0v4'],
+  bell: ['M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.73 21a2 2 0 0 1-3.46 0'],
+  inbox: [
+    'M22 12h-6l-2 3h-4l-2-3H2',
+    'M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z',
+  ],
+  refresh: [
+    'M21 2v6h-6',
+    'M3 12a9 9 0 0 1 15-6.7L21 8',
+    'M3 22v-6h6',
+    'M21 12a9 9 0 0 1-15 6.7L3 16',
+  ],
+  download: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'm7 10 5 5 5-5', 'M12 15V3'],
+  smartphone: [
+    'M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z',
+    'M12 18h.01',
+  ],
+  history: ['M3 12a9 9 0 1 0 3-6.7L3 8', 'M3 3v5h5', 'M12 7v5l3 2'],
   truck: [
     'M3 6h11v11H3z',
     'M14 10h4l3 3v4h-7z',
@@ -65,6 +88,11 @@ const paths: Readonly<Record<string, readonly string[]>> = {
   circle: ['M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'],
   alert: ['m12 3 10 18H2L12 3Z', 'M12 9v5m0 3h.01'],
   eye: ['M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z', 'M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'],
+  'eye-off': [
+    'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94',
+    'M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19',
+    'm1 1 22 22',
+  ],
   trash: ['M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7'],
   archive: ['M3 3h18v5H3z', 'M5 8v13h14V8M10 12h4'],
   copy: ['M8 8h13v13H8z', 'M16 8V3H3v13h5'],

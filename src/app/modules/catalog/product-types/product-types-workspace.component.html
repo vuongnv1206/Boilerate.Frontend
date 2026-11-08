@@ -1,0 +1,133 @@
+<div class="product-types-workspace" [class.product-type-editor-open]="editorId() !== null">
+  @if (editorId() !== null && canView()) {
+    <button
+      pButton
+      severity="secondary"
+      outlined
+      class="product-type-items-toggle"
+      type="button"
+      (click)="panelOpen.set(!panelOpen())"
+      [attr.aria-expanded]="panelOpen()"
+      aria-controls="product-type-items"
+    >
+      <ui-icon name="panel-left" [size]="14" />Danh sách loại sản phẩm
+    </button>
+    @if (panelOpen()) {
+      <button
+        pButton
+        text
+        class="product-type-items-backdrop"
+        type="button"
+        aria-label="Đóng danh sách loại sản phẩm"
+        (click)="panelOpen.set(false)"
+      ></button>
+    }
+    <aside
+      class="product-type-items"
+      [class.product-type-items-open]="panelOpen()"
+      id="product-type-items"
+      aria-label="Chuyển loại sản phẩm"
+      tabindex="-1"
+      [attr.role]="panelOpen() ? 'dialog' : null"
+      [attr.aria-modal]="panelOpen() ? true : null"
+      [cdkTrapFocus]="panelOpen()"
+      [cdkTrapFocusAutoCapture]="panelOpen()"
+      (keydown.escape)="panelOpen.set(false)"
+    >
+      <header>
+        <a
+          routerLink="/admin/collections/product-types"
+          [queryParams]="routeQuery()"
+          (click)="panelOpen.set(false)"
+          >Loại sản phẩm <span>{{ items().length }}</span></a
+        >
+        @if (canCreate()) {
+          <a
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
+            routerLink="/admin/collections/product-types/new"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            aria-label="Thêm loại sản phẩm"
+            ><ui-icon name="plus" [size]="14"
+          /></a>
+        }
+      </header>
+      <label class="product-type-item-search">
+        <span class="sr-only">Tìm trong loại sản phẩm</span>
+        <input
+          pInputText
+          type="search"
+          [value]="query()"
+          #itemSearch
+          (input)="search(itemSearch.value)"
+          placeholder="Tìm loại sản phẩm…"
+        />
+      </label>
+      @if (loading()) {
+        <p class="product-type-items-message" role="status">Đang tải loại sản phẩm…</p>
+      }
+      @if (error()) {
+        <div class="product-type-items-message" role="alert">
+          {{ error() }}
+          <button pButton severity="secondary" outlined type="button" (click)="load()">
+            Thử lại
+          </button>
+        </div>
+      }
+      <nav class="product-type-items-list" aria-label="Loại sản phẩm trong bộ lọc">
+        @for (item of rows(); track item.id) {
+          <a
+            [routerLink]="['/admin/collections/product-types', item.id]"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            [attr.aria-current]="editorId() === item.id ? 'page' : null"
+            [title]="item.name"
+          >
+            <ui-icon name="layers" [size]="14" />
+            <span>{{ item.name }}</span>
+            <small>{{ item.isActive ? 'Bật' : 'Tắt' }}</small>
+          </a>
+        } @empty {
+          @if (!loading() && !error()) {
+            <p class="product-type-items-message">Không có loại sản phẩm trong bộ lọc.</p>
+          }
+        }
+      </nav>
+      <footer>
+        <button
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
+          type="button"
+          aria-label="Trang loại sản phẩm trước"
+          [disabled]="page() <= 1 || loading()"
+          (click)="setPage(page() - 1)"
+        >
+          <ui-icon name="chevron-left" [size]="14" /></button
+        ><span>{{ page() }} / {{ totalPages() }}</span
+        ><button
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
+          type="button"
+          aria-label="Trang loại sản phẩm sau"
+          [disabled]="page() >= totalPages() || loading()"
+          (click)="setPage(page() + 1)"
+        >
+          <ui-icon name="chevron-right" [size]="14" />
+        </button>
+      </footer>
+    </aside>
+  }
+  <div class="product-types-workspace-content" [attr.inert]="panelOpen() ? '' : null">
+    <router-outlet />
+  </div>
+</div>

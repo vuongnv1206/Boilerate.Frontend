@@ -1,0 +1,443 @@
+<section class="collection-page catalog-products" aria-labelledby="collection-title">
+  <header class="catalog-list-toolbar">
+    <h1 id="collection-title" aria-label="Sản phẩm">
+      Sản phẩm <span>{{ workspace.page().total }}</span>
+    </h1>
+    <label class="search-field" for="products-list-search">
+      <ui-icon name="search" [size]="14" />
+      <input
+        pInputText
+        id="products-list-search"
+        type="search"
+        aria-label="Tìm sản phẩm"
+        placeholder="Tìm sản phẩm…"
+        [ngModel]="workspace.query()"
+        (ngModelChange)="setQuery($event)"
+        [disabled]="workspace.bulkBusy()"
+      />
+    </label>
+    <button
+      pButton
+      severity="secondary"
+      outlined
+      type="button"
+      (click)="filtersOpen.set(true)"
+      [disabled]="workspace.bulkBusy()"
+    >
+      <ui-icon name="filter" [size]="14" />Bộ lọc
+      @if (filterCount()) {
+        <span>{{ filterCount() }}</span>
+      }
+    </button>
+    <p-select
+      [options]="sortOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="sortValue()"
+      (ngModelChange)="setSort($event)"
+      ariaLabel="Sắp xếp sản phẩm"
+      appendTo="body"
+      [disabled]="workspace.bulkBusy()"
+    />
+    <button
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
+      type="button"
+      aria-label="Tải lại sản phẩm"
+      (click)="workspace.load(); workspace.loadLookups()"
+      [disabled]="workspace.loading() || workspace.bulkBusy()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
+    @if (workspace.canCreate()) {
+      <a
+        pButton
+        severity="primary"
+        aria-label="Thêm sản phẩm"
+        routerLink="/admin/collections/products/new"
+        [queryParams]="routeQuery()"
+        ><ui-icon name="plus" [size]="14" /><span>Thêm sản phẩm</span></a
+      >
+    }
+  </header>
+  @if (workspace.notice()) {
+    <div class="collection-notice" role="status">{{ workspace.notice() }}</div>
+  }
+  @if (workspace.lookupError()) {
+    <div class="collection-notice" role="alert">{{ workspace.lookupError() }}</div>
+  }
+  @if (workspace.selectedIds().size) {
+    <div class="selection-toolbar">
+      <span
+        >Đã chọn <strong>{{ workspace.selectedIds().size }}</strong> sản phẩm trên trang</span
+      >
+      @if (workspace.canPublish()) {
+        <button
+          pButton
+          severity="secondary"
+          outlined
+          type="button"
+          (click)="bulkTarget.set(status.Published)"
+          [disabled]="workspace.bulkBusy()"
+        >
+          Xuất bản đã chọn
+        </button>
+        <button
+          pButton
+          severity="secondary"
+          outlined
+          type="button"
+          (click)="bulkTarget.set(status.Archived)"
+          [disabled]="workspace.bulkBusy()"
+        >
+          Lưu trữ đã chọn
+        </button>
+      }
+      <button
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Bỏ chọn tất cả"
+        (click)="workspace.clearSelection()"
+        [disabled]="workspace.bulkBusy()"
+      >
+        <ui-icon name="close" [size]="13" />
+      </button>
+    </div>
+  }
+  @if (workspace.loading()) {
+    <ui-content-state
+      kind="loading"
+      layout="page"
+      title="Đang tải sản phẩm"
+      message="Vui lòng đợi trong giây lát."
+    />
+  } @else if (workspace.listError()) {
+    <ui-content-state
+      kind="error"
+      layout="page"
+      title="Không thể tải hoặc cập nhật sản phẩm"
+      [message]="workspace.listError()"
+    >
+      <button pButton type="button" severity="secondary" outlined (click)="workspace.load()">
+        Tải lại
+      </button>
+    </ui-content-state>
+  } @else {
+    <div class="collection-table">
+      <div class="table-scroll" role="region" aria-label="Danh sách sản phẩm" tabindex="0">
+        <p-table
+          [value]="workspace.page().items.slice()"
+          dataKey="id"
+          tableStyleClass="content-table catalog-products-table"
+          [tableStyle]="{ 'min-width': '1120px' }"
+          [rowHover]="true"
+          [pt]="{ tableContainer: { style: { overflow: 'visible' } } }"
+        >
+          <ng-template #header>
+            <tr>
+              <th class="selection-cell">
+                <p-checkbox
+                  inputId="products-select-all"
+                  ariaLabel="Chọn tất cả trên trang"
+                  [binary]="true"
+                  [ngModel]="workspace.allSelected()"
+                  (onChange)="workspace.toggleAll()"
+                  [disabled]="workspace.bulkBusy()"
+                />
+              </th>
+              <th class="name-cell" scope="col">Tên sản phẩm</th>
+              <th scope="col">Trạng thái</th>
+              <th scope="col">Giá từ</th>
+              <th scope="col">Loại sản phẩm</th>
+              <th scope="col">Cách giao</th>
+              <th scope="col">Khả dụng</th>
+              <th scope="col">Cập nhật</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-item>
+            <tr [class.row-selected]="workspace.selectedIds().has(item.id)">
+              <td class="selection-cell">
+                <p-checkbox
+                  [inputId]="'product-select-' + item.id"
+                  [ariaLabel]="'Chọn ' + item.name"
+                  [binary]="true"
+                  [ngModel]="workspace.selectedIds().has(item.id)"
+                  (onChange)="workspace.toggle(item.id)"
+                  [disabled]="workspace.bulkBusy()"
+                />
+              </td>
+              <td class="name-cell">
+                <div class="item-identity">
+                  <span class="catalog-thumbnail">
+                    @if (previews.url(item.thumbnailMediaId ?? null); as url) {
+                      <img [src]="url" alt="" />
+                    } @else {
+                      <ui-icon name="image" [size]="17" />
+                    }
+                  </span>
+                  <div>
+                    <a
+                      [routerLink]="['/admin/collections/products', item.id]"
+                      [queryParams]="routeQuery()"
+                      >{{ item.name }}</a
+                    ><span>/{{ item.slug }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <ui-status-badge
+                  [tone]="
+                    item.status === status.Published
+                      ? 'success'
+                      : item.status === status.Archived
+                        ? 'muted'
+                        : 'neutral'
+                  "
+                  >{{ statusLabel(item.status) }}</ui-status-badge
+                >
+              </td>
+              <td class="price-cell">
+                {{
+                  item.fromPrice === null
+                    ? 'Chưa đặt giá'
+                    : (item.fromPrice | currency: 'VND' : 'symbol-narrow' : '1.0-0')
+                }}
+              </td>
+              <td>{{ item.productTypeName ?? '—' }}</td>
+              <td>{{ fulfillmentLabel(item.fulfillmentKind) }}</td>
+              <td>
+                <span class="availability" [class.available]="item.inStock">{{
+                  item.inStock ? 'Có sẵn' : 'Chưa khả dụng'
+                }}</span>
+              </td>
+              <td>{{ item.modifiedOn ? (item.modifiedOn | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr class="empty-row">
+              <td colspan="8">
+                <ui-content-state
+                  kind="empty"
+                  title="Không có sản phẩm"
+                  message="Thử thay đổi từ khóa hoặc bộ lọc."
+                >
+                  <button
+                    pButton
+                    type="button"
+                    severity="secondary"
+                    outlined
+                    (click)="resetFilters()"
+                  >
+                    Xóa bộ lọc
+                  </button>
+                </ui-content-state>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+      <footer class="pagination">
+        <span
+          >Hiển thị <strong>{{ workspace.rangeStart() }}–{{ workspace.rangeEnd() }}</strong> trong
+          {{ workspace.page().total }} sản phẩm</span
+        >
+        <div class="pagination-right">
+          <label class="page-size" for="product-page-size"
+            >Mỗi trang<p-select
+              inputId="product-page-size"
+              [options]="pageSizes"
+              [ngModel]="workspace.page().pageSize"
+              (ngModelChange)="changePageSize($event)"
+              ariaLabel="Số sản phẩm mỗi trang"
+              appendTo="body"
+          /></label>
+          <span class="page-divider"></span>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            text
+            rounded
+            iconOnly
+            aria-label="Trang trước"
+            [disabled]="workspace.page().pageNumber <= 1 || workspace.bulkBusy()"
+            (click)="setPage(workspace.page().pageNumber - 1)"
+          >
+            <ui-icon name="chevron-left" [size]="14" />
+          </button>
+          <span>{{ workspace.page().pageNumber }} / {{ workspace.pageCount() }}</span>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            text
+            rounded
+            iconOnly
+            aria-label="Trang sau"
+            [disabled]="
+              workspace.page().pageNumber >= workspace.pageCount() || workspace.bulkBusy()
+            "
+            (click)="setPage(workspace.page().pageNumber + 1)"
+          >
+            <ui-icon name="chevron-right" [size]="14" />
+          </button>
+        </div>
+      </footer>
+    </div>
+  }
+</section>
+
+<p-dialog
+  header="Bộ lọc sản phẩm"
+  [visible]="filtersOpen()"
+  (visibleChange)="filtersOpen.set($event)"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '480px', maxWidth: '94vw' }"
+>
+  <div class="catalog-filter-fields">
+    <label for="filter-product-status"
+      >Trạng thái<p-select
+        inputId="filter-product-status"
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="workspace.status()"
+        (ngModelChange)="setStatus($event)"
+        ariaLabel="Lọc trạng thái sản phẩm"
+        appendTo="body"
+    /></label>
+    <label for="filter-product-category"
+      >Danh mục<p-select
+        inputId="filter-product-category"
+        [options]="categoryOptions()"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="workspace.filters().categoryId ?? null"
+        (ngModelChange)="setFilter('categoryId', $event)"
+        [showClear]="true"
+        placeholder="Tất cả danh mục"
+        ariaLabel="Lọc danh mục sản phẩm"
+        appendTo="body"
+    /></label>
+    <label for="filter-product-type"
+      >Loại sản phẩm<p-select
+        inputId="filter-product-type"
+        [options]="typeOptions()"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="workspace.filters().productTypeId ?? null"
+        (ngModelChange)="setFilter('productTypeId', $event)"
+        [showClear]="true"
+        placeholder="Tất cả loại"
+        ariaLabel="Lọc loại sản phẩm"
+        appendTo="body"
+    /></label>
+    <label for="filter-product-fulfillment"
+      >Cách giao<p-select
+        inputId="filter-product-fulfillment"
+        [options]="fulfillmentOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="workspace.filters().fulfillmentKind ?? null"
+        (ngModelChange)="setFilter('fulfillmentKind', $event)"
+        ariaLabel="Lọc cách giao"
+        appendTo="body"
+    /></label>
+    <label for="filter-product-stock"
+      >Khả dụng<p-select
+        inputId="filter-product-stock"
+        [options]="stockOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="workspace.filters().inStock ?? null"
+        (ngModelChange)="setFilter('inStock', $event)"
+        ariaLabel="Lọc khả dụng"
+        appendTo="body"
+    /></label>
+    <div class="catalog-filter-prices">
+      <ui-form-field forId="product-minimum-price" label="Giá từ (VND)">
+        <p-inputnumber
+          inputId="product-minimum-price"
+          [ngModel]="workspace.filters().minimumPrice ?? null"
+          (ngModelChange)="setPrice('minimumPrice', $event)"
+          [min]="0"
+          [step]="1"
+          [useGrouping]="false"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </ui-form-field>
+      <ui-form-field forId="product-maximum-price" label="Đến (VND)">
+        <p-inputnumber
+          inputId="product-maximum-price"
+          [ngModel]="workspace.filters().maximumPrice ?? null"
+          (ngModelChange)="setPrice('maximumPrice', $event)"
+          [min]="0"
+          [step]="1"
+          [useGrouping]="false"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </ui-form-field>
+    </div>
+  </div>
+  <ng-template #footer>
+    <button pButton type="button" severity="secondary" outlined (click)="resetFilters()">
+      Xóa bộ lọc
+    </button>
+    <button pButton type="button" severity="primary" (click)="filtersOpen.set(false)">Xong</button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [header]="
+    bulkTarget() === status.Published ? 'Xuất bản sản phẩm đã chọn' : 'Lưu trữ sản phẩm đã chọn'
+  "
+  [visible]="bulkTarget() !== null"
+  (visibleChange)="!$event && bulkTarget.set(null)"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!workspace.bulkBusy()"
+  [closeOnEscape]="!workspace.bulkBusy()"
+  [style]="{ width: '460px', maxWidth: '94vw' }"
+>
+  <p class="collection-dialog-copy">
+    {{ bulkTarget() === status.Published ? 'Xuất bản' : 'Lưu trữ' }}
+    {{ workspace.selectedIds().size }} sản phẩm? Hệ thống sẽ kiểm tra toàn bộ lựa chọn trước khi cập
+    nhật.
+  </p>
+  @if (workspace.listError()) {
+    <p class="collection-dialog-copy" role="alert">{{ workspace.listError() }}</p>
+  }
+  <ng-template #footer>
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      outlined
+      [disabled]="workspace.bulkBusy()"
+      (click)="bulkTarget.set(null)"
+    >
+      Hủy
+    </button>
+    <button
+      pButton
+      type="button"
+      severity="primary"
+      [disabled]="workspace.bulkBusy()"
+      (click)="confirmBulk()"
+    >
+      {{ workspace.bulkBusy() ? 'Đang cập nhật…' : 'Xác nhận' }}
+    </button>
+  </ng-template>
+</p-dialog>

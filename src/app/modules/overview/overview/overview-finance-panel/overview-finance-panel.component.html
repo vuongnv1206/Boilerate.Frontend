@@ -1,0 +1,215 @@
+<section
+  class="overview-section"
+  aria-labelledby="overview-finance-title"
+  [attr.aria-busy]="section().loading"
+>
+  <div class="overview-section-heading">
+    <div>
+      <h2 id="overview-finance-title">Thu tiền</h2>
+      <p>Theo phiếu nhận tiền và hoàn tiền đã ghi nhận, tính theo ngày Việt Nam.</p>
+    </div>
+    <button
+      pButton
+      severity="secondary"
+      text
+      type="button"
+      aria-label="Tải lại số liệu thu tiền"
+      [disabled]="section().loading"
+      (click)="requestReload()"
+    >
+      <ui-icon name="clock" [size]="15" /> Tải lại
+    </button>
+  </div>
+  <div class="overview-filters">
+    <div class="overview-filter">
+      <label for="overview-range">Khoảng ngày báo cáo</label
+      ><p-select
+        inputId="overview-range"
+        [options]="rangeOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="preset()"
+        (ngModelChange)="setPreset($event)"
+        appendTo="body"
+      />
+    </div>
+    <div class="overview-filter">
+      <label for="overview-from">Từ ngày</label
+      ><p-datepicker
+        inputId="overview-from"
+        [ngModel]="fromDraft()"
+        (ngModelChange)="setFromDate($event)"
+        [disabled]="preset() !== 'custom'"
+        [maxDate]="maxDate()"
+        [showIcon]="true"
+        iconDisplay="input"
+        [readonlyInput]="true"
+        dateFormat="dd/mm/yy"
+        appendTo="body"
+      />
+    </div>
+    <div class="overview-filter">
+      <label for="overview-to">Đến ngày</label
+      ><p-datepicker
+        inputId="overview-to"
+        [ngModel]="toDraft()"
+        (ngModelChange)="setToDate($event)"
+        [disabled]="preset() !== 'custom'"
+        [maxDate]="maxDate()"
+        [showIcon]="true"
+        iconDisplay="input"
+        [readonlyInput]="true"
+        dateFormat="dd/mm/yy"
+        appendTo="body"
+      />
+    </div>
+    @if (preset() === 'custom') {
+      <button
+        pButton
+        severity="secondary"
+        outlined
+        type="button"
+        [disabled]="!!rangeError()"
+        (click)="applyDates()"
+      >
+        Áp dụng ngày
+      </button>
+    }
+  </div>
+  @if (preset() === 'custom' && rangeError()) {
+    <p class="overview-validation" role="alert">{{ rangeError() }}</p>
+  }
+  <p class="overview-caption">
+    Tối đa 90 ngày. Thu ròng có thể âm khi hoàn tiền cho khoản đã nhận ở kỳ trước.
+  </p>
+  @if (section().error) {
+    <div class="overview-error" role="alert">
+      <p>{{ section().error }}</p>
+      <button pButton severity="secondary" outlined type="button" (click)="requestReload()">
+        Thử lại số liệu thu tiền
+      </button>
+    </div>
+  }
+  @if (section().loading && !section().data) {
+    <ui-content-state kind="loading" title="Đang tải số liệu thu tiền" />
+  }
+  @if (section().data; as finance) {
+    @if (finance.received === '0' && finance.refunded === '0') {
+      <p class="overview-caption" role="status">
+        Không phát sinh nhận hoặc hoàn tiền trong khoảng ngày này.
+      </p>
+    }
+    <dl class="overview-money">
+      <div>
+        <dt>Đã nhận</dt>
+        <dd data-testid="overview-received">{{ money(finance.received) }}</dd>
+      </div>
+      <div>
+        <dt>Đã hoàn</dt>
+        <dd data-testid="overview-refunded">{{ money(finance.refunded) }}</dd>
+      </div>
+      <div>
+        <dt>Thu ròng</dt>
+        <dd data-testid="overview-net" [class.negative]="finance.net.startsWith('-')">
+          {{ money(finance.net) }}
+        </dd>
+      </div>
+    </dl>
+    <figure class="overview-finance-chart">
+      <figcaption>
+        <strong>Biến động theo ngày</strong
+        ><span
+          >{{ finance.from + 'T00:00:00Z' | date: 'dd/MM/yyyy' : 'UTC' }} –
+          {{ finance.to + 'T00:00:00Z' | date: 'dd/MM/yyyy' : 'UTC' }}</span
+        >
+      </figcaption>
+      <div class="overview-chart-legend">
+        <span class="received">Đã nhận</span><span class="refunded">Đã hoàn</span
+        ><span class="net">Thu ròng</span>
+      </div>
+      <svg
+        viewBox="0 0 960 245"
+        role="img"
+        aria-labelledby="overview-chart-title overview-chart-desc"
+      >
+        <title id="overview-chart-title">Tiền đã nhận, đã hoàn và thu ròng theo ngày</title>
+        <desc id="overview-chart-desc">
+          Số liệu đầy đủ có trong bảng theo ngày bên dưới biểu đồ.
+        </desc>
+        <line
+          x1="30"
+          x2="930"
+          [attr.y1]="chart().zeroY"
+          [attr.y2]="chart().zeroY"
+          class="overview-chart-axis"
+        />
+        @for (bar of chart().bars; track bar.date) {
+          <g>
+            <title>{{ bar.label }}</title>
+            <rect
+              class="overview-chart-received"
+              [attr.x]="bar.receivedX"
+              [attr.y]="bar.receivedY"
+              [attr.width]="bar.width"
+              [attr.height]="bar.receivedHeight"
+            />
+            <rect
+              class="overview-chart-refunded"
+              [attr.x]="bar.refundedX"
+              [attr.y]="bar.refundedY"
+              [attr.width]="bar.width"
+              [attr.height]="bar.refundedHeight"
+            />
+            @if (bar.showCaption) {
+              <text [attr.x]="bar.captionX" y="232" text-anchor="middle">
+                {{ bar.caption }}
+              </text>
+            }
+          </g>
+        }
+        <polyline [attr.points]="chart().netPoints" class="overview-chart-net" />
+      </svg>
+    </figure>
+    <button
+      pButton
+      severity="secondary"
+      outlined
+      type="button"
+      [attr.aria-expanded]="showDailyData()"
+      aria-controls="overview-daily-data"
+      (click)="toggleDailyData()"
+    >
+      {{ showDailyData() ? 'Ẩn bảng số liệu theo ngày' : 'Hiện bảng số liệu theo ngày' }}
+    </button>
+    @if (showDailyData()) {
+      <div
+        id="overview-daily-data"
+        class="overview-table-region overview-daily-data"
+        role="region"
+        aria-label="Số liệu thu tiền theo ngày"
+        tabindex="0"
+      >
+        <p-table [value]="financeDays()" tableStyleClass="content-table"
+          ><ng-template #header
+            ><tr>
+              <th scope="col">Ngày</th>
+              <th scope="col" class="overview-number">Đã nhận</th>
+              <th scope="col" class="overview-number">Đã hoàn</th>
+              <th scope="col" class="overview-number">Thu ròng</th>
+            </tr></ng-template
+          ><ng-template #body let-day
+            ><tr>
+              <td>{{ day.date + 'T00:00:00Z' | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+              <td class="overview-number">{{ money(day.received) }}</td>
+              <td class="overview-number">{{ money(day.refunded) }}</td>
+              <td class="overview-number">{{ money(day.net) }}</td>
+            </tr></ng-template
+          ></p-table
+        >
+      </div>
+    }
+    <p class="overview-updated">
+      Cập nhật {{ finance.generatedAtUtc | date: 'HH:mm:ss dd/MM/yyyy' : '+0700' }} · giờ Việt Nam
+    </p>
+  }
+</section>

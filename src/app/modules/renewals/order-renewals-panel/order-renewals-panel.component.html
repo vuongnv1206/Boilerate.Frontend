@@ -1,0 +1,63 @@
+<section class="order-card collapsed-section">
+  <div>
+    <span class="eyebrow">Gia hạn thủ công</span>
+    <h2>Gia hạn</h2>
+    @if (canViewRenewals()) {
+      <p>Yêu cầu gia hạn được xử lý trong hàng chờ riêng, có bước nhận xử lý và xác minh.</p>
+      <div class="after-sales-actions">
+        <a pButton severity="secondary" outlined [routerLink]="['/admin/renewals']">
+          Mở hàng chờ gia hạn
+        </a>
+        @if (canProvision()) {
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            outlined
+            [disabled]="busy()"
+            (click)="provision()"
+          >
+            {{ working() ? 'Đang khởi tạo…' : 'Khởi tạo yêu cầu gia hạn' }}
+          </button>
+        }
+      </div>
+    } @else if (canProvision()) {
+      <p>Khởi tạo yêu cầu gia hạn cho các dòng dịch vụ thủ công của đơn hàng đã thanh toán.</p>
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        outlined
+        [disabled]="busy()"
+        (click)="provision()"
+      >
+        {{ working() ? 'Đang khởi tạo…' : 'Khởi tạo yêu cầu gia hạn' }}
+      </button>
+    } @else {
+      <p>Tài khoản của bạn chưa được cấp quyền xem yêu cầu gia hạn.</p>
+    }
+    @if (errorMessage()) {
+      <p class="order-form-error" role="alert">{{ errorMessage() }}</p>
+    }
+    @if (provisionedRenewals().length > 0) {
+      <ul class="shipment-lines">
+        @for (item of provisionedRenewals(); track item.id) {
+          <li>
+            <span>
+              @if (canViewRenewals()) {
+                <a [routerLink]="['/admin/renewals', item.id]">{{ item.name }}</a>
+              } @else {
+                {{ item.name }}
+              }
+              · {{ item.sku }}
+            </span>
+            <ui-status-badge [tone]="statusTone(item.status)">
+              {{ statusLabels[item.status] }}
+            </ui-status-badge>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+  <ui-icon name="chevron-right" [size]="16" />
+</section>

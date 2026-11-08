@@ -3,8 +3,8 @@ import type {
   OverviewFinance,
   OverviewStockItem,
   OverviewWork,
-} from '../../src/app/models/admin-overview.dto';
-import { ProductFulfillmentKind } from '../../src/app/models/order.dto';
+} from '../../src/app/modules/overview/models/overview.dto';
+import { ProductFulfillmentKind } from '../../src/app/modules/ordering/models/order.dto';
 import { ORDER_ID } from './orders-api';
 import { PENDING_RENEWAL_ID, RENEWAL_ID } from './renewals-api';
 

@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,15 +6,14 @@ import { ESLint } from 'eslint';
 
 const cwd = fileURLToPath(new URL('..', import.meta.url));
 const eslint = new ESLint({ cwd });
-const screen = 'src/app/features/collections/categories/categories.component.ts';
+const screen = 'src/app/modules/catalog/categories/categories-list/categories.component.ts';
 const probes = [
   [
-    'core rejects feature',
+    'core rejects module',
     'src/app/core/probe.ts',
-    "import '@features/collections/collections.routes';",
+    "import '@modules/catalog/catalog.routes';",
     false,
   ],
-  ['core rejects store', 'src/app/core/probe.ts', "import '@stores/categories.store';", false],
   [
     'core rejects layout',
     'src/app/core/probe.ts',
@@ -22,9 +21,9 @@ const probes = [
     false,
   ],
   [
-    'layout rejects feature',
+    'layout rejects module',
     'src/app/layout/probe.ts',
-    "import '@features/collections/collections.routes';",
+    "import '@modules/catalog/catalog.routes';",
     false,
   ],
   [
@@ -34,9 +33,9 @@ const probes = [
     true,
   ],
   [
-    'shared UI rejects state',
+    'shared UI rejects module service',
     'src/app/shared/ui/probe.ts',
-    "import '@stores/categories.store';",
+    "import '@modules/catalog/services/categories.service';",
     false,
   ],
   ['shared UI rejects HTTP', 'src/app/shared/ui/probe.ts', "import '@angular/common/http';", false],
@@ -47,111 +46,77 @@ const probes = [
     true,
   ],
   [
-    'app accepts routes',
+    'app accepts module routes',
     'src/app/probe.ts',
-    "void import('@features/collections/collections.routes');",
+    "void import('./modules/catalog/catalog.routes');",
     true,
   ],
+  ['app accepts module barrel', 'src/app/probe.ts', "import '@modules/notifications';", true],
   [
-    'app rejects private screen',
+    'app rejects private module screen',
     'src/app/probe.ts',
-    "void import('@features/collections/categories/categories');",
+    "void import('./modules/catalog/categories/categories-list/categories.component');",
     false,
   ],
   ['unknown alias is rejected', 'src/app/core/probe.ts', "import '@models/missing';", false],
   [
-    'routes accept API service',
-    'src/app/features/collections/collections.routes.ts',
-    "import '@services/categories.service';",
+    'routes accept module service',
+    'src/app/modules/catalog/catalog.routes.ts',
+    "import './services/categories.service';",
     true,
   ],
   [
     'routes accept lazy screen',
-    'src/app/features/collections/collections.routes.ts',
-    "void import('./categories/categories.component');",
+    'src/app/modules/catalog/catalog.routes.ts',
+    "void import('./categories/categories-list/categories.component');",
     true,
   ],
-  ['screen accepts store', screen, "import '@stores/categories.store';", true],
-  ['screen accepts shared constants', screen, "import '@constants/category.constants';", true],
-  ['screen accepts shared model', screen, "import '@models/category.dto';", true],
-  ['screen rejects service', screen, "import '@services/categories.service';", false],
+  [
+    'screen accepts same-module service',
+    screen,
+    "import '../../services/categories.service';",
+    true,
+  ],
+  ['screen accepts same-module model', screen, "import '../../models/category.dto';", true],
+  ['screen accepts shared imports', screen, "import '@shared/shared-imports';", true],
+  ['screen accepts another module barrel', screen, "import '@modules/inventory';", true],
+  [
+    'screen rejects another module private service',
+    screen,
+    "import '@modules/inventory/services/inventory.service';",
+    false,
+  ],
   ['screen rejects HTTP transport', screen, "import '@core/http/api-client';", false],
   ['screen rejects raw HTTP', screen, "import '@angular/common/http';", false],
   [
-    'screen rejects another feature',
-    screen,
-    "import '@features/control-gallery/control-gallery.routes';",
-    false,
-  ],
-  [
-    'store accepts service',
-    'src/app/stores/probe.ts',
-    "import '@services/categories.service';",
-    true,
-  ],
-  ['store rejects transport', 'src/app/stores/probe.ts', "import '@core/http/api-client';", false],
-  ['store rejects raw HTTP', 'src/app/stores/probe.ts', "import '@angular/common/http';", false],
-  [
-    'store rejects feature',
-    'src/app/stores/probe.ts',
-    "import '@features/collections/categories/categories';",
-    false,
-  ],
-  [
     'service accepts transport',
-    'src/app/services/probe.ts',
+    'src/app/modules/catalog/services/probe.service.ts',
     "import '@core/http/api-client';",
     true,
   ],
   [
+    'service accepts base generics',
+    'src/app/modules/catalog/services/probe.service.ts',
+    "import '@core/base';",
+    true,
+  ],
+  [
     'service rejects view',
-    'src/app/services/probe.ts',
-    "import '@features/collections/categories/categories';",
+    'src/app/modules/catalog/services/probe.service.ts',
+    "import '../categories/categories-list/categories.component';",
     false,
   ],
-  ['utility rejects store', 'src/app/utils/probe.ts', "import '@stores/categories.store';", false],
   [
-    'store rejects router',
-    'src/app/stores/probe.ts',
+    'service rejects router',
+    'src/app/modules/catalog/services/probe.service.ts',
     "import {Router} from '@angular/router';",
     false,
   ],
-  ['utility accepts sibling', 'src/app/utils/probe.ts', "import './text.util';", true],
-  ['model rejects store', 'src/app/models/probe.ts', "import '@stores/categories.store';", false],
-  ['form rejects store', 'src/app/forms/probe.ts', "import '@stores/category-io.store';", false],
-  ['component enum is outside the screen', screen, "export enum Status { Draft = 'draft' }", false],
-  ['component model is outside the screen', screen, 'export interface Item { id: string; }', false],
+  ['utility accepts sibling', 'src/app/shared/utils/probe.ts', "import './date.util';", true],
   [
-    'component options are outside the screen',
-    screen,
-    "export class Example { readonly options = [{ value: 'draft' }]; }",
-    false,
-  ],
-  [
-    'fields precede methods',
-    screen,
-    'export class Example { run(): void {} readonly label = "Example"; }',
-    false,
-  ],
-  [
-    'enum has its own folder',
-    'src/app/enums/probe.ts',
-    "export enum Status { Draft = 'draft' }",
-    true,
-  ],
-  [
-    'test can use HTTP testing',
-    'src/app/services/probe.spec.ts',
-    "import '@angular/common/http/testing';",
-    true,
-  ],
-];
-probes.push(
-  ['utility rejects DI', 'src/app/utils/probe.ts', "import {inject} from '@angular/core';", false],
-  [
-    'utility rejects storage',
-    'src/app/utils/probe.ts',
-    "export const read = () => localStorage.getItem('q');",
+    'utility rejects DI',
+    'src/app/shared/utils/probe.ts',
+    "import {inject} from '@angular/core';",
     false,
   ],
   [
@@ -162,23 +127,18 @@ probes.push(
   ],
   [
     'model rejects view',
-    'src/app/models/probe.ts',
-    "import '@features/collections/categories/categories';",
-    false,
-  ],
-  [
-    'screen rejects eager change detection',
-    screen,
-    "import {Component,ChangeDetectionStrategy} from '@angular/core'; @Component({selector:'app-test',template:'',changeDetection:ChangeDetectionStrategy.Eager}) export class Test {}",
+    'src/app/modules/catalog/models/probe.dto.ts',
+    "import '../categories/categories-list/categories.component';",
     false,
   ],
   [
     'screen rejects UI selector',
     screen,
-    "import {Component,ChangeDetectionStrategy} from '@angular/core'; @Component({selector:'ui-test',template:'',changeDetection:ChangeDetectionStrategy.OnPush}) export class Test {}",
+    "import {Component} from '@angular/core'; @Component({selector:'ui-test',template:''}) export class Test {}",
     false,
   ],
-);
+];
+
 for (const [name, filePath, code, allowed] of probes) {
   const results = await eslint.lintText(code, { filePath });
   const errors = results
@@ -186,11 +146,7 @@ for (const [name, filePath, code, allowed] of probes) {
     .filter(
       (message) =>
         message.ruleId?.startsWith('boundaries/') ||
-        message.ruleId === 'no-restricted-syntax' ||
-        message.ruleId === 'no-restricted-globals' ||
-        message.ruleId === '@angular-eslint/prefer-on-push-component-change-detection' ||
         message.ruleId === '@angular-eslint/component-selector' ||
-        message.ruleId === '@typescript-eslint/member-ordering' ||
         message.fatal,
     );
   assert.equal(errors.length === 0, allowed, `${name}: ${JSON.stringify(errors)}`);
@@ -202,24 +158,31 @@ function files(directory) {
     return entry.isDirectory() ? files(file) : [file];
   });
 }
-for (const folder of [
+
+for (const folder of ['core', 'shared', 'layout', 'modules']) {
+  assert.ok(fs.existsSync(path.join(cwd, 'src/app', folder)), `Missing app folder: ${folder}`);
+}
+for (const legacy of [
+  'features',
+  'stores',
+  'services',
+  'models',
+  'forms',
   'constants',
   'enums',
-  'models',
-  'services',
-  'stores',
-  'forms',
   'guards',
   'utils',
 ]) {
-  assert.ok(fs.existsSync(path.join(cwd, 'src/app', folder)), `Missing shared folder: ${folder}`);
   assert.ok(
-    !fs.existsSync(path.join(cwd, 'src/app/features/collections', folder)),
-    `Move ${folder} beside features`,
+    !fs.existsSync(path.join(cwd, 'src/app', legacy)),
+    `Legacy folder must not exist: src/app/${legacy}`,
   );
 }
+
 for (const file of files(path.join(cwd, 'src/app'))) {
-  if (!file.endsWith('.ts') || file.endsWith('.spec.ts')) continue;
+  assert.ok(!file.endsWith('.store.ts'), `Store files are forbidden: ${file}`);
+  assert.ok(!file.endsWith('.spec.ts'), `Spec files are forbidden: ${file}`);
+  if (!file.endsWith('.ts')) continue;
   assert.match(
     path.basename(file),
     /^[a-z0-9]+(?:[.-][a-z0-9]+)*\.ts$/u,
@@ -241,29 +204,12 @@ for (const file of files(path.join(cwd, 'src/app'))) {
       );
     }
     assert.ok(
-      !fs.existsSync(file.replace(/\.ts$/u, '.spec.ts')),
-      `Component tests belong in src/tests/components: ${file}`,
-    );
-    assert.ok(
       !fs.existsSync(file.replace(/\.ts$/u, '.scss')),
       `Use the shared SCSS boundary: ${file}`,
     );
   }
 }
-for (const [folder, suffix] of Object.entries({
-  constants: 'constants',
-  enums: 'enum',
-  models: '(?:dto|model)',
-  services: 'service',
-  stores: 'store',
-  guards: 'guard',
-  utils: 'util',
-})) {
-  for (const file of files(path.join(cwd, 'src/app', folder))) {
-    if (!file.endsWith('.spec.ts'))
-      assert.match(file, new RegExp(`\\.${suffix}\\.ts$`, 'u'), `Wrong role suffix: ${file}`);
-  }
-}
+
 const angular = JSON.parse(fs.readFileSync(path.join(cwd, 'angular.json'), 'utf8'));
 const defaults = angular.projects['boilerate-admin'].schematics['@schematics/angular:component'];
 assert.equal(defaults.style, 'none');

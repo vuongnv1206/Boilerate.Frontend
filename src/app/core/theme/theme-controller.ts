@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Inject, Injectable, computed, signal } from '@angular/core';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';
@@ -11,8 +11,6 @@ export function isThemeMode(value: unknown): value is ThemeMode {
 
 @Injectable({ providedIn: 'root' })
 export class ThemeController {
-  private readonly document = inject(DOCUMENT);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly preference = signal<ThemeMode>('system');
   private readonly systemDark = signal(false);
   private initialized = false;
@@ -25,6 +23,11 @@ export class ThemeController {
         : 'light'
       : (this.preference() as ResolvedTheme),
   );
+
+  constructor(
+    @Inject(DOCUMENT) private readonly document: Document,
+    private readonly destroyRef: DestroyRef,
+  ) {}
 
   initialize(): void {
     if (this.initialized) return;

@@ -1,3 +1,4 @@
+<app-admin-styles />
 <a class="skip-link" [href]="currentUrl() + '#workspace-main'" (click)="skipNavigation($event)"
   >Bỏ qua điều hướng</a
 >
@@ -11,6 +12,29 @@
   <nav class="icon-rail" aria-label="Không gian làm việc" [attr.inert]="mobileOpen() ? '' : null">
     <a class="brand-mark" routerLink="/admin" aria-label="Boilerate — trang quản trị">b</a>
     <div class="rail-bottom">
+      @if (notificationBadge) {
+        <a
+          class="rail-button"
+          routerLink="/admin/notifications"
+          routerLinkActive="active"
+          title="Thông báo"
+          aria-label="Thông báo"
+        >
+          <ui-icon name="bell" [size]="18" />
+          @if (unreadCount() > 0) {
+            <span class="unread-dot-badge">{{ unreadCount() > 99 ? '99+' : unreadCount() }}</span>
+          }
+        </a>
+      }
+      <a
+        class="rail-button"
+        routerLink="/admin/account"
+        routerLinkActive="active"
+        title="Hồ sơ cá nhân"
+        aria-label="Hồ sơ cá nhân"
+      >
+        <ui-icon name="user" [size]="18" />
+      </a>
       <button
         class="rail-button"
         (click)="openHelp()"
@@ -156,6 +180,9 @@
       }
       <div class="nav-heading"><span>Công cụ</span></div>
       <nav class="collection-nav" aria-label="Công cụ workspace">
+        <a routerLink="/admin/account" routerLinkActive="selected"
+          ><ui-icon name="user" [size]="16" /><span>Tài khoản cá nhân</span></a
+        >
         <a routerLink="/admin/controls" routerLinkActive="selected"
           ><ui-icon name="grid" [size]="16" /><span>Bộ giao diện</span
           ><span class="new-tag">UI</span></a

@@ -12,5 +12,4 @@
 @layer app {
   @include meta.load-css('styles/primeng');
   @include meta.load-css('styles/base/controls');
-  @include meta.load-css('styles/admin');
 }

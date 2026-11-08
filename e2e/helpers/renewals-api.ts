@@ -4,7 +4,7 @@ import {
   RenewalHistoryDto,
   RenewalOutcome,
   RenewalStatus,
-} from '../../src/app/models/renewal.dto';
+} from '../../src/app/modules/renewals/models/renewal.dto';
 
 export const RENEWAL_ID = '60000000-0000-0000-0000-000000000001';
 export const SECOND_RENEWAL_ID = '60000000-0000-0000-0000-000000000002';

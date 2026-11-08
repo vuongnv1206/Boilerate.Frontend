@@ -1,0 +1,627 @@
+<div class="editor-page">
+  <header class="page-heading">
+    <div>
+      <h1>Kho hàng &amp; Nội dung số</h1>
+      <p class="page-subtitle">
+        Theo dõi tồn kho vật lý, lịch sử điều chỉnh và vận hành kho mã/tài khoản số theo biến thể.
+      </p>
+    </div>
+    @if (canInitialize()) {
+      <div class="heading-actions">
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          [disabled]="initializing()"
+          (click)="initializeMainWarehouse()"
+        >
+          <ui-icon name="database" [size]="15" />
+          <span>{{ initializing() ? 'Đang khởi tạo…' : 'Khởi tạo kho MAIN' }}</span>
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (canPhysicalView()) {
+    <section class="editor-card" aria-labelledby="physical-warehouse-heading">
+      <div class="section-header">
+        <div>
+          <h2 id="physical-warehouse-heading">Kho vật lý</h2>
+          <p class="section-description">
+            Số lượng tồn thực tế, số lượng đang giữ cho đơn và số lượng khả dụng theo kho.
+          </p>
+        </div>
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          size="small"
+          [disabled]="balancesLoading()"
+          (click)="loadBalances(balancesPage()?.page ?? 1)"
+        >
+          <ui-icon name="refresh" [size]="14" />
+          <span>Làm mới</span>
+        </button>
+      </div>
+
+      <div class="toolbar-row">
+        <div class="field">
+          <label for="inventory-search-input" class="field-label">Tìm theo mã biến thể / kho</label>
+          <input
+            pInputText
+            id="inventory-search-input"
+            type="search"
+            [ngModel]="searchKeyword()"
+            (ngModelChange)="searchKeyword.set($event)"
+            (keydown.enter)="applyBalanceSearch()"
+            placeholder="Nhập UUID biến thể hoặc mã kho…"
+          />
+        </div>
+        <div class="field">
+          <label for="inventory-stock-filter" class="field-label">Mức tồn</label>
+          <p-select
+            inputId="inventory-stock-filter"
+            [options]="stockFilterOptions"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="stockFilter()"
+            (ngModelChange)="stockFilter.set($event)"
+          />
+        </div>
+        <div class="toolbar-actions">
+          <button
+            pButton
+            type="button"
+            severity="primary"
+            [disabled]="balancesLoading()"
+            (click)="applyBalanceSearch()"
+          >
+            <ui-icon name="search" [size]="14" />
+            <span>Tra cứu</span>
+          </button>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            outlined
+            [disabled]="balancesLoading()"
+            (click)="resetBalanceFilters()"
+          >
+            <span>Đặt lại</span>
+          </button>
+        </div>
+      </div>
+
+      @if (balancesError()) {
+        <ui-content-state
+          kind="error"
+          title="Không tải được dữ liệu kho"
+          [message]="balancesError()"
+        >
+          <button pButton type="button" severity="secondary" outlined (click)="loadBalances(1)">
+            Thử lại
+          </button>
+        </ui-content-state>
+      } @else if (balancesLoading() && !balancesPage()) {
+        <ui-content-state kind="loading" title="Đang tải tồn kho…" />
+      } @else {
+        <div class="product-commerce-table">
+          <p-table
+            [value]="filteredBalances()"
+            tableStyleClass="content-table"
+            [tableStyle]="{ 'min-width': '720px' }"
+          >
+            <ng-template #header>
+              <tr>
+                <th>Biến thể (Variant ID)</th>
+                <th>Kho (Location ID)</th>
+                <th>Tồn thực tế</th>
+                <th>Đã giữ</th>
+                <th>Khả dụng</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-row>
+              <tr>
+                <td>
+                  <code>{{ row.variantId }}</code>
+                </td>
+                <td>
+                  <code>{{ row.locationId }}</code>
+                </td>
+                <td>{{ row.onHand }}</td>
+                <td>{{ row.reserved }}</td>
+                <td>
+                  <strong>{{ row.available }}</strong>
+                </td>
+                <td>
+                  <ui-status-badge [tone]="balanceTone(row)">{{
+                    balanceLabel(row)
+                  }}</ui-status-badge>
+                </td>
+                <td>
+                  <div class="product-commerce-actions">
+                    @if (canAdjust()) {
+                      <button
+                        pButton
+                        type="button"
+                        severity="secondary"
+                        outlined
+                        size="small"
+                        (click)="openAdjustDialog(row)"
+                      >
+                        Điều chỉnh
+                      </button>
+                    }
+                    <button
+                      pButton
+                      type="button"
+                      severity="secondary"
+                      outlined
+                      size="small"
+                      (click)="openMovementsDrawer(row)"
+                    >
+                      Lịch sử
+                    </button>
+                    @if (canDigitalView()) {
+                      <button
+                        pButton
+                        type="button"
+                        severity="secondary"
+                        outlined
+                        size="small"
+                        (click)="selectVariantForDigital(row.variantId)"
+                      >
+                        Kho số
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="7">Chưa có bản ghi tồn kho phù hợp với bộ lọc hiện tại.</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+
+        @if (balancesPage(); as page) {
+          <div class="product-commerce-actions">
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              outlined
+              size="small"
+              [disabled]="balancesLoading() || page.page <= 1"
+              (click)="loadBalances(page.page - 1)"
+            >
+              Trước
+            </button>
+            <span>Trang {{ page.page }} · {{ page.total }} bản ghi</span>
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              outlined
+              size="small"
+              [disabled]="balancesLoading() || page.page * page.pageSize >= page.total"
+              (click)="loadBalances(page.page + 1)"
+            >
+              Sau
+            </button>
+          </div>
+        }
+      }
+    </section>
+  }
+
+  @if (canDigitalView()) {
+    <section class="editor-card" aria-labelledby="digital-warehouse-heading">
+      <div class="section-header">
+        <div>
+          <h2 id="digital-warehouse-heading">Kho nội dung số</h2>
+          <p class="section-description">
+            Tra cứu theo Variant ID để kiểm tra số lượng khả dụng, nhập lô mã/tài khoản và mở xem
+            nội dung bảo mật.
+          </p>
+        </div>
+        @if (activeVariantId() && canDigitalImport()) {
+          <button
+            pButton
+            type="button"
+            severity="primary"
+            size="small"
+            [disabled]="digitalWorking()"
+            (click)="openImportDialog()"
+          >
+            <ui-icon name="plus" [size]="14" />
+            <span>Nhập lô nội dung số</span>
+          </button>
+        }
+      </div>
+
+      <div class="toolbar-row">
+        <div class="field">
+          <label for="digital-variant-lookup" class="field-label">Mã biến thể (Variant ID)</label>
+          <input
+            pInputText
+            id="digital-variant-lookup"
+            type="text"
+            [ngModel]="variantLookupInput()"
+            (ngModelChange)="variantLookupInput.set($event)"
+            (keydown.enter)="lookupDigitalVariant(1)"
+            placeholder="Nhập Variant ID cần tra cứu…"
+          />
+        </div>
+        @if (loadedVariantOptions().length > 0) {
+          <div class="field">
+            <label for="digital-quick-select" class="field-label">Chọn nhanh từ danh sách</label>
+            <p-select
+              inputId="digital-quick-select"
+              [options]="loadedVariantOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Chọn biến thể đã tải…"
+              [ngModel]="activeVariantId() || null"
+              (ngModelChange)="selectVariantForDigital($event)"
+            />
+          </div>
+        }
+        <div class="toolbar-actions">
+          <button
+            pButton
+            type="button"
+            severity="primary"
+            [disabled]="digitalLoading() || !variantLookupInput().trim()"
+            (click)="lookupDigitalVariant(1)"
+          >
+            <ui-icon name="search" [size]="14" />
+            <span>Tra cứu kho số</span>
+          </button>
+        </div>
+      </div>
+
+      @if (digitalError()) {
+        <div class="editor-error" role="alert">
+          <span>{{ digitalError() }}</span>
+        </div>
+      }
+
+      @if (digitalAvailability(); as summary) {
+        <div class="product-commerce-actions" role="status">
+          <ui-status-badge tone="neutral">Tổng: {{ summary.total }}</ui-status-badge>
+          <ui-status-badge tone="success">Sẵn sàng: {{ summary.availableCount }}</ui-status-badge>
+          <ui-status-badge tone="warning"
+            >Ngừng cung cấp: {{ summary.disabledCount }}</ui-status-badge
+          >
+          <ui-status-badge tone="neutral">Đã giữ: {{ summary.reservedCount }}</ui-status-badge>
+          <ui-status-badge tone="muted">Đã giao: {{ summary.deliveredCount }}</ui-status-badge>
+        </div>
+      }
+
+      @if (digitalLoading() && !digitalItemsPage()) {
+        <ui-content-state kind="loading" title="Đang tải kho nội dung số…" />
+      } @else if (digitalItemsPage(); as stockPage) {
+        <div class="product-commerce-table">
+          <p-table
+            [value]="stockPage.items.slice()"
+            tableStyleClass="content-table"
+            [tableStyle]="{ 'min-width': '680px' }"
+          >
+            <ng-template #header>
+              <tr>
+                <th>Mã tham chiếu</th>
+                <th>Trạng thái</th>
+                <th>Nội dung bảo mật</th>
+                <th>Thao tác</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-item>
+              <tr>
+                <td>
+                  <strong>{{ item.reference }}</strong>
+                </td>
+                <td>
+                  <ui-status-badge [tone]="digitalTone(item.state)">{{
+                    stockStateLabels[item.state] ?? 'Không xác định'
+                  }}</ui-status-badge>
+                </td>
+                <td>
+                  <ui-secret-reveal
+                    [label]="item.reference"
+                    [revealLabel]="'Xem nội dung'"
+                    [hideLabel]="'Ẩn nội dung'"
+                    [canReveal]="canDigitalReveal()"
+                    [loading]="revealingItemId() === item.id"
+                    [value]="revealedItemId() === item.id ? revealedSecret() : null"
+                    (revealRequested)="revealItemSecret(item)"
+                    (hideRequested)="hideSecret()"
+                  />
+                </td>
+                <td>
+                  @if (canDigitalUpdate() && item.state <= 2) {
+                    <button
+                      pButton
+                      type="button"
+                      severity="secondary"
+                      outlined
+                      size="small"
+                      [disabled]="digitalWorking()"
+                      (click)="toggleItemAvailability(item)"
+                    >
+                      {{ item.state === 1 ? 'Ngừng cung cấp' : 'Cho phép cung cấp' }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="4">Biến thể này chưa có mục nội dung số nào.</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+
+        <div class="product-commerce-actions">
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            outlined
+            size="small"
+            [disabled]="digitalLoading() || stockPage.page <= 1"
+            (click)="lookupDigitalVariant(stockPage.page - 1)"
+          >
+            Trước
+          </button>
+          <span>Trang {{ stockPage.page }} · {{ stockPage.total }} nội dung</span>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            outlined
+            size="small"
+            [disabled]="digitalLoading() || stockPage.page * stockPage.pageSize >= stockPage.total"
+            (click)="lookupDigitalVariant(stockPage.page + 1)"
+          >
+            Sau
+          </button>
+        </div>
+      } @else {
+        <ui-content-state
+          kind="empty"
+          title="Chưa chọn biến thể"
+          message="Nhập Variant ID hoặc bấm Kho số ở bảng tồn kho để kiểm tra danh sách nội dung số."
+        />
+      }
+    </section>
+  }
+</div>
+
+<p-dialog
+  header="Điều chỉnh tồn kho"
+  [modal]="true"
+  [visible]="adjustDialogOpen()"
+  (visibleChange)="$event ? adjustDialogOpen.set(true) : closeAdjustDialog()"
+  [closable]="!adjusting() && !pendingAdjustment()"
+  [style]="{ width: '30rem', maxWidth: '95vw' }"
+>
+  @if (activeBalance(); as balance) {
+    <p>
+      Biến thể: <code>{{ balance.variantId }}</code>
+    </p>
+    <p>
+      Tồn {{ balance.onHand }} · Đã giữ {{ balance.reserved }} · Bán được {{ balance.available }}
+    </p>
+    @if (adjustError()) {
+      <div class="editor-error" role="alert">
+        <span>{{ adjustError() }}</span>
+      </div>
+    }
+    <form [formGroup]="adjustmentForm" (submit)="$event.preventDefault(); submitAdjustment()">
+      <fieldset [disabled]="adjusting() || !!pendingAdjustment()" class="product-content-fieldset">
+        <div class="field">
+          <label for="workspace-inventory-delta" class="field-label">Số lượng tăng / giảm</label>
+          <p-inputnumber
+            inputId="workspace-inventory-delta"
+            [step]="1"
+            [useGrouping]="false"
+            formControlName="delta"
+          />
+          <ui-field-message>Nhập số dương để nhập kho, số âm để giảm kho.</ui-field-message>
+          <ui-field-message tone="error">{{
+            error(adjustmentForm.controls.delta)
+          }}</ui-field-message>
+        </div>
+        <div class="field">
+          <label for="workspace-inventory-reason" class="field-label">Lý do điều chỉnh</label>
+          <textarea
+            pTextarea
+            id="workspace-inventory-reason"
+            rows="3"
+            formControlName="reason"
+          ></textarea>
+          <ui-field-message tone="error">{{
+            error(adjustmentForm.controls.reason)
+          }}</ui-field-message>
+        </div>
+      </fieldset>
+      @if (pendingAdjustment(); as pending) {
+        <p class="product-commerce-help" role="status">
+          Kết quả chưa rõ. Gửi lại cùng mã thao tác {{ pending.operationId }} để tránh ghi trùng.
+        </p>
+      }
+      <div class="product-commerce-actions">
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          [disabled]="adjusting() || !!pendingAdjustment()"
+          (click)="closeAdjustDialog()"
+        >
+          Hủy
+        </button>
+        <button pButton type="submit" severity="primary" [disabled]="adjusting()">
+          {{ pendingAdjustment() ? 'Gửi lại đúng yêu cầu cũ' : 'Ghi nhận điều chỉnh' }}
+        </button>
+      </div>
+    </form>
+  }
+</p-dialog>
+
+<p-drawer
+  header="Lịch sử biến động tồn kho"
+  position="right"
+  [visible]="movementsDrawerOpen()"
+  (visibleChange)="movementsDrawerOpen.set($event)"
+  [style]="{ width: '38rem', maxWidth: '96vw' }"
+>
+  @if (movementsBalance(); as balance) {
+    <p>
+      Biến thể: <code>{{ balance.variantId }}</code> · Hiện tồn:
+      <strong>{{ balance.onHand }}</strong>
+    </p>
+    @if (movementsError()) {
+      <ui-content-state
+        kind="error"
+        title="Không tải được lịch sử tồn kho"
+        [message]="movementsError()"
+      >
+        <button pButton type="button" severity="secondary" outlined (click)="loadMovementsPage(1)">
+          Thử lại
+        </button>
+      </ui-content-state>
+    } @else if (movementsLoading() && !movementsPage()) {
+      <ui-content-state kind="loading" title="Đang tải lịch sử biến động…" />
+    } @else if (movementsPage(); as ledger) {
+      <div class="product-commerce-table">
+        <p-table [value]="ledger.items.slice()" tableStyleClass="content-table">
+          <ng-template #header>
+            <tr>
+              <th>Thời gian</th>
+              <th>Thay đổi</th>
+              <th>Tồn sau</th>
+              <th>Lý do</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-movement>
+            <tr>
+              <td>{{ movement.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ movement.delta > 0 ? '+' : '' }}{{ movement.delta }}</td>
+              <td>{{ movement.quantityAfter }}</td>
+              <td>{{ movement.reason }}</td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="4">Chưa có biến động tồn kho.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+      <div class="product-commerce-actions">
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          size="small"
+          [disabled]="movementsLoading() || ledger.page <= 1"
+          (click)="loadMovementsPage(ledger.page - 1)"
+        >
+          Trước
+        </button>
+        <span>Trang {{ ledger.page }} · {{ ledger.total }} bản ghi</span>
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          size="small"
+          [disabled]="movementsLoading() || ledger.page * ledger.pageSize >= ledger.total"
+          (click)="loadMovementsPage(ledger.page + 1)"
+        >
+          Sau
+        </button>
+      </div>
+    }
+  }
+</p-drawer>
+
+<p-dialog
+  header="Nhập lô nội dung số"
+  [modal]="true"
+  [visible]="importDialogOpen()"
+  (visibleChange)="$event ? importDialogOpen.set(true) : closeImportDialog()"
+  [closable]="!digitalWorking()"
+  [style]="{ width: '36rem', maxWidth: '95vw' }"
+>
+  <form [formGroup]="digitalImportForm" (submit)="$event.preventDefault(); submitBatchImport()">
+    <fieldset [disabled]="digitalWorking()" class="product-content-fieldset">
+      <p>
+        Biến thể đích: <code>{{ activeVariantId() }}</code>
+      </p>
+      @if (importError()) {
+        <div class="editor-error" role="alert">
+          <span>{{ importError() }}</span>
+        </div>
+      }
+      <div class="field">
+        <label for="digital-import-product-id" class="field-label">Mã sản phẩm (Product ID)</label>
+        <input pInputText id="digital-import-product-id" type="text" formControlName="productId" />
+        <ui-field-message tone="error">{{
+          error(digitalImportForm.controls.productId)
+        }}</ui-field-message>
+      </div>
+      <div class="field">
+        <label for="digital-import-version" class="field-label"
+          >Phiên bản sản phẩm (Product Version)</label
+        >
+        <input pInputText id="digital-import-version" type="text" formControlName="version" />
+        <ui-field-message tone="error">{{
+          error(digitalImportForm.controls.version)
+        }}</ui-field-message>
+      </div>
+      <div class="field">
+        <label for="digital-import-batch" class="field-label">Danh sách mã và nội dung</label>
+        <textarea
+          pTextarea
+          id="digital-import-batch"
+          rows="6"
+          formControlName="batch"
+          placeholder="KEY-001|noi-dung-bi-mat-1&#10;KEY-002|noi-dung-bi-mat-2"
+        ></textarea>
+        <ui-field-message
+          >Mỗi dòng một mục theo mẫu MA_THAM_CHIEU|NOI_DUNG (tối đa 8.000 byte UTF-8 mỗi
+          dòng).</ui-field-message
+        >
+        <ui-field-message tone="error">{{
+          error(digitalImportForm.controls.batch)
+        }}</ui-field-message>
+      </div>
+    </fieldset>
+    <div class="product-commerce-actions">
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        outlined
+        [disabled]="digitalWorking()"
+        (click)="closeImportDialog()"
+      >
+        Hủy
+      </button>
+      <button pButton type="submit" severity="primary" [disabled]="digitalWorking()">
+        {{ digitalWorking() ? 'Đang nhập…' : 'Nhập lô' }}
+      </button>
+    </div>
+  </form>
+</p-dialog>

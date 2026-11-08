@@ -1,0 +1,97 @@
+<section class="wf-media" [attr.aria-label]="heading()" [attr.aria-busy]="mediaService.busy()">
+  <label class="wf-media-label" [for]="uploadId()">{{ heading() }}</label>
+  @if (items().length < limit()) {
+    <label
+      class="wf-media-dropzone"
+      [for]="uploadId()"
+      tabindex="0"
+      (keydown.enter)="fileInput.click()"
+      (dragover)="$event.preventDefault()"
+      (drop)="drop($event)"
+    >
+      <ui-icon name="image" [size]="22" />
+      <strong>{{ mediaService.busy() ? 'Đang tải ảnh…' : 'Kéo ảnh vào đây' }}</strong>
+      <span>hoặc bấm để chọn {{ limit() === 1 ? 'một ảnh' : 'các ảnh' }}</span>
+    </label>
+  }
+  <input
+    #fileInput
+    class="wf-media-file"
+    [id]="uploadId()"
+    type="file"
+    [multiple]="limit() > 1"
+    [accept]="accept"
+    [disabled]="blocked() || !mediaService.canUpload() || items().length >= limit()"
+    (change)="upload($event)"
+  />
+  @if (mediaService.uploadError()) {
+    <p class="field-error" role="alert">{{ mediaService.uploadError() }}</p>
+  }
+  <ol class="wf-media-list" [attr.aria-label]="heading()">
+    @for (item of items(); track item.mediaAssetId; let index = $index) {
+      <li class="wf-media-item">
+        <div class="wf-media-preview">
+          @if (mediaService.url(item.mediaAssetId); as url) {
+            <img [src]="url" [alt]="item.altText || heading()" width="80" height="64" />
+          }
+        </div>
+        <div class="wf-media-actions">
+          <input
+            pInputText
+            type="text"
+            [value]="item.altText || ''"
+            [disabled]="blocked()"
+            [attr.aria-label]="'Mô tả ảnh ' + (index + 1)"
+            placeholder="Mô tả ảnh"
+            (input)="altText(item.mediaAssetId, $event)"
+            maxlength="500"
+          />
+          @if (items().length > 1) {
+            <button
+              pButton
+              severity="secondary"
+              text
+              rounded
+              iconOnly
+              class="wf-icon-button"
+              type="button"
+              [disabled]="blocked() || index === 0"
+              (click)="move(item.mediaAssetId, -1)"
+              aria-label="Đưa ảnh lên trước"
+            >
+              <ui-icon name="arrow-left" [size]="12" />
+            </button>
+            <button
+              pButton
+              severity="secondary"
+              text
+              rounded
+              iconOnly
+              class="wf-icon-button"
+              type="button"
+              [disabled]="blocked() || index === items().length - 1"
+              (click)="move(item.mediaAssetId, 1)"
+              aria-label="Đưa ảnh về sau"
+            >
+              <ui-icon name="arrow-right" [size]="12" />
+            </button>
+          }
+          <button
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
+            class="wf-icon-button"
+            type="button"
+            [disabled]="blocked()"
+            (click)="remove(item.mediaAssetId)"
+            [attr.aria-label]="'Xóa ảnh ' + (index + 1)"
+          >
+            <ui-icon name="trash" [size]="13" />
+          </button>
+        </div>
+      </li>
+    }
+  </ol>
+</section>

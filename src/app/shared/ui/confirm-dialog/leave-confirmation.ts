@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, signal } from '@angular/core';
 
 /** Screen-scoped UI state. Never owns forms, requests or navigation. */
 @Injectable()
@@ -7,8 +7,8 @@ export class LeaveConfirmation {
   private pending: Promise<boolean> | undefined;
   private resolve: ((allowed: boolean) => void) | undefined;
 
-  constructor() {
-    inject(DestroyRef).onDestroy(() => this.answer(false));
+  constructor(destroyRef: DestroyRef) {
+    destroyRef.onDestroy(() => this.answer(false));
   }
 
   request(dirty: boolean, busy: boolean): boolean | Promise<boolean> {

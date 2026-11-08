@@ -1,17 +1,51 @@
 import { Routes } from '@angular/router';
+import { provideStorefrontCart } from '@modules/storefront';
 import { provideWorkspaceNavigation } from './app.providers';
 import { authGuard } from './core/auth/auth.guard';
-import { adminHomeGuard } from '@guards/permission.guard';
+import { adminHomeGuard } from './core/auth/permission.guard';
 
 export const routes: Routes = [
   {
     path: 'login',
-    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
+    loadComponent: () =>
+      import('./layout/auth-shell/auth-shell.component').then((m) => m.AuthShell),
+    loadChildren: () =>
+      import('./modules/identity/identity.routes').then((m) => m.AUTH_PUBLIC_ROUTES),
+  },
+  {
+    path: '',
+    pathMatch: 'full',
+    redirectTo: 'admin',
+  },
+  {
+    path: '',
+    loadComponent: () =>
+      import('./layout/auth-shell/auth-shell.component').then((m) => m.AuthShell),
+    loadChildren: () =>
+      import('./modules/identity/identity.routes').then((m) => m.AUTH_FLOW_ROUTES),
   },
   {
     path: 'shop',
-    loadChildren: () =>
-      import('./features/storefront/storefront.routes').then((m) => m.STOREFRONT_ROUTES),
+    providers: [provideStorefrontCart()],
+    loadComponent: () =>
+      import('./layout/storefront-shell/storefront-shell.component').then((m) => m.StorefrontShell),
+    children: [
+      {
+        path: 'orders',
+        loadChildren: () =>
+          import('./modules/ordering/ordering.routes').then((m) => m.CUSTOMER_ORDER_ROUTES),
+      },
+      {
+        path: 'account',
+        loadChildren: () =>
+          import('./modules/personal/personal.routes').then((m) => m.PERSONAL_ROUTES),
+      },
+      {
+        path: '',
+        loadChildren: () =>
+          import('./modules/storefront/storefront.routes').then((m) => m.STOREFRONT_SHOP_ROUTES),
+      },
+    ],
   },
   {
     path: 'admin',
@@ -23,65 +57,79 @@ export const routes: Routes = [
       {
         path: 'overview',
         loadChildren: () =>
-          import('./features/overview/overview.routes').then((m) => m.OVERVIEW_ROUTES),
+          import('./modules/overview/overview.routes').then((m) => m.OVERVIEW_ROUTES),
       },
       {
         path: 'discounts',
         loadChildren: () =>
-          import('./features/discounts/discounts.routes').then((m) => m.DISCOUNT_ROUTES),
+          import('./modules/ordering/ordering.routes').then((m) => m.DISCOUNT_ROUTES),
       },
       {
         path: 'storefront-settings',
         loadChildren: () =>
-          import('./features/storefront-settings/storefront-settings.routes').then(
+          import('./modules/storefront/storefront.routes').then(
             (m) => m.STOREFRONT_SETTINGS_ROUTES,
           ),
+      },
+      {
+        path: 'inventory',
+        loadChildren: () =>
+          import('./modules/inventory/inventory.routes').then((m) => m.INVENTORY_ROUTES),
+      },
+      {
+        path: 'outbox',
+        loadChildren: () => import('./modules/outbox/outbox.routes').then((m) => m.OUTBOX_ROUTES),
+      },
+      {
+        path: 'notifications',
+        loadChildren: () =>
+          import('./modules/notifications/notifications.routes').then(
+            (m) => m.NOTIFICATIONS_ROUTES,
+          ),
+      },
+      {
+        path: 'account',
+        loadChildren: () =>
+          import('./modules/personal/personal.routes').then((m) => m.PERSONAL_ROUTES),
       },
       {
         path: '',
         pathMatch: 'full',
         canActivate: [adminHomeGuard],
         loadChildren: () =>
-          import('./features/access-denied/access-denied.routes').then(
-            (m) => m.ACCESS_DENIED_ROUTES,
-          ),
+          import('./modules/identity/identity.routes').then((m) => m.ACCESS_DENIED_ROUTES),
       },
       {
         path: 'system',
-        loadChildren: () => import('./features/system/system.routes').then((m) => m.SYSTEM_ROUTES),
+        loadChildren: () =>
+          import('./modules/identity/identity.routes').then((m) => m.SYSTEM_ROUTES),
       },
       {
         path: 'controls',
         loadChildren: () =>
-          import('./features/control-gallery/control-gallery.routes').then(
-            (module) => module.CONTROL_GALLERY_ROUTES,
-          ),
+          import('./modules/ui-gallery/ui-gallery.routes').then((m) => m.UI_GALLERY_ROUTES),
       },
       {
         path: 'collections',
         loadChildren: () =>
-          import('./features/collections/collections.routes').then(
-            (module) => module.COLLECTIONS_ROUTES,
-          ),
+          import('./modules/catalog/catalog.routes').then((m) => m.CATALOG_ROUTES),
       },
       {
         path: 'renewals',
         loadChildren: () =>
-          import('./features/renewals/renewals.routes').then((m) => m.RENEWAL_ROUTES),
+          import('./modules/renewals/renewals.routes').then((m) => m.RENEWAL_ROUTES),
       },
       {
         path: '',
-        loadChildren: () => import('./features/orders/orders.routes').then((m) => m.ORDER_ROUTES),
+        loadChildren: () =>
+          import('./modules/ordering/ordering.routes').then((m) => m.ADMIN_ORDER_ROUTES),
       },
       {
         path: 'forbidden',
         loadChildren: () =>
-          import('./features/access-denied/access-denied.routes').then(
-            (m) => m.ACCESS_DENIED_ROUTES,
-          ),
+          import('./modules/identity/identity.routes').then((m) => m.ACCESS_DENIED_ROUTES),
       },
     ],
   },
-  { path: '', pathMatch: 'full', redirectTo: 'admin' },
   { path: '**', redirectTo: 'admin' },
 ];

@@ -1,8 +1,8 @@
 import { Provider, computed, inject } from '@angular/core';
 import { AuthSession } from './core/auth/auth-session';
+import { COLLECTION_LINKS, SYSTEM_LINKS } from './core/navigation/navigation.constants';
+import { hasNavigationPermission } from './core/navigation/navigation-permission';
 import { WORKSPACE_NAVIGATION } from './core/navigation/workspace-navigation';
-import { COLLECTION_LINKS, SYSTEM_LINKS } from '@constants/navigation.constants';
-import { hasNavigationPermission } from '@core/navigation/navigation-permission';
 
 export function provideWorkspaceNavigation(): Provider[] {
   return [

@@ -1,13 +1,13 @@
 import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, APIResponse, Locator, Page } from '@playwright/test';
-import type { ProductDto } from '../src/app/models/product.dto';
+import type { ProductDto } from '../src/app/modules/catalog/models/product.dto';
 import type {
   CatalogPage,
   DigitalStock,
   InventoryBalance,
   InventoryMovement,
-} from '../src/app/models/inventory.dto';
+} from '../src/app/modules/inventory/models/inventory.dto';
 import { addOption } from '../e2e/helpers/product-editor';
 import { test, expect, signIn } from './fixtures';
 

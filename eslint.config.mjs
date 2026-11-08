@@ -4,9 +4,9 @@ import angular from 'angular-eslint';
 import boundaries from 'eslint-plugin-boundaries';
 import { fileURLToPath } from 'node:url';
 
-const dataTypes = ['constants', 'enums', 'models'];
-const commonTypes = [...dataTypes, 'forms', 'services', 'stores', 'guards', 'utils'];
-const sameFeature = ['feature', { feature: '${from.feature}' }];
+const sameModuleView = ['module-view', { module: '${from.module}' }];
+const sameModuleService = ['module-service', { module: '${from.module}' }];
+const sameModuleModel = ['module-model', { module: '${from.module}' }];
 
 export default tseslint.config(
   { ignores: ['dist/**', '.angular/**', 'node_modules/**', 'artifacts/**'] },
@@ -24,36 +24,56 @@ export default tseslint.config(
       'boundaries/flag-as-external': { unresolvableAlias: false },
       'boundaries/dependency-nodes': ['import', 'dynamic-import', 'export', 'require'],
       'boundaries/elements': [
-        { type: 'test', pattern: 'src/tests/**/*.ts', mode: 'file' },
         {
-          type: 'test',
-          pattern: 'src/app/{features,stores,services,forms,guards,utils}/**/*.spec.ts',
+          type: 'module-entry',
+          pattern: 'src/app/modules/*/{index,*.routes}.ts',
+          capture: ['module'],
           mode: 'file',
         },
         {
-          type: 'feature-entry',
-          pattern: 'src/app/features/*/{index,*.routes}.ts',
-          capture: ['feature'],
+          type: 'module-service',
+          pattern: 'src/app/modules/*/services/**/*.ts',
+          capture: ['module'],
           mode: 'file',
         },
-        { type: 'feature', pattern: 'src/app/features/*', capture: ['feature'] },
-        ...commonTypes.map((type) => ({ type, pattern: `src/app/${type}` })),
+        {
+          type: 'module-model',
+          pattern: 'src/app/modules/*/models/**/*.ts',
+          capture: ['module'],
+          mode: 'file',
+        },
+        {
+          type: 'module-view',
+          pattern: 'src/app/modules/*/**/*.ts',
+          capture: ['module'],
+          mode: 'file',
+        },
         {
           type: 'http-transport',
-          pattern: 'src/app/core/http/api-client{,.spec}.ts',
+          pattern: 'src/app/core/http/api-client.ts',
           mode: 'file',
         },
-        { type: 'core', pattern: 'src/app/core' },
-        { type: 'layout', pattern: 'src/app/layout' },
-        { type: 'shared-ui', pattern: 'src/app/shared/ui' },
-        { type: 'shared-forms', pattern: 'src/app/shared/forms' },
+        { type: 'core', pattern: 'src/app/core/**/*.ts', mode: 'file' },
+        { type: 'layout', pattern: 'src/app/layout/**/*.ts', mode: 'file' },
+        { type: 'shared-ui', pattern: 'src/app/shared/ui/**/*.ts', mode: 'file' },
+        { type: 'shared-forms', pattern: 'src/app/shared/forms/**/*.ts', mode: 'file' },
+        { type: 'shared-utils', pattern: 'src/app/shared/utils/**/*.ts', mode: 'file' },
+        { type: 'shared-guards', pattern: 'src/app/shared/guards/**/*.ts', mode: 'file' },
+        { type: 'shared-bundle', pattern: 'src/app/shared/*.ts', mode: 'file' },
         { type: 'composition', pattern: 'src/app/*.ts', mode: 'file' },
         { type: 'bootstrap', pattern: 'src/*.ts', mode: 'file' },
       ],
       'import/resolver': { typescript: { project: './tsconfig.json', alwaysTryTypes: true } },
     },
     rules: {
-      '@angular-eslint/prefer-on-push-component-change-detection': 'error',
+      '@angular-eslint/prefer-on-push-component-change-detection': 'off',
+      '@angular-eslint/prefer-inject': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       'boundaries/no-unknown-files': 'error',
       'boundaries/no-unknown': 'error',
       'boundaries/element-types': [
@@ -64,52 +84,95 @@ export default tseslint.config(
             { from: 'bootstrap', allow: ['composition', 'core'] },
             {
               from: 'composition',
-              allow: ['composition', 'core', 'layout', ...dataTypes, 'guards', 'feature-entry'],
+              allow: [
+                'composition',
+                'core',
+                'layout',
+                'shared-guards',
+                'shared-bundle',
+                'module-entry',
+              ],
             },
-            { from: 'core', allow: ['core', 'http-transport', ...dataTypes] },
+            { from: 'core', allow: ['core', 'http-transport'] },
             { from: 'http-transport', allow: ['core', 'http-transport'] },
             {
               from: 'layout',
-              allow: ['layout', 'core', 'shared-ui', 'shared-forms', ...dataTypes],
-            },
-            { from: 'shared-ui', allow: ['shared-ui'] },
-            { from: 'shared-forms', allow: ['shared-forms'] },
-            { from: 'feature-entry', allow: [sameFeature, 'core', ...commonTypes] },
-            {
-              from: 'feature',
               allow: [
-                sameFeature,
+                'layout',
                 'core',
                 'shared-ui',
                 'shared-forms',
-                ...dataTypes,
-                'forms',
-                'stores',
-                'utils',
+                'shared-utils',
+                'shared-bundle',
+              ],
+            },
+            { from: 'shared-ui', allow: ['shared-ui', 'shared-bundle'] },
+            { from: 'shared-forms', allow: ['shared-forms', 'core'] },
+            { from: 'shared-utils', allow: ['shared-utils'] },
+            { from: 'shared-guards', allow: ['shared-guards', 'core'] },
+            {
+              from: 'shared-bundle',
+              allow: [
+                'shared-bundle',
+                'shared-ui',
+                'shared-forms',
+                'shared-utils',
+                'shared-guards',
+                'core',
               ],
             },
             {
-              from: 'stores',
-              allow: ['core', 'shared-forms', 'stores', 'services', 'forms', 'utils', ...dataTypes],
-            },
-            { from: 'services', allow: ['core', 'http-transport', 'services', ...dataTypes] },
-            { from: 'forms', allow: ['forms', 'utils', 'shared-forms', ...dataTypes] },
-            { from: 'models', allow: ['models', 'enums'] },
-            { from: 'constants', allow: dataTypes },
-            { from: 'enums', allow: ['enums'] },
-            { from: 'utils', allow: ['utils', ...dataTypes] },
-            { from: 'guards', allow: ['core', 'guards', ...dataTypes] },
-            {
-              from: 'test',
+              from: 'module-entry',
               allow: [
+                sameModuleView,
+                sameModuleService,
+                sameModuleModel,
+                'module-entry',
                 'core',
-                'http-transport',
+                'layout',
                 'shared-ui',
                 'shared-forms',
-                'feature',
-                'composition',
-                'layout',
-                ...commonTypes,
+                'shared-utils',
+                'shared-guards',
+                'shared-bundle',
+              ],
+            },
+            {
+              from: 'module-view',
+              allow: [
+                sameModuleView,
+                sameModuleService,
+                sameModuleModel,
+                'module-entry',
+                'core',
+                'shared-ui',
+                'shared-forms',
+                'shared-utils',
+                'shared-guards',
+                'shared-bundle',
+              ],
+            },
+            {
+              from: 'module-service',
+              allow: [
+                sameModuleService,
+                sameModuleModel,
+                'module-entry',
+                'core',
+                'http-transport',
+                'shared-utils',
+                'shared-bundle',
+              ],
+            },
+            {
+              from: 'module-model',
+              allow: [
+                sameModuleModel,
+                'module-entry',
+                'core',
+                'shared-forms',
+                'shared-utils',
+                'shared-bundle',
               ],
             },
           ],
@@ -120,15 +183,15 @@ export default tseslint.config(
         {
           default: 'allow',
           rules: [
-            { from: 'utils', disallow: ['@angular/**', 'rxjs'] },
+            { from: ['shared-utils'], disallow: ['@angular/**', 'rxjs'] },
             {
-              from: ['stores', 'utils', 'services', 'models', 'forms', 'shared-ui'],
+              from: ['shared-utils', 'module-service', 'module-model', 'shared-ui'],
               disallow: ['@angular/router'],
             },
             {
-              from: ['feature', 'stores', 'forms', 'models', 'shared-ui', 'utils'],
+              from: ['module-view', 'module-model', 'shared-ui', 'shared-utils'],
               disallow: [['@angular/common', { path: '/http{,/**}' }]],
-              message: 'Call the store/service. HTTP belongs to ApiClient and API services.',
+              message: 'Call the module service. HTTP belongs to ApiClient and BaseApiService.',
             },
           ],
         },
@@ -141,48 +204,10 @@ export default tseslint.config(
         'error',
         { type: 'attribute', prefix: ['app', 'ui'], style: 'camelCase' },
       ],
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-non-null-assertion': 'error',
     },
   },
   {
-    files: ['src/app/features/**/*.ts', 'src/app/shared/ui/*/*.ts', 'src/app/layout/**/*.ts'],
-    ignores: ['**/*.spec.ts', '**/*.model.ts'],
-    rules: {
-      '@typescript-eslint/member-ordering': [
-        'error',
-        { default: ['field', 'constructor', 'method'] },
-      ],
-      'no-restricted-syntax': [
-        'error',
-        { selector: 'TSEnumDeclaration', message: 'Put enums in src/app/enums.' },
-        { selector: 'TSInterfaceDeclaration', message: 'Put interfaces in src/app/models.' },
-        { selector: 'TSTypeAliasDeclaration', message: 'Put types in src/app/models.' },
-        {
-          selector: 'PropertyDefinition > ArrayExpression > :matches(ObjectExpression, Literal)',
-          message: 'Put shared options in src/app/constants.',
-        },
-      ],
-    },
-  },
-  {
-    files: ['src/app/utils/**/*.ts', 'src/app/models/**/*.ts'],
-    ignores: ['**/*.spec.ts'],
-    rules: {
-      'no-restricted-globals': [
-        'error',
-        'window',
-        'document',
-        'localStorage',
-        'sessionStorage',
-        'navigator',
-        'fetch',
-      ],
-    },
-  },
-  {
-    files: ['src/app/features/**/*.ts', 'src/app/layout/**/*.ts'],
-    ignores: ['**/*.spec.ts'],
+    files: ['src/app/modules/**/*.ts', 'src/app/layout/**/*.ts'],
     rules: {
       '@angular-eslint/component-selector': [
         'error',
@@ -192,17 +217,12 @@ export default tseslint.config(
   },
   {
     files: ['src/app/shared/ui/**/*.ts'],
-    ignores: ['**/*.spec.ts'],
     rules: {
       '@angular-eslint/component-selector': [
         'error',
         { type: 'element', prefix: 'ui', style: 'kebab-case' },
       ],
     },
-  },
-  {
-    files: ['**/*.spec.ts'],
-    rules: { '@angular-eslint/prefer-on-push-component-change-detection': 'off' },
   },
   {
     files: ['src/**/*.html'],

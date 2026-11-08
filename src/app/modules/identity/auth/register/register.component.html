@@ -1,0 +1,149 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="register-heading">
+    <a class="auth-brand" routerLink="/shop" aria-label="Boilerate — cửa hàng">
+      <span>b</span> Boilerate
+    </a>
+    <p class="auth-eyebrow">Tài khoản mới</p>
+    <h1 id="register-heading" class="auth-title">Đăng ký tài khoản</h1>
+    <p class="auth-intro">Tạo tài khoản để theo dõi đơn hàng và quản lý thông tin cá nhân.</p>
+
+    @if (successMessage(); as message) {
+      <div class="auth-success" role="status">
+        <p>{{ message }}</p>
+      </div>
+      <div class="auth-links">
+        <a class="auth-link" routerLink="/login">Đi tới đăng nhập</a>
+        <a class="auth-link" routerLink="/shop">← Về cửa hàng</a>
+      </div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="auth-grid">
+          <div class="auth-field">
+            <label for="register-first-name">Họ *</label>
+            <input
+              pInputText
+              id="register-first-name"
+              formControlName="firstName"
+              maxlength="75"
+              autocomplete="given-name"
+              [attr.aria-invalid]="!!fieldError('firstName')"
+            />
+            @if (fieldError('firstName'); as err) {
+              <small class="auth-error">{{ err }}</small>
+            }
+          </div>
+          <div class="auth-field">
+            <label for="register-last-name">Tên *</label>
+            <input
+              pInputText
+              id="register-last-name"
+              formControlName="lastName"
+              maxlength="75"
+              autocomplete="family-name"
+              [attr.aria-invalid]="!!fieldError('lastName')"
+            />
+            @if (fieldError('lastName'); as err) {
+              <small class="auth-error">{{ err }}</small>
+            }
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label for="register-email">Email *</label>
+          <input
+            pInputText
+            id="register-email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            [attr.aria-invalid]="!!fieldError('email')"
+          />
+          @if (fieldError('email'); as err) {
+            <small class="auth-error">{{ err }}</small>
+          }
+        </div>
+
+        <div class="auth-grid">
+          <div class="auth-field">
+            <label for="register-username">Tên đăng nhập *</label>
+            <input
+              pInputText
+              id="register-username"
+              formControlName="userName"
+              minlength="6"
+              autocomplete="username"
+              [attr.aria-invalid]="!!fieldError('userName')"
+            />
+            <small class="auth-hint">Tối thiểu 6 ký tự.</small>
+            @if (fieldError('userName'); as err) {
+              <small class="auth-error">{{ err }}</small>
+            }
+          </div>
+          <div class="auth-field">
+            <label for="register-phone">Số điện thoại</label>
+            <input
+              pInputText
+              id="register-phone"
+              type="tel"
+              formControlName="phoneNumber"
+              autocomplete="tel"
+            />
+            @if (fieldError('phoneNumber'); as err) {
+              <small class="auth-error">{{ err }}</small>
+            }
+          </div>
+        </div>
+
+        <div class="auth-grid">
+          <div class="auth-field">
+            <label for="register-password">Mật khẩu *</label>
+            <input
+              pInputText
+              id="register-password"
+              type="password"
+              formControlName="password"
+              minlength="9"
+              autocomplete="new-password"
+              [attr.aria-invalid]="!!fieldError('password')"
+            />
+            <small class="auth-hint">Tối thiểu 9 ký tự.</small>
+            @if (fieldError('password'); as err) {
+              <small class="auth-error">{{ err }}</small>
+            }
+          </div>
+          <div class="auth-field">
+            <label for="register-confirm-password">Nhập lại mật khẩu *</label>
+            <input
+              pInputText
+              id="register-confirm-password"
+              type="password"
+              formControlName="confirmPassword"
+              autocomplete="new-password"
+              [attr.aria-invalid]="!!fieldError('confirmPassword')"
+            />
+            @if (fieldError('confirmPassword'); as err) {
+              <small class="auth-error">{{ err }}</small>
+            }
+          </div>
+        </div>
+
+        @if (errorMessage(); as message) {
+          <p class="auth-error" role="alert">{{ message }}</p>
+        }
+
+        <p-button
+          type="submit"
+          label="Đăng ký"
+          [loading]="saving()"
+          [disabled]="saving()"
+          styleClass="auth-submit"
+        />
+
+        <div class="auth-links">
+          <a class="auth-link" routerLink="/login">Đã có tài khoản? Đăng nhập</a>
+          <a class="auth-link" routerLink="/shop">← Về cửa hàng</a>
+        </div>
+      </form>
+    }
+  </section>
+</main>

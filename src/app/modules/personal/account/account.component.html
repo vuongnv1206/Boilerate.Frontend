@@ -1,0 +1,539 @@
+<section class="account-workspace" aria-labelledby="account-heading">
+  <header class="account-header">
+    <div>
+      <h1 id="account-heading" class="account-title">Tài khoản cá nhân</h1>
+      <p class="account-subtitle">
+        Quản lý thông tin hồ sơ, bảo mật mật khẩu, phiên thiết bị và nhật ký hoạt động.
+      </p>
+    </div>
+  </header>
+
+  <div class="account-tabs" role="tablist" aria-label="Các mục tài khoản cá nhân">
+    @for (tab of visibleTabs(); track tab.key) {
+      <button
+        type="button"
+        role="tab"
+        class="account-tab"
+        [id]="'account-tab-' + tab.key"
+        [attr.aria-selected]="activeTab() === tab.key"
+        [attr.aria-controls]="'account-panel-' + tab.key"
+        (click)="selectTab(tab.key)"
+      >
+        <ui-icon [name]="tab.icon" [size]="16" />
+        <span>{{ tab.label }}</span>
+      </button>
+    }
+  </div>
+
+  @if (activeTab() === 'profile') {
+    <div
+      id="account-panel-profile"
+      role="tabpanel"
+      aria-labelledby="account-tab-profile"
+      class="account-card"
+    >
+      @if (loading()) {
+        <ui-content-state kind="loading" title="Đang tải hồ sơ cá nhân" />
+      } @else if (!record() && errorMessage()) {
+        <ui-content-state kind="error" title="Không tải được hồ sơ" [message]="errorMessage()">
+          <button pButton severity="secondary" outlined type="button" (click)="loadProfile()">
+            Thử lại
+          </button>
+        </ui-content-state>
+      } @else if (record(); as profile) {
+        <div class="account-avatar-row">
+          @if (profile.imageUrl) {
+            <img
+              class="account-avatar"
+              [src]="profile.imageUrl"
+              [alt]="(profile.firstName || '') + ' ' + (profile.lastName || '')"
+            />
+          } @else {
+            <span class="account-avatar" aria-hidden="true">{{ initials() }}</span>
+          }
+          <div class="account-meta">
+            <div class="account-meta-title">
+              <span>{{ profile.firstName }} {{ profile.lastName }}</span>
+              <ui-status-badge [tone]="profile.emailConfirmed ? 'success' : 'warning'">
+                {{ profile.emailConfirmed ? 'Đã xác minh email' : 'Chưa xác minh email' }}
+              </ui-status-badge>
+            </div>
+            <span class="account-meta-sub">
+              {{ profile.userName || '—' }} · {{ profile.email || '—' }}
+            </span>
+          </div>
+        </div>
+
+        @if (conflict()) {
+          <div class="editor-error" role="alert">
+            <span>
+              Hồ sơ đã được cập nhật ở phiên khác. Nội dung đang nhập vẫn được giữ lại; hãy tải lại
+              để đối chiếu trước khi lưu tiếp.
+            </span>
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              type="button"
+              (click)="reloadProfileAfterConflict()"
+              [disabled]="saving()"
+            >
+              Tải lại hồ sơ
+            </button>
+          </div>
+        } @else if (errorMessage()) {
+          <div class="editor-error" role="alert">{{ errorMessage() }}</div>
+        }
+
+        <ui-form-error-summary [messages]="summaryErrors()" />
+
+        <form [formGroup]="form" (ngSubmit)="saveProfile()" novalidate>
+          <div class="account-grid">
+            <ui-form-field
+              forId="personal-first-name"
+              label="Họ"
+              [required]="true"
+              [error]="profileFieldError('firstName')"
+            >
+              <input
+                pInputText
+                id="personal-first-name"
+                formControlName="firstName"
+                maxlength="75"
+                autocomplete="given-name"
+                [attr.aria-invalid]="!!profileFieldError('firstName')"
+              />
+            </ui-form-field>
+
+            <ui-form-field
+              forId="personal-last-name"
+              label="Tên"
+              [required]="true"
+              [error]="profileFieldError('lastName')"
+            >
+              <input
+                pInputText
+                id="personal-last-name"
+                formControlName="lastName"
+                maxlength="75"
+                autocomplete="family-name"
+                [attr.aria-invalid]="!!profileFieldError('lastName')"
+              />
+            </ui-form-field>
+
+            <ui-form-field
+              forId="personal-email"
+              label="Email"
+              hint="Email gắn với định danh đăng nhập và không đổi trực tiếp tại đây."
+            >
+              <input
+                pInputText
+                id="personal-email"
+                type="email"
+                formControlName="email"
+                autocomplete="email"
+              />
+            </ui-form-field>
+
+            <ui-form-field
+              forId="personal-phone"
+              label="Số điện thoại"
+              [error]="profileFieldError('phoneNumber')"
+            >
+              <input
+                pInputText
+                id="personal-phone"
+                type="tel"
+                formControlName="phoneNumber"
+                autocomplete="tel"
+                [attr.aria-invalid]="!!profileFieldError('phoneNumber')"
+              />
+            </ui-form-field>
+          </div>
+
+          @if (profile.imageUrl) {
+            <div class="account-actions">
+              <label class="account-meta-title" for="personal-delete-image">
+                <p-checkbox
+                  inputId="personal-delete-image"
+                  [binary]="true"
+                  formControlName="deleteCurrentImage"
+                />
+                <span>Xóa ảnh đại diện hiện tại khi lưu</span>
+              </label>
+            </div>
+          }
+
+          <div class="account-actions">
+            <button pButton severity="primary" type="submit" [disabled]="saving() || !form.dirty">
+              {{ saving() ? 'Đang lưu…' : 'Lưu hồ sơ' }}
+            </button>
+            <span class="account-meta-sub">Phiên bản bản ghi: {{ version() || '—' }}</span>
+          </div>
+        </form>
+      }
+    </div>
+  }
+
+  @if (activeTab() === 'security') {
+    <div
+      id="account-panel-security"
+      role="tabpanel"
+      aria-labelledby="account-tab-security"
+      class="account-list"
+    >
+      <section class="account-card" aria-labelledby="change-password-heading">
+        <div>
+          <h2 id="change-password-heading" class="account-meta-title">Đổi mật khẩu</h2>
+          <p class="account-meta-sub">
+            Sử dụng mật khẩu mạnh tối thiểu 9 ký tự. Sau khi đổi mật khẩu, các phiên khác sẽ được
+            thu hồi để bảo vệ tài khoản.
+          </p>
+        </div>
+
+        @if (passwordError()) {
+          <div class="editor-error" role="alert">{{ passwordError() }}</div>
+        }
+
+        <form [formGroup]="passwordForm" (ngSubmit)="submitChangePassword()" novalidate>
+          <div class="account-grid">
+            <ui-form-field
+              forId="personal-current-password"
+              label="Mật khẩu hiện tại"
+              [required]="true"
+              [error]="passwordFieldError('password')"
+            >
+              <input
+                pInputText
+                id="personal-current-password"
+                type="password"
+                formControlName="password"
+                autocomplete="current-password"
+                [attr.aria-invalid]="!!passwordFieldError('password')"
+              />
+            </ui-form-field>
+
+            <ui-form-field
+              forId="personal-new-password"
+              label="Mật khẩu mới"
+              [required]="true"
+              hint="Tối thiểu 9 ký tự."
+              [error]="passwordFieldError('newPassword')"
+            >
+              <input
+                pInputText
+                id="personal-new-password"
+                type="password"
+                formControlName="newPassword"
+                minlength="9"
+                autocomplete="new-password"
+                [attr.aria-invalid]="!!passwordFieldError('newPassword')"
+              />
+            </ui-form-field>
+
+            <ui-form-field
+              forId="personal-confirm-password"
+              label="Nhập lại mật khẩu mới"
+              [required]="true"
+              [error]="passwordFieldError('confirmNewPassword')"
+            >
+              <input
+                pInputText
+                id="personal-confirm-password"
+                type="password"
+                formControlName="confirmNewPassword"
+                autocomplete="new-password"
+                [attr.aria-invalid]="!!passwordFieldError('confirmNewPassword')"
+              />
+            </ui-form-field>
+          </div>
+
+          <div class="account-actions">
+            <button pButton severity="primary" type="submit" [disabled]="passwordSaving()">
+              {{ passwordSaving() ? 'Đang cập nhật…' : 'Cập nhật mật khẩu' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="account-card" aria-labelledby="external-link-heading">
+        <div>
+          <h2 id="external-link-heading" class="account-meta-title">
+            Liên kết tài khoản Google / Facebook
+          </h2>
+          <p class="account-meta-sub">
+            Nhập mã xác thực (ID Token / Access Token) từ nhà cung cấp để gắn kết đăng nhập nhanh
+            vào tài khoản hiện tại.
+          </p>
+        </div>
+
+        @if (linkError()) {
+          <div class="editor-error" role="alert">{{ linkError() }}</div>
+        }
+
+        <form [formGroup]="externalLinkForm" novalidate>
+          <div class="account-grid">
+            <ui-form-field forId="personal-google-token" label="Google ID Token">
+              <input
+                pInputText
+                id="personal-google-token"
+                formControlName="googleIdToken"
+                autocomplete="off"
+                placeholder="Dán Google ID Token…"
+              />
+            </ui-form-field>
+
+            <ui-form-field forId="personal-facebook-token" label="Facebook Token">
+              <input
+                pInputText
+                id="personal-facebook-token"
+                formControlName="facebookIdToken"
+                autocomplete="off"
+                placeholder="Dán Facebook Access / ID Token…"
+              />
+            </ui-form-field>
+          </div>
+
+          <div class="account-actions">
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              type="button"
+              (click)="linkExternal('google')"
+              [disabled]="!!linkingProvider()"
+            >
+              <ui-icon name="link" [size]="14" />
+              {{ linkingProvider() === 'google' ? 'Đang liên kết Google…' : 'Liên kết Google' }}
+            </button>
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              type="button"
+              (click)="linkExternal('facebook')"
+              [disabled]="!!linkingProvider()"
+            >
+              <ui-icon name="link" [size]="14" />
+              {{
+                linkingProvider() === 'facebook' ? 'Đang liên kết Facebook…' : 'Liên kết Facebook'
+              }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  }
+
+  @if (activeTab() === 'sessions') {
+    <div
+      id="account-panel-sessions"
+      role="tabpanel"
+      aria-labelledby="account-tab-sessions"
+      class="account-card"
+    >
+      <div class="account-header">
+        <div>
+          <h2 class="account-meta-title">Phiên đăng nhập đang hoạt động</h2>
+          <p class="account-meta-sub">
+            Kiểm tra các thiết bị đang giữ phiên làm việc và thu hồi quyền truy cập từ xa khi cần.
+          </p>
+        </div>
+        <button
+          pButton
+          severity="secondary"
+          outlined
+          type="button"
+          (click)="loadSessions()"
+          [disabled]="sessionsLoading()"
+        >
+          <ui-icon name="refresh" [size]="14" />
+          Làm mới
+        </button>
+      </div>
+
+      @if (sessionsError()) {
+        <div class="editor-error" role="alert">{{ sessionsError() }}</div>
+      }
+
+      @if (sessionsLoading()) {
+        <ui-content-state kind="loading" title="Đang tải danh sách phiên đăng nhập" />
+      } @else if (!sessions().length) {
+        <ui-content-state
+          kind="empty"
+          icon="smartphone"
+          title="Không có phiên hoạt động"
+          message="Chưa ghi nhận phiên đăng nhập nào đang mở."
+        />
+      } @else {
+        <div class="account-list">
+          @for (item of sessions(); track item.id) {
+            <div class="account-list-row">
+              <div class="account-meta">
+                <div class="account-meta-title">
+                  <ui-icon name="smartphone" [size]="16" />
+                  <span>IP: {{ item.ipAddress || 'Không xác định' }}</span>
+                  @if (isCurrentSession(item)) {
+                    <span class="account-badge">Phiên hiện tại</span>
+                  }
+                </div>
+                <span class="account-meta-sub">
+                  Đăng nhập: {{ formatDateTime(item.createdOn) }} · Hết hạn:
+                  {{ formatDateTime(item.expiresOn) }}
+                </span>
+              </div>
+
+              @if (!isCurrentSession(item)) {
+                <button
+                  pButton
+                  severity="danger"
+                  outlined
+                  type="button"
+                  (click)="revokeSession(item)"
+                  [disabled]="revokingSessionId() === item.id"
+                >
+                  {{ revokingSessionId() === item.id ? 'Đang thu hồi…' : 'Thu hồi phiên' }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (activeTab() === 'audit' && canViewAudit()) {
+    <div
+      id="account-panel-audit"
+      role="tabpanel"
+      aria-labelledby="account-tab-audit"
+      class="account-card"
+    >
+      <div class="account-header">
+        <div>
+          <h2 class="account-meta-title">Nhật ký hoạt động cá nhân</h2>
+          <p class="account-meta-sub">Lịch sử thao tác dữ liệu gắn với tài khoản của bạn.</p>
+        </div>
+        <div class="account-actions">
+          <label class="sr-only" for="personal-audit-search">Tìm trong nhật ký hoạt động</label>
+          <input
+            pInputText
+            id="personal-audit-search"
+            type="search"
+            #auditSearchInput
+            [value]="auditKeyword()"
+            (keydown.enter)="searchAudit(auditSearchInput.value)"
+            placeholder="Tìm bảng hoặc thao tác…"
+          />
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            type="button"
+            (click)="searchAudit(auditSearchInput.value)"
+            [disabled]="auditLoading()"
+          >
+            Tìm
+          </button>
+          @if (canExportAudit()) {
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              type="button"
+              (click)="exportAudit()"
+              [disabled]="exportingAudit()"
+            >
+              <ui-icon name="download" [size]="14" />
+              {{ exportingAudit() ? 'Đang xuất…' : 'Xuất Excel' }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (auditError()) {
+        <div class="editor-error" role="alert">{{ auditError() }}</div>
+      }
+
+      @if (auditLoading()) {
+        <ui-content-state kind="loading" title="Đang tải nhật ký hoạt động" />
+      } @else if (!auditItems().length) {
+        <ui-content-state
+          kind="empty"
+          icon="history"
+          title="Chưa có nhật ký hoạt động"
+          message="Không tìm thấy bản ghi thay đổi nào phù hợp."
+        />
+      } @else {
+        <div role="region" aria-label="Bảng nhật ký hoạt động" tabindex="0">
+          <p-table
+            [value]="auditItems().slice()"
+            dataKey="id"
+            [tableStyle]="{ 'min-width': '680px' }"
+            [rowHover]="true"
+          >
+            <ng-template #header>
+              <tr>
+                <th scope="col">Thời gian</th>
+                <th scope="col">Thao tác</th>
+                <th scope="col">Bảng dữ liệu</th>
+                <th scope="col">Trường thay đổi</th>
+                <th scope="col">Khóa chính</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-entry>
+              <tr>
+                <td>{{ formatDateTime(entry.dateTime) }}</td>
+                <td>
+                  <ui-status-badge tone="neutral">{{ entry.type }}</ui-status-badge>
+                </td>
+                <td>
+                  <strong>{{ entry.tableName }}</strong>
+                </td>
+                <td>{{ entry.affectedColumns || '—' }}</td>
+                <td>
+                  <code>{{ entry.primaryKey }}</code>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+
+        <div class="account-header">
+          <span class="account-meta-sub">{{ auditTotal() }} bản ghi</span>
+          <div class="account-actions">
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              type="button"
+              aria-label="Trang trước nhật ký"
+              [disabled]="auditPage() <= 1 || auditLoading()"
+              (click)="loadAuditLogs(auditPage() - 1)"
+            >
+              <ui-icon name="chevron-left" [size]="14" />
+            </button>
+            <span class="account-meta-sub">{{ auditPage() }} / {{ auditTotalPages() }}</span>
+            <button
+              pButton
+              severity="secondary"
+              outlined
+              type="button"
+              aria-label="Trang sau nhật ký"
+              [disabled]="auditPage() >= auditTotalPages() || auditLoading()"
+              (click)="loadAuditLogs(auditPage() + 1)"
+            >
+              <ui-icon name="chevron-right" [size]="14" />
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<ui-confirm-dialog
+  title="Bỏ thay đổi hồ sơ?"
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

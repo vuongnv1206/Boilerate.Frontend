@@ -445,6 +445,9 @@ async function installCatalogApi(context: BrowserContext): Promise<CatalogApi> {
       request.postData() && request.headers()['content-type']?.includes('application/json')
         ? (request.postDataJSON() as Record<string, unknown>)
         : null;
+    if (path === 'notifications/unread-count' && method === 'GET') {
+      return reply(route, { unreadCount: 0 });
+    }
     api.requests.push({
       method,
       path,

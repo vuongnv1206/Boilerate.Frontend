@@ -1,0 +1,234 @@
+<section class="editor-page" aria-labelledby="discount-heading">
+  <header class="editor-toolbar">
+    <a
+      class="discount-editor-back"
+      routerLink="/admin/discounts"
+      queryParamsHandling="preserve"
+      aria-label="Quay lại danh sách mã giảm giá"
+      ><ui-icon name="arrow-left" [size]="14"
+    /></a>
+    <div class="editor-title-wrap discount-editor-title">
+      <h1 id="discount-heading">{{ record()?.code || 'Mã giảm giá mới' }}</h1>
+      <p class="editor-save-status" aria-live="polite">
+        {{
+          saving()
+            ? 'Đang lưu…'
+            : saved()
+              ? 'Đã lưu mã giảm giá'
+              : !canWrite()
+                ? 'Chỉ xem'
+                : form.dirty
+                  ? 'Có thay đổi chưa lưu'
+                  : ''
+        }}
+      </p>
+    </div>
+    @if (canWrite()) {
+      <div class="editor-actions">
+        <button
+          pButton
+          type="button"
+          (click)="save()"
+          [disabled]="!ready() || loading() || saving()"
+        >
+          {{ saving() ? 'Đang lưu…' : 'Lưu' }}
+        </button>
+      </div>
+    }
+  </header>
+  @if (summary().length) {
+    <ui-form-error-summary [messages]="summary()" />
+  }
+  @if (loadError()) {
+    <div class="editor-notice" role="alert">
+      {{ loadError() }}
+      @if (!saving()) {
+        <button pButton severity="secondary" outlined type="button" (click)="retry()">
+          Tải lại
+        </button>
+      }
+    </div>
+  }
+  @if (loading()) {
+    <ui-content-state kind="loading" title="Đang tải mã giảm giá" layout="page" />
+  } @else if (ready()) {
+    <div class="discount-editor-body">
+      <main>
+        <form class="editor-form" [formGroup]="form" novalidate (ngSubmit)="save()">
+          <fieldset class="save-lock" [disabled]="saving()">
+            <section class="form-section" aria-labelledby="discount-basic">
+              <h2 id="discount-basic">Thông tin mã</h2>
+              @if (!canWrite()) {
+                <p>Bạn có quyền xem mã giảm giá. Liên hệ quản trị viên để cập nhật.</p>
+              }
+              <ui-form-field
+                forId="discount-code"
+                label="Mã giảm giá"
+                [required]="true"
+                hint="Dùng chữ, số, dấu chấm, gạch ngang hoặc gạch dưới; tối đa 32 ký tự."
+                [error]="error(form.controls.code)"
+                ><input
+                  pInputText
+                  id="discount-code"
+                  formControlName="code"
+                  required
+                  maxlength="32"
+                  [attr.aria-invalid]="!!error(form.controls.code)"
+                  [attr.aria-describedby]="
+                    error(form.controls.code) ? 'discount-code-error' : 'discount-code-hint'
+                  "
+              /></ui-form-field>
+              <ui-form-field
+                forId="discount-name"
+                label="Tên mã"
+                [required]="true"
+                [error]="error(form.controls.name)"
+                ><input
+                  pInputText
+                  id="discount-name"
+                  formControlName="name"
+                  required
+                  maxlength="160"
+                  [attr.aria-invalid]="!!error(form.controls.name)"
+                  [attr.aria-describedby]="
+                    error(form.controls.name) ? 'discount-name-error' : null
+                  "
+              /></ui-form-field>
+              <ui-form-field forId="discount-kind" label="Loại giảm" [required]="true"
+                ><p-select
+                  inputId="discount-kind"
+                  [ariaLabel]="'Loại giảm'"
+                  formControlName="kind"
+                  [options]="kinds"
+                  optionLabel="label"
+                  optionValue="value"
+                  appendTo="body"
+              /></ui-form-field>
+              <ui-form-field
+                forId="discount-value"
+                [label]="form.controls.kind.value === 1 ? 'Mức giảm (%)' : 'Mức giảm (đ)'"
+                [required]="true"
+                [hint]="
+                  form.controls.kind.value === 1
+                    ? 'Số nguyên từ 1 đến 99.'
+                    : 'Số tiền nguyên tính bằng đồng.'
+                "
+                [error]="
+                  error(form.controls.value) ||
+                  (form.hasError('percent') && form.controls.value.touched
+                    ? 'Mức phần trăm tối đa là 99.'
+                    : null)
+                "
+                ><input
+                  pInputText
+                  id="discount-value"
+                  type="number"
+                  step="1"
+                  min="1"
+                  formControlName="value"
+                  required
+                  [attr.aria-invalid]="!!error(form.controls.value) || form.hasError('percent')"
+                  [attr.aria-describedby]="
+                    error(form.controls.value) || form.hasError('percent')
+                      ? 'discount-value-error'
+                      : 'discount-value-hint'
+                  "
+              /></ui-form-field>
+              <ui-form-field
+                forId="discount-minimum"
+                label="Tiền hàng tối thiểu (đ)"
+                [required]="true"
+                hint="Nhập 0 nếu không đặt điều kiện."
+                [error]="error(form.controls.minimumSubtotal)"
+                ><input
+                  pInputText
+                  id="discount-minimum"
+                  type="number"
+                  step="1"
+                  min="0"
+                  formControlName="minimumSubtotal"
+                  required
+                  [attr.aria-invalid]="!!error(form.controls.minimumSubtotal)"
+                  [attr.aria-describedby]="
+                    error(form.controls.minimumSubtotal)
+                      ? 'discount-minimum-error'
+                      : 'discount-minimum-hint'
+                  "
+              /></ui-form-field>
+            </section>
+            <section class="form-section" aria-labelledby="discount-limits">
+              <h2 id="discount-limits">Hiệu lực và số lượt</h2>
+              <p>Thời gian theo giờ Việt Nam. Để trống nếu không giới hạn.</p>
+              <ui-form-field
+                forId="discount-start"
+                label="Bắt đầu"
+                [error]="error(form.controls.startsAt)"
+                ><input
+                  pInputText
+                  id="discount-start"
+                  type="datetime-local"
+                  step="1"
+                  formControlName="startsAt"
+                  [attr.aria-invalid]="!!error(form.controls.startsAt)"
+              /></ui-form-field>
+              <ui-form-field
+                forId="discount-end"
+                label="Kết thúc"
+                [error]="
+                  error(form.controls.endsAt) ||
+                  (form.hasError('dateRange') &&
+                  (form.controls.startsAt.touched || form.controls.endsAt.touched)
+                    ? 'Thời điểm kết thúc phải sau thời điểm bắt đầu.'
+                    : null)
+                "
+                ><input
+                  pInputText
+                  id="discount-end"
+                  type="datetime-local"
+                  step="1"
+                  formControlName="endsAt"
+                  [attr.aria-invalid]="!!error(form.controls.endsAt) || form.hasError('dateRange')"
+                  [attr.aria-describedby]="
+                    error(form.controls.endsAt) || form.hasError('dateRange')
+                      ? 'discount-end-error'
+                      : null
+                  "
+              /></ui-form-field>
+              <ui-form-field
+                forId="discount-usage-limit"
+                label="Giới hạn tổng lượt"
+                hint="Để trống nếu không giới hạn."
+                [error]="error(form.controls.usageLimit)"
+                ><input
+                  pInputText
+                  id="discount-usage-limit"
+                  type="number"
+                  step="1"
+                  min="1"
+                  formControlName="usageLimit"
+                  [attr.aria-invalid]="!!error(form.controls.usageLimit)"
+                  [attr.aria-describedby]="
+                    error(form.controls.usageLimit)
+                      ? 'discount-usage-limit-error'
+                      : 'discount-usage-limit-hint'
+                  "
+              /></ui-form-field>
+              <label class="check-field" for="discount-active">
+                <p-checkbox inputId="discount-active" formControlName="isActive" [binary]="true" />
+                <span>Bật mã giảm giá</span>
+              </label>
+              @if (record(); as record) {
+                <p>Đã sử dụng: {{ record.usedCount }} lượt.</p>
+              }
+            </section>
+          </fieldset>
+        </form>
+      </main>
+    </div>
+  }
+</section>
+<ui-confirm-dialog
+  [visible]="confirmation.visible()"
+  title="Rời khỏi mã giảm giá?"
+  (answered)="confirmation.answer($event)"
+/>

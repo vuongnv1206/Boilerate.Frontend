@@ -1,6 +1,7 @@
-import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+﻿import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { RuntimeConfig } from '../config/runtime-config';
 import { RUNTIME_CONFIG } from '../config/runtime-config.token';
 import { apiUrl } from './api-url';
 
@@ -14,11 +15,13 @@ export interface ApiRequestOptions {
 
 export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-/** Typed JSON transport. Feature services own endpoint paths and response mapping. */
+/** Typed HTTP transport. Domain services inherit BaseApiService / BaseCrudService on top of this. */
 @Injectable({ providedIn: 'root' })
 export class ApiClient {
-  private readonly http = inject(HttpClient);
-  private readonly config = inject(RUNTIME_CONFIG);
+  constructor(
+    private readonly http: HttpClient,
+    @Inject(RUNTIME_CONFIG) private readonly config: RuntimeConfig,
+  ) {}
 
   get<T>(resource: string, options?: ApiRequestOptions): Observable<T> {
     return this.request<T>('GET', resource, options);
@@ -40,9 +43,16 @@ export class ApiClient {
     return this.request<T>('DELETE', resource, options);
   }
 
-  text(method: ApiMethod, resource: string, body: unknown): Observable<string> {
+  text(
+    method: ApiMethod,
+    resource: string,
+    body?: unknown,
+    options?: ApiRequestOptions,
+  ): Observable<string> {
     return this.http.request(method, apiUrl(this.config.apiBaseUrl, resource), {
+      ...options,
       body,
+      observe: 'body',
       responseType: 'text',
     });
   }
@@ -50,6 +60,15 @@ export class ApiClient {
   blob(resource: string, options?: ApiRequestOptions): Observable<Blob> {
     return this.http.get(apiUrl(this.config.apiBaseUrl, resource), {
       ...options,
+      observe: 'body',
+      responseType: 'blob',
+    });
+  }
+
+  postBlob(resource: string, body: unknown, options?: ApiRequestOptions): Observable<Blob> {
+    return this.http.post(apiUrl(this.config.apiBaseUrl, resource), body, {
+      ...options,
+      observe: 'body',
       responseType: 'blob',
     });
   }

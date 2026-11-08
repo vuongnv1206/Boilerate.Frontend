@@ -1,0 +1,164 @@
+<section class="collection-page" aria-labelledby="outbox-heading">
+  <header class="catalog-list-toolbar system-list-toolbar">
+    <h1 id="outbox-heading">
+      Hàng đợi Outbox <span>{{ total() }}</span>
+    </h1>
+    <label class="sr-only" for="outbox-status-filter">Lọc theo trạng thái</label>
+    <p-select
+      inputId="outbox-status-filter"
+      [options]="statusOptions.slice()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="filter().state ?? null"
+      (ngModelChange)="onStatusChange($event)"
+      ariaLabel="Lọc theo trạng thái"
+      appendTo="body"
+    />
+    <button
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
+      type="button"
+      aria-label="Tải lại hàng đợi Outbox"
+      (click)="reload()"
+      [disabled]="loading() || working()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="collection-notice error-notice" role="alert">
+      <span>{{ errorMessage() }}</span>
+      <button
+        pButton
+        severity="secondary"
+        outlined
+        type="button"
+        (click)="reload()"
+        [disabled]="loading()"
+      >
+        Thử lại
+      </button>
+    </div>
+  }
+
+  @if (loading()) {
+    <ui-content-state kind="loading" title="Đang tải hàng đợi Outbox" layout="page" />
+  } @else if (isEmpty()) {
+    <ui-content-state
+      kind="empty"
+      icon="inbox"
+      title="Không có thông điệp Outbox"
+      message="Chưa có sự kiện nào phù hợp với bộ lọc hiện tại."
+      layout="page"
+    />
+  } @else {
+    <div
+      class="table-scroll system-table"
+      role="region"
+      aria-label="Danh sách thông điệp Outbox"
+      tabindex="0"
+    >
+      <p-table
+        [value]="items().slice()"
+        dataKey="messageId"
+        tableStyleClass="content-table"
+        [tableStyle]="{ 'min-width': '860px' }"
+        [rowHover]="true"
+        [pt]="{ tableContainer: { style: { overflow: 'visible' } } }"
+      >
+        <ng-template #header>
+          <tr>
+            <th scope="col">Sự kiện</th>
+            <th scope="col">Trạng thái</th>
+            <th scope="col">Số lần thử</th>
+            <th scope="col">Thời điểm tạo</th>
+            <th scope="col">Lần thử tiếp theo</th>
+            <th scope="col">Lỗi gần nhất</th>
+            @if (canReplay()) {
+              <th scope="col" class="action-column">Thao tác</th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #body let-row>
+          <tr>
+            <td>
+              <strong>{{ row.type }}</strong>
+              <small>v{{ row.schemaVersion }} · {{ row.messageId }}</small>
+            </td>
+            <td>
+              <ui-status-badge [tone]="statusTone(row.state)">
+                {{ statusLabel(row.state) }}
+              </ui-status-badge>
+            </td>
+            <td class="price-cell">{{ row.attempts }}</td>
+            <td>{{ formatDateTime(row.occurredAt) }}</td>
+            <td>
+              {{ formatDateTime(row.nextAttemptAt) }}
+              @if (row.leaseUntil) {
+                <small>Giữ khóa đến {{ formatDateTime(row.leaseUntil) }}</small>
+              }
+            </td>
+            <td>
+              <span>{{ row.lastError || '—' }}</span>
+            </td>
+            @if (canReplay()) {
+              <td>
+                <div class="system-row-actions">
+                  <button
+                    pButton
+                    severity="secondary"
+                    outlined
+                    type="button"
+                    (click)="replayMessage(row)"
+                    [disabled]="working() || !canReplayRow(row)"
+                    [attr.aria-label]="'Phát lại sự kiện ' + row.type"
+                  >
+                    <ui-icon name="refresh" [size]="14" />
+                    {{ replayingId() === row.messageId ? 'Đang phát lại…' : 'Phát lại' }}
+                  </button>
+                </div>
+              </td>
+            }
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
+
+  <footer class="pagination">
+    <span>{{ total() }} bản ghi</span>
+    <div class="pagination-right">
+      <button
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang trước"
+        [disabled]="page() <= 1 || loading()"
+        (click)="changePage(page() - 1)"
+      >
+        <ui-icon name="chevron-left" [size]="14" />
+      </button>
+      <span>{{ page() }} / {{ totalPages() }}</span>
+      <button
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang sau"
+        [disabled]="page() >= totalPages() || loading()"
+        (click)="changePage(page() + 1)"
+      >
+        <ui-icon name="chevron-right" [size]="14" />
+      </button>
+    </div>
+  </footer>
+</section>

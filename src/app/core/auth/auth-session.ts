@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { HttpContext } from '@angular/common/http';
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Inject, Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   Observable,
@@ -19,14 +19,12 @@ import {
 import { ApiClient, ApiRequestOptions } from '../http/api-client';
 import { normalizeApiError } from '../http/normalize-api-error';
 import { SKIP_AUTH } from './auth-context';
-import { LoginRequest, TokenResponse } from './auth.dto';
+import { ExternalTokenWire, LoginRequest, TokenResponse } from './auth.dto';
 
 /** The refresh cookie belongs to the server. Access tokens stay in memory. */
 @Injectable({ providedIn: 'root' })
 export class AuthSession {
-  private readonly api = inject(ApiClient);
-  private readonly document = inject(DOCUMENT);
-  private readonly router = inject(Router);
+  // System variables
   private readonly tokens = signal<TokenResponse | null>(null);
   private readonly ready = signal(false);
   private readonly grantedPermissions = signal<readonly string[]>([]);
@@ -37,30 +35,37 @@ export class AuthSession {
   private authorizationRequest: Observable<void> | null = null;
   private readonly restoreFailure = signal('');
   private readonly logoutFailure = signal(false);
-  private readonly channel = this.document.defaultView?.BroadcastChannel
-    ? new this.document.defaultView.BroadcastChannel('boilerate-session')
-    : null;
+  private readonly channel: BroadcastChannel | null;
   private refreshRequest: Observable<string> | null = null;
   private restoreRequest: Observable<boolean> | null = null;
   private sessionVersion = 0;
 
+  // Business variables
   readonly accessToken = computed(() => this.tokens()?.token ?? null);
-  readonly signedIn = computed(() => this.ready() && this.tokens() !== null);
+  readonly userId = computed(() => this.tokens()?.userId ?? null);
+  readonly sessionId = computed(() => this.tokens()?.sessionId ?? null);
+  readonly signedIn = computed(() => Boolean(this.accessToken() && this.ready()));
   readonly permissions = this.grantedPermissions.asReadonly();
   readonly isCentralAdmin = this.centralAdmin.asReadonly();
   readonly restoreError = this.restoreFailure.asReadonly();
   readonly logoutFailed = this.logoutFailure.asReadonly();
 
-  constructor() {
+  constructor(
+    private readonly api: ApiClient,
+    @Inject(DOCUMENT) private readonly document: Document,
+    private readonly router: Router,
+    destroyRef: DestroyRef,
+  ) {
+    this.channel = this.document.defaultView?.BroadcastChannel
+      ? new this.document.defaultView.BroadcastChannel('boilerate-session')
+      : null;
     if (this.channel) {
       this.channel.onmessage = (event: MessageEvent<unknown>) => {
         if (event.data === 'authorization-changed') {
-          this.reloadAuthorization()
-            .pipe(catchError(() => of(undefined)))
-            .subscribe();
+          if (this.accessToken()) this.reloadAuthorization().subscribe({ error: () => undefined });
           return;
         }
-        if (event.data !== 'login' && event.data !== 'logout') return;
+        if (event.data !== 'logout') return;
         const returnUrl = this.router.url;
         this.clear();
         if (returnUrl.startsWith('/admin')) {
@@ -68,7 +73,7 @@ export class AuthSession {
         }
       };
     }
-    inject(DestroyRef).onDestroy(() => this.channel?.close());
+    destroyRef.onDestroy(() => this.channel?.close());
   }
 
   signIn(request: LoginRequest): Observable<void> {
@@ -83,6 +88,49 @@ export class AuthSession {
           this.channel?.postMessage('login');
         }),
       );
+    }).pipe(
+      switchMap(() => this.loadPermissions(version)),
+      tap(() => {
+        completed = true;
+      }),
+      catchError((error: unknown) => {
+        if (version === this.sessionVersion) this.clear();
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        if (!completed && version === this.sessionVersion) this.clear();
+      }),
+    );
+  }
+
+  signInExternal(
+    endpoint: 'auth/google' | 'auth/google/code' | 'auth/facebook',
+    payload: unknown,
+  ): Observable<void> {
+    this.clear();
+    const version = this.sessionVersion;
+    let completed = false;
+    return this.withSessionLock(() => {
+      this.checkVersion(version);
+      return this.api
+        .post<ExternalTokenWire>(endpoint, payload, {
+          context: new HttpContext().set(SKIP_AUTH, true),
+        })
+        .pipe(
+          tap((wire) => {
+            const userId = wire.userId || readJwtUserId(wire.token);
+            this.setTokens(
+              {
+                userId,
+                token: wire.token,
+                sessionId: wire.sessionId,
+                accessTokenExpiresAt: wire.accessTokenExpiresAt,
+              },
+              version,
+            );
+            this.channel?.postMessage('login');
+          }),
+        );
     }).pipe(
       switchMap(() => this.loadPermissions(version)),
       tap(() => {
@@ -284,5 +332,22 @@ export class AuthSession {
     return locks
       ? defer(() => from(locks.request('boilerate-session', () => firstValueFrom(request()))))
       : defer(request);
+  }
+}
+
+function readJwtUserId(jwt: string): string {
+  try {
+    const payloadPart = jwt.split('.')[1];
+    if (!payloadPart) return '';
+    const base64 = payloadPart.replace(/-/gu, '+').replace(/_/gu, '/');
+    const json = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='));
+    const claims = JSON.parse(json) as Record<string, unknown>;
+    const id =
+      claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ??
+      claims['sub'] ??
+      claims['uid'];
+    return typeof id === 'string' ? id : '';
+  } catch {
+    return '';
   }
 }

@@ -1,7 +1,7 @@
 import { AbstractControl } from '@angular/forms';
 
 /** Presentation-ready message; domain validators retain their own error keys. */
-export function validationMessage(control: AbstractControl | undefined): string {
+export function validationMessage(control: AbstractControl | null | undefined): string {
   if (!control || !(control.touched || control.dirty) || !control.errors) return '';
   const server: unknown = control.errors['server'];
   if (Array.isArray(server))

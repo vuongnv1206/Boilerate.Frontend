@@ -1,0 +1,84 @@
+@if (errorMessage()) {
+  <p class="form-error" role="alert">
+    Chưa tải được thông tin đổi trả & hoàn tiền: {{ errorMessage() }}
+  </p>
+  <button type="button" class="store-button store-button-secondary" (click)="reload()">
+    Thử lại thông tin hậu mãi
+  </button>
+}
+@if (hasActivity()) {
+  @if (summary(); as current) {
+    <div class="shipment-card">
+      <div class="shipment-header">
+        <ui-icon name="receipt" [size]="20" />
+        <h2>Đổi trả & hoàn tiền đã ghi nhận</h2>
+      </div>
+      <p class="digital-hint">
+        Tổng tiền đã hoàn cho đơn hàng:
+        <strong>{{ current.refundedAmount | number: '1.0-0' }} ₫</strong>
+      </p>
+
+      <div class="shipments-list">
+        @for (refund of current.refunds; track refund.id) {
+          <div class="shipment-item">
+            <div class="shipment-info">
+              <span
+                >Khoản hoàn: <strong>{{ refund.amount | number: '1.0-0' }} ₫</strong></span
+              >
+              <span
+                >Chứng từ: <strong class="tracking-code">{{ refund.reference }}</strong></span
+              >
+              <span>
+                Hình thức:
+                <strong>{{
+                  refund.source === 'ManualBankTransfer' ? 'Chuyển khoản ngân hàng' : 'Tiền mặt'
+                }}</strong>
+              </span>
+              <span>
+                Thời điểm: <strong>{{ refund.refundedAtUtc | date: 'dd/MM/yyyy HH:mm' }}</strong>
+              </span>
+              <span
+                >Lý do: <strong>{{ refund.reason }}</strong></span
+              >
+            </div>
+          </div>
+        }
+
+        @for (receipt of current.returns; track receipt.id) {
+          <div class="shipment-item">
+            <div class="shipment-info">
+              <span>
+                Phiếu nhận hàng trả:
+                <strong class="tracking-code">{{ receipt.reference }}</strong>
+              </span>
+              <span
+                >Số lượng nhận lại: <strong>{{ returnQuantity(receipt.items) }}</strong></span
+              >
+              <span>
+                Thời điểm nhận:
+                <strong>{{ receipt.receivedAtUtc | date: 'dd/MM/yyyy HH:mm' }}</strong>
+              </span>
+              <span>
+                Lý do:
+                <strong>
+                  {{ receipt.reason
+                  }}{{ receipt.closeRemainingCod ? ' · Đã đóng COD còn lại' : '' }}
+                </strong>
+              </span>
+            </div>
+            @if (receipt.items.length > 0) {
+              <div class="shipment-info">
+                @for (line of receipt.items; track line.shipmentId + ':' + line.orderItemId) {
+                  <span>
+                    {{ itemName(line.orderItemId) }}:
+                    <strong>× {{ line.quantity }}</strong>
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+}

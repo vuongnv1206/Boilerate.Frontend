@@ -1,0 +1,188 @@
+<section class="collection-page" aria-labelledby="notifications-heading">
+  <header class="catalog-list-toolbar system-list-toolbar">
+    <h1 id="notifications-heading">
+      Thông báo <span>{{ unreadCount() }} chưa đọc</span>
+    </h1>
+    <label class="sr-only" for="notifications-read-filter">Lọc trạng thái đọc</label>
+    <p-select
+      inputId="notifications-read-filter"
+      [options]="filterOptions.slice()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="filter().isRead ?? null"
+      (ngModelChange)="onFilterChange($event)"
+      ariaLabel="Lọc trạng thái đọc"
+      appendTo="body"
+    />
+    <button
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
+      type="button"
+      aria-label="Tải lại thông báo"
+      (click)="reload()"
+      [disabled]="loading() || working()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
+    <button
+      pButton
+      severity="secondary"
+      outlined
+      type="button"
+      (click)="markAllRead()"
+      [disabled]="working() || unreadCount() === 0"
+    >
+      <ui-icon name="check" [size]="14" />
+      Đánh dấu tất cả đã đọc
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="collection-notice error-notice" role="alert">
+      <span>{{ errorMessage() }}</span>
+      <button
+        pButton
+        severity="secondary"
+        outlined
+        type="button"
+        (click)="reload()"
+        [disabled]="loading()"
+      >
+        Thử lại
+      </button>
+    </div>
+  }
+
+  @if (loading()) {
+    <ui-content-state kind="loading" title="Đang tải thông báo" layout="page" />
+  } @else if (isEmpty()) {
+    <ui-content-state
+      kind="empty"
+      icon="bell"
+      title="Không có thông báo"
+      message="Bạn chưa có thông báo nào trong mục này."
+      layout="page"
+    />
+  } @else {
+    <div
+      class="table-scroll system-table"
+      role="region"
+      aria-label="Danh sách thông báo"
+      tabindex="0"
+    >
+      <p-table
+        [value]="items().slice()"
+        dataKey="id"
+        tableStyleClass="content-table"
+        [tableStyle]="{ 'min-width': '760px' }"
+        [rowHover]="true"
+        [pt]="{ tableContainer: { style: { overflow: 'visible' } } }"
+      >
+        <ng-template #header>
+          <tr>
+            <th scope="col">Nội dung</th>
+            <th scope="col">Phân loại</th>
+            <th scope="col">Trạng thái</th>
+            <th scope="col">Thời gian</th>
+            <th scope="col" class="action-column">Thao tác</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-row>
+          <tr>
+            <td>
+              <strong>{{ row.title }}</strong>
+              <small>{{ row.message }}</small>
+            </td>
+            <td>
+              <ui-status-badge [tone]="typeTone(row.type)">
+                {{ typeLabel(row.type) }}
+              </ui-status-badge>
+            </td>
+            <td>
+              <ui-status-badge [tone]="row.isRead ? 'muted' : 'success'">
+                {{ row.isRead ? 'Đã đọc' : 'Chưa đọc' }}
+              </ui-status-badge>
+            </td>
+            <td>{{ formatDateTime(row.createdOn) }}</td>
+            <td>
+              <div class="system-row-actions">
+                @if (targetUrl(row)) {
+                  <button
+                    pButton
+                    severity="secondary"
+                    outlined
+                    type="button"
+                    (click)="openTarget(row)"
+                    [disabled]="working()"
+                  >
+                    <ui-icon name="arrow-up-right" [size]="14" />
+                    Mở liên kết
+                  </button>
+                }
+                @if (!row.isRead) {
+                  <button
+                    pButton
+                    severity="secondary"
+                    outlined
+                    type="button"
+                    (click)="markRead(row)"
+                    [disabled]="working()"
+                  >
+                    Đã đọc
+                  </button>
+                }
+                <button
+                  pButton
+                  severity="danger"
+                  outlined
+                  type="button"
+                  (click)="remove(row)"
+                  [disabled]="working()"
+                  [attr.aria-label]="'Xóa thông báo ' + row.title"
+                >
+                  <ui-icon name="trash" [size]="14" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
+
+  <footer class="pagination">
+    <span>{{ total() }} thông báo</span>
+    <div class="pagination-right">
+      <button
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang trước"
+        [disabled]="page() <= 1 || loading()"
+        (click)="changePage(page() - 1)"
+      >
+        <ui-icon name="chevron-left" [size]="14" />
+      </button>
+      <span>{{ page() }} / {{ totalPages() }}</span>
+      <button
+        pButton
+        severity="secondary"
+        text
+        rounded
+        iconOnly
+        type="button"
+        aria-label="Trang sau"
+        [disabled]="page() >= totalPages() || loading()"
+        (click)="changePage(page() + 1)"
+      >
+        <ui-icon name="chevron-right" [size]="14" />
+      </button>
+    </div>
+  </footer>
+</section>

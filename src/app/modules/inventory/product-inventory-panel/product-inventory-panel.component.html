@@ -1,0 +1,292 @@
+@if (inventoryLoading()) {
+  <p role="status">Đang tải tồn kho…</p>
+}
+@if (notice()) {
+  <p class="editor-notice" role="status">{{ notice() }}</p>
+}
+@if (panelError()) {
+  <div class="editor-error" role="alert">
+    <span>{{ panelError() }}</span>
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      outlined
+      size="small"
+      [disabled]="busy()"
+      (click)="reloadCanonical()"
+    >
+      Tải bản mới, giữ nội dung nhập
+    </button>
+  </div>
+}
+@if (mode(); as activeMode) {
+  <section class="product-commerce-editor" aria-label="Vận hành tồn kho">
+    <div class="product-commerce-heading">
+      <h3>
+        {{ activeMode === 'inventory' ? 'Điều chỉnh và lịch sử tồn' : 'Nội dung số' }}
+        {{ selectedVariant()?.sku }}
+      </h3>
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        outlined
+        size="small"
+        [disabled]="busy() || !!pendingAdjustment()"
+        (click)="requestClose()"
+      >
+        Đóng trình sửa
+      </button>
+    </div>
+    @if (activeMode === 'inventory') {
+      @if (selectedBalance(); as balance) {
+        <p>
+          Tồn {{ balance.onHand }} · Đã giữ {{ balance.reserved }} · Bán được
+          {{ balance.available }}
+        </p>
+        @if (canAdjust()) {
+          <form [formGroup]="adjustmentForm" (submit)="$event.preventDefault(); adjust()">
+            <fieldset [disabled]="busy() || !!pendingAdjustment()" class="product-content-fieldset">
+              <div class="field">
+                <label for="inventory-delta" class="field-label">Số lượng tăng / giảm</label>
+                <p-inputnumber
+                  inputId="inventory-delta"
+                  [step]="1"
+                  [useGrouping]="false"
+                  formControlName="delta"
+                  ariaDescribedBy="inventory-delta-help inventory-delta-error"
+                />
+                <ui-field-message id="inventory-delta-help"
+                  >Nhập số dương để nhập kho, số âm để giảm kho.</ui-field-message
+                >
+                <ui-field-message id="inventory-delta-error" tone="error">{{
+                  error(adjustmentForm.controls.delta)
+                }}</ui-field-message>
+              </div>
+              <div class="field">
+                <label for="inventory-reason" class="field-label">Lý do điều chỉnh</label>
+                <textarea
+                  pTextarea
+                  id="inventory-reason"
+                  formControlName="reason"
+                  rows="2"
+                  aria-describedby="inventory-reason-error"
+                ></textarea>
+                <ui-field-message id="inventory-reason-error" tone="error">{{
+                  error(adjustmentForm.controls.reason)
+                }}</ui-field-message>
+              </div>
+            </fieldset>
+            <button pButton severity="primary" type="submit" [disabled]="busy()">
+              {{ pendingAdjustment() ? 'Gửi lại đúng yêu cầu cũ' : 'Ghi nhận điều chỉnh' }}
+            </button>
+          </form>
+        }
+        @if (pendingAdjustment(); as pending) {
+          <p class="product-commerce-help" role="status">
+            Kết quả chưa rõ. Yêu cầu cũ được giữ nguyên để gửi lại an toàn. Mã:
+            {{ pending.operationId }}
+          </p>
+        }
+        <h4>Lịch sử tồn kho</h4>
+        @if (movements(); as ledger) {
+          <div class="product-commerce-table">
+            <p-table
+              [value]="ledger.items.slice()"
+              tableStyleClass="content-table"
+              [tableStyle]="{ 'min-width': '620px' }"
+            >
+              <ng-template #header>
+                <tr>
+                  <th>Thời gian</th>
+                  <th>Thay đổi</th>
+                  <th>Tồn sau</th>
+                  <th>Lý do</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-movement>
+                <tr>
+                  <td>{{ movement.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ movement.delta > 0 ? '+' : '' }}{{ movement.delta }}</td>
+                  <td>{{ movement.quantityAfter }}</td>
+                  <td>{{ movement.reason }}</td>
+                </tr>
+              </ng-template>
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="4">Chưa có điều chỉnh.</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+          <div class="product-commerce-actions">
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              outlined
+              size="small"
+              [disabled]="ledger.page <= 1"
+              (click)="loadMovements(ledger.page - 1)"
+            >
+              Trước
+            </button>
+            <span>Trang {{ ledger.page }} · {{ ledger.total }} bản ghi</span>
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              outlined
+              size="small"
+              [disabled]="ledger.page * ledger.pageSize >= ledger.total"
+              (click)="loadMovements(ledger.page + 1)"
+            >
+              Sau
+            </button>
+          </div>
+        }
+      }
+    }
+    @if (activeMode === 'digital') {
+      @if (availability(); as summary) {
+        <p>
+          Tổng {{ summary.total }} · Sẵn sàng {{ summary.availableCount }} · Ngừng cung cấp
+          {{ summary.disabledCount }} · Đã giữ {{ summary.reservedCount }} · Đã giao
+          {{ summary.deliveredCount }}
+        </p>
+      }
+      @if (
+        (product()?.fulfillmentKind === kind.DigitalShared && canDigitalUpdate()) ||
+        (product()?.fulfillmentKind === kind.DigitalUnique && canImport())
+      ) {
+        <form [formGroup]="digitalForm" (submit)="$event.preventDefault(); saveDigital()">
+          <fieldset [disabled]="busy()" class="product-content-fieldset">
+            @if (product()?.fulfillmentKind === kind.DigitalUnique) {
+              <div class="field">
+                <label for="digital-reference" class="field-label">Mã nội dung riêng</label>
+                <input
+                  pInputText
+                  id="digital-reference"
+                  formControlName="reference"
+                  aria-describedby="digital-reference-error"
+                />
+                <ui-field-message id="digital-reference-error" tone="error">{{
+                  error(digitalForm.controls.reference)
+                }}</ui-field-message>
+              </div>
+            }
+            <div class="field">
+              <label for="digital-content" class="field-label">Nội dung giao cho khách</label>
+              <textarea
+                pTextarea
+                id="digital-content"
+                rows="4"
+                formControlName="content"
+                aria-describedby="digital-content-help digital-content-error"
+              ></textarea>
+              <ui-field-message id="digital-content-help"
+                >Tối đa 8.000 byte UTF-8. Nội dung hiện có chỉ được đọc qua thao tác Xem nội
+                dung.</ui-field-message
+              >
+              <ui-field-message id="digital-content-error" tone="error">{{
+                error(digitalForm.controls.content)
+              }}</ui-field-message>
+            </div>
+            @if (product()?.fulfillmentKind === kind.DigitalShared) {
+              <label class="product-checkbox" for="shared-stock-active">
+                <p-checkbox
+                  inputId="shared-stock-active"
+                  [binary]="true"
+                  formControlName="isActive"
+                />
+                Sẵn sàng cung cấp
+              </label>
+            }
+            <button pButton severity="primary" type="submit">
+              {{
+                product()?.fulfillmentKind === kind.DigitalShared
+                  ? 'Lưu nội dung dùng chung'
+                  : 'Nhập nội dung riêng'
+              }}
+            </button>
+          </fieldset>
+        </form>
+      }
+      @if (digital(); as stock) {
+        <h4>Nội dung đã nhập</h4>
+        @for (entry of stock.items; track entry.id) {
+          <div class="product-digital-row">
+            <span>
+              <strong>{{ entry.reference }}</strong> · {{ stockLabels[entry.state] }}
+            </span>
+            <div class="product-commerce-actions">
+              @if (canReveal()) {
+                <ui-secret-reveal
+                  [label]="entry.reference"
+                  [revealLabel]="'Xem nội dung'"
+                  [hideLabel]="'Ẩn nội dung'"
+                  [canReveal]="canReveal()"
+                  [loading]="revealingId() === entry.id"
+                  [value]="revealedEntryId() === entry.id ? revealedSecret() || null : null"
+                  (revealRequested)="reveal(entry)"
+                  (hideRequested)="clearSecret()"
+                />
+              }
+              @if (canDigitalUpdate() && entry.state <= 2) {
+                <button
+                  pButton
+                  type="button"
+                  severity="secondary"
+                  outlined
+                  size="small"
+                  [disabled]="busy() || digitalForm.dirty"
+                  (click)="setDigitalAvailability(entry)"
+                >
+                  {{ entry.state === 1 ? 'Ngừng cung cấp' : 'Cho phép cung cấp' }}
+                </button>
+              }
+            </div>
+          </div>
+        } @empty {
+          <p>Chưa có nội dung số.</p>
+        }
+        <div class="product-commerce-actions">
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            outlined
+            size="small"
+            [disabled]="stock.page <= 1"
+            (click)="loadDigital(stock.page - 1)"
+          >
+            Trước
+          </button>
+          <span>Trang {{ stock.page }} · {{ stock.total }} nội dung</span>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            outlined
+            size="small"
+            [disabled]="stock.page * stock.pageSize >= stock.total"
+            (click)="loadDigital(stock.page + 1)"
+          >
+            Sau
+          </button>
+        </div>
+      }
+      @if (revealedSecret()) {
+        <pre class="product-secret" aria-label="Nội dung số đã yêu cầu xem">{{
+          revealedSecret()
+        }}</pre>
+      }
+    }
+  </section>
+}
+<ui-confirm-dialog
+  title="Bỏ nội dung đang sửa?"
+  [visible]="confirmation.visible()"
+  (answered)="confirmation.answer($event)"
+/>

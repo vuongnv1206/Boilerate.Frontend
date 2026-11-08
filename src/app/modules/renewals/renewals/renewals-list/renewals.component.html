@@ -1,0 +1,167 @@
+<section class="collection-page renewals-page" aria-labelledby="renewals-title">
+  <header class="catalog-list-toolbar renewal-list-toolbar">
+    <h1 id="renewals-title">
+      Gia hạn <span>{{ workspace.page().total }}</span>
+    </h1>
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Mọi trạng thái"
+      [ngModel]="statusFilter()"
+      (ngModelChange)="setStatus($event)"
+      appendTo="body"
+      ariaLabel="Lọc trạng thái yêu cầu gia hạn"
+    />
+    <button
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
+      type="button"
+      aria-label="Tải lại yêu cầu gia hạn"
+      title="Tải lại yêu cầu gia hạn"
+      (click)="workspace.loadPage(workspace.page().pageNumber, workspace.selectedStatus())"
+      [disabled]="workspace.loading()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
+    <span class="toolbar-hint">Thông tin tài khoản chỉ mở khi cần và có quyền.</span>
+  </header>
+  @if (workspace.selectedQueue(); as queue) {
+    <div class="collection-queue-filter" role="group" aria-label="Nhóm gia hạn đang chọn">
+      <span>{{ queueLabels[queue] }}</span>
+      <button pButton severity="secondary" text type="button" (click)="clearQueue()">
+        Xóa nhóm
+      </button>
+    </div>
+  }
+  @if (workspace.loading()) {
+    <ui-content-state
+      kind="loading"
+      layout="page"
+      title="Đang tải yêu cầu gia hạn"
+      message="Vui lòng chờ."
+    />
+  } @else if (workspace.errorMessage()) {
+    <ui-content-state
+      kind="error"
+      layout="page"
+      title="Không thể tải gia hạn"
+      [message]="workspace.errorMessage()"
+    >
+      <button
+        pButton
+        severity="secondary"
+        outlined
+        type="button"
+        (click)="workspace.loadPage(workspace.page().pageNumber, workspace.selectedStatus())"
+      >
+        Thử lại
+      </button>
+    </ui-content-state>
+  } @else {
+    <div class="collection-table">
+      <div class="table-scroll" role="region" aria-label="Danh sách yêu cầu gia hạn" tabindex="0">
+        <p-table
+          [value]="workspace.page().items.slice()"
+          dataKey="renewal.id"
+          tableStyleClass="content-table renewal-table"
+          [tableStyle]="{ 'min-width': '880px' }"
+          [rowHover]="true"
+          [pt]="{ tableContainer: { style: { overflow: 'visible' } } }"
+        >
+          <ng-template #header>
+            <tr>
+              <th scope="col">Sản phẩm cần gia hạn</th>
+              <th scope="col">Đơn liên quan</th>
+              <th scope="col">Tài khoản đích</th>
+              <th scope="col">Tiến độ</th>
+              <th scope="col">Số lượng</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-item>
+            <tr>
+              <td class="name-cell">
+                <a [routerLink]="[item.renewal.id]" [queryParams]="routeQuery()">{{
+                  item.renewal.name
+                }}</a>
+                <span class="order-contact">
+                  {{ item.renewal.sku
+                  }}{{
+                    item.renewal.optionDescription ? ' · ' + item.renewal.optionDescription : ''
+                  }}
+                </span>
+              </td>
+              <td>
+                @if (workspace.canViewOrders()) {
+                  <a [routerLink]="['/admin/orders', item.renewal.orderId]">Mở đơn hàng</a>
+                } @else {
+                  <span class="renewal-order-reference">Không có quyền xem đơn hàng</span>
+                }
+              </td>
+              <td>
+                <span class="renewal-private-value">{{
+                  item.renewal.targetPreview || 'Chưa nhập'
+                }}</span>
+              </td>
+              <td>
+                <ui-status-badge [tone]="statusTone(item.renewal.status)">
+                  {{ statusLabel(item.renewal.status) }}
+                </ui-status-badge>
+              </td>
+              <td>{{ item.renewal.quantity }}</td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr class="empty-row">
+              <td colspan="5">
+                <ui-content-state
+                  kind="empty"
+                  title="Không có yêu cầu gia hạn"
+                  message="Thử đổi bộ lọc trạng thái."
+                />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+      <footer class="pagination">
+        <span>
+          Hiển thị <strong>{{ rangeStart() }}–{{ rangeEnd() }}</strong> trong
+          {{ workspace.page().total }} yêu cầu
+        </span>
+        <div class="pagination-right">
+          <button
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
+            type="button"
+            aria-label="Trang gia hạn trước"
+            [disabled]="workspace.page().pageNumber <= 1 || workspace.loading()"
+            (click)="previous()"
+          >
+            <ui-icon name="chevron-left" [size]="14" />
+          </button>
+          <span>{{ workspace.page().pageNumber }} / {{ workspace.pageCount() }}</span>
+          <button
+            pButton
+            severity="secondary"
+            text
+            rounded
+            iconOnly
+            type="button"
+            aria-label="Trang gia hạn sau"
+            [disabled]="workspace.page().pageNumber >= workspace.pageCount() || workspace.loading()"
+            (click)="next()"
+          >
+            <ui-icon name="chevron-right" [size]="14" />
+          </button>
+        </div>
+      </footer>
+    </div>
+  }
+</section>

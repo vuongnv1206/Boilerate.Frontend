@@ -1,0 +1,257 @@
+<div class="storefront-page cart-page">
+  <div class="cart-header">
+    <div>
+      <p class="store-eyebrow"><span></span> LỰA CHỌN CỦA BẠN</p>
+      <h1 class="page-title">Giỏ hàng</h1>
+    </div>
+    <a routerLink="/shop/products" class="continue-shopping">
+      <ui-icon name="arrow-left" [size]="15" /> Tiếp tục mua sắm
+    </a>
+  </div>
+
+  @if (cartService.saveError()) {
+    <div class="catalog-state catalog-state-error" role="alert">
+      <p>{{ cartService.saveError() }}</p>
+      <button
+        type="button"
+        class="store-button store-button-secondary"
+        (click)="onRetry()"
+        [disabled]="cartService.loading()"
+      >
+        Tải lại giỏ hàng
+      </button>
+    </div>
+  }
+  <nav class="purchase-progress" aria-label="Tiến trình đặt hàng">
+    <span class="progress-step current" aria-current="step"><span>01</span> Giỏ hàng</span>
+    <span class="progress-line"></span>
+    <span class="progress-step"><span>02</span> Thông tin & thanh toán</span>
+    <span class="progress-line"></span>
+    <span class="progress-step"><span>03</span> Hoàn tất</span>
+  </nav>
+
+  @if (cartService.reading()) {
+    <div class="cart-loading" aria-busy="true">
+      <div class="cart-skeleton-row"></div>
+      <div class="cart-skeleton-row"></div>
+    </div>
+  } @else if (cartService.error()) {
+    <div class="catalog-state catalog-state-error" role="alert">
+      <ui-icon name="alert" [size]="24" />
+      <div>
+        <h2>Chưa thể tải giỏ hàng</h2>
+        <p>{{ cartService.error() }}</p>
+      </div>
+      <button type="button" class="store-button store-button-secondary" (click)="onRetry()">
+        Tải lại giỏ hàng
+      </button>
+    </div>
+  } @else if (cartService.itemCount() === 0) {
+    <div class="cart-empty">
+      <div class="empty-icon"><ui-icon name="shopping-bag" [size]="29" /></div>
+      <p class="store-eyebrow"><span></span> BẮT ĐẦU TỪ ĐÂY</p>
+      <h2>Giỏ hàng đang chờ bạn</h2>
+      <p>Thêm sản phẩm yêu thích để bắt đầu đặt hàng.</p>
+      <a routerLink="/shop/products" class="store-button store-button-primary shop-now-btn">
+        Khám phá sản phẩm <ui-icon name="arrow-right" [size]="16" />
+      </a>
+    </div>
+  } @else {
+    <div class="cart-layout">
+      <section class="cart-items-section" aria-labelledby="cart-items-title">
+        <div class="cart-section-heading">
+          <h2 id="cart-items-title">Sản phẩm trong giỏ</h2>
+          <span>{{ cartService.itemCount() }} món</span>
+        </div>
+        <div class="cart-table-wrap" role="region" aria-label="Chi tiết giỏ hàng" tabindex="0">
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th scope="col">Sản phẩm</th>
+                <th scope="col" class="col-price">Đơn giá</th>
+                <th scope="col" class="col-qty">Số lượng</th>
+                <th scope="col" class="col-total">Thành tiền</th>
+                <th scope="col" class="col-action">
+                  <span class="visually-hidden">Thao tác</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (cartService.isAuthenticated()) {
+                @for (item of cartService.cart().items; track item.variantId) {
+                  <tr class="cart-row">
+                    <td class="col-product">
+                      <span class="cart-item-mark"><ui-icon name="box" [size]="18" /></span>
+                      <span class="item-name">{{ item.name }}</span>
+                      <span class="item-sku">SKU: {{ item.sku }}</span>
+                      @if (!item.isAvailable) {
+                        <span class="item-unavailable">Tạm thời không khả dụng</span>
+                      }
+                    </td>
+                    <td class="col-price">
+                      @if (item.unitPrice !== null) {
+                        {{ item.unitPrice | number: '1.0-0' }} ₫
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td class="col-qty">
+                      <div class="qty-control" [attr.aria-label]="'Số lượng ' + item.name">
+                        <button
+                          type="button"
+                          class="qty-btn"
+                          [attr.aria-label]="'Giảm số lượng ' + item.name"
+                          [disabled]="item.quantity <= 1 || cartService.loading()"
+                          (click)="onUpdateQty(item.variantId, item.quantity - 1)"
+                        >
+                          −
+                        </button>
+                        <span class="qty-value">{{ item.quantity }}</span>
+                        <button
+                          type="button"
+                          class="qty-btn"
+                          [attr.aria-label]="'Tăng số lượng ' + item.name"
+                          [disabled]="item.quantity >= 999 || cartService.loading()"
+                          (click)="onUpdateQty(item.variantId, item.quantity + 1)"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </td>
+                    <td class="col-total">
+                      @if (item.unitPrice !== null) {
+                        {{ item.unitPrice * item.quantity | number: '1.0-0' }} ₫
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td class="col-action">
+                      <button
+                        type="button"
+                        class="delete-item-btn"
+                        [attr.aria-label]="'Xóa ' + item.name + ' khỏi giỏ hàng'"
+                        (click)="onRemoveItem(item.variantId)"
+                      >
+                        <ui-icon name="trash" [size]="16" />
+                      </button>
+                    </td>
+                  </tr>
+                }
+              } @else {
+                @for (item of cartService.guestItems(); track item.variantId) {
+                  <tr class="cart-row">
+                    <td class="col-product">
+                      <span class="cart-item-mark"><ui-icon name="box" [size]="18" /></span>
+                      <span class="item-name">{{ item.name }}</span>
+                      <span class="item-sku">SKU: {{ item.sku }}</span>
+                      @if (item.isDigital) {
+                        <span class="item-digital-tag">Sản phẩm số · thanh toán chuyển khoản</span>
+                      }
+                    </td>
+                    <td class="col-price">{{ item.unitPrice | number: '1.0-0' }} ₫</td>
+                    <td class="col-qty">
+                      <div class="qty-control" [attr.aria-label]="'Số lượng ' + item.name">
+                        <button
+                          type="button"
+                          class="qty-btn"
+                          [attr.aria-label]="'Giảm số lượng ' + item.name"
+                          [disabled]="item.quantity <= 1 || cartService.loading()"
+                          (click)="onUpdateQty(item.variantId, item.quantity - 1)"
+                        >
+                          −
+                        </button>
+                        <span class="qty-value">{{ item.quantity }}</span>
+                        <button
+                          type="button"
+                          class="qty-btn"
+                          [attr.aria-label]="'Tăng số lượng ' + item.name"
+                          [disabled]="item.quantity >= 999 || cartService.loading()"
+                          (click)="onUpdateQty(item.variantId, item.quantity + 1)"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </td>
+                    <td class="col-total">
+                      {{ item.unitPrice * item.quantity | number: '1.0-0' }} ₫
+                    </td>
+                    <td class="col-action">
+                      <button
+                        type="button"
+                        class="delete-item-btn"
+                        [attr.aria-label]="'Xóa ' + item.name + ' khỏi giỏ hàng'"
+                        (click)="onRemoveItem(item.variantId)"
+                      >
+                        <ui-icon name="trash" [size]="16" />
+                      </button>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (cartService.hasDigitalItems()) {
+          <p class="digital-notice">
+            <ui-icon name="key" [size]="16" /> Đơn có sản phẩm số cần thanh toán chuyển khoản. Nhân
+            viên sẽ xác nhận tiền trước khi nội dung được mở.
+          </p>
+        }
+      </section>
+
+      <aside class="cart-summary-section" aria-labelledby="cart-summary-title">
+        <div class="summary-card">
+          <p class="store-eyebrow"><span></span> ĐƠN HÀNG CỦA BẠN</p>
+          <h2 class="summary-title" id="cart-summary-title">Tóm tắt đơn hàng</h2>
+          <app-discount-code />
+          @if (cartService.quoteNeedsReview()) {
+            <div class="discount-code-review" role="alert">
+              <p>Giỏ hàng đã thay đổi. Vui lòng kiểm tra lại tổng tiền.</p>
+              <button
+                type="button"
+                class="store-button store-button-secondary"
+                (click)="cartService.acknowledgeQuoteChange()"
+              >
+                Đã kiểm tra
+              </button>
+            </div>
+          }
+          <div class="summary-row">
+            <span>Tạm tính</span>
+            <span>{{ cartService.subtotalAmount() | number: '1.0-0' }} ₫</span>
+          </div>
+          @if (cartService.discountAmount() > 0) {
+            <div class="summary-row">
+              <span>Giảm giá</span>
+              <span>−{{ cartService.discountAmount() | number: '1.0-0' }} ₫</span>
+            </div>
+          }
+          <div class="summary-row">
+            <span>Phí vận chuyển</span>
+            @if (cartService.shippingAmount() > 0) {
+              <span>{{ cartService.shippingAmount() | number: '1.0-0' }} ₫</span>
+            } @else {
+              <span class="free-shipping">Miễn phí</span>
+            }
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row total-row">
+            <span>Tổng cộng</span>
+            <span class="total-value">{{ cartService.totalAmount() | number: '1.0-0' }} ₫</span>
+          </div>
+          <button
+            type="button"
+            class="store-button store-button-primary checkout-btn"
+            [disabled]="!cartService.canCheckout() || cartService.quoteNeedsReview()"
+            (click)="onProceedToCheckout()"
+          >
+            Tiến hành đặt hàng <ui-icon name="arrow-right" [size]="16" />
+          </button>
+          <p class="summary-reassurance">
+            <ui-icon name="shield-check" [size]="15" /> Không cần tạo tài khoản để hoàn tất đơn.
+          </p>
+        </div>
+      </aside>
+    </div>
+  }
+</div>

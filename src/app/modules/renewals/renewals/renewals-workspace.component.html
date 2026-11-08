@@ -1,0 +1,142 @@
+<div class="renewals-workspace" [class.renewal-detail-open]="editorId() !== null">
+  @if (editorId() !== null) {
+    <button
+      #itemsToggle
+      pButton
+      severity="secondary"
+      outlined
+      class="renewal-items-toggle"
+      type="button"
+      (click)="panelOpen.set(!panelOpen())"
+      [attr.aria-expanded]="panelOpen()"
+      aria-controls="renewal-items"
+    >
+      <ui-icon name="panel-left" [size]="14" />Yêu cầu gia hạn
+    </button>
+    @if (panelOpen()) {
+      <button
+        pButton
+        text
+        class="renewal-items-backdrop"
+        type="button"
+        aria-label="Đóng danh sách gia hạn"
+        (click)="closePanel()"
+      ></button>
+    }
+    <aside
+      class="renewal-items"
+      [class.renewal-items-open]="panelOpen()"
+      id="renewal-items"
+      aria-label="Chuyển yêu cầu gia hạn"
+      tabindex="-1"
+      [attr.role]="panelOpen() ? 'dialog' : null"
+      [attr.aria-modal]="panelOpen() ? true : null"
+      [cdkTrapFocus]="panelOpen()"
+      [cdkTrapFocusAutoCapture]="panelOpen()"
+      (keydown.escape)="closePanel()"
+    >
+      <header>
+        <a routerLink="/admin/renewals" [queryParams]="routeQuery()" (click)="panelOpen.set(false)">
+          Yêu cầu gia hạn <span>{{ page().total }}</span>
+        </a>
+      </header>
+      <label class="renewal-item-filter" for="renewal-status-filter">
+        <span>Trạng thái</span>
+        <p-select
+          inputId="renewal-status-filter"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="selectedStatus()?.toString() ?? ''"
+          (ngModelChange)="setStatus($event)"
+          [ngModelOptions]="{ standalone: true }"
+          aria-label="Lọc yêu cầu gia hạn theo trạng thái"
+          appendTo="body"
+        />
+      </label>
+      @if (selectedQueue(); as queue) {
+        <div class="collection-queue-filter" role="group" aria-label="Nhóm gia hạn đang chọn">
+          <span>{{ queueLabels[queue] }}</span>
+          <button pButton severity="secondary" text type="button" (click)="clearQueue()">
+            Xóa nhóm
+          </button>
+        </div>
+      }
+      @if (loading()) {
+        <p class="renewal-items-message" role="status">Đang tải yêu cầu gia hạn…</p>
+      }
+      @if (errorMessage()) {
+        <div class="renewal-items-message" role="alert">
+          {{ errorMessage() }}
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            type="button"
+            (click)="loadPage(page().pageNumber, selectedStatus())"
+          >
+            Thử lại
+          </button>
+        </div>
+      }
+      <nav class="renewal-items-list" aria-label="Yêu cầu trong trang hiện tại">
+        @for (item of page().items; track item.renewal.id) {
+          <a
+            [routerLink]="['/admin/renewals', item.renewal.id]"
+            [queryParams]="routeQuery()"
+            (click)="panelOpen.set(false)"
+            [attr.aria-current]="editorId() === item.renewal.id ? 'page' : null"
+            [title]="item.renewal.name + ' · ' + item.renewal.sku"
+          >
+            <span class="renewal-item-heading">
+              <strong>{{ item.renewal.name }}</strong>
+              <ui-status-badge [tone]="statusTone(item.renewal.status)">
+                {{ statusLabels[item.renewal.status] }}
+              </ui-status-badge>
+            </span>
+            <span class="renewal-item-description">
+              {{ item.renewal.sku }} · {{ item.renewal.quantity }} sản phẩm
+            </span>
+            <small>Đơn hàng liên quan</small>
+          </a>
+        } @empty {
+          @if (!loading() && !errorMessage()) {
+            <p class="renewal-items-message">Không có yêu cầu trong trang này.</p>
+          }
+        }
+      </nav>
+      <footer>
+        <button
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
+          type="button"
+          aria-label="Trang gia hạn trước"
+          [disabled]="page().pageNumber <= 1 || loading()"
+          (click)="setPage(page().pageNumber - 1)"
+        >
+          <ui-icon name="chevron-left" [size]="14" />
+        </button>
+        <span>{{ page().pageNumber }} / {{ pageCount() }}</span>
+        <button
+          pButton
+          severity="secondary"
+          text
+          rounded
+          iconOnly
+          type="button"
+          aria-label="Trang gia hạn sau"
+          [disabled]="page().pageNumber >= pageCount() || loading()"
+          (click)="setPage(page().pageNumber + 1)"
+        >
+          <ui-icon name="chevron-right" [size]="14" />
+        </button>
+      </footer>
+    </aside>
+  }
+  <div class="renewals-workspace-content" [attr.inert]="panelOpen() ? '' : null">
+    <router-outlet />
+  </div>
+</div>

@@ -1,0 +1,235 @@
+<div class="storefront-page catalog-page">
+  <section class="shop-hero" aria-labelledby="shop-hero-title">
+    <div class="shop-hero-copy">
+      <p class="store-eyebrow"><span></span> CỬA HÀNG BOILERATE</p>
+      <h1 id="shop-hero-title">Điều bạn cần, <em>theo cách của bạn.</em></h1>
+      <p class="shop-hero-subtitle">
+        Khám phá hàng vật lý, nội dung số và dịch vụ trong cùng một cửa hàng.
+      </p>
+      <a class="store-button store-button-primary shop-hero-link" href="#product-catalog">
+        Xem sản phẩm <ui-icon name="arrow-right" [size]="16" />
+      </a>
+      <div class="shop-hero-notes" aria-label="Danh mục sản phẩm">
+        <span><ui-icon name="box" [size]="15" /> Hàng vật lý</span>
+        <span><ui-icon name="key" [size]="15" /> Sản phẩm số</span>
+      </div>
+    </div>
+
+    @if (page().items[0]; as featured) {
+      <a
+        class="shop-featured"
+        [routerLink]="['/shop/products', featured.slug]"
+        queryParamsHandling="preserve"
+      >
+        <div class="shop-featured-image">
+          @if (getProductImageSource(featured); as imageSource) {
+            <img [src]="imageSource" alt="" (error)="onProductImageError($event, featured)" />
+            <div class="product-image-empty" aria-hidden="true">
+              <ui-icon name="image" [size]="26" />
+              <span>Hình ảnh đang cập nhật</span>
+            </div>
+          } @else {
+            <div class="product-image-empty" aria-hidden="true">
+              <ui-icon name="image" [size]="26" />
+              <span>Hình ảnh đang cập nhật</span>
+            </div>
+          }
+        </div>
+        <div class="shop-featured-caption">
+          <span
+            ><small>KHÁM PHÁ SẢN PHẨM</small><strong>{{ featured.name }}</strong></span
+          >
+          <ui-icon name="arrow-up-right" [size]="18" />
+        </div>
+      </a>
+    } @else {
+      <div class="shop-hero-empty" aria-hidden="true">
+        <span>Boilerate</span>
+        <small>Không gian cho những lựa chọn của bạn.</small>
+      </div>
+    }
+  </section>
+
+  <section id="product-catalog" class="catalog-section" aria-labelledby="catalog-title">
+    <div class="catalog-section-heading">
+      <div>
+        <p class="store-eyebrow"><span></span> SẢN PHẨM</p>
+        <h2 id="catalog-title">Khám phá cửa hàng</h2>
+      </div>
+      @if (!loading() && !error()) {
+        <span class="catalog-product-count">{{ page().total }} sản phẩm</span>
+      }
+    </div>
+
+    <div class="catalog-filters-bar">
+      <label class="catalog-search-field" for="catalog-search">
+        <ui-icon name="search" [size]="19" />
+        <input
+          id="catalog-search"
+          aria-label="Tìm sản phẩm theo tên"
+          type="search"
+          autocomplete="off"
+          placeholder="Tìm sản phẩm…"
+          [value]="searchDraft()"
+          (input)="onSearchInput($event)"
+        />
+        <span class="search-shortcut" aria-hidden="true">⌕</span>
+      </label>
+
+      <div class="category-chips" role="group" aria-label="Lọc theo danh mục">
+        <button
+          type="button"
+          class="category-chip"
+          [class.active]="selectedCategoryId() === null"
+          [attr.aria-pressed]="selectedCategoryId() === null"
+          (click)="onSelectCategory(null)"
+        >
+          Tất cả
+        </button>
+        @for (cat of categories(); track cat.id) {
+          <button
+            type="button"
+            class="category-chip"
+            [class.active]="selectedCategoryId() === cat.id"
+            [attr.aria-pressed]="selectedCategoryId() === cat.id"
+            (click)="onSelectCategory(cat.id)"
+          >
+            {{ cat.name }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="products-grid" aria-label="Đang tải sản phẩm" aria-busy="true">
+        @for (placeholder of skeletonItems; track placeholder) {
+          <div class="product-skeleton" aria-hidden="true">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-copy"></div>
+            <div class="skeleton-price"></div>
+          </div>
+        }
+      </div>
+    } @else if (error()) {
+      <div class="catalog-state catalog-state-error" role="alert">
+        <ui-icon name="alert" [size]="24" />
+        <div>
+          <h3>Chưa thể tải sản phẩm</h3>
+          <p>{{ error() }}</p>
+        </div>
+        <button type="button" class="store-button store-button-secondary" (click)="onRetry()">
+          Thử lại
+        </button>
+      </div>
+    } @else if (!hasProducts()) {
+      <div class="catalog-state catalog-state-empty">
+        <ui-icon name="search" [size]="25" />
+        <h3>Chưa tìm thấy sản phẩm phù hợp</h3>
+        <p>Thử từ khóa khác hoặc xem lại toàn bộ cửa hàng.</p>
+        <button
+          type="button"
+          class="store-button store-button-secondary"
+          (click)="onResetFilters()"
+        >
+          Xóa bộ lọc
+        </button>
+      </div>
+    } @else {
+      <div class="products-grid">
+        @for (product of page().items; track product.id) {
+          <article class="product-card" [attr.data-product-id]="product.id">
+            <a
+              [routerLink]="['/shop/products', product.slug]"
+              queryParamsHandling="preserve"
+              class="product-card-link"
+            >
+              <div class="product-image-frame">
+                @if (getProductImageSource(product); as imageSource) {
+                  <img
+                    [src]="imageSource"
+                    [alt]="product.name"
+                    class="product-thumbnail"
+                    loading="lazy"
+                    (error)="onProductImageError($event, product)"
+                  />
+                  <div class="product-image-empty" aria-hidden="true">
+                    <ui-icon name="image" [size]="26" />
+                    <span>Hình ảnh đang cập nhật</span>
+                  </div>
+                } @else {
+                  <div class="product-image-empty">
+                    <ui-icon name="image" [size]="26" />
+                    <span>Hình ảnh đang cập nhật</span>
+                  </div>
+                }
+                <span
+                  class="fulfillment-badge"
+                  [class.digital]="isDigital(product.fulfillmentKind)"
+                >
+                  <ui-icon
+                    [name]="isDigital(product.fulfillmentKind) ? 'key' : 'box'"
+                    [size]="13"
+                  />
+                  {{ getFulfillmentLabel(product.fulfillmentKind) }}
+                </span>
+                <span class="product-open-icon" aria-hidden="true">
+                  <ui-icon name="arrow-up-right" [size]="17" />
+                </span>
+              </div>
+
+              <div class="product-info">
+                <div class="product-info-topline">
+                  <h3 class="product-name">{{ product.name }}</h3>
+                  <span
+                    class="stock-dot"
+                    [class.out-of-stock]="!product.inStock"
+                    [attr.aria-label]="product.inStock ? 'Còn hàng' : 'Tạm hết hàng'"
+                  ></span>
+                </div>
+                <div class="product-pricing">
+                  @if (product.fromPrice !== null) {
+                    <span class="price-label">Từ</span>
+                    <span class="price-value">{{ product.fromPrice | number: '1.0-0' }} ₫</span>
+                  } @else {
+                    <span class="price-contact">Liên hệ</span>
+                  }
+                </div>
+                <div class="product-card-bottom">
+                  <span class="product-stock-status" [class.out-of-stock]="!product.inStock">
+                    {{ product.inStock ? 'Sẵn sàng đặt mua' : 'Tạm hết hàng' }}
+                  </span>
+                  <span class="product-card-link-label">Xem sản phẩm</span>
+                </div>
+              </div>
+            </a>
+          </article>
+        }
+      </div>
+
+      @if (totalPages() > 1) {
+        <nav class="catalog-pagination" aria-label="Phân trang sản phẩm">
+          <button
+            type="button"
+            class="store-button store-button-secondary page-btn"
+            [disabled]="page().pageNumber <= 1"
+            (click)="onPageChange(page().pageNumber - 1)"
+          >
+            <ui-icon name="arrow-left" [size]="15" /> Trang trước
+          </button>
+          <span class="page-info">
+            Trang <strong>{{ page().pageNumber }}</strong> /
+            {{ totalPages() }}
+          </span>
+          <button
+            type="button"
+            class="store-button store-button-secondary page-btn"
+            [disabled]="page().pageNumber >= totalPages()"
+            (click)="onPageChange(page().pageNumber + 1)"
+          >
+            Trang sau <ui-icon name="arrow-right" [size]="15" />
+          </button>
+        </nav>
+      }
+    }
+  </section>
+</div>

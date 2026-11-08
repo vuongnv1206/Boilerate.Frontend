@@ -1,0 +1,120 @@
+@if (errorMessage()) {
+  <p class="form-error" role="alert">Chưa tải được yêu cầu gia hạn: {{ errorMessage() }}</p>
+  <button type="button" class="store-button store-button-secondary" (click)="reload()">
+    Thử lại thông tin gia hạn
+  </button>
+}
+@if (renewals().length > 0) {
+  <div class="shipment-card">
+    <div class="shipment-header">
+      <ui-icon name="refresh" [size]="20" />
+      <h2>Thông tin gia hạn dịch vụ</h2>
+    </div>
+    <p class="digital-hint">
+      Nhập hoặc kiểm tra tài khoản cần gia hạn cho từng gói dịch vụ thủ công trong đơn hàng.
+    </p>
+
+    <div class="shipments-list">
+      @for (renewal of renewals(); track renewal.id) {
+        <div class="shipment-item">
+          <div class="delivery-item-header">
+            <div>
+              <strong>{{ renewal.name }}</strong>
+              <div class="shipment-info">
+                <span
+                  >SKU: <strong>{{ renewal.sku }}</strong></span
+                >
+                @if (renewal.optionDescription) {
+                  <span
+                    >Phân loại: <strong>{{ renewal.optionDescription }}</strong></span
+                  >
+                }
+                <span
+                  >Số lượng: <strong>{{ renewal.quantity }}</strong></span
+                >
+              </div>
+            </div>
+            <ui-status-badge [tone]="statusTone(renewal.status)">
+              {{ statusLabels[renewal.status] }}
+            </ui-status-badge>
+          </div>
+
+          @if (renewal.verifiedExpiresAtUtc || renewal.completedAtUtc) {
+            <div class="shipment-info">
+              @if (renewal.completedAtUtc) {
+                <span>
+                  Hoàn tất:
+                  <strong>{{ renewal.completedAtUtc | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                </span>
+              }
+              @if (renewal.verifiedExpiresAtUtc) {
+                <span>
+                  Thời hạn mới:
+                  <strong>{{ renewal.verifiedExpiresAtUtc | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                </span>
+              }
+            </div>
+          }
+
+          @if (renewal.targetPreview) {
+            <p class="digital-hint">
+              Tài khoản đã gửi: <strong>{{ renewal.targetPreview }}</strong>
+            </p>
+            <ui-secret-reveal
+              [label]="'Tài khoản gia hạn · ' + renewal.name"
+              [value]="revealedTargets()[renewal.id] ?? null"
+              [loading]="revealingIds()[renewal.id] === true"
+              revealLabel="Hiện tài khoản đã gửi"
+              hideLabel="Ẩn"
+              (revealRequested)="revealTarget(renewal.id)"
+              (hideRequested)="hideTarget(renewal.id)"
+            />
+          }
+
+          @if (canEditTarget(renewal)) {
+            <form class="form-group" (submit)="$event.preventDefault(); submitTarget(renewal)">
+              <label [for]="'customer-renewal-target-' + renewal.id">
+                {{
+                  renewal.targetPreview
+                    ? 'Cập nhật email / ID tài khoản cần gia hạn'
+                    : 'Email hoặc ID tài khoản cần gia hạn'
+                }}
+              </label>
+              <input
+                [id]="'customer-renewal-target-' + renewal.id"
+                type="text"
+                class="form-control"
+                maxlength="256"
+                [name]="'renewalTarget-' + renewal.id"
+                placeholder="Nhập email hoặc tên đăng nhập cần gia hạn…"
+                [ngModel]="draftValue(renewal.id)"
+                (ngModelChange)="setDraft(renewal.id, $event)"
+                [disabled]="submittingIds()[renewal.id] === true"
+              />
+              @if (itemErrors()[renewal.id]) {
+                <p class="form-error" role="alert">{{ itemErrors()[renewal.id] }}</p>
+              }
+              <div class="form-actions">
+                <button
+                  type="submit"
+                  class="store-button store-button-primary"
+                  [disabled]="!canSubmitTarget(renewal)"
+                >
+                  {{
+                    submittingIds()[renewal.id] === true
+                      ? 'Đang lưu…'
+                      : renewal.targetPreview
+                        ? 'Cập nhật tài khoản'
+                        : 'Lưu tài khoản gia hạn'
+                  }}
+                </button>
+              </div>
+            </form>
+          } @else if (itemErrors()[renewal.id]) {
+            <p class="form-error" role="alert">{{ itemErrors()[renewal.id] }}</p>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

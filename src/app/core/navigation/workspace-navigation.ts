@@ -1,6 +1,11 @@
 import { InjectionToken, Signal } from '@angular/core';
-import { WorkspaceCollectionLink } from '@models/navigation.model';
-export type { WorkspaceCollectionLink } from '@models/navigation.model';
+import { WorkspaceCollectionLink } from './navigation.model';
+export type {
+  NavigationPermission,
+  PermissionRequirement,
+  ProtectedNavigationLink,
+  WorkspaceCollectionLink,
+} from './navigation.model';
 
 /** Presentation contract consumed by the shell; feature data stays with its owner. */
 export interface WorkspaceNavigation {
