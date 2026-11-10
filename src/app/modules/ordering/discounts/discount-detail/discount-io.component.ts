@@ -1,13 +1,4 @@
-﻿import {
-  Component,
-  DestroyRef,
-  HostListener,
-  OnInit,
-  computed,
-  effect,
-  signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+﻿import { Component } from '@angular/core';
 import {
   AbstractControl,
   FormControl,
@@ -16,12 +7,11 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription, distinctUntilChanged, finalize, map } from 'rxjs';
-import { AuthSession } from '@core/auth/auth-session';
-import { LeaveConfirmation } from '@core/base';
-import { normalizeApiError } from '@core/http/normalize-api-error';
-import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
+import { Observable, of } from 'rxjs';
+import { BaseEditorComponent } from '@core/base/base-editor.component';
+import { LeaveConfirmation } from '@core/base/leave-confirmation';
+import { clearServerErrors } from '@core/base/form-errors.util';
+import { ApiError } from '@core/http/api-error';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
@@ -150,160 +140,17 @@ export function discountRequest(
   providers: [LeaveConfirmation],
   templateUrl: './discount-io.component.html',
 })
-export class DiscountIo implements OnInit {
+export class DiscountIo extends BaseEditorComponent<DiscountDto, DiscountForm> {
   // System variables
-  private subscription?: Subscription;
-  private generation = 0;
-  private revision = 0;
-  private currentId = 'new';
+  protected override readonly fieldErrorAliases = DISCOUNT_FIELD_ALIASES;
+  protected override readonly lockFormWhileSaving = true;
 
   // Business variables
   readonly form = createDiscountForm();
   readonly kinds = [...DISCOUNT_KIND_OPTIONS];
-  readonly record = signal<DiscountDto | null>(null);
-  readonly loading = signal(false);
-  readonly saving = signal(false);
-  readonly ready = signal(false);
-  readonly loadError = signal('');
-  readonly summary = signal<readonly string[]>([]);
-  readonly saved = signal(false);
 
-  readonly canWrite = computed(() =>
-    this.session.can('Discount', this.record() ? 'Update' : 'Create'),
-  );
-
-  constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    private readonly destroyRef: DestroyRef,
-    private readonly discountsService: DiscountsService,
-    private readonly session: AuthSession,
-    readonly confirmation: LeaveConfirmation,
-  ) {
-    effect(() => {
-      const canWrite = this.canWrite() && !this.saving();
-      if (canWrite) this.form.enable({ emitEvent: false });
-      else this.form.disable({ emitEvent: false });
-    });
-    this.destroyRef.onDestroy(() => {
-      this.generation += 1;
-      this.subscription?.unsubscribe();
-    });
-  }
-
-  ngOnInit(): void {
-    if (!this.canWrite()) this.form.disable({ emitEvent: false });
-    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.revision += 1;
-      this.saved.set(false);
-      this.summary.set([]);
-      clearServerErrors(this.form);
-    });
-    this.route.paramMap
-      .pipe(
-        map((params) => params.get('id') ?? 'new'),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((id) => this.load(id));
-  }
-
-  load(id: string): void {
-    this.currentId = id;
-    const generation = ++this.generation;
-    this.subscription?.unsubscribe();
-    this.ready.set(false);
-    this.loading.set(id !== 'new');
-    this.loadError.set('');
-    this.summary.set([]);
-    this.saved.set(false);
-    this.record.set(null);
-    this.form.reset(discountFormValue(), { emitEvent: false });
-    if (id === 'new') {
-      this.ready.set(true);
-      return;
-    }
-    this.subscription = this.discountsService
-      .getById(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (record) => {
-          if (generation !== this.generation) return;
-          this.record.set(record);
-          this.form.reset(discountFormValue(record), { emitEvent: false });
-          if (!this.canWrite()) this.form.disable({ emitEvent: false });
-          this.loading.set(false);
-          this.ready.set(true);
-        },
-        error: (err: unknown) => {
-          if (generation !== this.generation) return;
-          this.loading.set(false);
-          this.loadError.set(normalizeApiError(err).message);
-        },
-      });
-  }
-
-  save(): void {
-    if (!this.ready() || !this.canWrite() || this.saving()) return;
-    this.form.markAllAsTouched();
-    if (this.form.invalid) return;
-    const wasNew = !this.route.snapshot.paramMap.has('id');
-    const current = this.record();
-    const value = discountRequest(this.form, current);
-    const generation = this.generation;
-    const revision = this.revision;
-    this.saving.set(true);
-    this.form.disable({ emitEvent: false });
-    this.loadError.set('');
-    this.summary.set([]);
-    const request = current
-      ? this.discountsService.updateDiscount(current.id, current.version, value)
-      : this.discountsService.create(value);
-    request
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          if (generation === this.generation) this.saving.set(false);
-        }),
-      )
-      .subscribe({
-        next: (saved) => {
-          if (generation !== this.generation) return;
-          this.record.set(saved);
-          if (revision === this.revision) {
-            this.form.reset(discountFormValue(saved), { emitEvent: false });
-            this.saved.set(true);
-          }
-          if (wasNew && !this.form.dirty) {
-            void this.router.navigate(['/admin/discounts', saved.id], {
-              replaceUrl: true,
-              queryParamsHandling: 'preserve',
-            });
-          }
-        },
-        error: (err: unknown) => {
-          if (generation !== this.generation) return;
-          const api = normalizeApiError(err);
-          this.loadError.set(
-            api.kind === 'conflict'
-              ? 'Mã đã thay đổi hoặc trùng. Bản nhập được giữ lại; hãy kiểm tra dữ liệu trước khi lưu lại.'
-              : api.message,
-          );
-          this.summary.set(
-            applyServerErrors(this.form, api.fieldErrors, DISCOUNT_FIELD_ALIASES).flatMap(
-              (entry) => entry.messages,
-            ),
-          );
-        },
-      });
-  }
-
-  async retry(): Promise<void> {
-    if (await this.confirmLeave()) this.load(this.currentId);
-  }
-
-  confirmLeave(): boolean | Promise<boolean> {
-    return this.confirmation.request(this.form.dirty, this.saving());
+  constructor(private readonly discountsService: DiscountsService) {
+    super();
   }
 
   error(control: AbstractControl): string | null {
@@ -314,11 +161,37 @@ export class DiscountIo implements OnInit {
     return validationMessage(control) || 'Kiểm tra lại giá trị này.';
   }
 
-  @HostListener('window:beforeunload', ['$event'])
-  beforeUnload(event: BeforeUnloadEvent): void {
-    if (this.form.dirty || this.saving()) {
-      event.preventDefault();
-      event.returnValue = '';
-    }
+  protected fetchRecord(id: string | null): Observable<DiscountDto | null> {
+    return id === null ? of(null) : this.discountsService.getById(id);
+  }
+
+  protected hydrate(record: DiscountDto | null): void {
+    this.form.reset(discountFormValue(record ?? undefined), { emitEvent: false });
+  }
+
+  protected persist(record: DiscountDto | null): Observable<DiscountDto> {
+    const value = discountRequest(this.form, record);
+    return record
+      ? this.discountsService.updateDiscount(record.id, record.version, value)
+      : this.discountsService.create(value);
+  }
+
+  protected canWriteRecord(record: DiscountDto | null): boolean {
+    return this.can('Discount', record ? 'Update' : 'Create');
+  }
+
+  protected override afterSaved(saved: DiscountDto, wasNew: boolean): void {
+    if (wasNew) this.openCreated(['/admin/discounts', saved.id]);
+  }
+
+  protected override onDraftChange(): void {
+    this.summaryErrors.set([]);
+    clearServerErrors(this.form);
+  }
+
+  protected override saveErrorMessage(error: ApiError): string {
+    return error.kind === 'conflict'
+      ? 'Mã đã thay đổi hoặc trùng. Bản nhập được giữ lại; hãy kiểm tra dữ liệu trước khi lưu lại.'
+      : error.message;
   }
 }
