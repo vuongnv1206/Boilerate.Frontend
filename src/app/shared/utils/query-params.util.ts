@@ -33,3 +33,15 @@ export function readTrimmedParam(
   if (typeof raw !== 'string') return '';
   return raw.trim().slice(0, maxLength);
 }
+
+/** True when the URL already holds exactly the canonical query params (values compared as strings). */
+export function sameQueryParams(
+  left: Readonly<Record<string, unknown>>,
+  right: Readonly<Record<string, unknown>>,
+): boolean {
+  const keys = Object.keys(left);
+  return (
+    keys.length === Object.keys(right).length &&
+    keys.every((key) => String(left[key]) === String(right[key]))
+  );
+}

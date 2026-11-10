@@ -27,7 +27,7 @@ import {
 import { AuthSession } from '@core/auth/auth-session';
 import { LeaveConfirmation } from '@core/base';
 import { normalizeApiError } from '@core/http/normalize-api-error';
-import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
+import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {

@@ -18,6 +18,7 @@ import {
 import { BaseComponent } from '@core/base';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
+import { sameQueryParams } from '@shared/utils/query-params.util';
 import {
   PRODUCT_SEARCH_DELAY_MS,
   ProductCategoryLookup,
@@ -28,7 +29,6 @@ import {
   ProductTypeLookup,
   listQueryParams,
   readProductListQuery,
-  sameQueryParams,
 } from '@api/catalog/models/product.dto';
 import { CategoriesService } from '@api/catalog/services/categories.service';
 import { MediaService } from '@api/catalog/services/media.service';

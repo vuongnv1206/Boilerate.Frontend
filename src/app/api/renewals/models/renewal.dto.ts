@@ -205,14 +205,3 @@ export function renewalListQueryParams(query: RenewalListQuery): Record<string, 
     ...(query.queue ? { queue: query.queue } : {}),
   };
 }
-
-export function sameRenewalQueryParams(
-  left: Readonly<Record<string, unknown>>,
-  right: Readonly<Record<string, unknown>>,
-): boolean {
-  const keys = Object.keys(left);
-  return (
-    keys.length === Object.keys(right).length &&
-    keys.every((key) => String(left[key]) === String(right[key]))
-  );
-}

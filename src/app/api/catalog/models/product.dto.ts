@@ -494,17 +494,6 @@ export function listQueryParams(
   };
 }
 
-export function sameQueryParams(
-  left: Readonly<Record<string, unknown>>,
-  right: Readonly<Record<string, unknown>>,
-): boolean {
-  const keys = Object.keys(left);
-  return (
-    keys.length === Object.keys(right).length &&
-    keys.every((key) => String(left[key]) === String(right[key]))
-  );
-}
-
 export type ProductFieldControlValue = string | number | boolean | null;
 
 export const catalogRequired: ValidatorFn = (control) =>

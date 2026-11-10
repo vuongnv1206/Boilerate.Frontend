@@ -5,6 +5,7 @@ import { Subject, catchError, debounceTime, filter, of, switchMap } from 'rxjs';
 import { BaseComponent } from '@core/base';
 import { ApiError } from '@core/http/api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
+import { sameQueryParams } from '@shared/utils/query-params.util';
 import {
   DEFAULT_ORDER_LIST_QUERY,
   EMPTY_ADMIN_ORDER_PAGE,
@@ -15,7 +16,6 @@ import {
   orderListQueryParams,
   orderStatusTone,
   readOrderListQuery,
-  sameOrderQueryParams,
 } from '@api/ordering/models/order.dto';
 import { OrdersService } from '@api/ordering/services/orders.service';
 
@@ -117,7 +117,7 @@ export class OrdersWorkspace extends BaseComponent implements OnInit {
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const parsed = readOrderListQuery(params);
       const canonical = orderListQueryParams(parsed);
-      if (!sameOrderQueryParams(params, canonical)) {
+      if (!sameQueryParams(params, canonical)) {
         this.updateQuery(parsed, true);
         return;
       }

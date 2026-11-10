@@ -38,7 +38,7 @@ import type {
 } from 'primeng/types/autocomplete';
 import { BaseComponent, LeaveConfirmation } from '@core/base';
 import { ApiError } from '@core/http/api-error';
-import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
+import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {

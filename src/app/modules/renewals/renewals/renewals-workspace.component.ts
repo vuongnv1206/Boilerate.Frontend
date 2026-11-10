@@ -5,6 +5,7 @@ import { Subject, catchError, filter, map, of, switchMap } from 'rxjs';
 import { BaseComponent } from '@core/base';
 import { ApiError } from '@core/http/api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
+import { sameQueryParams } from '@shared/utils/query-params.util';
 import {
   RENEWAL_QUEUE_LABELS,
   RENEWAL_STATUS_FILTER_OPTIONS,
@@ -15,7 +16,6 @@ import {
   readRenewalListQuery,
   renewalListQueryParams,
   renewalStatusTone,
-  sameRenewalQueryParams,
 } from '@api/renewals/models/renewal.dto';
 import { RenewalsService } from '@api/renewals/services/renewals.service';
 
@@ -120,7 +120,7 @@ export class RenewalsWorkspace extends BaseComponent implements OnInit {
       )
       .subscribe(({ page, status, queue }) => {
         const params = this.route.snapshot.queryParams;
-        if (!sameRenewalQueryParams(params, renewalListQueryParams({ page, status, queue }))) {
+        if (!sameQueryParams(params, renewalListQueryParams({ page, status, queue }))) {
           this.updateQuery(page, status, true, queue);
           return;
         }

@@ -5,12 +5,8 @@ import { Subject, Subscription, debounceTime, filter } from 'rxjs';
 import { BaseComponent } from '@core/base';
 import { ApiError } from '@core/http/api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import {
-  ListQuery,
-  listQueryParams,
-  readListQuery,
-  sameQueryParams,
-} from '@api/catalog/models/product.dto';
+import { sameQueryParams } from '@shared/utils/query-params.util';
+import { ListQuery, listQueryParams, readListQuery } from '@api/catalog/models/product.dto';
 import {
   PRODUCT_TYPE_PAGE_SIZE,
   PRODUCT_TYPE_SEARCH_DELAY_MS,

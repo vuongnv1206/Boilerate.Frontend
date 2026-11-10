@@ -332,14 +332,3 @@ export function orderListQueryParams(query: OrderListQuery): Record<string, stri
     ...(query.pageSize !== 10 ? { pageSize: query.pageSize } : {}),
   };
 }
-
-export function sameOrderQueryParams(
-  left: Readonly<Record<string, unknown>>,
-  right: Readonly<Record<string, unknown>>,
-): boolean {
-  const keys = Object.keys(left);
-  return (
-    keys.length === Object.keys(right).length &&
-    keys.every((key) => String(left[key]) === String(right[key]))
-  );
-}

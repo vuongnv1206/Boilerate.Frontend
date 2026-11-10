@@ -34,7 +34,7 @@ import {
 import { BaseComponent } from '@core/base';
 import { ApiError } from '@core/http/api-error';
 import { createOperationId } from '@core/http/operation-id';
-import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
+import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
