@@ -1,11 +1,4 @@
-﻿import {
-  Component,
-  HostListener,
-  OnInit,
-  ViewEncapsulation,
-  computed,
-  signal,
-} from '@angular/core';
+﻿import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -15,12 +8,10 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import {
-  BaseFormComponent,
-  LeaveConfirmation,
-  applyServerErrors,
-  clearServerErrors,
-} from '@core/base';
+import { Observable } from 'rxjs';
+import { BaseEditorComponent } from '@core/base/base-editor.component';
+import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
+import { LeaveConfirmation } from '@core/base/leave-confirmation';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { formatVnDateTime } from '@shared/utils/date.util';
@@ -65,11 +56,9 @@ type PersonalProfileForm = FormGroup<{
   templateUrl: './account.component.html',
   styleUrl: '../../../../styles/ui/_account.scss',
 })
-export class AccountComponent
-  extends BaseFormComponent<PersonalProfileDto, PersonalProfileForm>
-  implements OnInit
-{
+export class AccountComponent extends BaseEditorComponent<PersonalProfileDto, PersonalProfileForm> {
   // System variables
+  protected override readonly bannerOnValidationError = false;
   readonly activeTab = signal<AccountTabKey>('profile');
   readonly canViewAudit = computed(() => this.can('Users', 'View'));
   readonly canExportAudit = computed(() => this.can('Users', 'Export'));
@@ -125,7 +114,6 @@ export class AccountComponent
   constructor(
     private readonly personalService: PersonalService,
     private readonly fb: FormBuilder,
-    public readonly confirmation: LeaveConfirmation,
   ) {
     super();
     this.form = this.fb.nonNullable.group({
@@ -149,10 +137,6 @@ export class AccountComponent
     });
   }
 
-  ngOnInit(): void {
-    this.loadProfile();
-  }
-
   selectTab(tab: AccountTabKey): void {
     if (tab === 'audit' && !this.canViewAudit()) return;
     this.activeTab.set(tab);
@@ -161,72 +145,6 @@ export class AccountComponent
     } else if (tab === 'audit' && !this.auditLoaded()) {
       this.loadAuditLogs(1);
     }
-  }
-
-  loadProfile(): void {
-    this.run(this.personalService.getProfile(), {
-      busy: this.loading,
-      onSuccess: (profile) => {
-        this.bindRecord(profile, (dto) => {
-          this.form.reset(
-            {
-              firstName: dto.firstName ?? '',
-              lastName: dto.lastName ?? '',
-              email: dto.email ?? '',
-              phoneNumber: dto.phoneNumber ?? '',
-              deleteCurrentImage: false,
-            },
-            { emitEvent: false },
-          );
-          this.form.controls.email.disable({ emitEvent: false });
-        });
-      },
-    });
-  }
-
-  async reloadProfileAfterConflict(): Promise<void> {
-    if (await this.confirmLeave()) {
-      this.loadProfile();
-    }
-  }
-
-  saveProfile(): void {
-    const current = this.record();
-    if (!current) return;
-    this.submitForm(
-      (raw, version) =>
-        this.personalService.updateProfile({
-          id: current.id,
-          version,
-          firstName: raw.firstName.trim(),
-          lastName: raw.lastName.trim(),
-          email: (current.email ?? raw.email).trim(),
-          phoneNumber: raw.phoneNumber.trim() || null,
-          deleteCurrentImage: raw.deleteCurrentImage,
-        }),
-      {
-        successMessage: 'Đã cập nhật hồ sơ cá nhân.',
-        onSuccess: (saved) => {
-          this.bindRecord(saved, (dto) => {
-            this.form.reset(
-              {
-                firstName: dto.firstName ?? '',
-                lastName: dto.lastName ?? '',
-                email: dto.email ?? '',
-                phoneNumber: dto.phoneNumber ?? '',
-                deleteCurrentImage: false,
-              },
-              { emitEvent: false },
-            );
-            this.form.controls.email.disable({ emitEvent: false });
-          });
-          this.session
-            .reloadAuthorization()
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe({ error: () => undefined });
-        },
-      },
-    );
   }
 
   profileFieldError(field: 'firstName' | 'lastName' | 'phoneNumber'): string | null {
@@ -406,11 +324,49 @@ export class AccountComponent
     return formatVnDateTime(value);
   }
 
-  @HostListener('window:beforeunload', ['$event'])
-  beforeUnload(event: BeforeUnloadEvent): void {
-    if (this.form.dirty || this.saving()) {
-      event.preventDefault();
-      event.returnValue = '';
-    }
+  protected fetchRecord(): Observable<PersonalProfileDto> {
+    return this.personalService.getProfile();
+  }
+
+  protected hydrate(record: PersonalProfileDto | null): void {
+    this.form.reset(
+      {
+        firstName: record?.firstName ?? '',
+        lastName: record?.lastName ?? '',
+        email: record?.email ?? '',
+        phoneNumber: record?.phoneNumber ?? '',
+        deleteCurrentImage: false,
+      },
+      { emitEvent: false },
+    );
+  }
+
+  protected persist(record: PersonalProfileDto | null): Observable<PersonalProfileDto> {
+    const raw = this.form.getRawValue();
+    return this.personalService.updateProfile({
+      id: record?.id ?? '',
+      version: record?.version ?? null,
+      firstName: raw.firstName.trim(),
+      lastName: raw.lastName.trim(),
+      email: (record?.email ?? raw.email).trim(),
+      phoneNumber: raw.phoneNumber.trim() || null,
+      deleteCurrentImage: raw.deleteCurrentImage,
+    });
+  }
+
+  protected canWriteRecord(record: PersonalProfileDto | null): boolean {
+    return record !== null;
+  }
+
+  protected override restrictControls(): void {
+    this.form.controls.email.disable({ emitEvent: false });
+  }
+
+  protected override afterSaved(): void {
+    this.toast.success('Đã cập nhật hồ sơ cá nhân.');
+    this.session
+      .reloadAuthorization()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ error: () => undefined });
   }
 }

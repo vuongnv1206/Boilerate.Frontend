@@ -1,7 +1,8 @@
-﻿import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+﻿import { Component, computed } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { BaseFormComponent, LeaveConfirmation } from '@core/base';
+import { Observable } from 'rxjs';
+import { BaseEditorComponent } from '@core/base/base-editor.component';
+import { LeaveConfirmation } from '@core/base/leave-confirmation';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
@@ -17,10 +18,11 @@ import { StorefrontSettingsService } from '@api/storefront/services/storefront-s
   providers: [LeaveConfirmation],
   templateUrl: './storefront-settings.component.html',
 })
-export class StorefrontSettingsComponent
-  extends BaseFormComponent<StorefrontSettings>
-  implements OnInit
-{
+export class StorefrontSettingsComponent extends BaseEditorComponent<StorefrontSettings> {
+  // System variables
+  protected override readonly lockFormWhileSaving = true;
+  protected override readonly bannerOnValidationError = false;
+
   // Business variables
   readonly form = new FormGroup({
     bankTransferEnabled: new FormControl(false, { nonNullable: true }),
@@ -31,83 +33,12 @@ export class StorefrontSettingsComponent
     instructions: new FormControl('', { nonNullable: true }),
   });
 
-  readonly notice = signal('');
+  readonly notice = computed(() => (this.saved() ? 'Đã lưu thông tin thanh toán.' : ''));
   readonly canEdit = computed(() => this.session.can('StorefrontSettings', 'Update'));
-  readonly leaveVisible = computed(() => this.leaveConfirmation?.visible() ?? false);
+  readonly leaveVisible = computed(() => this.confirmation.visible());
 
   constructor(private readonly settingsService: StorefrontSettingsService) {
     super();
-    effect(() => {
-      const editable = this.canEdit();
-      const isSaving = this.saving();
-      const loaded = this.record() !== null;
-      untracked(() => {
-        if (!editable || isSaving || !loaded) {
-          this.form.disable({ emitEvent: false });
-        } else {
-          this.form.enable({ emitEvent: false });
-        }
-      });
-    });
-  }
-
-  ngOnInit(): void {
-    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      if (this.form.dirty) {
-        this.notice.set('');
-      }
-    });
-    this.load();
-  }
-
-  load(): void {
-    this.notice.set('');
-    this.run(this.settingsService.getAdminSettings(), {
-      busy: this.loading,
-      onSuccess: (settings) => {
-        this.bindRecord(settings, (dto) => {
-          this.form.setValue(
-            {
-              bankTransferEnabled: dto.bankTransferEnabled,
-              bankName: dto.bankName ?? '',
-              accountNumber: dto.accountNumber ?? '',
-              accountHolder: dto.accountHolder ?? '',
-              branch: dto.branch ?? '',
-              instructions: dto.instructions ?? '',
-            },
-            { emitEvent: false },
-          );
-        });
-        if (!this.canEdit()) {
-          this.form.disable({ emitEvent: false });
-        }
-      },
-    });
-  }
-
-  save(): void {
-    if (!this.canEdit() || !this.record() || this.loading()) return;
-    this.notice.set('');
-    this.submitForm(
-      (raw, version) => {
-        const payload: UpdateStorefrontSettings = {
-          version: version ?? '',
-          bankTransferEnabled: raw.bankTransferEnabled,
-          bankName: raw.bankName || null,
-          accountNumber: raw.accountNumber || null,
-          accountHolder: raw.accountHolder || null,
-          branch: raw.branch || null,
-          instructions: raw.instructions || null,
-        };
-        return this.settingsService.updateAdminSettings(payload);
-      },
-      {
-        disableWhileSaving: true,
-        onSuccess: () => {
-          this.notice.set('Đã lưu thông tin thanh toán.');
-        },
-      },
-    );
   }
 
   fieldError(name: string): string | null {
@@ -116,6 +47,42 @@ export class StorefrontSettingsComponent
   }
 
   answerLeave(allowed: boolean): void {
-    this.leaveConfirmation?.answer(allowed);
+    this.confirmation.answer(allowed);
+  }
+
+  protected fetchRecord(): Observable<StorefrontSettings> {
+    return this.settingsService.getAdminSettings();
+  }
+
+  protected hydrate(record: StorefrontSettings | null): void {
+    this.form.reset(
+      {
+        bankTransferEnabled: record?.bankTransferEnabled ?? false,
+        bankName: record?.bankName ?? '',
+        accountNumber: record?.accountNumber ?? '',
+        accountHolder: record?.accountHolder ?? '',
+        branch: record?.branch ?? '',
+        instructions: record?.instructions ?? '',
+      },
+      { emitEvent: false },
+    );
+  }
+
+  protected persist(record: StorefrontSettings | null): Observable<StorefrontSettings> {
+    const raw = this.form.getRawValue();
+    const payload: UpdateStorefrontSettings = {
+      version: record?.version ?? '',
+      bankTransferEnabled: raw.bankTransferEnabled,
+      bankName: raw.bankName || null,
+      accountNumber: raw.accountNumber || null,
+      accountHolder: raw.accountHolder || null,
+      branch: raw.branch || null,
+      instructions: raw.instructions || null,
+    };
+    return this.settingsService.updateAdminSettings(payload);
+  }
+
+  protected canWriteRecord(record: StorefrontSettings | null): boolean {
+    return record !== null && this.canEdit();
   }
 }

@@ -36,7 +36,7 @@
         <ui-content-state kind="loading" title="Đang tải hồ sơ cá nhân" />
       } @else if (!record() && errorMessage()) {
         <ui-content-state kind="error" title="Không tải được hồ sơ" [message]="errorMessage()">
-          <button pButton severity="secondary" outlined type="button" (click)="loadProfile()">
+          <button pButton severity="secondary" outlined type="button" (click)="load()">
             Thử lại
           </button>
         </ui-content-state>
@@ -75,7 +75,7 @@
               severity="secondary"
               outlined
               type="button"
-              (click)="reloadProfileAfterConflict()"
+              (click)="retry()"
               [disabled]="saving()"
             >
               Tải lại hồ sơ
@@ -87,7 +87,7 @@
 
         <ui-form-error-summary [messages]="summaryErrors()" />
 
-        <form [formGroup]="form" (ngSubmit)="saveProfile()" novalidate>
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
           <div class="account-grid">
             <ui-form-field
               forId="personal-first-name"
@@ -168,7 +168,7 @@
             <button pButton severity="primary" type="submit" [disabled]="saving() || !form.dirty">
               {{ saving() ? 'Đang lưu…' : 'Lưu hồ sơ' }}
             </button>
-            <span class="account-meta-sub">Phiên bản bản ghi: {{ version() || '—' }}</span>
+            <span class="account-meta-sub">Phiên bản bản ghi: {{ record()?.version || '—' }}</span>
           </div>
         </form>
       }

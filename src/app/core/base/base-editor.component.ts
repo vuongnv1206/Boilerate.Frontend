@@ -24,7 +24,7 @@ import {
 import { ApiError } from '../http/api-error';
 import { normalizeApiError } from '../http/normalize-api-error';
 import { BaseComponent } from './base.component';
-import { applyServerErrors } from './form-errors.util';
+import { applyServerErrors, clearServerErrors } from './form-errors.util';
 import { LeaveConfirmation } from './leave-confirmation';
 
 /**
@@ -136,6 +136,7 @@ export abstract class BaseEditorComponent<TDto, TForm extends FormGroup = FormGr
 
   save(): void {
     if (!this.ready() || !this.canWrite() || this.saving()) return;
+    clearServerErrors(this.form);
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const current = this.record();
