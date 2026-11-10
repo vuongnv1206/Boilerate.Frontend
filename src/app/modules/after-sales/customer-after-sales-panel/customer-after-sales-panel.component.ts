@@ -1,8 +1,6 @@
 ﻿import { Component, computed, effect, input, signal, untracked } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
 import { BaseComponent } from '@core/base';
-import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
   AfterSalesOrderItemSnapshot,
@@ -69,20 +67,8 @@ export class CustomerAfterSalesPanel extends BaseComponent {
 
   private loadSummary(orderId: string): void {
     this.loadSub?.unsubscribe();
-    this.loading.set(true);
-    this.errorMessage.set('');
-    this.loadSub = this.afterSalesService
-      .getCustomerAfterSales(orderId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data) => {
-          this.summary.set(data);
-          this.loading.set(false);
-        },
-        error: (err: unknown) => {
-          this.loading.set(false);
-          this.errorMessage.set(normalizeApiError(err).message);
-        },
-      });
+    this.loadSub = this.run(this.afterSalesService.getCustomerAfterSales(orderId), {
+      onSuccess: (data) => this.summary.set(data),
+    });
   }
 }

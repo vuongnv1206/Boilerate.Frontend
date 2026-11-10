@@ -1,8 +1,6 @@
 ﻿import { Component, effect, input, signal, untracked } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BaseComponent } from '@core/base';
-import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { SecretReveal } from '@shared/ui/secret-reveal/secret-reveal.component';
 import { DigitalDeliveryDto } from '@api/payments/models/payment.dto';
@@ -69,21 +67,11 @@ export class CustomerDigitalDeliveriesPanel extends BaseComponent {
 
   private loadDeliveries(orderId: string): void {
     this.activeSub?.unsubscribe();
-    this.loading.set(true);
-    this.errorMessage.set('');
-    this.activeSub = this.deliveriesService
-      .getCustomerDeliveries(orderId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (items) => {
-          this.deliveries.set(items);
-          this.hiddenIds.set({});
-          this.loading.set(false);
-        },
-        error: (err: unknown) => {
-          this.loading.set(false);
-          this.errorMessage.set(normalizeApiError(err).message);
-        },
-      });
+    this.activeSub = this.run(this.deliveriesService.getCustomerDeliveries(orderId), {
+      onSuccess: (items) => {
+        this.deliveries.set(items);
+        this.hiddenIds.set({});
+      },
+    });
   }
 }

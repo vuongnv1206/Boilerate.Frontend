@@ -1,8 +1,6 @@
 ﻿import { Component, effect, input, signal, untracked } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
 import { BaseComponent } from '@core/base';
-import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { ShipmentDto, ShipmentStatus } from '@api/shipping/models/shipment.dto';
 import { ShipmentsService } from '@api/shipping/services/shipments.service';
@@ -53,20 +51,8 @@ export class CustomerShipmentsPanel extends BaseComponent {
 
   private loadShipments(orderId: string): void {
     this.activeSub?.unsubscribe();
-    this.loading.set(true);
-    this.errorMessage.set('');
-    this.activeSub = this.shipmentsService
-      .getCustomerShipments(orderId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (items) => {
-          this.shipments.set(items);
-          this.loading.set(false);
-        },
-        error: (err: unknown) => {
-          this.loading.set(false);
-          this.errorMessage.set(normalizeApiError(err).message);
-        },
-      });
+    this.activeSub = this.run(this.shipmentsService.getCustomerShipments(orderId), {
+      onSuccess: (items) => this.shipments.set(items),
+    });
   }
 }

@@ -194,21 +194,11 @@ export class CustomerRenewalTargetPanel extends BaseComponent {
 
   private loadRenewals(orderId: string): void {
     this.loadSub?.unsubscribe();
-    this.loading.set(true);
-    this.errorMessage.set('');
-    this.loadSub = this.renewalsService
-      .getCustomerOrderRenewals(orderId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (items) => {
-          this.renewals.set(items);
-          this.revealedTargets.set({});
-          this.loading.set(false);
-        },
-        error: (err: unknown) => {
-          this.loading.set(false);
-          this.errorMessage.set(normalizeApiError(err).message);
-        },
-      });
+    this.loadSub = this.run(this.renewalsService.getCustomerOrderRenewals(orderId), {
+      onSuccess: (items) => {
+        this.renewals.set(items);
+        this.revealedTargets.set({});
+      },
+    });
   }
 }
