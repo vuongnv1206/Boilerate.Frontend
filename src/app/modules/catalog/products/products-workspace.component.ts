@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
+﻿import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import {
@@ -29,11 +29,11 @@ import {
   listQueryParams,
   readProductListQuery,
   sameQueryParams,
-} from '../models/product.dto';
-import { CategoriesService } from '../services/categories.service';
-import { MediaService } from '../services/media.service';
-import { ProductTypesService } from '../services/product-types.service';
-import { ProductsService } from '../services/products.service';
+} from '@api/catalog/models/product.dto';
+import { CategoriesService } from '@api/catalog/services/categories.service';
+import { MediaService } from '@api/catalog/services/media.service';
+import { ProductTypesService } from '@api/catalog/services/product-types.service';
+import { ProductsService } from '@api/catalog/services/products.service';
 
 @Component({
   selector: 'app-products-workspace',

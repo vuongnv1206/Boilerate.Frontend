@@ -1,9 +1,9 @@
-import { Component, signal } from '@angular/core';
+﻿import { Component, signal } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { BaseComponent, applyServerErrors, clearServerErrors } from '@core/base';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { AUTH_FORM_STYLES } from '../../models/identity.dto';
-import { IdentityAuthService } from '../../services/identity-auth.service';
+import { AUTH_FORM_STYLES } from '@api/identity/models/identity.dto';
+import { IdentityAuthService } from '@api/identity/services/identity-auth.service';
 
 @Component({
   selector: 'app-forgot-password',

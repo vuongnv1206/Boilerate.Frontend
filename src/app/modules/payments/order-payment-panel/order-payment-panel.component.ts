@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+﻿import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { BaseComponent } from '@core/base';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
@@ -10,8 +10,8 @@ import {
   PaymentActionFailure,
   PaymentPanelOrder,
   PaymentSource,
-} from '../models/payment.dto';
-import { PaymentsService } from '../services/payments.service';
+} from '@api/payments/models/payment.dto';
+import { PaymentsService } from '@api/payments/services/payments.service';
 
 @Component({
   selector: 'app-order-payment-panel',

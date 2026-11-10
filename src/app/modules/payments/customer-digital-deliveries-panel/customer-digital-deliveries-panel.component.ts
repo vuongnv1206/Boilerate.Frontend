@@ -1,12 +1,12 @@
-import { Component, effect, input, signal, untracked } from '@angular/core';
+﻿import { Component, effect, input, signal, untracked } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BaseComponent } from '@core/base';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { SecretReveal } from '@shared/ui/secret-reveal/secret-reveal.component';
-import { DigitalDeliveryDto } from '../models/payment.dto';
-import { DigitalDeliveriesService } from '../services/digital-deliveries.service';
+import { DigitalDeliveryDto } from '@api/payments/models/payment.dto';
+import { DigitalDeliveriesService } from '@api/payments/services/digital-deliveries.service';
 
 @Component({
   selector: 'app-customer-digital-deliveries-panel',

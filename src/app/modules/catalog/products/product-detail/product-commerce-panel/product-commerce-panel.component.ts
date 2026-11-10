@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   OnInit,
   computed,
@@ -13,11 +13,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { BaseComponent } from '@core/base';
-import {
-  InventoryBalanceDto,
-  InventoryProductContext,
-  ProductInventoryPanel,
-} from '@modules/inventory';
+import { ProductInventoryPanel } from '@modules/inventory/product-inventory-panel/product-inventory-panel.component';
+import { InventoryBalanceDto, InventoryProductContext } from '@api/inventory/models/inventory.dto';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
@@ -35,8 +32,8 @@ import {
   createProductMediaForm,
   createSkuRow,
   generatedCatalogCode,
-} from '../../../models/product.dto';
-import { MediaService } from '../../../services/media.service';
+} from '@api/catalog/models/product.dto';
+import { MediaService } from '@api/catalog/services/media.service';
 import { ProductMedia } from '../product-media/product-media.component';
 
 @Component({

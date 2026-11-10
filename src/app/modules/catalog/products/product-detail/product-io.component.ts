@@ -65,11 +65,11 @@ import {
   createProductMediaForm,
   createSkuRow,
   productSlug,
-} from '../../models/product.dto';
-import { ProductFieldType } from '../../models/product-type.dto';
-import { CategoriesService } from '../../services/categories.service';
-import { ProductTypesService } from '../../services/product-types.service';
-import { ProductsService } from '../../services/products.service';
+} from '@api/catalog/models/product.dto';
+import { ProductFieldType } from '@api/catalog/models/product-type.dto';
+import { CategoriesService } from '@api/catalog/services/categories.service';
+import { ProductTypesService } from '@api/catalog/services/product-types.service';
+import { ProductsService } from '@api/catalog/services/products.service';
 import { ProductsWorkspace } from '../products-workspace.component';
 import { ProductCommercePanel } from './product-commerce-panel/product-commerce-panel.component';
 

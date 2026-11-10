@@ -1,11 +1,14 @@
-import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
+﻿import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
 import { BaseFormComponent, LeaveConfirmation } from '@core/base';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { StorefrontSettings, UpdateStorefrontSettings } from '../models/storefront-settings.dto';
-import { StorefrontSettingsService } from '../services/storefront-settings.service';
+import {
+  StorefrontSettings,
+  UpdateStorefrontSettings,
+} from '@api/storefront/models/storefront-settings.dto';
+import { StorefrontSettingsService } from '@api/storefront/services/storefront-settings.service';
 
 @Component({
   selector: 'app-storefront-settings',

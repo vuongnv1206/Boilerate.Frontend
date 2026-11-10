@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, untracked } from '@angular/core';
+﻿import { Component, OnInit, effect, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { BaseListComponent, PagedResult } from '@core/base';
@@ -13,8 +13,8 @@ import {
   notificationTypeLabel,
   notificationTypeTone,
   resolveNotificationUrl,
-} from '../models/notification.dto';
-import { NotificationsService } from '../services/notifications.service';
+} from '@api/notifications/models/notification.dto';
+import { NotificationsService } from '@api/notifications/services/notifications.service';
 
 @Component({
   selector: 'app-notifications-list',

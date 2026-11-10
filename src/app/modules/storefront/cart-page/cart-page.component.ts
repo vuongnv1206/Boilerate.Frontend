@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { CartService } from '../services/cart.service';
+import { CartService } from '@api/storefront/services/cart.service';
 import { DiscountCodeComponent } from './discount-code/discount-code.component';
 
 @Component({

@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+﻿import { Component, computed, input, output, signal } from '@angular/core';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
   OVERVIEW_WORK_DESCRIPTIONS,
@@ -9,7 +9,7 @@ import {
   OverviewWorkItem,
   OverviewWorkKey,
   getOverviewWorkStatusLabel,
-} from '../../models/overview.dto';
+} from '@api/overview/models/overview.dto';
 
 @Component({
   selector: 'app-overview-work-panel',

@@ -1,4 +1,4 @@
-import { Component, effect, input, signal, untracked } from '@angular/core';
+﻿import { Component, effect, input, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription, finalize } from 'rxjs';
 import { BaseComponent } from '@core/base';
@@ -10,8 +10,8 @@ import {
   RenewalDto,
   RenewalStatus,
   renewalStatusTone,
-} from '../models/renewal.dto';
-import { RenewalsService } from '../services/renewals.service';
+} from '@api/renewals/models/renewal.dto';
+import { RenewalsService } from '@api/renewals/services/renewals.service';
 
 @Component({
   selector: 'app-customer-renewal-target-panel',

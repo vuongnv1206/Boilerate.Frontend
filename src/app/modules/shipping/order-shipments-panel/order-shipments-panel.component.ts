@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+﻿import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription, finalize } from 'rxjs';
 import { BaseComponent } from '@core/base';
@@ -21,8 +21,8 @@ import {
   ShippingActionFailure,
   ShippingFailureKind,
   ShippingMutationEvent,
-} from '../models/shipment.dto';
-import { ShipmentsService } from '../services/shipments.service';
+} from '@api/shipping/models/shipment.dto';
+import { ShipmentsService } from '@api/shipping/services/shipments.service';
 
 @Component({
   selector: 'app-order-shipments-panel',

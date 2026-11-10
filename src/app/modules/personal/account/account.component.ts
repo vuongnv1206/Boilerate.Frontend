@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   HostListener,
   OnInit,
@@ -30,8 +30,8 @@ import {
   AuditDto,
   PersonalProfileDto,
   UserSessionDto,
-} from '../models/personal.dto';
-import { PersonalService } from '../services/personal.service';
+} from '@api/personal/models/personal.dto';
+import { PersonalService } from '@api/personal/services/personal.service';
 
 const requiredTrimmed = (maxLength: number) => [
   Validators.required,

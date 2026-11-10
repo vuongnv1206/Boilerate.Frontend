@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { centralAdminGuard, permissionGuard } from '@core/auth/permission.guard';
 import { unsavedChangesGuard } from '@shared/guards/unsaved-changes.guard';
-import { SYSTEM_SECTIONS, SystemKind } from './models/identity.dto';
+import { SYSTEM_SECTIONS, SystemKind } from '@api/identity/models/identity.dto';
 
 /** Public auth screens rendered inside the AuthShell (login, registration, confirmation, password reset). */
 export const AUTH_PUBLIC_ROUTES: Routes = [

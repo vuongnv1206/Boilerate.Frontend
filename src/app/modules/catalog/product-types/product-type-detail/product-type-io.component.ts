@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, computed, effect, signal } from '@angular/core';
+﻿import { Component, HostListener, OnInit, computed, effect, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -29,7 +29,7 @@ import { createOperationId } from '@core/http/operation-id';
 import { applyServerErrors, clearServerErrors } from '@shared/forms/apply-server-errors';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { ProductPage, ProductSummary } from '../../models/product.dto';
+import { ProductPage, ProductSummary } from '@api/catalog/models/product.dto';
 import {
   CreateProductTypeRequest,
   EditProductTypeRequest,
@@ -41,9 +41,9 @@ import {
   ProductFieldDefinitionDto,
   ProductFieldType,
   ProductTypeDto,
-} from '../../models/product-type.dto';
-import { ProductTypesService } from '../../services/product-types.service';
-import { ProductsService } from '../../services/products.service';
+} from '@api/catalog/models/product-type.dto';
+import { ProductTypesService } from '@api/catalog/services/product-types.service';
+import { ProductsService } from '@api/catalog/services/products.service';
 import { ProductTypesWorkspace } from '../product-types-workspace.component';
 
 function generatedTypeToken(prefix: string): string {

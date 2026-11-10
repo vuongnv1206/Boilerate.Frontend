@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+﻿import { Component, OnInit, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -11,8 +11,8 @@ import { ActivatedRoute } from '@angular/router';
 import { BaseComponent, applyServerErrors, clearServerErrors } from '@core/base';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { AUTH_FORM_STYLES } from '../../models/identity.dto';
-import { IdentityAuthService } from '../../services/identity-auth.service';
+import { AUTH_FORM_STYLES } from '@api/identity/models/identity.dto';
+import { IdentityAuthService } from '@api/identity/services/identity-auth.service';
 
 const confirmPasswordMatch: ValidatorFn = (control: AbstractControl) => {
   const password = control.get('password')?.value;

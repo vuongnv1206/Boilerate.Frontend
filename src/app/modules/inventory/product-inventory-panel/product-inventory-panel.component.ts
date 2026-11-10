@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+﻿import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl } from '@angular/forms';
 import { Observable, Subscription, finalize, of, switchMap, take } from 'rxjs';
@@ -22,9 +22,9 @@ import {
   StockMovementDto,
   createDigitalContentForm,
   createInventoryAdjustmentForm,
-} from '../models/inventory.dto';
-import { DigitalInventoryService } from '../services/digital-inventory.service';
-import { InventoryService } from '../services/inventory.service';
+} from '@api/inventory/models/inventory.dto';
+import { DigitalInventoryService } from '@api/inventory/services/digital-inventory.service';
+import { InventoryService } from '@api/inventory/services/inventory.service';
 
 @Component({
   selector: 'app-product-inventory-panel',

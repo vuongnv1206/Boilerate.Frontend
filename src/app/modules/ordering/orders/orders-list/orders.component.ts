@@ -1,4 +1,4 @@
-import { Component, OnInit, computed } from '@angular/core';
+﻿import { Component, OnInit, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime } from 'rxjs';
@@ -21,7 +21,7 @@ import {
   OrderStatus,
   orderListQueryParams,
   readOrderListQuery,
-} from '../../models/order.dto';
+} from '@api/ordering/models/order.dto';
 import { OrdersWorkspace } from '../orders-workspace.component';
 
 @Component({

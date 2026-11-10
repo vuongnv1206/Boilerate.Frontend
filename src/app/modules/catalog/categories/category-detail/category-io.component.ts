@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   HostListener,
   Injector,
@@ -49,10 +49,15 @@ import {
   CategoryProductIssueItem,
   CategoryProductResult,
   SaveCategoryRequest,
-} from '../../models/category.dto';
-import { ProductDto, ProductPage, ProductSearch, ProductSummary } from '../../models/product.dto';
-import { CategoriesService } from '../../services/categories.service';
-import { ProductsService } from '../../services/products.service';
+} from '@api/catalog/models/category.dto';
+import {
+  ProductDto,
+  ProductPage,
+  ProductSearch,
+  ProductSummary,
+} from '@api/catalog/models/product.dto';
+import { CategoriesService } from '@api/catalog/services/categories.service';
+import { ProductsService } from '@api/catalog/services/products.service';
 import { CategoriesWorkspace } from '../categories-workspace.component';
 
 @Component({

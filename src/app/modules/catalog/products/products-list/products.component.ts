@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
+﻿import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime } from 'rxjs';
@@ -16,8 +16,8 @@ import {
   ProductStatus,
   listQueryParams,
   readProductListQuery,
-} from '../../models/product.dto';
-import { MediaService } from '../../services/media.service';
+} from '@api/catalog/models/product.dto';
+import { MediaService } from '@api/catalog/services/media.service';
 import { ProductsWorkspace } from '../products-workspace.component';
 
 @Component({

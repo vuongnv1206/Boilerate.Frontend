@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, computed, effect, signal, viewChild } from '@angular/core';
+﻿import { Component, ElementRef, OnInit, computed, effect, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { Subject, catchError, filter, map, of, switchMap } from 'rxjs';
@@ -16,8 +16,8 @@ import {
   renewalListQueryParams,
   renewalStatusTone,
   sameRenewalQueryParams,
-} from '../models/renewal.dto';
-import { RenewalsService } from '../services/renewals.service';
+} from '@api/renewals/models/renewal.dto';
+import { RenewalsService } from '@api/renewals/services/renewals.service';
 
 @Component({
   selector: 'app-renewals-workspace',

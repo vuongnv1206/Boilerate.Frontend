@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
+﻿import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, catchError, of, tap, timer } from 'rxjs';
@@ -12,9 +12,9 @@ import {
   getStorefrontProductFallbackImage,
   isDigitalFulfillment,
   resolveCatalogImageSource,
-} from '../../models/storefront.dto';
-import { CartService } from '../../services/cart.service';
-import { PublicCatalogService } from '../../services/public-catalog.service';
+} from '@api/storefront/models/storefront.dto';
+import { CartService } from '@api/storefront/services/cart.service';
+import { PublicCatalogService } from '@api/storefront/services/public-catalog.service';
 
 @Component({
   selector: 'app-product-detail',

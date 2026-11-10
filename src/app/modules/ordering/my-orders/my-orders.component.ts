@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, signal } from '@angular/core';
+﻿import { Component, DestroyRef, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -11,8 +11,8 @@ import {
   ORDER_STATUS_LABELS,
   OrderFulfillmentStatus,
   OrderPage,
-} from '../models/order.dto';
-import { OrdersService } from '../services/orders.service';
+} from '@api/ordering/models/order.dto';
+import { OrdersService } from '@api/ordering/services/orders.service';
 
 @Component({
   selector: 'app-my-orders',

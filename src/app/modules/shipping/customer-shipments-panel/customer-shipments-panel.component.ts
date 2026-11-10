@@ -1,11 +1,11 @@
-import { Component, effect, input, signal, untracked } from '@angular/core';
+﻿import { Component, effect, input, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
 import { BaseComponent } from '@core/base';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { ShipmentDto, ShipmentStatus } from '../models/shipment.dto';
-import { ShipmentsService } from '../services/shipments.service';
+import { ShipmentDto, ShipmentStatus } from '@api/shipping/models/shipment.dto';
+import { ShipmentsService } from '@api/shipping/services/shipments.service';
 
 @Component({
   selector: 'app-customer-shipments-panel',

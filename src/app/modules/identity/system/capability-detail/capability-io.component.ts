@@ -1,4 +1,4 @@
-import { Component, DestroyRef, HostListener, OnInit, computed, signal } from '@angular/core';
+﻿import { Component, DestroyRef, HostListener, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -24,8 +24,8 @@ import {
   CapabilityKind,
   FunctionDto,
   FunctionGroupDto,
-} from '../../models/identity.dto';
-import { CapabilitiesService } from '../../services/capabilities.service';
+} from '@api/identity/models/identity.dto';
+import { CapabilitiesService } from '@api/identity/services/capabilities.service';
 
 const requiredName = (length: number) => [
   Validators.required,

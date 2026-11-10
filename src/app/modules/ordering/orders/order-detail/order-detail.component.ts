@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   HostListener,
   Optional,
@@ -14,10 +14,11 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription, catchError, finalize, of } from 'rxjs';
 import { BaseComponent, LeaveConfirmation } from '@core/base';
 import { ApiError } from '@core/http/api-error';
-import { OrderAfterSalesPanel } from '@modules/after-sales';
-import { OrderPaymentPanel } from '@modules/payments';
-import { OrderRenewalsPanel } from '@modules/renewals';
-import { OrderShipmentsPanel, ShipmentDto } from '@modules/shipping';
+import { OrderAfterSalesPanel } from '@modules/after-sales/order-after-sales-panel/order-after-sales-panel.component';
+import { OrderPaymentPanel } from '@modules/payments/order-payment-panel/order-payment-panel.component';
+import { OrderRenewalsPanel } from '@modules/renewals/order-renewals-panel/order-renewals-panel.component';
+import { OrderShipmentsPanel } from '@modules/shipping/order-shipments-panel/order-shipments-panel.component';
+import { ShipmentDto } from '@api/shipping/models/shipment.dto';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
   ORDER_FULFILLMENT_STATUS_LABELS,
@@ -33,8 +34,8 @@ import {
   PRODUCT_FULFILLMENT_OPTIONS,
   orderListQueryParams,
   readOrderListQuery,
-} from '../../models/order.dto';
-import { OrdersService } from '../../services/orders.service';
+} from '@api/ordering/models/order.dto';
+import { OrdersService } from '@api/ordering/services/orders.service';
 import { OrdersWorkspace } from '../orders-workspace.component';
 
 @Component({

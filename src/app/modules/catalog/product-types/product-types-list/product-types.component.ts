@@ -1,10 +1,10 @@
-import { Component, DestroyRef, OnInit } from '@angular/core';
+﻿import { Component, DestroyRef, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime } from 'rxjs';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { ListQuery, listQueryParams, readListQuery } from '../../models/product.dto';
-import { PRODUCT_TYPE_SEARCH_DELAY_MS } from '../../models/product-type.dto';
+import { ListQuery, listQueryParams, readListQuery } from '@api/catalog/models/product.dto';
+import { PRODUCT_TYPE_SEARCH_DELAY_MS } from '@api/catalog/models/product-type.dto';
 import { ProductTypesWorkspace } from '../product-types-workspace.component';
 
 @Component({

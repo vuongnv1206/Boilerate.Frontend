@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
+﻿import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Subscription, catchError, of, tap } from 'rxjs';
@@ -6,11 +6,11 @@ import { AuthSession } from '@core/auth/auth-session';
 import { GuestAccessSession } from '@core/auth/guest-access-session';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { CheckoutRequest, OrderPaymentMethod } from '../../models/checkout.dto';
-import { GuestPaymentSettings } from '../../models/storefront-settings.dto';
-import { ProductFulfillmentKind } from '../../models/storefront.dto';
-import { CartService } from '../../services/cart.service';
-import { StorefrontSettingsService } from '../../services/storefront-settings.service';
+import { CheckoutRequest, OrderPaymentMethod } from '@api/storefront/models/checkout.dto';
+import { GuestPaymentSettings } from '@api/storefront/models/storefront-settings.dto';
+import { ProductFulfillmentKind } from '@api/storefront/models/storefront.dto';
+import { CartService } from '@api/storefront/services/cart.service';
+import { StorefrontSettingsService } from '@api/storefront/services/storefront-settings.service';
 import { DiscountCodeComponent } from '../discount-code/discount-code.component';
 
 @Component({

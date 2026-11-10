@@ -1,13 +1,13 @@
-import { Component, DestroyRef, OnInit, signal } from '@angular/core';
+﻿import { Component, DestroyRef, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
 import { normalizeApiError } from '@core/http/normalize-api-error';
-import { CustomerAfterSalesPanel } from '@modules/after-sales';
-import { CustomerDigitalDeliveriesPanel } from '@modules/payments';
-import { CustomerRenewalTargetPanel } from '@modules/renewals';
-import { CustomerShipmentsPanel } from '@modules/shipping';
+import { CustomerAfterSalesPanel } from '@modules/after-sales/customer-after-sales-panel/customer-after-sales-panel.component';
+import { CustomerDigitalDeliveriesPanel } from '@modules/payments/customer-digital-deliveries-panel/customer-digital-deliveries-panel.component';
+import { CustomerRenewalTargetPanel } from '@modules/renewals/customer-renewal-target-panel/customer-renewal-target-panel.component';
+import { CustomerShipmentsPanel } from '@modules/shipping/customer-shipments-panel/customer-shipments-panel.component';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
   GuestPaymentSettings,
@@ -17,8 +17,8 @@ import {
   OrderStatus,
   customerOrderDetailFulfillmentLabel,
   customerOrderStatusLabel,
-} from '../../models/order.dto';
-import { OrdersService } from '../../services/orders.service';
+} from '@api/ordering/models/order.dto';
+import { OrdersService } from '@api/ordering/services/orders.service';
 
 @Component({
   selector: 'app-customer-order-detail',

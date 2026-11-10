@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, computed, effect, signal, viewChild } from '@angular/core';
+﻿import { Component, ElementRef, OnInit, computed, effect, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { Subject, catchError, debounceTime, filter, of, switchMap } from 'rxjs';
@@ -16,8 +16,8 @@ import {
   orderStatusTone,
   readOrderListQuery,
   sameOrderQueryParams,
-} from '../models/order.dto';
-import { OrdersService } from '../services/orders.service';
+} from '@api/ordering/models/order.dto';
+import { OrdersService } from '@api/ordering/services/orders.service';
 
 @Component({
   selector: 'app-orders-workspace',

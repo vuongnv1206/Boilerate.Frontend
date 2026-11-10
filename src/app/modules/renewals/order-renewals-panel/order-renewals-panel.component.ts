@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+﻿import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
 import { BaseComponent } from '@core/base';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
@@ -9,8 +9,8 @@ import {
   RenewalDto,
   RenewalOrderSnapshot,
   renewalStatusTone,
-} from '../models/renewal.dto';
-import { RenewalsService } from '../services/renewals.service';
+} from '@api/renewals/models/renewal.dto';
+import { RenewalsService } from '@api/renewals/services/renewals.service';
 
 @Component({
   selector: 'app-order-renewals-panel',

@@ -35,7 +35,7 @@ const probes = [
   [
     'shared UI rejects module service',
     'src/app/shared/ui/probe.ts',
-    "import '@modules/catalog/services/categories.service';",
+    "import '@api/catalog/services/categories.service';",
     false,
   ],
   ['shared UI rejects HTTP', 'src/app/shared/ui/probe.ts', "import '@angular/common/http';", false],
@@ -51,7 +51,6 @@ const probes = [
     "void import('./modules/catalog/catalog.routes');",
     true,
   ],
-  ['app accepts module barrel', 'src/app/probe.ts', "import '@modules/notifications';", true],
   [
     'app rejects private module screen',
     'src/app/probe.ts',
@@ -62,7 +61,7 @@ const probes = [
   [
     'routes accept module service',
     'src/app/modules/catalog/catalog.routes.ts',
-    "import './services/categories.service';",
+    "import '@api/catalog/services/categories.service';",
     true,
   ],
   [
@@ -72,43 +71,47 @@ const probes = [
     true,
   ],
   [
-    'screen accepts same-module service',
+    'screen accepts module service',
     screen,
-    "import '../../services/categories.service';",
+    "import '@api/catalog/services/categories.service';",
     true,
   ],
-  ['screen accepts same-module model', screen, "import '../../models/category.dto';", true],
-  ['screen accepts shared imports', screen, "import '@shared/shared-imports';", true],
-  ['screen accepts another module barrel', screen, "import '@modules/inventory';", true],
   [
-    'screen rejects another module private service',
+    'screen accepts module model',
     screen,
-    "import '@modules/inventory/services/inventory.service';",
-    false,
+    "import { CategoryDto } from '@api/catalog/models/category.dto';",
+    true,
+  ],
+  ['screen accepts shared imports', screen, "import '@shared/shared-imports';", true],
+  [
+    'screen accepts another module component',
+    screen,
+    "import '@modules/inventory/product-inventory-panel/product-inventory-panel.component';",
+    true,
   ],
   ['screen rejects HTTP transport', screen, "import '@core/http/api-client';", false],
   ['screen rejects raw HTTP', screen, "import '@angular/common/http';", false],
   [
     'service accepts transport',
-    'src/app/modules/catalog/services/probe.service.ts',
+    'src/app/api/catalog/services/probe.service.ts',
     "import '@core/http/api-client';",
     true,
   ],
   [
     'service accepts base generics',
-    'src/app/modules/catalog/services/probe.service.ts',
+    'src/app/api/catalog/services/probe.service.ts',
     "import '@core/base';",
     true,
   ],
   [
     'service rejects view',
-    'src/app/modules/catalog/services/probe.service.ts',
-    "import '../categories/categories-list/categories.component';",
+    'src/app/api/catalog/services/probe.service.ts',
+    "import '@modules/catalog/categories/categories-list/categories.component';",
     false,
   ],
   [
     'service rejects router',
-    'src/app/modules/catalog/services/probe.service.ts',
+    'src/app/api/catalog/services/probe.service.ts',
     "import {Router} from '@angular/router';",
     false,
   ],
@@ -127,8 +130,8 @@ const probes = [
   ],
   [
     'model rejects view',
-    'src/app/modules/catalog/models/probe.dto.ts',
-    "import '../categories/categories-list/categories.component';",
+    'src/app/api/catalog/models/probe.dto.ts',
+    "import '@modules/catalog/categories/categories-list/categories.component';",
     false,
   ],
   [
@@ -159,7 +162,7 @@ function files(directory) {
   });
 }
 
-for (const folder of ['core', 'shared', 'layout', 'modules']) {
+for (const folder of ['core', 'shared', 'layout', 'modules', 'api']) {
   assert.ok(fs.existsSync(path.join(cwd, 'src/app', folder)), `Missing app folder: ${folder}`);
 }
 for (const legacy of [

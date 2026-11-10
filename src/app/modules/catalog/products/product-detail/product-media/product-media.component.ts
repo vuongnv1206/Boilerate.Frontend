@@ -1,8 +1,8 @@
-import { Component, DestroyRef, computed, effect, input, output, untracked } from '@angular/core';
+﻿import { Component, DestroyRef, computed, effect, input, output, untracked } from '@angular/core';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { MAX_PRODUCT_MEDIA, PRODUCT_IMAGE_ACCEPT } from '../../../models/media.dto';
-import { ProductMediaDto } from '../../../models/product.dto';
-import { MediaService } from '../../../services/media.service';
+import { MAX_PRODUCT_MEDIA, PRODUCT_IMAGE_ACCEPT } from '@api/catalog/models/media.dto';
+import { ProductMediaDto } from '@api/catalog/models/product.dto';
+import { MediaService } from '@api/catalog/services/media.service';
 
 @Component({
   selector: 'app-product-media',

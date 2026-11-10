@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, signal, untracked } from '@angular/core';
+﻿import { Component, computed, effect, input, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
 import { BaseComponent } from '@core/base';
@@ -8,8 +8,8 @@ import {
   AfterSalesOrderItemSnapshot,
   AfterSalesSummaryDto,
   ReturnLineInput,
-} from '../models/after-sales.dto';
-import { AfterSalesService } from '../services/after-sales.service';
+} from '@api/after-sales/models/after-sales.dto';
+import { AfterSalesService } from '@api/after-sales/services/after-sales.service';
 
 @Component({
   selector: 'app-customer-after-sales-panel',

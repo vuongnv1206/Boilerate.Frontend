@@ -18,9 +18,18 @@ import {
 import { BaseComponent } from '@core/base';
 import { ApiError } from '@core/http/api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { CATEGORY_PAGE_SIZE, CATEGORY_SEARCH_DELAY_MS, CategoryDto } from '../models/category.dto';
-import { ListQuery, listQueryParams, readListQuery, sameQueryParams } from '../models/product.dto';
-import { CategoriesService } from '../services/categories.service';
+import {
+  CATEGORY_PAGE_SIZE,
+  CATEGORY_SEARCH_DELAY_MS,
+  CategoryDto,
+} from '@api/catalog/models/category.dto';
+import {
+  ListQuery,
+  listQueryParams,
+  readListQuery,
+  sameQueryParams,
+} from '@api/catalog/models/product.dto';
+import { CategoriesService } from '@api/catalog/services/categories.service';
 
 @Component({
   selector: 'app-categories-workspace',

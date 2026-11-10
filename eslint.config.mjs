@@ -4,10 +4,6 @@ import angular from 'angular-eslint';
 import boundaries from 'eslint-plugin-boundaries';
 import { fileURLToPath } from 'node:url';
 
-const sameModuleView = ['module-view', { module: '${from.module}' }];
-const sameModuleService = ['module-service', { module: '${from.module}' }];
-const sameModuleModel = ['module-model', { module: '${from.module}' }];
-
 export default tseslint.config(
   { ignores: ['dist/**', '.angular/**', 'node_modules/**', 'artifacts/**'] },
   {
@@ -26,19 +22,19 @@ export default tseslint.config(
       'boundaries/elements': [
         {
           type: 'module-entry',
-          pattern: 'src/app/modules/*/{index,*.routes}.ts',
+          pattern: 'src/app/modules/*/*.routes.ts',
           capture: ['module'],
           mode: 'file',
         },
         {
-          type: 'module-service',
-          pattern: 'src/app/modules/*/services/**/*.ts',
+          type: 'api-service',
+          pattern: 'src/app/api/*/services/**/*.ts',
           capture: ['module'],
           mode: 'file',
         },
         {
-          type: 'module-model',
-          pattern: 'src/app/modules/*/models/**/*.ts',
+          type: 'api-model',
+          pattern: 'src/app/api/*/models/**/*.ts',
           capture: ['module'],
           mode: 'file',
         },
@@ -91,6 +87,7 @@ export default tseslint.config(
                 'shared-guards',
                 'shared-bundle',
                 'module-entry',
+                'api-service',
               ],
             },
             { from: 'core', allow: ['core', 'http-transport'] },
@@ -104,6 +101,8 @@ export default tseslint.config(
                 'shared-forms',
                 'shared-utils',
                 'shared-bundle',
+                'api-service',
+                'api-model',
               ],
             },
             { from: 'shared-ui', allow: ['shared-ui', 'shared-bundle'] },
@@ -122,12 +121,27 @@ export default tseslint.config(
               ],
             },
             {
+              from: 'api-service',
+              allow: [
+                'api-service',
+                'api-model',
+                'core',
+                'http-transport',
+                'shared-utils',
+                'shared-bundle',
+              ],
+            },
+            {
+              from: 'api-model',
+              allow: ['api-model', 'core', 'shared-forms', 'shared-utils', 'shared-bundle'],
+            },
+            {
               from: 'module-entry',
               allow: [
-                sameModuleView,
-                sameModuleService,
-                sameModuleModel,
+                'module-view',
                 'module-entry',
+                'api-service',
+                'api-model',
                 'core',
                 'layout',
                 'shared-ui',
@@ -140,38 +154,15 @@ export default tseslint.config(
             {
               from: 'module-view',
               allow: [
-                sameModuleView,
-                sameModuleService,
-                sameModuleModel,
+                'module-view',
                 'module-entry',
+                'api-service',
+                'api-model',
                 'core',
                 'shared-ui',
                 'shared-forms',
                 'shared-utils',
                 'shared-guards',
-                'shared-bundle',
-              ],
-            },
-            {
-              from: 'module-service',
-              allow: [
-                sameModuleService,
-                sameModuleModel,
-                'module-entry',
-                'core',
-                'http-transport',
-                'shared-utils',
-                'shared-bundle',
-              ],
-            },
-            {
-              from: 'module-model',
-              allow: [
-                sameModuleModel,
-                'module-entry',
-                'core',
-                'shared-forms',
-                'shared-utils',
                 'shared-bundle',
               ],
             },
@@ -185,13 +176,13 @@ export default tseslint.config(
           rules: [
             { from: ['shared-utils'], disallow: ['@angular/**', 'rxjs'] },
             {
-              from: ['shared-utils', 'module-service', 'module-model', 'shared-ui'],
+              from: ['shared-utils', 'api-service', 'api-model', 'shared-ui'],
               disallow: ['@angular/router'],
             },
             {
-              from: ['module-view', 'module-model', 'shared-ui', 'shared-utils'],
+              from: ['module-view', 'api-model', 'shared-ui', 'shared-utils'],
               disallow: [['@angular/common', { path: '/http{,/**}' }]],
-              message: 'Call the module service. HTTP belongs to ApiClient and BaseApiService.',
+              message: 'Call the API service. HTTP belongs to ApiClient and BaseApiService.',
             },
           ],
         },

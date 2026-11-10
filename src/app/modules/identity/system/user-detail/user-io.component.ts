@@ -1,4 +1,4 @@
-import { Component, DestroyRef, HostListener, OnInit, computed, signal } from '@angular/core';
+﻿import { Component, DestroyRef, HostListener, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -35,8 +35,8 @@ import {
   UserLifecycleAction,
   UserRoleDto,
   UserSectionTab,
-} from '../../models/identity.dto';
-import { UsersService } from '../../services/users.service';
+} from '@api/identity/models/identity.dto';
+import { UsersService } from '@api/identity/services/users.service';
 
 const requiredName = (length: number) => [
   Validators.required,

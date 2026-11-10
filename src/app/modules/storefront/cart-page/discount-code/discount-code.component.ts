@@ -1,6 +1,6 @@
-import { Component, input, signal } from '@angular/core';
+﻿import { Component, input, signal } from '@angular/core';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { CartService } from '../../services/cart.service';
+import { CartService } from '@api/storefront/services/cart.service';
 
 @Component({
   selector: 'app-discount-code',

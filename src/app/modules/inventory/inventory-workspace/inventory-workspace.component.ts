@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+﻿import { Component, computed, signal } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { BaseComponent, PagedResult } from '@core/base';
 import { validationMessage } from '@shared/forms/validation-message';
@@ -19,9 +19,9 @@ import {
   createInventoryAdjustmentForm,
   createWorkspaceDigitalImportForm,
   parseDigitalBatchLines,
-} from '../models/inventory.dto';
-import { DigitalInventoryService } from '../services/digital-inventory.service';
-import { InventoryService } from '../services/inventory.service';
+} from '@api/inventory/models/inventory.dto';
+import { DigitalInventoryService } from '@api/inventory/services/digital-inventory.service';
+import { InventoryService } from '@api/inventory/services/inventory.service';
 
 @Component({
   selector: 'app-inventory-workspace',

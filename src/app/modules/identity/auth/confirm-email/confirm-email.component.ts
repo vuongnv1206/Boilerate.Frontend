@@ -1,10 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+﻿import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from '@core/base';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { AUTH_FORM_STYLES, CONFIRM_MODE_OPTIONS, ConfirmMode } from '../../models/identity.dto';
-import { IdentityAuthService } from '../../services/identity-auth.service';
+import {
+  AUTH_FORM_STYLES,
+  CONFIRM_MODE_OPTIONS,
+  ConfirmMode,
+} from '@api/identity/models/identity.dto';
+import { IdentityAuthService } from '@api/identity/services/identity-auth.service';
 
 @Component({
   selector: 'app-confirm-email',

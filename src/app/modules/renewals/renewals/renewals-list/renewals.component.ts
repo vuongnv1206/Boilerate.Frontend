@@ -1,4 +1,4 @@
-import { Component, computed } from '@angular/core';
+﻿import { Component, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponent } from '@core/base';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
@@ -11,7 +11,7 @@ import {
   readRenewalListQuery,
   renewalListQueryParams,
   renewalStatusTone,
-} from '../../models/renewal.dto';
+} from '@api/renewals/models/renewal.dto';
 import { RenewalsWorkspace } from '../renewals-workspace.component';
 
 @Component({

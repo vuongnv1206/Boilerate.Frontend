@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   DestroyRef,
   ElementRef,
@@ -20,7 +20,7 @@ import {
   GALLERY_TOAST_LIFETIME_MS,
   GalleryTab,
   PreviewRecord,
-} from '../models/ui-gallery.model';
+} from '@api/ui-gallery/models/ui-gallery.model';
 
 @Component({
   selector: 'app-control-gallery',

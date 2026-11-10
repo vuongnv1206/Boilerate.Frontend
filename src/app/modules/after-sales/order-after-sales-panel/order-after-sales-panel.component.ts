@@ -1,10 +1,10 @@
-import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+﻿import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, Subscription, catchError, filter, finalize, tap } from 'rxjs';
 import { BaseComponent } from '@core/base';
 import { ApiError } from '@core/http/api-error';
 import { createOperationId } from '@core/http/operation-id';
-import { ShipmentDto } from '@modules/shipping';
+import { ShipmentDto } from '@api/shipping/models/shipment.dto';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
   AFTER_SALES_FULFILLMENT_KIND,
@@ -22,8 +22,8 @@ import {
   ReturnLineInput,
   ReturnResult,
   ReturnableLine,
-} from '../models/after-sales.dto';
-import { AfterSalesService } from '../services/after-sales.service';
+} from '@api/after-sales/models/after-sales.dto';
+import { AfterSalesService } from '@api/after-sales/services/after-sales.service';
 
 @Component({
   selector: 'app-order-after-sales-panel',

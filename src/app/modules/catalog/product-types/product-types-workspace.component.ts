@@ -5,13 +5,18 @@ import { Subject, Subscription, debounceTime, filter } from 'rxjs';
 import { BaseComponent } from '@core/base';
 import { ApiError } from '@core/http/api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { ListQuery, listQueryParams, readListQuery, sameQueryParams } from '../models/product.dto';
+import {
+  ListQuery,
+  listQueryParams,
+  readListQuery,
+  sameQueryParams,
+} from '@api/catalog/models/product.dto';
 import {
   PRODUCT_TYPE_PAGE_SIZE,
   PRODUCT_TYPE_SEARCH_DELAY_MS,
   ProductTypeDto,
-} from '../models/product-type.dto';
-import { ProductTypesService } from '../services/product-types.service';
+} from '@api/catalog/models/product-type.dto';
+import { ProductTypesService } from '@api/catalog/services/product-types.service';
 
 @Component({
   selector: 'app-product-types-workspace',

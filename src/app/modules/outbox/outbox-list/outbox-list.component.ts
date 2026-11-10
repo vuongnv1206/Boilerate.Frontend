@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+﻿import { Component, OnInit, computed, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BaseListComponent, PagedResult } from '@core/base';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
@@ -12,8 +12,8 @@ import {
   normalizeOutboxStatus,
   outboxStatusLabel,
   outboxStatusTone,
-} from '../models/outbox.dto';
-import { OutboxService } from '../services/outbox.service';
+} from '@api/outbox/models/outbox.dto';
+import { OutboxService } from '@api/outbox/services/outbox.service';
 
 @Component({
   selector: 'app-outbox-list',

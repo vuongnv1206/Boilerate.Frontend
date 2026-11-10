@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
+﻿import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, Subscription, debounceTime } from 'rxjs';
@@ -6,8 +6,12 @@ import { AuthSession } from '@core/auth/auth-session';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { readListQuery } from '@shared/utils/query-params.util';
-import { DISCOUNT_STATUS_OPTIONS, DiscountActiveFilter, DiscountDto } from '../models/discount.dto';
-import { DiscountsService } from '../services/discounts.service';
+import {
+  DISCOUNT_STATUS_OPTIONS,
+  DiscountActiveFilter,
+  DiscountDto,
+} from '@api/ordering/models/discount.dto';
+import { DiscountsService } from '@api/ordering/services/discounts.service';
 
 @Component({
   selector: 'app-discounts',

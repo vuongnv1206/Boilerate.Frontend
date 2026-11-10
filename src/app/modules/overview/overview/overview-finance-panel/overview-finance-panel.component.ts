@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   OnInit,
   computed,
@@ -22,7 +22,7 @@ import {
   overviewDateValue,
   overviewRangeError,
   overviewRangePreset,
-} from '../../models/overview.dto';
+} from '@api/overview/models/overview.dto';
 
 @Component({
   selector: 'app-overview-finance-panel',

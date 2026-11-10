@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   OnInit,
   WritableSignal,
@@ -29,8 +29,8 @@ import {
   overviewToday,
   readAdminOverviewQuery,
   sameOverviewParams,
-} from '../models/overview.dto';
-import { AdminOverviewService } from '../services/admin-overview.service';
+} from '@api/overview/models/overview.dto';
+import { AdminOverviewService } from '@api/overview/services/admin-overview.service';
 import { OverviewFinancePanelComponent } from './overview-finance-panel/overview-finance-panel.component';
 import { OverviewStockPanelComponent } from './overview-stock-panel/overview-stock-panel.component';
 import { OverviewWorkPanelComponent } from './overview-work-panel/overview-work-panel.component';

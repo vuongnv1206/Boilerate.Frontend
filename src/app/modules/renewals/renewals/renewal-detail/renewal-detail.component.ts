@@ -1,4 +1,4 @@
-import { Component, HostListener, Optional, OnInit, computed, signal } from '@angular/core';
+﻿import { Component, HostListener, Optional, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import {
@@ -30,8 +30,8 @@ import {
   readRenewalListQuery,
   renewalListQueryParams,
   renewalStatusTone,
-} from '../../models/renewal.dto';
-import { RenewalsService } from '../../services/renewals.service';
+} from '@api/renewals/models/renewal.dto';
+import { RenewalsService } from '@api/renewals/services/renewals.service';
 import { RenewalsWorkspace } from '../renewals-workspace.component';
 
 @Component({

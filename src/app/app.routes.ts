@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { provideStorefrontCart } from '@modules/storefront';
+import { provideStorefrontCart } from '@api/storefront/services/cart.service';
 import { provideWorkspaceNavigation } from './app.providers';
 import { authGuard } from './core/auth/auth.guard';
 import { adminHomeGuard } from './core/auth/permission.guard';

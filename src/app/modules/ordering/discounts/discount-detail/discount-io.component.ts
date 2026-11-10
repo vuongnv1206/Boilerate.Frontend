@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   DestroyRef,
   HostListener,
@@ -30,8 +30,8 @@ import {
   DiscountDto,
   DiscountKind,
   SaveDiscountRequest,
-} from '../../models/discount.dto';
-import { DiscountsService } from '../../services/discounts.service';
+} from '@api/ordering/models/discount.dto';
+import { DiscountsService } from '@api/ordering/services/discounts.service';
 
 const integer: ValidatorFn = (control: AbstractControl): ValidationErrors | null =>
   control.value === null || (Number.isSafeInteger(control.value) && control.value >= 0)
