@@ -2,7 +2,7 @@ import type {
   OverviewFinance,
   OverviewStock,
   OverviewWork,
-} from '../src/app/modules/overview/models/overview.dto';
+} from '../src/app/api/overview/models/overview.dto';
 import { test, expect, signIn, signInAs, apiAs } from './fixtures';
 
 test('live overview: read-only current queues match their destination lists and finance balances daily receipts', async ({

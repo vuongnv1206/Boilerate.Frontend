@@ -1,5 +1,5 @@
 import type { BrowserContext } from '@playwright/test';
-import type { StorefrontSettings } from '../src/app/modules/storefront/models/storefront-settings.dto';
+import type { StorefrontSettings } from '../src/app/api/storefront/models/storefront-settings.dto';
 import { expect, ready, test } from './helpers/catalog-api';
 import { installOrdersApi, ORDER_ID, SHIPPING_GRANTS } from './helpers/orders-api';
 import { installRenewalsApi, PENDING_RENEWAL_ID, RENEWAL_GRANTS } from './helpers/renewals-api';

@@ -6,7 +6,7 @@ import type {
   RefundDto,
   RefundResult,
   ReturnResult,
-} from '../../src/app/modules/after-sales/models/after-sales.dto';
+} from '../../src/app/api/after-sales/models/after-sales.dto';
 import { installOrdersApi, ORDER_ID, SHIPPING_GRANTS } from './orders-api';
 
 export const AFTER_SALES_GRANTS = [
