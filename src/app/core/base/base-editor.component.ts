@@ -52,8 +52,6 @@ export abstract class BaseEditorComponent<TDto, TForm extends FormGroup = FormGr
   protected readonly router = inject(Router);
   readonly confirmation = inject(LeaveConfirmation);
 
-  /** Server field path -> form control path, for fields whose names differ. */
-  protected readonly fieldErrorAliases: Readonly<Record<string, string>> = {};
   /** Disable every control while a save is in flight. */
   protected readonly lockFormWhileSaving: boolean = false;
   /** Show the API message as a banner for validation failures too, not only as field errors. */
@@ -188,6 +186,11 @@ export abstract class BaseEditorComponent<TDto, TForm extends FormGroup = FormGr
     return;
   }
 
+  /** Server field path -> form control path, for fields whose names differ. */
+  protected fieldAliases(): Readonly<Record<string, string>> {
+    return {};
+  }
+
   /** Banner text for a failed save. */
   protected saveErrorMessage(error: ApiError): string {
     return error.message;
@@ -264,11 +267,9 @@ export abstract class BaseEditorComponent<TDto, TForm extends FormGroup = FormGr
   }
 
   private reportSaveError(error: ApiError): void {
-    const unmapped = applyServerErrors(
-      this.form,
-      error.fieldErrors,
-      this.fieldErrorAliases,
-    ).flatMap((entry) => entry.messages);
+    const unmapped = applyServerErrors(this.form, error.fieldErrors, this.fieldAliases()).flatMap(
+      (entry) => entry.messages,
+    );
     this.conflict.set(error.kind === 'conflict');
     if (error.kind === 'validation' && !this.bannerOnValidationError) {
       const hasFieldErrors = Object.keys(error.fieldErrors).length > 0;

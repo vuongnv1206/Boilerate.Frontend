@@ -1,4 +1,4 @@
-﻿import { Component, HostListener, OnInit, computed, effect, signal } from '@angular/core';
+﻿import { Component, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -8,25 +8,13 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import {
-  EMPTY,
-  Observable,
-  Subject,
-  Subscription,
-  catchError,
-  defer,
-  distinctUntilChanged,
-  filter,
-  finalize,
-  map,
-  takeUntil,
-  tap,
-} from 'rxjs';
-import { BaseComponent, LeaveConfirmation } from '@core/base';
+import { Observable, Subscription, finalize, map, of, tap } from 'rxjs';
+import { BaseEditorComponent } from '@core/base/base-editor.component';
+import { clearServerErrors } from '@core/base/form-errors.util';
+import { LeaveConfirmation } from '@core/base/leave-confirmation';
 import { ApiError } from '@core/http/api-error';
+import { normalizeApiError } from '@core/http/normalize-api-error';
 import { createOperationId } from '@core/http/operation-id';
-import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { ProductPage, ProductSummary } from '@api/catalog/models/product.dto';
@@ -69,14 +57,10 @@ function uniqueCodes(control: AbstractControl): ValidationErrors | null {
   providers: [LeaveConfirmation],
   templateUrl: './product-type-io.component.html',
 })
-export class ProductTypeIo extends BaseComponent implements OnInit {
+export class ProductTypeIo extends BaseEditorComponent<ProductTypeDto> {
   // System variables
-  private readonly cancelWrites = new Subject<void>();
-  private loadSubscription?: Subscription;
   private productSubscription?: Subscription;
-  private generation = 0;
-  private revision = 0;
-  private currentId = 'new';
+  private errorAliases: () => Readonly<Record<string, string>> = () => ({});
 
   // Business variables
   readonly form = this.buildForm();
@@ -84,17 +68,10 @@ export class ProductTypeIo extends BaseComponent implements OnInit {
   readonly fieldTypes = [...PRODUCT_FIELD_TYPE_OPTIONS];
   readonly fieldType = ProductFieldType;
 
-  readonly record = signal<ProductTypeDto | null>(null);
-  readonly saving = signal(false);
-  readonly ready = signal(false);
-  readonly error = signal('');
-  readonly saved = signal(false);
-  readonly summary = signal<readonly string[]>([]);
   readonly linkedProductsPage = signal<ProductPage | null>(null);
   readonly productLoading = signal(false);
   readonly productError = signal('');
 
-  readonly canWrite = computed(() => this.can('ProductType', this.record() ? 'Update' : 'Create'));
   readonly canCreate = computed(() => this.can('ProductType', 'Create'));
   readonly canViewProducts = computed(() => this.can('Product', 'View'));
   readonly linkedProducts = computed<readonly ProductSummary[]>(
@@ -103,24 +80,12 @@ export class ProductTypeIo extends BaseComponent implements OnInit {
   readonly linkedProductCount = computed(() => this.linkedProductsPage()?.total ?? 0);
 
   constructor(
-    private readonly router: Router,
-    private readonly route: ActivatedRoute,
     private readonly productTypesService: ProductTypesService,
     private readonly productsService: ProductsService,
     private readonly listStore: ProductTypesWorkspace,
-    readonly confirmation: LeaveConfirmation,
   ) {
     super();
-    effect(() => {
-      this.canWrite();
-      this.applyAccess();
-    });
-    this.destroyRef.onDestroy(() => {
-      this.generation++;
-      this.cancelWrites.next();
-      this.loadSubscription?.unsubscribe();
-      this.productSubscription?.unsubscribe();
-    });
+    this.destroyRef.onDestroy(() => this.productSubscription?.unsubscribe());
   }
 
   private buildChoiceForm(choice?: ProductFieldChoiceDto, index = 0) {
@@ -218,115 +183,34 @@ export class ProductTypeIo extends BaseComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.applyAccess();
-    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.revision++;
-      this.summary.set([]);
-      this.saved.set(false);
-      clearServerErrors(this.form);
-    });
-    this.route.paramMap
-      .pipe(
-        map((params) => params.get('id') ?? 'new'),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((id) => this.load(id));
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  beforeUnload(event: BeforeUnloadEvent): void {
-    if (this.form.dirty || this.saving()) {
-      event.preventDefault();
-      event.returnValue = '';
-    }
-  }
-
-  load(id: string): void {
-    this.currentId = id;
-    this.cancelWrites.next();
-    this.summary.set([]);
-    const generation = ++this.generation;
-    this.loadSubscription?.unsubscribe();
-    this.productSubscription?.unsubscribe();
-    this.linkedProductsPage.set(null);
-    this.productLoading.set(false);
-    this.productError.set('');
-    this.loading.set(false);
-    this.ready.set(false);
-    this.error.set('');
-    this.record.set(null);
-    this.saved.set(false);
-    this.saving.set(false);
-    this.resetProductTypeForm();
-    if (id === 'new') {
-      this.ready.set(true);
-      this.applyAccess();
-      return;
-    }
-    this.loading.set(true);
-    this.loadSubscription = this.productTypesService
-      .getById(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (record) => {
-          if (generation !== this.generation) return;
-          this.record.set(record);
-          this.resetProductTypeForm(record);
-          this.loadLinkedProducts(record.id, generation);
-          this.ready.set(true);
-          this.applyAccess();
-          this.loading.set(false);
-        },
-        error: (error: unknown) => {
-          this.loading.set(false);
-          this.error.set(
-            error instanceof ApiError ? error.message : 'Không thể tải loại sản phẩm.',
-          );
-        },
-      });
-  }
-
-  save(): void {
-    const wasNew = !this.route.snapshot.paramMap.has('id');
-    this.saveRequest()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((saved) => {
-        this.listStore.upsert(saved);
-        if (wasNew && !this.form.dirty) {
-          void this.router.navigate(['/admin/collections/product-types', saved.id], {
-            replaceUrl: true,
-            queryParamsHandling: 'preserve',
-          });
-        }
-      });
-  }
-
-  async retry(): Promise<void> {
-    if (await this.confirmLeave()) {
-      this.load(this.currentId);
-    }
-  }
-
   async duplicate(): Promise<void> {
     const current = this.record();
-    if (!current || !this.canCreate() || this.saving()) return;
+    if (!current || !this.canCreate() || this.saving() || this.loading()) return;
     if (!(await this.confirmLeave())) return;
-    this.duplicateRequest()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((copy) => {
-        this.listStore.upsert(copy);
-        void this.router.navigate(['/admin/collections/product-types', copy.id], {
-          queryParamsHandling: 'preserve',
-        });
+    this.saving.set(true);
+    this.errorMessage.set('');
+    this.saved.set(false);
+    this.productTypesService
+      .create(this.duplicateProductTypeRequest(current))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.saving.set(false)),
+      )
+      .subscribe({
+        next: (copy) => {
+          this.listStore.upsert(copy);
+          void this.router.navigate(['/admin/collections/product-types', copy.id], {
+            queryParamsHandling: 'preserve',
+          });
+        },
+        error: (error: unknown) => this.errorMessage.set(normalizeApiError(error).message),
       });
   }
 
   retryProducts(): void {
     const current = this.record();
     if (current) {
-      this.loadLinkedProducts(current.id, this.generation);
+      this.loadLinkedProducts(current.id);
     }
   }
 
@@ -380,10 +264,6 @@ export class ProductTypeIo extends BaseComponent implements OnInit {
     if (!this.canWrite() || !choice || choice.controls.id.value || this.saving()) return;
     field.controls.choices.removeAt(choiceIndex);
     this.form.markAsDirty();
-  }
-
-  confirmLeave(): boolean | Promise<boolean> {
-    return this.confirmation.request(this.form.dirty, this.saving());
   }
 
   validation(control: AbstractControl): string {
@@ -607,94 +487,56 @@ export class ProductTypeIo extends BaseComponent implements OnInit {
       );
   }
 
-  private saveRequest(): Observable<ProductTypeDto> {
-    return defer(() => {
-      if (!this.canWrite() || this.saving() || this.loading() || !this.ready()) return EMPTY;
-      clearServerErrors(this.form);
-      this.summary.set([]);
-      this.form.markAllAsTouched();
-      if (this.form.invalid) return EMPTY;
-      const generation = this.generation;
-      const revision = this.revision;
-      this.saving.set(true);
-      this.error.set('');
-      this.saved.set(false);
-      const original = this.record();
-      const errorAliases = this.productTypeErrorAliases(!!original);
-      const operation = original
-        ? this.productTypesService.update(original.id, this.editProductTypeRequest(original))
-        : this.productTypesService.create(this.createProductTypeRequest());
-      return operation.pipe(
-        takeUntil(this.cancelWrites),
-        takeUntilDestroyed(this.destroyRef),
-        filter(() => generation === this.generation),
-        tap((record) => {
-          this.record.set(record);
-          this.loadLinkedProducts(record.id, generation);
-          if (revision === this.revision) {
-            this.resetProductTypeForm(record);
-          } else {
-            this.synchronizeProductTypeIdentity(record);
-          }
-          this.saved.set(revision === this.revision);
-        }),
-        catchError((error: unknown) => {
-          if (generation !== this.generation) return EMPTY;
-          if (error instanceof ApiError) {
-            this.summary.set(
-              applyServerErrors(this.form, error.fieldErrors, errorAliases()).flatMap(
-                (issue) => issue.messages,
-              ),
-            );
-            this.error.set(
-              error.status === 409
-                ? 'Dữ liệu đã thay đổi. Nội dung đang nhập được giữ lại; tải lại để đối chiếu trước khi lưu tiếp.'
-                : error.message,
-            );
-          } else {
-            this.error.set('Chưa lưu được dữ liệu. Nội dung đang nhập được giữ lại.');
-          }
-          return EMPTY;
-        }),
-        finalize(() => {
-          if (generation === this.generation) {
-            this.saving.set(false);
-            this.applyAccess();
-          }
-        }),
-      );
-    });
+  protected fetchRecord(id: string | null): Observable<ProductTypeDto | null> {
+    this.productSubscription?.unsubscribe();
+    this.linkedProductsPage.set(null);
+    this.productLoading.set(false);
+    this.productError.set('');
+    if (id === null) return of(null);
+    return this.productTypesService
+      .getById(id)
+      .pipe(tap((record) => this.loadLinkedProducts(record.id)));
   }
 
-  private duplicateRequest(): Observable<ProductTypeDto> {
-    return defer(() => {
-      const current = this.record();
-      if (!current || !this.canCreate() || this.saving() || this.loading()) return EMPTY;
-      const generation = this.generation;
-      this.saving.set(true);
-      this.error.set('');
-      this.saved.set(false);
-      return this.productTypesService.create(this.duplicateProductTypeRequest(current)).pipe(
-        takeUntil(this.cancelWrites),
-        takeUntilDestroyed(this.destroyRef),
-        filter(() => generation === this.generation),
-        catchError((error: unknown) => {
-          if (generation !== this.generation) return EMPTY;
-          this.error.set(
-            error instanceof ApiError
-              ? error.message
-              : 'Chưa nhân bản được loại sản phẩm. Vui lòng thử lại.',
-          );
-          return EMPTY;
-        }),
-        finalize(() => {
-          if (generation === this.generation) this.saving.set(false);
-        }),
-      );
-    });
+  protected hydrate(record: ProductTypeDto | null): void {
+    this.resetProductTypeForm(record ?? undefined);
   }
 
-  private loadLinkedProducts(id: string, generation: number): void {
+  protected persist(record: ProductTypeDto | null): Observable<ProductTypeDto> {
+    this.errorAliases = this.productTypeErrorAliases(!!record);
+    return record
+      ? this.productTypesService.update(record.id, this.editProductTypeRequest(record))
+      : this.productTypesService.create(this.createProductTypeRequest());
+  }
+
+  protected canWriteRecord(record: ProductTypeDto | null): boolean {
+    return this.can('ProductType', record ? 'Update' : 'Create');
+  }
+
+  protected override fieldAliases(): Readonly<Record<string, string>> {
+    return this.errorAliases();
+  }
+
+  protected override onDraftChange(): void {
+    this.summaryErrors.set([]);
+    clearServerErrors(this.form);
+  }
+
+  protected override saveErrorMessage(error: ApiError): string {
+    return error.status === 409
+      ? 'Dữ liệu đã thay đổi. Nội dung đang nhập được giữ lại; tải lại để đối chiếu trước khi lưu tiếp.'
+      : error.message;
+  }
+
+  protected override afterSaved(saved: ProductTypeDto, wasNew: boolean): void {
+    // Edits typed during the save are kept; they only pick up the ids the server just assigned.
+    if (!this.saved()) this.synchronizeProductTypeIdentity(saved);
+    this.loadLinkedProducts(saved.id);
+    this.listStore.upsert(saved);
+    if (wasNew) this.openCreated(['/admin/collections/product-types', saved.id]);
+  }
+
+  private loadLinkedProducts(id: string): void {
     this.productSubscription?.unsubscribe();
     this.linkedProductsPage.set(null);
     this.productError.set('');
@@ -710,29 +552,21 @@ export class ProductTypeIo extends BaseComponent implements OnInit {
       })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        map((page) => ({ id, generation, page })),
+        map((page) => ({ id, page })),
       )
       .subscribe({
-        next: ({ id: responseId, generation: responseGeneration, page }) => {
-          if (responseGeneration !== this.generation || this.record()?.id !== responseId) return;
+        next: ({ id: responseId, page }) => {
+          if (this.record()?.id !== responseId) return;
           this.linkedProductsPage.set(page);
           this.productLoading.set(false);
         },
         error: (error: unknown) => {
-          if (generation !== this.generation || this.record()?.id !== id) return;
+          if (this.record()?.id !== id) return;
           this.productLoading.set(false);
           this.productError.set(
             error instanceof ApiError ? error.message : 'Không thể tải sản phẩm của loại này.',
           );
         },
       });
-  }
-
-  private applyAccess(): void {
-    if (this.canWrite()) {
-      if (this.form.disabled) this.form.enable({ emitEvent: false });
-    } else if (this.form.enabled) {
-      this.form.disable({ emitEvent: false });
-    }
   }
 }

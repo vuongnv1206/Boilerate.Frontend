@@ -142,7 +142,6 @@ export function discountRequest(
 })
 export class DiscountIo extends BaseEditorComponent<DiscountDto, DiscountForm> {
   // System variables
-  protected override readonly fieldErrorAliases = DISCOUNT_FIELD_ALIASES;
   protected override readonly lockFormWhileSaving = true;
 
   // Business variables
@@ -182,6 +181,10 @@ export class DiscountIo extends BaseEditorComponent<DiscountDto, DiscountForm> {
 
   protected override afterSaved(saved: DiscountDto, wasNew: boolean): void {
     if (wasNew) this.openCreated(['/admin/discounts', saved.id]);
+  }
+
+  protected override fieldAliases(): Readonly<Record<string, string>> {
+    return DISCOUNT_FIELD_ALIASES;
   }
 
   protected override onDraftChange(): void {

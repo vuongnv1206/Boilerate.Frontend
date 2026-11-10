@@ -37,12 +37,12 @@
       </button>
     </div>
   </header>
-  @if (summary().length) {
-    <ui-form-error-summary [messages]="summary()" />
+  @if (summaryErrors().length) {
+    <ui-form-error-summary [messages]="summaryErrors()" />
   }
-  @if (error()) {
+  @if (errorMessage()) {
     <div class="editor-notice" role="alert">
-      {{ error() }}
+      {{ errorMessage() }}
       @if (!saving()) {
         <button pButton severity="secondary" outlined (click)="retry()">Tải lại</button>
       }
