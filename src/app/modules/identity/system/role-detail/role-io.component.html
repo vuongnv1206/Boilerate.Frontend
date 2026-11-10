@@ -20,9 +20,9 @@
       >Quay lại</a
     >
   </header>
-  @if (error()) {
+  @if (errorMessage()) {
     <div class="editor-notice" role="alert">
-      {{ error()
+      {{ errorMessage()
       }}<button pButton severity="secondary" outlined (click)="retry()" [disabled]="saving()">
         Tải lại
       </button>
@@ -59,7 +59,7 @@
           <form
             class="editor-form system-info-form"
             [formGroup]="form"
-            (ngSubmit)="saveInfo()"
+            (ngSubmit)="save()"
             novalidate
           >
             <section class="form-section">

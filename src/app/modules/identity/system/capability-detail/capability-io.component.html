@@ -23,9 +23,9 @@
       >Quay lại</a
     >
   </header>
-  @if (error()) {
+  @if (errorMessage()) {
     <div class="editor-notice" role="alert">
-      {{ error()
+      {{ errorMessage()
       }}<button pButton severity="secondary" outlined (click)="retry()" [disabled]="saving()">
         Tải lại
       </button>
@@ -39,7 +39,7 @@
   } @else if (ready()) {
     <div class="editor-body">
       <main class="editor-main">
-        <form class="editor-form" [formGroup]="form" (ngSubmit)="saveInfo()" novalidate>
+        <form class="editor-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
           <section class="form-section">
             <h2>Thông tin chung</h2>
             <fieldset class="save-lock" [disabled]="saving() || !canWrite()">
