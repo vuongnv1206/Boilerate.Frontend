@@ -1,7 +1,4 @@
-﻿import { Component, OnInit, computed } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, debounceTime } from 'rxjs';
+﻿import { Component, computed } from '@angular/core';
 import { BaseComponent } from '@core/base';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
@@ -15,12 +12,9 @@ import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_OPTIONS,
   OrderFulfillmentStatus,
-  OrderListQuery,
   OrderPaymentMethod,
   OrderPaymentStatus,
   OrderStatus,
-  orderListQueryParams,
-  readOrderListQuery,
 } from '@api/ordering/models/order.dto';
 import { OrdersWorkspace } from '../orders-workspace.component';
 
@@ -30,10 +24,7 @@ import { OrdersWorkspace } from '../orders-workspace.component';
   imports: [SHARED_IMPORTS],
   templateUrl: './orders.component.html',
 })
-export class Orders extends BaseComponent implements OnInit {
-  // System variables
-  private readonly typing = new Subject<string>();
-
+export class Orders extends BaseComponent {
   // Business variables
   readonly queueLabels = ORDER_QUEUE_LABELS;
   readonly statusLabels = ORDER_STATUS_LABELS;
@@ -50,39 +41,28 @@ export class Orders extends BaseComponent implements OnInit {
   readonly createdFromDate = computed(() => this.parseDate(this.workspace.query().createdFrom));
   readonly createdToDate = computed(() => this.parseDate(this.workspace.query().createdTo));
 
-  constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    readonly workspace: OrdersWorkspace,
-  ) {
+  constructor(readonly workspace: OrdersWorkspace) {
     super();
-    this.destroyRef.onDestroy(() => this.typing.complete());
-  }
-
-  ngOnInit(): void {
-    this.typing.pipe(debounceTime(260), takeUntilDestroyed(this.destroyRef)).subscribe((q) => {
-      this.update({ ...this.currentQuery(), q, page: 1 });
-    });
   }
 
   routeQuery(): Record<string, string | number> {
-    return orderListQueryParams(this.currentQuery());
+    return this.workspace.routeQuery();
   }
 
   setQuery(q: string): void {
-    this.typing.next(q);
+    this.workspace.search(q);
   }
 
   setStatus(status: OrderStatus | null): void {
-    this.update({ ...this.currentQuery(), status, page: 1 });
+    this.workspace.patchQuery({ status }, { resetPage: true });
   }
 
   setPaymentStatus(paymentStatus: OrderPaymentStatus | null): void {
-    this.update({ ...this.currentQuery(), paymentStatus, page: 1 });
+    this.workspace.patchQuery({ paymentStatus }, { resetPage: true });
   }
 
   setFulfillmentStatus(fulfillmentStatus: OrderFulfillmentStatus | null): void {
-    this.update({ ...this.currentQuery(), fulfillmentStatus, page: 1 });
+    this.workspace.patchQuery({ fulfillmentStatus }, { resetPage: true });
   }
 
   statusLabel(value: OrderStatus): string {
@@ -102,7 +82,7 @@ export class Orders extends BaseComponent implements OnInit {
   }
 
   setDate(key: 'createdFrom' | 'createdTo', value: string): void {
-    this.update({ ...this.currentQuery(), [key]: value, page: 1 });
+    this.workspace.patchQuery({ [key]: value }, { resetPage: true });
   }
 
   setDatePicker(key: 'createdFrom' | 'createdTo', value: Date | null): void {
@@ -113,32 +93,33 @@ export class Orders extends BaseComponent implements OnInit {
   }
 
   setPage(page: number): void {
-    this.update({ ...this.currentQuery(), page });
+    this.workspace.setPage(page);
   }
 
   changePageSize(value: number | string): void {
     const pageSize = Number(value);
     if (this.pageSizes.some((size) => size === pageSize)) {
-      this.update({ ...this.currentQuery(), pageSize, page: 1 });
+      this.workspace.patchQuery({ pageSize }, { resetPage: true });
     }
   }
 
   resetFilters(): void {
-    this.update({
-      ...this.currentQuery(),
-      queue: null,
-      q: '',
-      status: null,
-      paymentStatus: null,
-      fulfillmentStatus: null,
-      createdFrom: '',
-      createdTo: '',
-      page: 1,
-    });
+    this.workspace.patchQuery(
+      {
+        queue: null,
+        q: '',
+        status: null,
+        paymentStatus: null,
+        fulfillmentStatus: null,
+        createdFrom: '',
+        createdTo: '',
+      },
+      { resetPage: true },
+    );
   }
 
   clearQueue(): void {
-    this.update({ ...this.currentQuery(), queue: null, page: 1 });
+    this.workspace.patchQuery({ queue: null }, { resetPage: true });
   }
 
   private parseDate(value: string): Date | null {
@@ -146,17 +127,5 @@ export class Orders extends BaseComponent implements OnInit {
     if (!match) return null;
     const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
     return Number.isNaN(date.getTime()) ? null : date;
-  }
-
-  private currentQuery(): OrderListQuery {
-    return readOrderListQuery(this.route.snapshot.queryParams);
-  }
-
-  private update(query: OrderListQuery, replaceUrl = false): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: orderListQueryParams(query),
-      replaceUrl,
-    });
   }
 }

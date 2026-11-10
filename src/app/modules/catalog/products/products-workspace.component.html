@@ -62,7 +62,7 @@
           pInputText
           id="workspace-product-search"
           type="search"
-          [value]="query()"
+          [value]="query().q"
           #itemSearch
           (input)="search(itemSearch.value)"
           placeholder="Tìm sản phẩm…"

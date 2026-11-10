@@ -1,24 +1,10 @@
 ﻿import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import {
-  EMPTY,
-  Observable,
-  Subject,
-  catchError,
-  debounceTime,
-  defer,
-  filter,
-  finalize,
-  forkJoin,
-  of,
-  switchMap,
-  tap,
-} from 'rxjs';
-import { BaseComponent } from '@core/base';
+import { Params } from '@angular/router';
+import { EMPTY, Observable, catchError, defer, finalize, forkJoin, of, tap } from 'rxjs';
+import { BaseRouteListComponent } from '@core/base/base-route-list.component';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
-import { sameQueryParams } from '@shared/utils/query-params.util';
 import {
   PRODUCT_SEARCH_DELAY_MS,
   ProductCategoryLookup,
@@ -26,6 +12,7 @@ import {
   ProductPage,
   ProductSearch,
   ProductStatus,
+  ProductSummary,
   ProductTypeLookup,
   listQueryParams,
   readProductListQuery,
@@ -41,53 +28,29 @@ import { ProductsService } from '@api/catalog/services/products.service';
   imports: [SHARED_IMPORTS],
   templateUrl: './products-workspace.component.html',
 })
-export class ProductsWorkspace extends BaseComponent implements OnInit {
+export class ProductsWorkspace
+  extends BaseRouteListComponent<ProductSummary, ProductListQuery>
+  implements OnInit
+{
   // System variables
   private readonly previewOwner = Symbol('products-workspace');
-  private readonly typing = new Subject<string>();
-  private readonly requests = new Subject<ProductSearch>();
-  private requestedPage = 1;
+  protected override readonly searchDelayMs = PRODUCT_SEARCH_DELAY_MS;
 
   // Business variables
-  readonly editorId = signal<string | null>(null);
-  readonly panelOpen = signal(false);
-
-  readonly page = signal<ProductPage>({
-    items: [],
-    total: 0,
-    pageNumber: 1,
-    pageSize: 10,
-  });
-  readonly query = signal('');
-  readonly status = signal<ProductStatus | null>(null);
-  readonly listError = signal('');
+  readonly listError = this.errorMessage;
   readonly bulkBusy = signal(false);
   readonly notice = signal('');
   readonly categories = signal<readonly ProductCategoryLookup[]>([]);
   readonly types = signal<readonly ProductTypeLookup[]>([]);
   readonly lookupError = signal('');
-  readonly filters = signal<ProductListQuery>({
-    q: '',
-    status: null,
-    page: 1,
-    pageSize: 10,
-  });
+  readonly filters = this.query;
+  readonly status = computed(() => this.query().status as ProductStatus | null);
   readonly selectedIds = signal<ReadonlySet<string>>(new Set());
-  readonly queryCorrection = signal<number | null>(null);
 
   readonly canView = computed(() => this.can('Product', 'View'));
   readonly canCreate = computed(() => this.can('Product', 'Create'));
   readonly canPublish = computed(() => this.can('Product', 'Publish'));
 
-  readonly pageCount = computed(() =>
-    Math.max(1, Math.ceil(this.page().total / this.page().pageSize)),
-  );
-  readonly rangeStart = computed(() =>
-    this.page().items.length ? (this.page().pageNumber - 1) * this.page().pageSize + 1 : 0,
-  );
-  readonly rangeEnd = computed(() =>
-    this.rangeStart() ? this.rangeStart() + this.page().items.length - 1 : 0,
-  );
   readonly allSelected = computed(
     () =>
       this.page().items.length > 0 &&
@@ -95,44 +58,18 @@ export class ProductsWorkspace extends BaseComponent implements OnInit {
   );
 
   constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
     private readonly productsService: ProductsService,
     private readonly categoriesService: CategoriesService,
     private readonly productTypesService: ProductTypesService,
     protected readonly previews: MediaService,
   ) {
     super();
-    this.requests
-      .pipe(
-        switchMap((request) => {
-          this.loading.set(true);
-          this.listError.set('');
-          return this.productsService.search(request).pipe(
-            catchError((rawError: unknown) => {
-              const apiError = normalizeApiError(rawError);
-              this.listError.set(
-                apiError.status > 0
-                  ? apiError.message
-                  : 'Không thể tải sản phẩm. Vui lòng thử lại.',
-              );
-              return of(null);
-            }),
-          );
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((result) => {
-        this.loading.set(false);
-        if (!result) return;
-        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
-        if (this.requestedPage > lastPage) {
-          this.queryCorrection.set(lastPage);
-          return;
-        }
-        this.page.set(result);
-        this.selectedIds.set(new Set());
-      });
+    this.page.set({
+      items: [],
+      total: 0,
+      pageNumber: 1,
+      pageSize: 10,
+    });
 
     effect(() => {
       const ids = this.page().items.flatMap((item) =>
@@ -141,79 +78,75 @@ export class ProductsWorkspace extends BaseComponent implements OnInit {
       untracked(() => this.previews.retainPreviews(this.previewOwner, ids));
     });
 
-    effect(() => {
-      const correctedPage = this.queryCorrection();
-      if (correctedPage !== null) {
-        this.updateQuery({ ...this.routeQuery(), page: correctedPage }, true);
-      }
-    });
-
     this.destroyRef.onDestroy(() => {
-      this.typing.complete();
-      this.requests.complete();
       this.previews.releasePreviews(this.previewOwner);
     });
   }
 
-  ngOnInit(): void {
-    this.readEditorRoute();
-    this.router.events
-      .pipe(
-        filter((event) => event instanceof NavigationEnd),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(() => {
-        this.readEditorRoute();
-        this.panelOpen.set(false);
-      });
-
-    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      const parsed = readProductListQuery(params);
-      const canonical = listQueryParams(parsed);
-      if (
-        this.route.snapshot.firstChild?.routeConfig?.path === 'new' &&
-        typeof params['duplicateFrom'] === 'string'
-      ) {
-        canonical['duplicateFrom'] = params['duplicateFrom'];
-      }
-      if (!sameQueryParams(params, canonical)) {
-        this.updateQuery(canonical, true);
-        return;
-      }
-      if (this.canView()) {
-        this.applyQuery(parsed);
-      }
-    });
-
+  override ngOnInit(): void {
+    super.ngOnInit();
     this.loadLookups();
-    this.typing
-      .pipe(debounceTime(PRODUCT_SEARCH_DELAY_MS), takeUntilDestroyed(this.destroyRef))
-      .subscribe((q) => this.updateQuery({ ...this.routeQuery(), q, page: 1 }, true));
   }
 
-  routeQuery(): Record<string, string | number> {
-    return listQueryParams(readProductListQuery(this.route.snapshot.queryParams));
+  protected override canFetchPage(): boolean {
+    return this.canView();
   }
 
-  search(q: string): void {
-    this.typing.next(q);
+  protected override parseQuery(params: Params): ProductListQuery {
+    return readProductListQuery(params);
   }
 
-  setPage(page: number): void {
-    this.updateQuery({ ...this.routeQuery(), page });
+  protected override serializeQuery(query: ProductListQuery): Record<string, string | number> {
+    return listQueryParams(query);
   }
 
-  applyQuery(query: ProductListQuery): void {
-    this.filters.set(query);
-    this.query.set(query.q);
-    this.status.set(query.status as ProductStatus | null);
-    this.page.update((current) => ({ ...current, pageSize: query.pageSize }));
-    this.queryCorrection.set(null);
-    this.requestPage(query.page);
+  protected override canonicalParams(
+    query: ProductListQuery,
+    rawParams: Params,
+  ): Record<string, string | number> {
+    const canonical = this.serializeQuery(query);
+    if (
+      this.route.snapshot.firstChild?.routeConfig?.path === 'new' &&
+      typeof rawParams['duplicateFrom'] === 'string'
+    ) {
+      canonical['duplicateFrom'] = rawParams['duplicateFrom'];
+    }
+    return canonical;
   }
 
-  load(): void {
-    this.requestPage(this.requestedPage);
+  protected override fetchPage(query: ProductListQuery): Observable<ProductPage> {
+    const search = query.q.trim();
+    const currentStatus = query.status as ProductStatus | null;
+    const request: ProductSearch = {
+      pageNumber: query.page,
+      pageSize: query.pageSize,
+      ...(search ? { search } : {}),
+      ...(currentStatus === null ? {} : { status: currentStatus }),
+      ...Object.fromEntries(
+        Object.entries(query).filter(([key]) =>
+          [
+            'categoryId',
+            'productTypeId',
+            'fulfillmentKind',
+            'inStock',
+            'minimumPrice',
+            'maximumPrice',
+            'sortBy',
+            'sortDirection',
+          ].includes(key),
+        ),
+      ),
+    };
+    return this.productsService.search(request);
+  }
+
+  protected override fetchErrorMessage(rawError: unknown): string {
+    const apiError = normalizeApiError(rawError);
+    return apiError.status > 0 ? apiError.message : 'Không thể tải sản phẩm. Vui lòng thử lại.';
+  }
+
+  protected override onPageLoaded(_page: ProductPage): void {
+    this.clearSelection();
   }
 
   loadLookups(): void {
@@ -292,42 +225,5 @@ export class ProductsWorkspace extends BaseComponent implements OnInit {
 
   clearSelection(): void {
     this.selectedIds.set(new Set());
-  }
-
-  private requestPage(pageNumber: number): void {
-    this.requestedPage = pageNumber;
-    const search = this.query().trim();
-    const currentStatus = this.status();
-    this.requests.next({
-      pageNumber,
-      pageSize: this.page().pageSize,
-      ...(search ? { search } : {}),
-      ...(currentStatus === null ? {} : { status: currentStatus }),
-      ...Object.fromEntries(
-        Object.entries(this.filters()).filter(([key]) =>
-          [
-            'categoryId',
-            'productTypeId',
-            'fulfillmentKind',
-            'inStock',
-            'minimumPrice',
-            'maximumPrice',
-            'sortBy',
-            'sortDirection',
-          ].includes(key),
-        ),
-      ),
-    });
-  }
-
-  private updateQuery(queryParams: Record<string, string | number>, replaceUrl = false): void {
-    void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl });
-  }
-
-  private readEditorRoute(): void {
-    const child = this.route.snapshot.firstChild;
-    this.editorId.set(
-      child?.paramMap.get('id') ?? (child?.routeConfig?.path === 'new' ? 'new' : null),
-    );
   }
 }

@@ -11,7 +11,7 @@
         type="search"
         aria-label="Tìm sản phẩm"
         placeholder="Tìm sản phẩm…"
-        [ngModel]="workspace.query()"
+        [ngModel]="workspace.query().q"
         (ngModelChange)="setQuery($event)"
         [disabled]="workspace.bulkBusy()"
       />
