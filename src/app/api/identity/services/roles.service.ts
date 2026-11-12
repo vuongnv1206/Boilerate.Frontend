@@ -1,20 +1,22 @@
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
-import { BaseApiService } from '@core/base';
+import { ApiService } from '@core/http/api.service';
 import { FunctionDto, PermissionPair, RoleDto, RoleRequest } from '../models/identity.dto';
 
 @Injectable({ providedIn: 'root' })
-export class RolesService extends BaseApiService {
+export class RolesService {
+  constructor(private readonly api: ApiService) {}
+
   roles(): Observable<readonly RoleDto[]> {
-    return this.get<readonly RoleDto[]>('roles');
+    return this.api.get<readonly RoleDto[]>('roles');
   }
 
   role(id: string): Observable<RoleDto> {
-    return this.get<RoleDto>(`roles/${encodeURIComponent(id)}`);
+    return this.api.get<RoleDto>(`roles/${encodeURIComponent(id)}`);
   }
 
   rolePermissions(id: string): Observable<readonly FunctionDto[]> {
-    return this.get<readonly FunctionDto[]>(`roles/${encodeURIComponent(id)}/permissions`);
+    return this.api.get<readonly FunctionDto[]>(`roles/${encodeURIComponent(id)}/permissions`);
   }
 
   saveRole(id: string | null, request: RoleRequest): Observable<string> {

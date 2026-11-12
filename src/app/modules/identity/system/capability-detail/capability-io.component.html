@@ -39,7 +39,7 @@
   } @else if (ready()) {
     <div class="editor-body">
       <main class="editor-main">
-        <form class="editor-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <form class="editor-form" [formGroup]="form" (ngSubmit)="saveChange()" novalidate>
           <section class="form-section">
             <h2>Thông tin chung</h2>
             <fieldset class="save-lock" [disabled]="saving() || !canWrite()">

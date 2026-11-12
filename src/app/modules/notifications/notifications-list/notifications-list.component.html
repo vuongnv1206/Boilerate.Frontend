@@ -22,7 +22,7 @@
       iconOnly
       type="button"
       aria-label="Tải lại thông báo"
-      (click)="reload()"
+      (click)="loadData()"
       [disabled]="loading() || working()"
     >
       <ui-icon name="refresh" [size]="14" />
@@ -48,7 +48,7 @@
         severity="secondary"
         outlined
         type="button"
-        (click)="reload()"
+        (click)="loadData()"
         [disabled]="loading()"
       >
         Thử lại
@@ -58,7 +58,7 @@
 
   @if (loading()) {
     <ui-content-state kind="loading" title="Đang tải thông báo" layout="page" />
-  } @else if (isEmpty()) {
+  } @else if (!loading() && !errorMessage() && result().items.length === 0) {
     <ui-content-state
       kind="empty"
       icon="bell"
@@ -74,7 +74,7 @@
       tabindex="0"
     >
       <p-table
-        [value]="items().slice()"
+        [value]="result().items.slice()"
         dataKey="id"
         tableStyleClass="content-table"
         [tableStyle]="{ 'min-width': '760px' }"
@@ -154,7 +154,7 @@
   }
 
   <footer class="pagination">
-    <span>{{ total() }} thông báo</span>
+    <span>{{ result().total }} thông báo</span>
     <div class="pagination-right">
       <button
         pButton
@@ -164,12 +164,12 @@
         iconOnly
         type="button"
         aria-label="Trang trước"
-        [disabled]="page() <= 1 || loading()"
-        (click)="changePage(page() - 1)"
+        [disabled]="result().page <= 1 || loading()"
+        (click)="changePage(result().page - 1)"
       >
         <ui-icon name="chevron-left" [size]="14" />
       </button>
-      <span>{{ page() }} / {{ totalPages() }}</span>
+      <span>{{ result().page }} / {{ result().totalPages }}</span>
       <button
         pButton
         severity="secondary"
@@ -178,8 +178,8 @@
         iconOnly
         type="button"
         aria-label="Trang sau"
-        [disabled]="page() >= totalPages() || loading()"
-        (click)="changePage(page() + 1)"
+        [disabled]="result().page >= result().totalPages || loading()"
+        (click)="changePage(result().page + 1)"
       >
         <ui-icon name="chevron-right" [size]="14" />
       </button>

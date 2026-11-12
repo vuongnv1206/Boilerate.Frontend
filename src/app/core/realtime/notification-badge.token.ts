@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthSession } from '../auth/auth-session';
 import { RUNTIME_CONFIG } from '../config/runtime-config.token';
 import { ToastService } from '../feedback/toast.service';
-import { ApiClient } from '../http/api-client';
+import { ApiService } from '../http/api.service';
 import { SignalRClientService } from './signalr-client.service';
 
 export interface NotificationBadgeState {
@@ -38,7 +38,7 @@ export const NOTIFICATION_BADGE = new InjectionToken<NotificationBadgeState>(
         };
       }
 
-      const api = inject(ApiClient);
+      const api = inject(ApiService);
       const session = inject(AuthSession);
       const signalR = inject(SignalRClientService);
       const toast = inject(ToastService);

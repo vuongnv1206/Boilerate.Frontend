@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { Observable, Subscription, catchError, map, of, tap, throwError } from 'rxjs';
-import { ApiClient } from '../http/api-client';
+import { ApiService } from '../http/api.service';
 import { normalizeApiError } from '../http/normalize-api-error';
 
 interface GuestVerificationResult {
@@ -21,12 +21,12 @@ export class GuestAccessSession {
   readonly submitting = this.submittingState.asReadonly();
   readonly error = this.errorState.asReadonly();
 
-  constructor(private readonly api: ApiClient) {}
+  constructor(private readonly api: ApiService) {}
 
   restore(onRestored?: (email: string) => void): void {
     this.restoreSub?.unsubscribe();
     this.restoreSub = this.api
-      .get<GuestVerificationResult>('storefront/access/me', { withCredentials: true })
+      .get<GuestVerificationResult>('storefront/access/me', undefined, { withCredentials: true })
       .pipe(
         tap((res) => {
           this.verifiedEmailState.set(res.email);

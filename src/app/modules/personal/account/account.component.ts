@@ -1,4 +1,11 @@
-﻿import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  OnInit,
+  ViewEncapsulation,
+  computed,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -8,10 +15,11 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { Observable } from 'rxjs';
-import { BaseEditorComponent } from '@core/base/base-editor.component';
+import { finalize } from 'rxjs';
+import { BaseComponent } from '@core/base/base.component';
 import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
 import { LeaveConfirmation } from '@core/base/leave-confirmation';
+import { normalizeApiError } from '@core/http/normalize-api-error';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { formatVnDateTime } from '@shared/utils/date.util';
@@ -56,9 +64,11 @@ type PersonalProfileForm = FormGroup<{
   templateUrl: './account.component.html',
   styleUrl: '../../../../styles/ui/_account.scss',
 })
-export class AccountComponent extends BaseEditorComponent<PersonalProfileDto, PersonalProfileForm> {
+export class AccountComponent extends BaseComponent implements OnInit {
   // System variables
-  protected override readonly bannerOnValidationError = false;
+  readonly saving = signal(false);
+  readonly conflict = signal(false);
+  readonly summaryErrors = signal<readonly string[]>([]);
   readonly activeTab = signal<AccountTabKey>('profile');
   readonly canViewAudit = computed(() => this.can('Users', 'View'));
   readonly canExportAudit = computed(() => this.can('Users', 'Export'));
@@ -79,7 +89,8 @@ export class AccountComponent extends BaseEditorComponent<PersonalProfileDto, Pe
   readonly exportingAudit = signal(false);
 
   // Business variables
-  override readonly form: PersonalProfileForm;
+  readonly record = signal<PersonalProfileDto | null>(null);
+  readonly form: PersonalProfileForm;
   readonly passwordForm: FormGroup<{
     password: FormControl<string>;
     newPassword: FormControl<string>;
@@ -114,6 +125,7 @@ export class AccountComponent extends BaseEditorComponent<PersonalProfileDto, Pe
   constructor(
     private readonly personalService: PersonalService,
     private readonly fb: FormBuilder,
+    readonly confirmation: LeaveConfirmation,
   ) {
     super();
     this.form = this.fb.nonNullable.group({
@@ -135,6 +147,10 @@ export class AccountComponent extends BaseEditorComponent<PersonalProfileDto, Pe
       googleIdToken: [''],
       facebookIdToken: [''],
     });
+  }
+
+  ngOnInit(): void {
+    this.loadData();
   }
 
   selectTab(tab: AccountTabKey): void {
@@ -324,49 +340,102 @@ export class AccountComponent extends BaseEditorComponent<PersonalProfileDto, Pe
     return formatVnDateTime(value);
   }
 
-  protected fetchRecord(): Observable<PersonalProfileDto> {
-    return this.personalService.getProfile();
+  loadData(): void {
+    this.loading.set(true);
+    this.errorMessage.set('');
+    this.summaryErrors.set([]);
+    this.conflict.set(false);
+    this.personalService
+      .getProfile()
+      .pipe(
+        finalize(() => this.loading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (profile) => this.showProfile(profile),
+        error: (error: unknown) => this.errorMessage.set(normalizeApiError(error).message),
+      });
   }
 
-  protected hydrate(record: PersonalProfileDto | null): void {
-    this.form.reset(
-      {
-        firstName: record?.firstName ?? '',
-        lastName: record?.lastName ?? '',
-        email: record?.email ?? '',
-        phoneNumber: record?.phoneNumber ?? '',
-        deleteCurrentImage: false,
-      },
-      { emitEvent: false },
-    );
+  async retry(): Promise<void> {
+    if (await this.confirmLeave()) this.loadData();
   }
 
-  protected persist(record: PersonalProfileDto | null): Observable<PersonalProfileDto> {
-    const raw = this.form.getRawValue();
-    return this.personalService.updateProfile({
-      id: record?.id ?? '',
-      version: record?.version ?? null,
-      firstName: raw.firstName.trim(),
-      lastName: raw.lastName.trim(),
-      email: (record?.email ?? raw.email).trim(),
-      phoneNumber: raw.phoneNumber.trim() || null,
-      deleteCurrentImage: raw.deleteCurrentImage,
+  saveChange(): void {
+    const record = this.record();
+    if (!record || this.saving()) return;
+    clearServerErrors(this.form);
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+
+    const value = this.form.getRawValue();
+    this.saving.set(true);
+    this.errorMessage.set('');
+    this.summaryErrors.set([]);
+    this.conflict.set(false);
+    this.personalService
+      .updateProfile({
+        id: record.id,
+        version: record.version,
+        firstName: value.firstName.trim(),
+        lastName: value.lastName.trim(),
+        email: (record.email ?? value.email).trim(),
+        phoneNumber: value.phoneNumber.trim() || null,
+        deleteCurrentImage: value.deleteCurrentImage,
+      })
+      .pipe(
+        finalize(() => this.saving.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (saved) => {
+          this.showProfile(saved);
+          this.toast.success('Đã cập nhật hồ sơ cá nhân.');
+          this.session
+            .reloadAuthorization()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({ error: () => undefined });
+        },
+        // The form keeps what was typed, also on 409: the user reloads when ready.
+        error: (error: unknown) => {
+          const apiError = normalizeApiError(error);
+          const unmapped = applyServerErrors(this.form, apiError.fieldErrors).flatMap(
+            (entry) => entry.messages,
+          );
+          this.conflict.set(apiError.kind === 'conflict');
+          if (apiError.kind !== 'validation') {
+            this.errorMessage.set(apiError.message);
+            this.summaryErrors.set(unmapped);
+          } else if (unmapped.length || Object.keys(apiError.fieldErrors).length) {
+            this.summaryErrors.set(unmapped);
+          } else {
+            this.summaryErrors.set([apiError.message]);
+          }
+        },
+      });
+  }
+
+  /** Asked by `unsavedChangesGuard` before leaving, and before reloading the profile. */
+  confirmLeave(): boolean | Promise<boolean> {
+    return this.confirmation.request(this.form.dirty, this.saving());
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnload(event: BeforeUnloadEvent): void {
+    if (this.form.dirty || this.saving()) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  private showProfile(profile: PersonalProfileDto): void {
+    this.record.set(profile);
+    this.form.reset({
+      firstName: profile.firstName ?? '',
+      lastName: profile.lastName ?? '',
+      email: profile.email ?? '',
+      phoneNumber: profile.phoneNumber ?? '',
+      deleteCurrentImage: false,
     });
-  }
-
-  protected canWriteRecord(record: PersonalProfileDto | null): boolean {
-    return record !== null;
-  }
-
-  protected override restrictControls(): void {
-    this.form.controls.email.disable({ emitEvent: false });
-  }
-
-  protected override afterSaved(): void {
-    this.toast.success('Đã cập nhật hồ sơ cá nhân.');
-    this.session
-      .reloadAuthorization()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ error: () => undefined });
   }
 }

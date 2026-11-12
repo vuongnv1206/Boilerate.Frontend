@@ -1,4 +1,4 @@
-import { PaginationParams } from '@core/base';
+import { PaginationParams } from '@core/http/pagination';
 
 export enum BasicNotificationLabelType {
   Info = 1,

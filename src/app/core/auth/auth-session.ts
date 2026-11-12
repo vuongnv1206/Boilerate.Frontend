@@ -1,353 +1,226 @@
-import { DOCUMENT } from '@angular/common';
-import { HttpContext } from '@angular/common/http';
-import { DestroyRef, Inject, Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
+  MonoTypeOperatorFunction,
   Observable,
+  Subject,
   catchError,
-  defer,
   finalize,
-  firstValueFrom,
-  from,
   map,
   of,
   shareReplay,
   switchMap,
+  takeUntil,
   tap,
   throwError,
+  throwIfEmpty,
 } from 'rxjs';
-import { ApiClient, ApiRequestOptions } from '../http/api-client';
 import { normalizeApiError } from '../http/normalize-api-error';
-import { SKIP_AUTH } from './auth-context';
-import { ExternalTokenWire, LoginRequest, TokenResponse } from './auth.dto';
+import { AuthApi } from './auth-api';
+import { ExternalLoginEndpoint, LoginRequest, TokenResponse } from './auth.dto';
+import { SessionSync } from './session-sync';
 
-/** The refresh cookie belongs to the server. Access tokens stay in memory. */
+interface SessionState {
+  readonly tokens: TokenResponse | null;
+  readonly permissions: readonly string[];
+  readonly isCentralAdmin: boolean;
+  readonly error: string;
+  readonly logoutFailed: boolean;
+}
+
+const SIGNED_OUT: SessionState = {
+  tokens: null,
+  permissions: [],
+  isCentralAdmin: false,
+  error: '',
+  logoutFailed: false,
+};
+
+/**
+ * The signed-in session. The access token lives in memory only; the refresh cookie belongs to the
+ * server. Tokens and permissions are always set together, so the session is either complete or
+ * signed out.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthSession {
   // System variables
-  private readonly tokens = signal<TokenResponse | null>(null);
-  private readonly ready = signal(false);
-  private readonly grantedPermissions = signal<readonly string[]>([]);
-  private readonly centralAdmin = signal(false);
+  private readonly state = signal(SIGNED_OUT);
+  /** Fires on every `clear()`; requests of the ended session stop instead of writing stale state. */
+  private readonly sessionEnded$ = new Subject<void>();
+  private readonly pending = new Map<string, Observable<unknown>>();
   private readonly permissionIndex = computed(
-    () => new Set(this.grantedPermissions().map((p) => p.toUpperCase())),
+    () => new Set(this.state().permissions.map((permission) => permission.toUpperCase())),
   );
-  private authorizationRequest: Observable<void> | null = null;
-  private readonly restoreFailure = signal('');
-  private readonly logoutFailure = signal(false);
-  private readonly channel: BroadcastChannel | null;
-  private refreshRequest: Observable<string> | null = null;
-  private restoreRequest: Observable<boolean> | null = null;
-  private sessionVersion = 0;
 
   // Business variables
-  readonly accessToken = computed(() => this.tokens()?.token ?? null);
-  readonly userId = computed(() => this.tokens()?.userId ?? null);
-  readonly sessionId = computed(() => this.tokens()?.sessionId ?? null);
-  readonly signedIn = computed(() => Boolean(this.accessToken() && this.ready()));
-  readonly permissions = this.grantedPermissions.asReadonly();
-  readonly isCentralAdmin = this.centralAdmin.asReadonly();
-  readonly restoreError = this.restoreFailure.asReadonly();
-  readonly logoutFailed = this.logoutFailure.asReadonly();
+  readonly accessToken = computed(() => this.state().tokens?.token ?? null);
+  readonly userId = computed(() => this.state().tokens?.userId ?? null);
+  readonly sessionId = computed(() => this.state().tokens?.sessionId ?? null);
+  readonly signedIn = computed(() => this.state().tokens !== null);
+  readonly permissions = computed(() => this.state().permissions);
+  readonly isCentralAdmin = computed(() => this.state().isCentralAdmin);
+  readonly restoreError = computed(() => this.state().error);
+  readonly logoutFailed = computed(() => this.state().logoutFailed);
 
   constructor(
-    private readonly api: ApiClient,
-    @Inject(DOCUMENT) private readonly document: Document,
+    private readonly authApi: AuthApi,
+    private readonly sync: SessionSync,
     private readonly router: Router,
-    destroyRef: DestroyRef,
   ) {
-    this.channel = this.document.defaultView?.BroadcastChannel
-      ? new this.document.defaultView.BroadcastChannel('boilerate-session')
-      : null;
-    if (this.channel) {
-      this.channel.onmessage = (event: MessageEvent<unknown>) => {
-        if (event.data === 'authorization-changed') {
-          if (this.accessToken()) this.reloadAuthorization().subscribe({ error: () => undefined });
-          return;
-        }
-        if (event.data !== 'logout') return;
-        const returnUrl = this.router.url;
-        this.clear();
-        if (returnUrl.startsWith('/admin')) {
-          void this.router.navigate(['/login'], { queryParams: { returnUrl } });
-        }
-      };
-    }
-    destroyRef.onDestroy(() => this.channel?.close());
+    this.sync.onEvent((event) => {
+      if (event === 'authorization-changed') {
+        this.reloadAuthorization().subscribe({ error: () => undefined });
+        return;
+      }
+      // Another tab signed out.
+      const returnUrl = this.router.url;
+      this.clear();
+      if (returnUrl.startsWith('/admin')) {
+        void this.router.navigate(['/login'], { queryParams: { returnUrl } });
+      }
+    });
   }
 
   signIn(request: LoginRequest): Observable<void> {
     this.clear();
-    const version = this.sessionVersion;
-    let completed = false;
-    return this.withSessionLock(() => {
-      this.checkVersion(version);
-      return this.api.post<TokenResponse>('tokens/session', request, this.browserOptions()).pipe(
-        tap((tokens) => {
-          this.setTokens(tokens, version);
-          this.channel?.postMessage('login');
-        }),
-      );
-    }).pipe(
-      switchMap(() => this.loadPermissions(version)),
-      tap(() => {
-        completed = true;
-      }),
-      catchError((error: unknown) => {
-        if (version === this.sessionVersion) this.clear();
-        return throwError(() => error);
-      }),
-      finalize(() => {
-        if (!completed && version === this.sessionVersion) this.clear();
-      }),
-    );
+    return this.openSession(() => this.authApi.login(request)).pipe(map(() => undefined));
   }
 
-  signInExternal(
-    endpoint: 'auth/google' | 'auth/google/code' | 'auth/facebook',
-    payload: unknown,
-  ): Observable<void> {
+  signInExternal(endpoint: ExternalLoginEndpoint, payload: unknown): Observable<void> {
     this.clear();
-    const version = this.sessionVersion;
-    let completed = false;
-    return this.withSessionLock(() => {
-      this.checkVersion(version);
-      return this.api
-        .post<ExternalTokenWire>(endpoint, payload, {
-          context: new HttpContext().set(SKIP_AUTH, true),
-        })
-        .pipe(
-          tap((wire) => {
-            const userId = wire.userId || readJwtUserId(wire.token);
-            this.setTokens(
-              {
-                userId,
-                token: wire.token,
-                sessionId: wire.sessionId,
-                accessTokenExpiresAt: wire.accessTokenExpiresAt,
-              },
-              version,
-            );
-            this.channel?.postMessage('login');
-          }),
-        );
-    }).pipe(
-      switchMap(() => this.loadPermissions(version)),
-      tap(() => {
-        completed = true;
-      }),
-      catchError((error: unknown) => {
-        if (version === this.sessionVersion) this.clear();
-        return throwError(() => error);
-      }),
-      finalize(() => {
-        if (!completed && version === this.sessionVersion) this.clear();
-      }),
+    return this.openSession(() => this.authApi.loginExternal(endpoint, payload)).pipe(
+      map(() => undefined),
     );
   }
 
+  /** Used on page load: turns the refresh cookie back into a session. Emits whether it worked. */
   restore(): Observable<boolean> {
     if (this.signedIn()) return of(true);
-    if (this.restoreRequest) return this.restoreRequest;
-    const version = this.sessionVersion;
-    const request = this.refresh().pipe(
+    return this.refresh().pipe(
       map(() => true),
       catchError((error: unknown) => {
-        if (version === this.sessionVersion) {
-          this.clear();
-          if (normalizeApiError(error).status !== 401) {
-            this.restoreFailure.set('Không thể kiểm tra phiên đăng nhập. Vui lòng thử lại.');
-          }
+        if (normalizeApiError(error).status !== 401) {
+          this.fail('Không thể kiểm tra phiên đăng nhập. Vui lòng thử lại.');
         }
         return of(false);
       }),
-      finalize(() => {
-        if (this.restoreRequest === request) this.restoreRequest = null;
-      }),
-      shareReplay({ bufferSize: 1, refCount: false }),
     );
-    this.restoreRequest = request;
-    return request;
   }
 
+  /** Emits the new access token. Concurrent callers share one request. */
   refresh(): Observable<string> {
-    if (this.refreshRequest) return this.refreshRequest;
-    const version = this.sessionVersion;
-    const userId = this.tokens()?.userId;
-    const request = this.withSessionLock(() => {
-      this.checkVersion(version);
-      return this.api
-        .post<TokenResponse>('tokens/session/refresh', null, this.browserOptions())
-        .pipe(
-          tap((response) => this.setTokens(response, version, userId)),
-          map((response) => response.token),
-        );
-    }).pipe(
-      switchMap((token) => this.loadPermissions(version).pipe(map(() => token))),
-      finalize(() => {
-        if (this.refreshRequest === request) this.refreshRequest = null;
-      }),
-      shareReplay({ bufferSize: 1, refCount: false }),
-    );
-    this.refreshRequest = request;
-    return request;
+    const userId = this.userId();
+    return this.shared('refresh', () => this.openSession(() => this.authApi.refresh(), userId));
   }
 
   signOut(): Observable<void> {
     this.clear();
-    this.channel?.postMessage('logout');
-    // Wait for an in-flight refresh, then revoke its newest cookie.
-    return this.withSessionLock(() =>
-      this.api.delete<void>('tokens/session', this.browserOptions()),
-    ).pipe(
-      catchError(() => {
-        this.logoutFailure.set(true);
-        this.restoreFailure.set('Chưa thể đăng xuất khỏi máy chủ. Vui lòng thử lại.');
-        return of(undefined);
-      }),
-      shareReplay({ bufferSize: 1, refCount: false }),
-    );
-  }
-
-  clear(): void {
-    this.sessionVersion += 1;
-    this.tokens.set(null);
-    this.ready.set(false);
-    this.grantedPermissions.set([]);
-    this.centralAdmin.set(false);
-    this.authorizationRequest = null;
-    this.restoreFailure.set('');
-    this.logoutFailure.set(false);
-    this.refreshRequest = null;
-    this.restoreRequest = null;
-  }
-
-  can(functionCode: string, actionCode: string): boolean {
-    const codePattern = /^[a-z0-9_-]{1,100}$/iu;
-    return (
-      codePattern.test(functionCode) &&
-      codePattern.test(actionCode) &&
-      this.permissionIndex().has(`Permissions.${functionCode}.${actionCode}`.toUpperCase())
-    );
-  }
-
-  reloadAuthorization(): Observable<void> {
-    if (!this.accessToken()) return of(undefined);
-    if (this.authorizationRequest) return this.authorizationRequest;
-    const request = this.loadPermissions(this.sessionVersion).pipe(
-      finalize(() => {
-        if (this.authorizationRequest === request) this.authorizationRequest = null;
-      }),
-      shareReplay({ bufferSize: 1, refCount: true }),
-    );
-    this.authorizationRequest = request;
-    return request;
-  }
-
-  authorizationChanged(): Observable<void> {
-    this.channel?.postMessage('authorization-changed');
-    return this.reloadAuthorization();
-  }
-
-  getVersion(): number {
-    return this.sessionVersion;
-  }
-
-  private loadPermissions(version: number): Observable<void> {
-    this.checkVersion(version);
-    return this.api
-      .get<unknown>('personal/authorization', {
-        context: new HttpContext().set(SKIP_AUTH, true),
-        headers: { Authorization: `Bearer ${this.accessToken()}` },
-      })
+    this.sync.notify('logout');
+    // The lock waits for a refresh still in flight, so the newest cookie is the one revoked.
+    return this.sync
+      .withLock(() => this.authApi.logout())
       .pipe(
-        tap((response) => {
-          this.checkVersion(version);
-          const context =
-            response && typeof response === 'object' && !Array.isArray(response)
-              ? (response as Record<string, unknown>)
-              : {};
-          const permissions = context['permissions'];
-          if (
-            !Array.isArray(permissions) ||
-            !permissions.every(
-              (permission) =>
-                typeof permission === 'string' &&
-                /^Permissions\.[a-z0-9_-]{1,100}\.[a-z0-9_-]{1,100}$/iu.test(permission),
-            ) ||
-            typeof context['isCentralAdmin'] !== 'boolean'
-          ) {
-            this.grantedPermissions.set([]);
-            throw new Error('Không tải được danh sách quyền hợp lệ.');
-          }
-          this.grantedPermissions.set(permissions);
-          this.centralAdmin.set(context['isCentralAdmin']);
-          this.ready.set(true);
-          this.restoreFailure.set('');
-        }),
-        map(() => undefined),
-        catchError((error: unknown) => {
-          if (version === this.sessionVersion) {
-            this.grantedPermissions.set([]);
-            this.centralAdmin.set(false);
-          }
-          return throwError(() => error);
+        catchError(() => {
+          this.fail('Chưa thể đăng xuất khỏi máy chủ. Vui lòng thử lại.', true);
+          return of(undefined);
         }),
       );
   }
 
-  private setTokens(tokens: TokenResponse, version: number, expectedUserId?: string): void {
-    this.checkVersion(version);
-    if (
-      !tokens.userId ||
-      !tokens.token ||
-      !tokens.sessionId ||
-      !Number.isFinite(Date.parse(tokens.accessTokenExpiresAt))
-    ) {
-      throw new Error('Máy chủ trả về phiên đăng nhập không hợp lệ.');
-    }
-    if (expectedUserId && tokens.userId !== expectedUserId) {
-      this.clear();
-      this.restoreFailure.set('Tài khoản đã thay đổi ở tab khác. Vui lòng đăng nhập lại.');
-      void this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
-      throw new Error('Không gửi lại yêu cầu bằng tài khoản khác.');
-    }
-    this.tokens.set(tokens);
+  /** The server no longer accepts this session: sign out locally and ask to sign in again. */
+  expire(message = ''): void {
+    const returnUrl = this.router.url;
+    this.clear();
+    if (message) this.fail(message);
+    void this.router.navigate(['/login'], { queryParams: { returnUrl } });
   }
 
-  private checkVersion(version: number): void {
-    if (version !== this.sessionVersion) throw new Error('Phiên đăng nhập đã kết thúc.');
+  can(functionCode: string, actionCode: string): boolean {
+    return this.permissionIndex().has(`Permissions.${functionCode}.${actionCode}`.toUpperCase());
   }
 
-  private browserOptions(): ApiRequestOptions {
-    return {
-      context: new HttpContext().set(SKIP_AUTH, true),
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      withCredentials: true,
-    };
+  /** Re-reads permissions for the current token. Concurrent callers share one request. */
+  reloadAuthorization(): Observable<void> {
+    const token = this.accessToken();
+    if (!token) return of(undefined);
+    return this.shared('authorization', () =>
+      this.authApi.getAuthorization(token).pipe(
+        this.untilSessionEnds(),
+        tap(({ permissions, isCentralAdmin }) =>
+          this.state.update((state) => ({ ...state, permissions, isCentralAdmin })),
+        ),
+        map(() => undefined),
+        catchError((error: unknown) => {
+          // Unknown permissions mean no permissions.
+          this.state.update((state) => ({ ...state, permissions: [], isCentralAdmin: false }));
+          return throwError(() => error);
+        }),
+      ),
+    );
   }
 
-  private withSessionLock<T>(request: () => Observable<T>): Observable<T> {
-    const locks = this.document.defaultView?.navigator.locks;
-    return locks
-      ? defer(() => from(locks.request('boilerate-session', () => firstValueFrom(request()))))
-      : defer(request);
+  /** Call after a write that changes permissions: updates this tab and tells the others. */
+  authorizationChanged(): Observable<void> {
+    this.sync.notify('authorization-changed');
+    return this.reloadAuthorization();
   }
-}
 
-function readJwtUserId(jwt: string): string {
-  try {
-    const payloadPart = jwt.split('.')[1];
-    if (!payloadPart) return '';
-    const base64 = payloadPart.replace(/-/gu, '+').replace(/_/gu, '/');
-    const json = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='));
-    const claims = JSON.parse(json) as Record<string, unknown>;
-    const id =
-      claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ??
-      claims['sub'] ??
-      claims['uid'];
-    return typeof id === 'string' ? id : '';
-  } catch {
-    return '';
+  private clear(): void {
+    // Stop in-flight requests first, so whatever they report is wiped by the reset below.
+    this.sessionEnded$.next();
+    this.state.set(SIGNED_OUT);
+  }
+
+  private fail(error: string, logoutFailed = false): void {
+    this.state.update((state) => ({ ...state, error, logoutFailed }));
+  }
+
+  /** Fetches tokens, then their permissions, and only then stores both. Emits the access token. */
+  private openSession(
+    fetchTokens: () => Observable<TokenResponse>,
+    expectedUserId: string | null = null,
+  ): Observable<string> {
+    return this.sync.withLock(fetchTokens).pipe(
+      tap((tokens) => {
+        // Ending the session here makes `untilSessionEnds` below fail this request.
+        if (expectedUserId && tokens.userId !== expectedUserId) {
+          this.expire('Tài khoản đã thay đổi ở tab khác. Vui lòng đăng nhập lại.');
+        }
+      }),
+      switchMap((tokens) =>
+        this.authApi
+          .getAuthorization(tokens.token)
+          .pipe(map((authorization) => ({ tokens, authorization }))),
+      ),
+      this.untilSessionEnds(),
+      map(({ tokens, authorization }) => {
+        this.state.set({
+          ...SIGNED_OUT,
+          tokens,
+          permissions: authorization.permissions,
+          isCentralAdmin: authorization.isCentralAdmin,
+        });
+        return tokens.token;
+      }),
+    );
+  }
+
+  private untilSessionEnds<T>(): MonoTypeOperatorFunction<T> {
+    return (source) =>
+      source.pipe(
+        takeUntil(this.sessionEnded$),
+        throwIfEmpty(() => new Error('Phiên đăng nhập đã kết thúc.')),
+      );
+  }
+
+  private shared<T>(key: 'refresh' | 'authorization', request: () => Observable<T>): Observable<T> {
+    const running = this.pending.get(key) as Observable<T> | undefined;
+    if (running) return running;
+    const started = request().pipe(
+      finalize(() => this.pending.delete(key)),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+    this.pending.set(key, started);
+    return started;
   }
 }

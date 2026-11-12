@@ -1,6 +1,6 @@
-﻿import { Component, effect, input, signal, untracked } from '@angular/core';
+import { Component, effect, input, signal, untracked } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { BaseComponent } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { SecretReveal } from '@shared/ui/secret-reveal/secret-reveal.component';
 import { DigitalDeliveryDto } from '@api/payments/models/payment.dto';

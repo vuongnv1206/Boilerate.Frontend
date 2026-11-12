@@ -1,6 +1,7 @@
-﻿import { Component, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { BaseComponent, applyServerErrors, clearServerErrors } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
+import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { AUTH_FORM_STYLES } from '@api/identity/models/identity.dto';
 import { IdentityAuthService } from '@api/identity/services/identity-auth.service';

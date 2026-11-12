@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component,
   OnInit,
   computed,
@@ -12,7 +12,7 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { BaseComponent } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
 import { ProductInventoryPanel } from '@modules/inventory/product-inventory-panel/product-inventory-panel.component';
 import { InventoryBalanceDto, InventoryProductContext } from '@api/inventory/models/inventory.dto';
 import { validationMessage } from '@shared/forms/validation-message';

@@ -1,8 +1,10 @@
-﻿import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl } from '@angular/forms';
 import { Observable, Subscription, finalize, of, switchMap, take } from 'rxjs';
-import { BaseComponent, LeaveConfirmation, PagedResult } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
+import { LeaveConfirmation } from '@core/base/leave-confirmation';
+import { PagedResult } from '@core/http/pagination';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { createOperationId } from '@core/http/operation-id';
 import { validationMessage } from '@shared/forms/validation-message';

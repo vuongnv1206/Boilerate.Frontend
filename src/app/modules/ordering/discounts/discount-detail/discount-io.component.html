@@ -28,7 +28,7 @@
         <button
           pButton
           type="button"
-          (click)="save()"
+          (click)="saveChange()"
           [disabled]="!ready() || loading() || saving()"
         >
           {{ saving() ? 'Đang lưu…' : 'Lưu' }}
@@ -54,7 +54,7 @@
   } @else if (ready()) {
     <div class="discount-editor-body">
       <main>
-        <form class="editor-form" [formGroup]="form" novalidate (ngSubmit)="save()">
+        <form class="editor-form" [formGroup]="form" novalidate (ngSubmit)="saveChange()">
           <fieldset class="save-lock" [disabled]="saving()">
             <section class="form-section" aria-labelledby="discount-basic">
               <h2 id="discount-basic">Thông tin mã</h2>

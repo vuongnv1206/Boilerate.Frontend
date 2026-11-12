@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component,
   HostListener,
   Injector,
@@ -36,7 +36,8 @@ import type {
   AutoCompleteCompleteEvent,
   AutoCompleteSelectEvent,
 } from 'primeng/types/autocomplete';
-import { BaseComponent, LeaveConfirmation } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
+import { LeaveConfirmation } from '@core/base/leave-confirmation';
 import { ApiError } from '@core/http/api-error';
 import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
 import { validationMessage } from '@shared/forms/validation-message';

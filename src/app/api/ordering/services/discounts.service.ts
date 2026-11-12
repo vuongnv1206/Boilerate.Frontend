@@ -1,30 +1,24 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseCrudService } from '@core/base';
-import {
-  DiscountDto,
-  DiscountListFilter,
-  DiscountPage,
-  SaveDiscountRequest,
-  UpdateDiscountRequest,
-} from '../models/discount.dto';
+import { ApiService } from '@core/http/api.service';
+import { DiscountDto, DiscountPage, SaveDiscountRequest } from '../models/discount.dto';
 
 @Injectable({ providedIn: 'root' })
-export class DiscountsService extends BaseCrudService<
-  DiscountDto,
-  SaveDiscountRequest,
-  UpdateDiscountRequest,
-  DiscountListFilter
-> {
-  protected readonly endpoint = 'admin/discounts';
+export class DiscountsService {
+  private readonly basePath = 'admin/discounts';
+
+  constructor(private readonly api: ApiService) {}
 
   listDiscounts(page: number, search: string, isActive: boolean | null): Observable<DiscountPage> {
-    return this.get<DiscountPage>(this.endpoint, {
-      page,
-      size: 20,
-      ...(search ? { search } : {}),
-      ...(isActive === null ? {} : { isActive }),
-    });
+    return this.api.get<DiscountPage>(this.basePath, { page, size: 20, search, isActive });
+  }
+
+  getById(id: string): Observable<DiscountDto> {
+    return this.api.get<DiscountDto>(`${this.basePath}/${encodeURIComponent(id)}`);
+  }
+
+  create(request: SaveDiscountRequest): Observable<DiscountDto> {
+    return this.api.post<DiscountDto>(this.basePath, request);
   }
 
   updateDiscount(
@@ -32,6 +26,9 @@ export class DiscountsService extends BaseCrudService<
     version: string,
     request: SaveDiscountRequest,
   ): Observable<DiscountDto> {
-    return this.update(id, { ...request, version });
+    return this.api.put<DiscountDto>(`${this.basePath}/${encodeURIComponent(id)}`, {
+      ...request,
+      version,
+    });
   }
 }

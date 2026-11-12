@@ -1,7 +1,7 @@
 <section class="collection-page" aria-labelledby="outbox-heading">
   <header class="catalog-list-toolbar system-list-toolbar">
     <h1 id="outbox-heading">
-      Hàng đợi Outbox <span>{{ total() }}</span>
+      Hàng đợi Outbox <span>{{ result().total }}</span>
     </h1>
     <label class="sr-only" for="outbox-status-filter">Lọc theo trạng thái</label>
     <p-select
@@ -22,7 +22,7 @@
       iconOnly
       type="button"
       aria-label="Tải lại hàng đợi Outbox"
-      (click)="reload()"
+      (click)="loadData()"
       [disabled]="loading() || working()"
     >
       <ui-icon name="refresh" [size]="14" />
@@ -37,7 +37,7 @@
         severity="secondary"
         outlined
         type="button"
-        (click)="reload()"
+        (click)="loadData()"
         [disabled]="loading()"
       >
         Thử lại
@@ -47,7 +47,7 @@
 
   @if (loading()) {
     <ui-content-state kind="loading" title="Đang tải hàng đợi Outbox" layout="page" />
-  } @else if (isEmpty()) {
+  } @else if (!loading() && !errorMessage() && result().items.length === 0) {
     <ui-content-state
       kind="empty"
       icon="inbox"
@@ -63,7 +63,7 @@
       tabindex="0"
     >
       <p-table
-        [value]="items().slice()"
+        [value]="result().items.slice()"
         dataKey="messageId"
         tableStyleClass="content-table"
         [tableStyle]="{ 'min-width': '860px' }"
@@ -130,7 +130,7 @@
   }
 
   <footer class="pagination">
-    <span>{{ total() }} bản ghi</span>
+    <span>{{ result().total }} bản ghi</span>
     <div class="pagination-right">
       <button
         pButton
@@ -140,12 +140,12 @@
         iconOnly
         type="button"
         aria-label="Trang trước"
-        [disabled]="page() <= 1 || loading()"
-        (click)="changePage(page() - 1)"
+        [disabled]="result().page <= 1 || loading()"
+        (click)="changePage(result().page - 1)"
       >
         <ui-icon name="chevron-left" [size]="14" />
       </button>
-      <span>{{ page() }} / {{ totalPages() }}</span>
+      <span>{{ result().page }} / {{ result().totalPages }}</span>
       <button
         pButton
         severity="secondary"
@@ -154,8 +154,8 @@
         iconOnly
         type="button"
         aria-label="Trang sau"
-        [disabled]="page() >= totalPages() || loading()"
-        (click)="changePage(page() + 1)"
+        [disabled]="result().page >= result().totalPages || loading()"
+        (click)="changePage(result().page + 1)"
       >
         <ui-icon name="chevron-right" [size]="14" />
       </button>

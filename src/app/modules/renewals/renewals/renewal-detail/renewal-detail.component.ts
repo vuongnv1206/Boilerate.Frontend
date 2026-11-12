@@ -1,4 +1,4 @@
-﻿import { Component, HostListener, Optional, OnInit, computed, signal } from '@angular/core';
+import { Component, HostListener, Optional, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import {
@@ -12,7 +12,8 @@ import {
   of,
   tap,
 } from 'rxjs';
-import { BaseComponent, LeaveConfirmation } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
+import { LeaveConfirmation } from '@core/base/leave-confirmation';
 import { ApiError } from '@core/http/api-error';
 import { createOperationId } from '@core/http/operation-id';
 import { SHARED_IMPORTS } from '@shared/shared-imports';

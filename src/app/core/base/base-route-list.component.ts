@@ -1,19 +1,10 @@
-import {
-  Directive,
-  ElementRef,
-  OnInit,
-  computed,
-  effect,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { Directive, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Params, Router } from '@angular/router';
 import { Observable, Subject, catchError, debounceTime, filter, of, switchMap } from 'rxjs';
 import { normalizeApiError } from '../http/normalize-api-error';
 import { BaseComponent } from './base.component';
-import { PageWire } from './paged.model';
+import { PageWire } from '../http/pagination';
 import { sameQueryParams } from './query-params.util';
 
 interface RouteListPatchOptions {
@@ -37,7 +28,10 @@ interface RouteListPatchOptions {
  * Every change goes through the URL (`patchQuery`), so Back/Forward and reload restore the list.
  */
 @Directive()
-export abstract class BaseRouteListComponent<TItem, TQuery extends { readonly page: number }>
+export abstract class BaseRouteListComponent<
+  TItem,
+  TQuery extends { readonly page: number; readonly q?: string },
+>
   extends BaseComponent
   implements OnInit
 {
@@ -58,7 +52,6 @@ export abstract class BaseRouteListComponent<TItem, TQuery extends { readonly pa
     pageSize: 20,
   });
   readonly query = signal<TQuery>(this.parseQuery({}));
-  readonly queryCorrection = signal<number | null>(null);
   readonly editorId = signal<string | null>(null);
   readonly panelOpen = signal(false);
 
@@ -101,10 +94,10 @@ export abstract class BaseRouteListComponent<TItem, TQuery extends { readonly pa
         if (!result) return;
         const lastPage = Math.max(1, Math.ceil(result.total / Math.max(1, result.pageSize)));
         if (this.query().page > lastPage) {
-          this.queryCorrection.set(lastPage);
+          // The requested page no longer exists: step back to the last one.
+          this.patchQuery({ page: lastPage } as Partial<TQuery>, { replaceUrl: true });
           return;
         }
-        this.queryCorrection.set(null);
         this.page.set(result);
         this.onPageLoaded(result);
       });
@@ -112,15 +105,6 @@ export abstract class BaseRouteListComponent<TItem, TQuery extends { readonly pa
     this.destroyRef.onDestroy(() => {
       this.requests.complete();
       this.typing.complete();
-    });
-
-    effect(() => {
-      const correctedPage = this.queryCorrection();
-      if (correctedPage !== null) {
-        this.patchQuery({ page: correctedPage } as unknown as Partial<TQuery>, {
-          replaceUrl: true,
-        });
-      }
     });
   }
 
@@ -148,28 +132,19 @@ export abstract class BaseRouteListComponent<TItem, TQuery extends { readonly pa
         });
         return;
       }
-      this.applyQuery(parsed);
+      this.query.set(parsed);
+      this.requests.next(parsed);
     });
 
     this.typing
       .pipe(debounceTime(this.searchDelayMs), takeUntilDestroyed(this.destroyRef))
       .subscribe((q) => {
-        this.patchQuery({ q, page: 1 } as unknown as Partial<TQuery>, { replaceUrl: true });
+        this.patchQuery({ q, page: 1 } as Partial<TQuery>, { replaceUrl: true });
       });
-  }
-
-  applyQuery(nextQuery: TQuery): void {
-    this.query.set(nextQuery);
-    this.queryCorrection.set(null);
-    this.requests.next(nextQuery);
   }
 
   load(): void {
     this.requests.next(this.query());
-  }
-
-  reload(): void {
-    this.load();
   }
 
   search(q: string): void {
@@ -177,7 +152,7 @@ export abstract class BaseRouteListComponent<TItem, TQuery extends { readonly pa
   }
 
   setPage(page: number): void {
-    this.patchQuery({ page } as unknown as Partial<TQuery>);
+    this.patchQuery({ page } as Partial<TQuery>);
   }
 
   patchQuery(patch: Partial<TQuery>, options?: RouteListPatchOptions): void {

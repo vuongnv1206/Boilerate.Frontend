@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component,
   OnInit,
   WritableSignal,
@@ -10,7 +10,7 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, Observable, Subject, catchError, map, of, switchMap } from 'rxjs';
-import { BaseComponent } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {

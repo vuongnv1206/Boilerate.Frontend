@@ -1,6 +1,9 @@
-﻿import { Component, OnInit, computed, signal } from '@angular/core';
-import { Observable } from 'rxjs';
-import { BaseListComponent, PagedResult } from '@core/base';
+import { Component, OnInit, computed, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription, finalize } from 'rxjs';
+import { BaseComponent } from '@core/base/base.component';
+import { normalizeApiError } from '@core/http/normalize-api-error';
+import { pagedResult } from '@core/http/pagination';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { formatVnDateTime } from '@shared/utils/date.util';
 import {
@@ -21,28 +24,49 @@ import { OutboxService } from '@api/outbox/services/outbox.service';
   imports: [SHARED_IMPORTS],
   templateUrl: './outbox-list.component.html',
 })
-export class OutboxListComponent
-  extends BaseListComponent<OutboxMessageDto, OutboxFilter>
-  implements OnInit
-{
+export class OutboxListComponent extends BaseComponent implements OnInit {
   // System variables
   readonly replayingId = signal<string | null>(null);
+  private loadRequest?: Subscription;
   readonly canReplay = computed(() => this.can('Outbox', 'Replay') || this.can('Outbox', 'Update'));
 
   // Business variables
   readonly statusOptions = OUTBOX_STATUS_OPTIONS;
+  readonly filter = signal<OutboxFilter>({ state: null, page: 1, pageSize: 20 });
+  readonly result = signal(pagedResult<OutboxMessageDto>([], 0, 1, 20));
 
   constructor(private readonly outboxService: OutboxService) {
     super();
   }
 
   ngOnInit(): void {
-    this.filter.set({ state: null, page: 1, pageSize: 20 });
-    this.reload();
+    this.loadData();
+  }
+
+  loadData(): void {
+    this.loadRequest?.unsubscribe();
+    this.loading.set(true);
+    this.errorMessage.set('');
+    this.loadRequest = this.outboxService
+      .getMessages(this.filter())
+      .pipe(
+        finalize(() => this.loading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (result) => this.result.set(result),
+        error: (error: unknown) => this.errorMessage.set(normalizeApiError(error).message),
+      });
+  }
+
+  changePage(page: number): void {
+    this.filter.update((filter) => ({ ...filter, page: Math.max(1, page) }));
+    this.loadData();
   }
 
   onStatusChange(state: OutboxMessageStatus | null): void {
-    this.patchFilter({ state }, true);
+    this.filter.update((filter) => ({ ...filter, state, page: 1 }));
+    this.loadData();
   }
 
   canReplayRow(item: OutboxMessageDto): boolean {
@@ -61,7 +85,7 @@ export class OutboxListComponent
       onSuccess: () => {
         this.replayingId.set(null);
         this.toast.success('Đã đưa sự kiện vào hàng đợi phát lại.');
-        this.reload();
+        this.loadData();
       },
       onError: () => {
         this.replayingId.set(null);
@@ -79,9 +103,5 @@ export class OutboxListComponent
 
   statusTone(state: OutboxMessageStatus | string): OutboxBadgeTone {
     return outboxStatusTone(state);
-  }
-
-  protected override fetchList(filter: OutboxFilter): Observable<PagedResult<OutboxMessageDto>> {
-    return this.outboxService.getMessages(filter);
   }
 }

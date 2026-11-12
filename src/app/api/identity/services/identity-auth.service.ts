@@ -3,8 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { SKIP_AUTH } from '@core/auth/auth-context';
 import { AuthSession } from '@core/auth/auth-session';
-import { BaseApiService } from '@core/base';
-import { ApiRequestOptions } from '@core/http/api-client';
+import { ApiRequestOptions, ApiService } from '@core/http/api.service';
 import {
   CreateUserRequest,
   ForgotPasswordRequest,
@@ -16,41 +15,46 @@ function cleanTextResponse(value: string): string {
 }
 
 @Injectable({ providedIn: 'root' })
-export class IdentityAuthService extends BaseApiService {
-  constructor(private readonly session: AuthSession) {
-    super();
-  }
+export class IdentityAuthService {
+  constructor(
+    private readonly api: ApiService,
+    private readonly session: AuthSession,
+  ) {}
 
   selfRegister(request: CreateUserRequest): Observable<string> {
-    return this.postText('users/self-register', request, this.anonymousOptions()).pipe(
-      map(cleanTextResponse),
-    );
+    return this.api
+      .text('POST', 'users/self-register', request, this.anonymousOptions())
+      .pipe(map(cleanTextResponse));
   }
 
   confirmEmail(userId: string, code: string): Observable<string> {
-    return this.getText('users/confirm-email', { userId, code }, this.anonymousOptions()).pipe(
-      map(cleanTextResponse),
-    );
+    return this.api
+      .text('GET', 'users/confirm-email', undefined, {
+        ...this.anonymousOptions(),
+        params: { userId, code },
+      })
+      .pipe(map(cleanTextResponse));
   }
 
   confirmPhoneNumber(userId: string, code: string): Observable<string> {
-    return this.getText(
-      'users/confirm-phone-number',
-      { userId, code },
-      this.anonymousOptions(),
-    ).pipe(map(cleanTextResponse));
+    return this.api
+      .text('GET', 'users/confirm-phone-number', undefined, {
+        ...this.anonymousOptions(),
+        params: { userId, code },
+      })
+      .pipe(map(cleanTextResponse));
   }
 
   forgotPassword(request: ForgotPasswordRequest): Observable<string> {
-    return this.postText('users/forgot-password', request, this.anonymousOptions()).pipe(
-      map(cleanTextResponse),
-    );
+    return this.api
+      .text('POST', 'users/forgot-password', request, this.anonymousOptions())
+      .pipe(map(cleanTextResponse));
   }
 
   resetPassword(request: ResetPasswordRequest): Observable<string> {
-    return this.postText('users/reset-password', request, this.anonymousOptions()).pipe(
-      map(cleanTextResponse),
-    );
+    return this.api
+      .text('POST', 'users/reset-password', request, this.anonymousOptions())
+      .pipe(map(cleanTextResponse));
   }
 
   googleSignIn(idToken: string): Observable<void> {

@@ -1,5 +1,5 @@
-﻿import { Component, computed, effect, input, output, signal } from '@angular/core';
-import { BaseComponent } from '@core/base';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
+import { BaseComponent } from '@core/base/base.component';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
   ORDER_PAYMENT_SOURCE_OPTIONS,

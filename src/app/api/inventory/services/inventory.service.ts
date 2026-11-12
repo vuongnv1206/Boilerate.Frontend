@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { EMPTY, Observable, expand, reduce } from 'rxjs';
-import { BaseApiService, PagedResult } from '@core/base';
+import { EMPTY, Observable, expand, reduce, map } from 'rxjs';
+import { ApiService } from '@core/http/api.service';
 import { createOperationId } from '@core/http/operation-id';
+import { PagedResult, PageWire, fromPage } from '@core/http/pagination';
 import {
   AdjustInventoryRequest,
   INVENTORY_PAGE_SIZE,
@@ -11,18 +12,22 @@ import {
 } from '../models/inventory.dto';
 
 @Injectable({ providedIn: 'root' })
-export class InventoryService extends BaseApiService {
+export class InventoryService {
+  constructor(private readonly api: ApiService) {}
+
   initializeWarehouse(operationId = createOperationId()): Observable<string> {
-    return this.post<string>('inventory/initialize', { operationId });
+    return this.api.post<string>('inventory/initialize', { operationId });
   }
 
   getBalances(filter?: InventoryFilter): Observable<PagedResult<InventoryBalanceDto>> {
-    return this.getPageFrom<InventoryBalanceDto>('inventory', {
-      page: filter?.page ?? 1,
-      size: filter?.size ?? INVENTORY_PAGE_SIZE,
-      productId: filter?.productId,
-      variantId: filter?.variantId,
-    });
+    return this.api
+      .get<PageWire<InventoryBalanceDto>>('inventory', {
+        page: filter?.page ?? 1,
+        size: filter?.size ?? INVENTORY_PAGE_SIZE,
+        productId: filter?.productId,
+        variantId: filter?.variantId,
+      })
+      .pipe(map(fromPage));
   }
 
   getAllProductBalances(productId: string): Observable<readonly InventoryBalanceDto[]> {
@@ -40,7 +45,7 @@ export class InventoryService extends BaseApiService {
     inventoryItemId: string,
     request: AdjustInventoryRequest,
   ): Observable<StockMovementDto> {
-    return this.post<StockMovementDto>(
+    return this.api.post<StockMovementDto>(
       `inventory/${encodeURIComponent(inventoryItemId)}/adjustments`,
       {
         ...request,
@@ -54,9 +59,11 @@ export class InventoryService extends BaseApiService {
     page = 1,
     size = INVENTORY_PAGE_SIZE,
   ): Observable<PagedResult<StockMovementDto>> {
-    return this.getPageFrom<StockMovementDto>(
-      `inventory/${encodeURIComponent(inventoryItemId)}/movements`,
-      { page, size },
-    );
+    return this.api
+      .get<PageWire<StockMovementDto>>(
+        `inventory/${encodeURIComponent(inventoryItemId)}/movements`,
+        { page, size },
+      )
+      .pipe(map(fromPage));
   }
 }

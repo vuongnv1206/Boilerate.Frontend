@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component,
   HostListener,
   Optional,
@@ -12,7 +12,8 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, catchError, finalize, of } from 'rxjs';
-import { BaseComponent, LeaveConfirmation } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
+import { LeaveConfirmation } from '@core/base/leave-confirmation';
 import { ApiError } from '@core/http/api-error';
 import { OrderAfterSalesPanel } from '@modules/after-sales/order-after-sales-panel/order-after-sales-panel.component';
 import { OrderPaymentPanel } from '@modules/payments/order-payment-panel/order-payment-panel.component';

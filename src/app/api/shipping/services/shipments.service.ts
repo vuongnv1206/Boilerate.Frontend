@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
-import { BaseApiService } from '@core/base';
+import { ApiService } from '@core/http/api.service';
 import {
   CreateShipmentRequest,
   DeliverShipmentRequest,
@@ -10,13 +10,14 @@ import {
 } from '../models/shipment.dto';
 
 @Injectable({ providedIn: 'root' })
-export class ShipmentsService extends BaseApiService {
-  constructor(private readonly session: AuthSession) {
-    super();
-  }
+export class ShipmentsService {
+  constructor(
+    private readonly api: ApiService,
+    private readonly session: AuthSession,
+  ) {}
 
   getAdminShipments(orderId: string): Observable<readonly ShipmentDto[]> {
-    return this.get<readonly ShipmentDto[]>(
+    return this.api.get<readonly ShipmentDto[]>(
       `admin/orders/${encodeURIComponent(orderId)}/shipments`,
     );
   }
@@ -26,7 +27,10 @@ export class ShipmentsService extends BaseApiService {
   }
 
   dispatchShipment(orderId: string, request: DispatchShipmentRequest): Observable<ShipmentDto> {
-    return this.post<ShipmentDto>(`admin/orders/${encodeURIComponent(orderId)}/shipments`, request);
+    return this.api.post<ShipmentDto>(
+      `admin/orders/${encodeURIComponent(orderId)}/shipments`,
+      request,
+    );
   }
 
   deliverShipment(
@@ -34,7 +38,7 @@ export class ShipmentsService extends BaseApiService {
     shipmentId: string,
     request: DeliverShipmentRequest,
   ): Observable<ShipmentDto> {
-    return this.post<ShipmentDto>(
+    return this.api.post<ShipmentDto>(
       `admin/orders/${encodeURIComponent(orderId)}/shipments/${encodeURIComponent(shipmentId)}/deliver`,
       request,
     );
@@ -42,7 +46,7 @@ export class ShipmentsService extends BaseApiService {
 
   getCustomerShipments(orderId: string): Observable<readonly ShipmentDto[]> {
     const prefix = this.session.signedIn() ? 'orders' : 'storefront/orders';
-    return this.get<readonly ShipmentDto[]>(
+    return this.api.get<readonly ShipmentDto[]>(
       `${prefix}/${encodeURIComponent(orderId)}/shipments`,
       undefined,
       { withCredentials: true },

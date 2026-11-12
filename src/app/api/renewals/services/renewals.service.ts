@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseApiService } from '@core/base';
+import { ApiService } from '@core/http/api.service';
 import {
   ClaimRenewalRequest,
   ProvisionRenewalsRequest,
@@ -19,13 +19,15 @@ import {
 } from '../models/renewal.dto';
 
 @Injectable({ providedIn: 'root' })
-export class RenewalsService extends BaseApiService {
+export class RenewalsService {
+  constructor(private readonly api: ApiService) {}
+
   list(
     page: number,
     status: RenewalStatus | null,
     queue: RenewalQueue | null = null,
   ): Observable<RenewalPage> {
-    return this.get<RenewalPage>('admin/renewals', {
+    return this.api.get<RenewalPage>('admin/renewals', {
       page,
       size: 20,
       ...(status === null ? {} : { status }),
@@ -34,37 +36,51 @@ export class RenewalsService extends BaseApiService {
   }
 
   getById(id: string): Observable<RenewalAdminDto> {
-    return this.get<RenewalAdminDto>(`admin/renewals/${encodeURIComponent(id)}`);
+    return this.api.get<RenewalAdminDto>(`admin/renewals/${encodeURIComponent(id)}`);
   }
 
   getHistory(id: string): Observable<readonly RenewalHistoryDto[]> {
-    return this.get<readonly RenewalHistoryDto[]>(
+    return this.api.get<readonly RenewalHistoryDto[]>(
       `admin/renewals/${encodeURIComponent(id)}/history`,
     );
   }
 
   claim(id: string, request: ClaimRenewalRequest): Observable<RenewalAdminDto> {
-    return this.post<RenewalAdminDto>(`admin/renewals/${encodeURIComponent(id)}/claim`, request);
+    return this.api.post<RenewalAdminDto>(
+      `admin/renewals/${encodeURIComponent(id)}/claim`,
+      request,
+    );
   }
 
   release(id: string, request: ReleaseRenewalRequest): Observable<RenewalAdminDto> {
-    return this.post<RenewalAdminDto>(`admin/renewals/${encodeURIComponent(id)}/release`, request);
+    return this.api.post<RenewalAdminDto>(
+      `admin/renewals/${encodeURIComponent(id)}/release`,
+      request,
+    );
   }
 
   start(id: string, request: StartRenewalRequest): Observable<RenewalAdminDto> {
-    return this.post<RenewalAdminDto>(`admin/renewals/${encodeURIComponent(id)}/start`, request);
+    return this.api.post<RenewalAdminDto>(
+      `admin/renewals/${encodeURIComponent(id)}/start`,
+      request,
+    );
   }
 
   verify(id: string, request: VerifyRenewalRequest): Observable<RenewalAdminDto> {
-    return this.post<RenewalAdminDto>(`admin/renewals/${encodeURIComponent(id)}/verify`, request);
+    return this.api.post<RenewalAdminDto>(
+      `admin/renewals/${encodeURIComponent(id)}/verify`,
+      request,
+    );
   }
 
   revealAdminTarget(id: string): Observable<RevealedRenewalTargetDto> {
-    return this.get<RevealedRenewalTargetDto>(`admin/renewals/${encodeURIComponent(id)}/target`);
+    return this.api.get<RevealedRenewalTargetDto>(
+      `admin/renewals/${encodeURIComponent(id)}/target`,
+    );
   }
 
   revealEvidence(id: string, attemptId: string): Observable<RenewalContentDto> {
-    return this.get<RenewalContentDto>(
+    return this.api.get<RenewalContentDto>(
       `admin/renewals/${encodeURIComponent(id)}/attempts/${encodeURIComponent(attemptId)}/evidence`,
     );
   }
@@ -73,14 +89,14 @@ export class RenewalsService extends BaseApiService {
     orderId: string,
     request: ProvisionRenewalsRequest,
   ): Observable<readonly RenewalDto[]> {
-    return this.post<readonly RenewalDto[]>(
+    return this.api.post<readonly RenewalDto[]>(
       `admin/orders/${encodeURIComponent(orderId)}/renewals/provision`,
       request,
     );
   }
 
   getCustomerOrderRenewals(orderId: string): Observable<readonly RenewalDto[]> {
-    return this.get<readonly RenewalDto[]>(
+    return this.api.get<readonly RenewalDto[]>(
       `orders/${encodeURIComponent(orderId)}/renewals`,
       undefined,
       { withCredentials: true },
@@ -92,7 +108,7 @@ export class RenewalsService extends BaseApiService {
     renewalId: string,
     body: SubmitRenewalTargetRequest,
   ): Observable<RenewalDto> {
-    return this.put<RenewalDto>(
+    return this.api.put<RenewalDto>(
       `orders/${encodeURIComponent(orderId)}/renewals/${encodeURIComponent(renewalId)}/target`,
       body,
       { withCredentials: true },
@@ -100,7 +116,7 @@ export class RenewalsService extends BaseApiService {
   }
 
   revealCustomerTarget(orderId: string, renewalId: string): Observable<RevealedRenewalTargetDto> {
-    return this.get<RevealedRenewalTargetDto>(
+    return this.api.get<RevealedRenewalTargetDto>(
       `orders/${encodeURIComponent(orderId)}/renewals/${encodeURIComponent(renewalId)}/target`,
       undefined,
       { withCredentials: true },

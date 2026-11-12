@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
-import { BaseApiService, PagedResult } from '@core/base';
+import { ApiService } from '@core/http/api.service';
 import { createOperationId } from '@core/http/operation-id';
+import { PagedResult, PageWire, fromPage } from '@core/http/pagination';
 import {
   DigitalAvailabilityDto,
   DigitalDeliverySpecRequest,
@@ -13,16 +14,20 @@ import {
 } from '../models/inventory.dto';
 
 @Injectable({ providedIn: 'root' })
-export class DigitalInventoryService extends BaseApiService {
+export class DigitalInventoryService {
+  constructor(private readonly api: ApiService) {}
+
   getItems(
     variantId: string,
     page = 1,
     size = INVENTORY_PAGE_SIZE,
   ): Observable<PagedResult<DigitalInventoryItemDto>> {
-    return this.getPageFrom<DigitalInventoryItemDto>(
-      `digital-inventory/variants/${encodeURIComponent(variantId)}`,
-      { page, size },
-    );
+    return this.api
+      .get<PageWire<DigitalInventoryItemDto>>(
+        `digital-inventory/variants/${encodeURIComponent(variantId)}`,
+        { page, size },
+      )
+      .pipe(map(fromPage));
   }
 
   getAvailability(variantId: string): Observable<DigitalAvailabilityDto> {
@@ -49,7 +54,7 @@ export class DigitalInventoryService extends BaseApiService {
     request: ImportDigitalItemsRequest,
     operationId = request.operationId ?? createOperationId(),
   ): Observable<readonly DigitalInventoryItemDto[]> {
-    return this.post<readonly DigitalInventoryItemDto[]>(
+    return this.api.post<readonly DigitalInventoryItemDto[]>(
       `digital-inventory/variants/${encodeURIComponent(variantId)}/items`,
       {
         ...request,
@@ -63,7 +68,7 @@ export class DigitalInventoryService extends BaseApiService {
     variantId: string,
     request: DigitalDeliverySpecRequest,
   ): Observable<DigitalInventoryItemDto> {
-    return this.put<DigitalInventoryItemDto>(
+    return this.api.put<DigitalInventoryItemDto>(
       `digital-inventory/variants/${encodeURIComponent(variantId)}/shared-content`,
       {
         ...request,
@@ -77,7 +82,7 @@ export class DigitalInventoryService extends BaseApiService {
     stockItemId: string,
     request: SetDigitalAvailabilityRequest,
   ): Observable<DigitalInventoryItemDto> {
-    return this.put<DigitalInventoryItemDto>(
+    return this.api.put<DigitalInventoryItemDto>(
       `digital-inventory/variants/${encodeURIComponent(variantId)}/items/${encodeURIComponent(stockItemId)}/availability`,
       {
         ...request,
@@ -88,7 +93,7 @@ export class DigitalInventoryService extends BaseApiService {
   }
 
   revealSecret(itemId: string): Observable<RevealedDigitalSecretDto> {
-    return this.post<RevealedDigitalSecretDto>(
+    return this.api.post<RevealedDigitalSecretDto>(
       `digital-inventory/items/${encodeURIComponent(itemId)}/reveal`,
       {},
     );

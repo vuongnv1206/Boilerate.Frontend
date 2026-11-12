@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -8,7 +8,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { BaseComponent, applyServerErrors, clearServerErrors } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
+import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { AUTH_FORM_STYLES } from '@api/identity/models/identity.dto';

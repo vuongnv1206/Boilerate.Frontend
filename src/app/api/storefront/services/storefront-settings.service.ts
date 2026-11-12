@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseApiService } from '@core/base';
+import { ApiService } from '@core/http/api.service';
 import {
   GuestPaymentSettings,
   StorefrontSettings,
@@ -8,18 +8,20 @@ import {
 } from '../models/storefront-settings.dto';
 
 @Injectable({ providedIn: 'root' })
-export class StorefrontSettingsService extends BaseApiService {
+export class StorefrontSettingsService {
+  constructor(private readonly api: ApiService) {}
+
   getPublicSettings(): Observable<GuestPaymentSettings> {
-    return this.get<GuestPaymentSettings>('storefront/settings', undefined, {
+    return this.api.get<GuestPaymentSettings>('storefront/settings', undefined, {
       withCredentials: true,
     });
   }
 
   getAdminSettings(): Observable<StorefrontSettings> {
-    return this.get<StorefrontSettings>('admin/storefront-settings');
+    return this.api.get<StorefrontSettings>('admin/storefront-settings');
   }
 
   updateAdminSettings(body: UpdateStorefrontSettings): Observable<StorefrontSettings> {
-    return this.put<StorefrontSettings>('admin/storefront-settings', body);
+    return this.api.put<StorefrontSettings>('admin/storefront-settings', body);
   }
 }

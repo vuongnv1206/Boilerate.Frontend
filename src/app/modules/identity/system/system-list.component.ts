@@ -1,4 +1,4 @@
-﻿import { Component, DestroyRef, HostListener, OnInit, computed, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,7 +15,7 @@ import {
   tap,
 } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
-import { LeaveConfirmation } from '@core/base';
+import { LeaveConfirmation } from '@core/base/leave-confirmation';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {

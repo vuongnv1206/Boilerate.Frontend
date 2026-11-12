@@ -1,8 +1,8 @@
-﻿import { Component, OnInit, computed, effect, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { Subject, Subscription, debounceTime, filter } from 'rxjs';
-import { BaseComponent } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
 import { ApiError } from '@core/http/api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { sameQueryParams } from '@core/base/query-params.util';

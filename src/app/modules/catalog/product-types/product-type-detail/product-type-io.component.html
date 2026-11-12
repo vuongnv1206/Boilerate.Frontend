@@ -30,7 +30,7 @@
       <button
         pButton
         severity="primary"
-        (click)="save()"
+        (click)="saveChange()"
         [disabled]="!canWrite() || loading() || saving() || !ready()"
       >
         {{ saving() ? 'Đang lưu…' : 'Lưu' }}

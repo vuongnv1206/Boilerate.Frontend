@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseApiService } from '@core/base';
+import { ApiService } from '@core/http/api.service';
 import {
   CreateUserRequest,
   ExportUsersRequest,
@@ -12,7 +12,9 @@ import {
 } from '../models/identity.dto';
 
 @Injectable({ providedIn: 'root' })
-export class UsersService extends BaseApiService {
+export class UsersService {
+  constructor(private readonly api: ApiService) {}
+
   searchUsers(filterOrKeyword: UserSearchFilter | string = '', page = 1): Observable<UserPageDto> {
     const body =
       typeof filterOrKeyword === 'string'
@@ -25,15 +27,15 @@ export class UsersService extends BaseApiService {
               ? { isActive: filterOrKeyword.isActive }
               : {}),
           };
-    return this.post<UserPageDto>('users/search', body);
+    return this.api.post<UserPageDto>('users/search', body);
   }
 
   getUser(id: string): Observable<SystemUserDto> {
-    return this.get<SystemUserDto>(`users/${encodeURIComponent(id)}`);
+    return this.api.get<SystemUserDto>(`users/${encodeURIComponent(id)}`);
   }
 
   createUser(request: CreateUserRequest): Observable<string> {
-    return this.post<string>('users/create', request, {
+    return this.api.post<string>('users/create', request, {
       headers: { Accept: 'application/json' },
     });
   }
@@ -48,11 +50,11 @@ export class UsersService extends BaseApiService {
     if (request.phoneNumber) form.append('PhoneNumber', request.phoneNumber);
     if (request.image) form.append('Image', request.image, request.image.name);
     if (request.deleteCurrentImage) form.append('DeleteCurrentImage', 'true');
-    return this.put<void>(`users/${encodeURIComponent(id)}`, form);
+    return this.api.put<void>(`users/${encodeURIComponent(id)}`, form);
   }
 
   getUserRoles(id: string): Observable<readonly UserRoleDto[]> {
-    return this.get<readonly UserRoleDto[]>(`users/${encodeURIComponent(id)}/roles`);
+    return this.api.get<readonly UserRoleDto[]>(`users/${encodeURIComponent(id)}/roles`);
   }
 
   saveUserRoles(id: string, version: string, roleIds: readonly string[]): Observable<string> {
@@ -60,7 +62,7 @@ export class UsersService extends BaseApiService {
   }
 
   toggleUserStatus(id: string, version: string, activateUser: boolean): Observable<void> {
-    return this.post<void>(`users/${encodeURIComponent(id)}/toggle-status`, {
+    return this.api.post<void>(`users/${encodeURIComponent(id)}/toggle-status`, {
       userId: id,
       version,
       activateUser,
@@ -68,7 +70,7 @@ export class UsersService extends BaseApiService {
   }
 
   requestPasswordReset(id: string): Observable<string> {
-    return this.post<string>(`users/${encodeURIComponent(id)}/password-reset`, null, {
+    return this.api.post<string>(`users/${encodeURIComponent(id)}/password-reset`, null, {
       headers: { Accept: 'application/json' },
     });
   }
@@ -79,6 +81,6 @@ export class UsersService extends BaseApiService {
       isActive: filter.isActive ?? undefined,
       role: filter.role ?? undefined,
     };
-    return this.downloadBlob('POST', 'users/export', body, 'danh-sach-nguoi-dung.xlsx');
+    return this.api.download('POST', 'users/export', body, 'danh-sach-nguoi-dung.xlsx');
   }
 }

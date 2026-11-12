@@ -1,7 +1,7 @@
-﻿import { Component, effect, input, signal, untracked } from '@angular/core';
+import { Component, effect, input, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription, finalize } from 'rxjs';
-import { BaseComponent } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { SecretReveal } from '@shared/ui/secret-reveal/secret-reveal.component';

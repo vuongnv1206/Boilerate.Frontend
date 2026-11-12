@@ -1,4 +1,4 @@
-﻿import { Component, computed } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { Params } from '@angular/router';
 import { Observable } from 'rxjs';
 import { BaseRouteListComponent } from '@core/base/base-route-list.component';
@@ -72,7 +72,7 @@ export class RenewalsWorkspace extends BaseRouteListComponent<RenewalAdminDto, R
     const nextQuery: RenewalListQuery = { page, status, queue };
     if (sameQueryParams(this.serializeQuery(this.query()), this.serializeQuery(nextQuery))) {
       this.afterWrite = afterWrite;
-      this.reload();
+      this.load();
       return;
     }
     this.afterWrite = afterWrite;
@@ -81,7 +81,7 @@ export class RenewalsWorkspace extends BaseRouteListComponent<RenewalAdminDto, R
 
   refreshPage(afterWrite = true): void {
     this.afterWrite = afterWrite;
-    this.reload();
+    this.load();
   }
 
   setStatus(value: string | number | null): void {

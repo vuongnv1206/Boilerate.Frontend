@@ -1,5 +1,5 @@
-﻿import { Component, computed } from '@angular/core';
-import { BaseComponent } from '@core/base';
+import { Component, computed } from '@angular/core';
+import { BaseComponent } from '@core/base/base.component';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
   RENEWAL_QUEUE_LABELS,

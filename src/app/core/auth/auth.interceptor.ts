@@ -1,14 +1,18 @@
 import { DOCUMENT } from '@angular/common';
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { EMPTY, catchError, concat, ignoreElements, switchMap, throwError } from 'rxjs';
 import { RUNTIME_CONFIG } from '../config/runtime-config.token';
 import { isApiRequestUrl } from '../http/api-url';
 import { normalizeApiError } from '../http/normalize-api-error';
-import { SKIP_AUTH, SKIP_AUTHORIZATION_REFRESH } from './auth-context';
+import { SKIP_AUTH } from './auth-context';
 import { AuthSession } from './auth-session';
 
+/**
+ * Adds the access token to API requests.
+ * - 403: re-read permissions, so menus and buttons follow the new rights; the error still surfaces.
+ * - 401: refresh the token and retry once. If that is rejected too, the session has expired.
+ */
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const config = inject(RUNTIME_CONFIG);
   const document = inject(DOCUMENT);
@@ -19,60 +23,35 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
   const session = inject(AuthSession);
-  const router = inject(Router);
   const token = session.accessToken();
-  const version = session.getVersion();
-  const authorized = token
-    ? request.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : request;
-  return next(authorized).pipe(
+  const sessionId = session.sessionId();
+  const send = (bearer: string | null) =>
+    next(bearer ? request.clone({ setHeaders: { Authorization: `Bearer ${bearer}` } }) : request);
+
+  return send(token).pipe(
     catchError((error: unknown) => {
-      if (
-        normalizeApiError(error).status === 403 &&
-        !request.context.get(SKIP_AUTHORIZATION_REFRESH)
-      ) {
-        return session.reloadAuthorization().pipe(
-          catchError(() => throwError(() => error)),
-          switchMap(() => throwError(() => error)),
+      const status = normalizeApiError(error).status;
+      if (status === 403) {
+        return concat(
+          session.reloadAuthorization().pipe(
+            ignoreElements(),
+            catchError(() => EMPTY),
+          ),
+          throwError(() => error),
         );
       }
-      if (
-        !(error instanceof HttpErrorResponse) ||
-        error.status !== 401 ||
-        !token ||
-        session.getVersion() !== version
-      ) {
+      // Never retry for another session: the user signed out or signed in again meanwhile.
+      if (status !== 401 || !token || session.sessionId() !== sessionId) {
         return throwError(() => error);
       }
-      // A newer request may already have refreshed the same expired token.
-      const currentToken = session.accessToken();
+      // A request sent alongside this one may already have refreshed the expired token.
+      const current = session.accessToken();
       const retry =
-        currentToken && currentToken !== token
-          ? next(request.clone({ setHeaders: { Authorization: `Bearer ${currentToken}` } }))
-          : session.refresh().pipe(
-              catchError((refreshError: unknown) => {
-                if (
-                  session.getVersion() === version &&
-                  normalizeApiError(refreshError).status === 401
-                ) {
-                  session.clear();
-                  void router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
-                }
-                return throwError(() => refreshError);
-              }),
-              switchMap((freshToken) =>
-                next(request.clone({ setHeaders: { Authorization: `Bearer ${freshToken}` } })),
-              ),
-            );
+        current && current !== token ? send(current) : session.refresh().pipe(switchMap(send));
       return retry.pipe(
         catchError((retryError: unknown) => {
-          if (
-            session.getVersion() === version &&
-            retryError instanceof HttpErrorResponse &&
-            retryError.status === 401
-          ) {
-            session.clear();
-            void router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
+          if (normalizeApiError(retryError).status === 401 && session.sessionId() === sessionId) {
+            session.expire();
           }
           return throwError(() => retryError);
         }),

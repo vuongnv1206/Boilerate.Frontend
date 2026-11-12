@@ -36,7 +36,7 @@
         <ui-content-state kind="loading" title="Đang tải hồ sơ cá nhân" />
       } @else if (!record() && errorMessage()) {
         <ui-content-state kind="error" title="Không tải được hồ sơ" [message]="errorMessage()">
-          <button pButton severity="secondary" outlined type="button" (click)="load()">
+          <button pButton severity="secondary" outlined type="button" (click)="loadData()">
             Thử lại
           </button>
         </ui-content-state>
@@ -87,7 +87,7 @@
 
         <ui-form-error-summary [messages]="summaryErrors()" />
 
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <form [formGroup]="form" (ngSubmit)="saveChange()" novalidate>
           <div class="account-grid">
             <ui-form-field
               forId="personal-first-name"

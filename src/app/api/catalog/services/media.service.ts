@@ -14,14 +14,14 @@ import {
   takeUntil,
 } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
-import { BaseApiService, QueryParamMap } from '@core/base';
+import { ApiService, QueryParams } from '@core/http/api.service';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { MAX_PRODUCT_IMAGE_BYTES, MAX_PRODUCT_MEDIA, MediaAssetDto } from '../models/media.dto';
 
 const DEFAULT_PREVIEW_OWNER = Symbol('default-preview-owner');
 
 @Injectable({ providedIn: 'root' })
-export class MediaService extends BaseApiService {
+export class MediaService {
   private readonly uploadingState = signal(false);
   private readonly uploadFailureState = signal('');
   private readonly stopUploads = new Subject<void>();
@@ -40,10 +40,10 @@ export class MediaService extends BaseApiService {
   );
 
   constructor(
+    private readonly api: ApiService,
     private readonly session: AuthSession,
     private readonly destroyRef: DestroyRef,
   ) {
-    super();
     effect(() => {
       if (!this.session.signedIn()) {
         this.stopUploads.next();
@@ -60,7 +60,7 @@ export class MediaService extends BaseApiService {
   uploadFile(file: File): Observable<MediaAssetDto> {
     const body = new FormData();
     body.append('file', file, file.name);
-    return this.post<MediaAssetDto>('media', body);
+    return this.api.post<MediaAssetDto>('media', body);
   }
 
   upload(files: readonly File[], remaining: number): Observable<MediaAssetDto> {
@@ -88,9 +88,8 @@ export class MediaService extends BaseApiService {
         return EMPTY;
       }
       this.uploadingState.set(true);
-      const sessionVersion = this.session.getVersion();
-      const current = (): boolean =>
-        this.session.signedIn() && this.session.getVersion() === sessionVersion;
+      const sessionId = this.session.sessionId();
+      const current = (): boolean => sessionId !== null && this.session.sessionId() === sessionId;
       return from(files).pipe(
         concatMap((file) => (current() ? this.uploadFile(file) : EMPTY)),
         filter(() => current()),
@@ -105,12 +104,12 @@ export class MediaService extends BaseApiService {
     });
   }
 
-  list(params?: QueryParamMap): Observable<readonly MediaAssetDto[]> {
-    return this.get<readonly MediaAssetDto[]>('media', params);
+  list(params?: QueryParams): Observable<readonly MediaAssetDto[]> {
+    return this.api.get<readonly MediaAssetDto[]>('media', params);
   }
 
   delete(id: string): Observable<void> {
-    return this.deleteResource<void>(`media/${encodeURIComponent(id)}`);
+    return this.api.delete<void>(`media/${encodeURIComponent(id)}`);
   }
 
   preview(id: string): Observable<Blob> {
@@ -206,7 +205,7 @@ export class MediaService extends BaseApiService {
 
   private requestPreview(id: string): void {
     const generation = this.previewGeneration;
-    const sessionVersion = this.session.getVersion();
+    const sessionId = this.session.sessionId();
     const request = new Subscription();
     this.previewRequests.set(id, request);
     this.previewPending.update((pending) => new Set(pending).add(id));
@@ -225,7 +224,7 @@ export class MediaService extends BaseApiService {
         )
         .subscribe({
           next: (blob) => {
-            if (!this.isCurrentPreview(id, generation, sessionVersion)) return;
+            if (!this.isCurrentPreview(id, generation, sessionId)) return;
             if (!['image/png', 'image/jpeg'].includes(blob.type)) {
               this.previewFailures.update((errors) => ({
                 ...errors,
@@ -237,7 +236,7 @@ export class MediaService extends BaseApiService {
             this.previewUrls.update((urls) => ({ ...urls, [id]: objectUrl }));
           },
           error: (rawError: unknown) => {
-            if (this.isCurrentPreview(id, generation, sessionVersion)) {
+            if (this.isCurrentPreview(id, generation, sessionId)) {
               this.previewFailures.update((errors) => ({
                 ...errors,
                 [id]: normalizeApiError(rawError).message,
@@ -248,12 +247,12 @@ export class MediaService extends BaseApiService {
     );
   }
 
-  private isCurrentPreview(id: string, generation: number, sessionVersion: number): boolean {
+  private isCurrentPreview(id: string, generation: number, sessionId: string | null): boolean {
     return (
       this.previewGeneration === generation &&
       this.isWanted(id) &&
-      this.session.signedIn() &&
-      this.session.getVersion() === sessionVersion
+      sessionId !== null &&
+      this.session.sessionId() === sessionId
     );
   }
 

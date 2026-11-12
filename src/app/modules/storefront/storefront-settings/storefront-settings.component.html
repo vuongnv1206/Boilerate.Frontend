@@ -8,7 +8,7 @@
       <button
         pButton
         type="button"
-        (click)="save()"
+        (click)="saveChange()"
         [disabled]="loading() || saving() || !record()"
       >
         {{ saving() ? 'Đang lưu…' : 'Lưu cài đặt' }}
@@ -23,7 +23,9 @@
     />
   } @else if (errorMessage() && !record()) {
     <ui-content-state kind="error" title="Không tải được cài đặt" [message]="errorMessage()">
-      <button pButton type="button" severity="secondary" outlined (click)="load()">Thử lại</button>
+      <button pButton type="button" severity="secondary" outlined (click)="loadData()">
+        Thử lại
+      </button>
     </ui-content-state>
   } @else if (record()) {
     @if (errorMessage()) {
@@ -135,10 +137,10 @@
     </div>
   }
 </section>
-@if (leaveVisible()) {
+@if (confirmation.visible()) {
   <ui-confirm-dialog
-    [visible]="leaveVisible()"
+    [visible]="confirmation.visible()"
     title="Rời khỏi cài đặt thanh toán?"
-    (answered)="answerLeave($event)"
+    (answered)="confirmation.answer($event)"
   />
 }

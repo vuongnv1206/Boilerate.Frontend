@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseApiService } from '@core/base';
+import { ApiService } from '@core/http/api.service';
 import {
   CapabilityDto,
   CapabilityKind,
@@ -11,31 +11,33 @@ import {
 } from '../models/identity.dto';
 
 @Injectable({ providedIn: 'root' })
-export class CapabilitiesService extends BaseApiService {
+export class CapabilitiesService {
+  constructor(private readonly api: ApiService) {}
+
   groups(): Observable<readonly FunctionGroupDto[]> {
-    return this.get<readonly FunctionGroupDto[]>('function-groups');
+    return this.api.get<readonly FunctionGroupDto[]>('function-groups');
   }
 
   saveGroup(id: string | null, request: FunctionGroupRequest): Observable<FunctionGroupDto> {
     return id
-      ? this.put<FunctionGroupDto>(`function-groups/${encodeURIComponent(id)}`, request)
-      : this.post<FunctionGroupDto>('function-groups', request);
+      ? this.api.put<FunctionGroupDto>(`function-groups/${encodeURIComponent(id)}`, request)
+      : this.api.post<FunctionGroupDto>('function-groups', request);
   }
 
   deleteGroup(id: string, version: string): Observable<void> {
-    return this.deleteResource<void>(`function-groups/${encodeURIComponent(id)}`, { version });
+    return this.api.delete<void>(`function-groups/${encodeURIComponent(id)}`, { version });
   }
 
   functions(): Observable<readonly FunctionDto[]> {
-    return this.get<readonly FunctionDto[]>('functions');
+    return this.api.get<readonly FunctionDto[]>('functions');
   }
 
   actions(): Observable<readonly CapabilityDto[]> {
-    return this.get<readonly CapabilityDto[]>('actions');
+    return this.api.get<readonly CapabilityDto[]>('actions');
   }
 
   capability(kind: CapabilityKind, id: string): Observable<FunctionDto | CapabilityDto> {
-    return this.get<FunctionDto | CapabilityDto>(`${kind}/${encodeURIComponent(id)}`);
+    return this.api.get<FunctionDto | CapabilityDto>(`${kind}/${encodeURIComponent(id)}`);
   }
 
   saveCapability(
@@ -44,8 +46,8 @@ export class CapabilitiesService extends BaseApiService {
     request: CapabilityRequest,
   ): Observable<FunctionDto | CapabilityDto> {
     return id
-      ? this.put<FunctionDto | CapabilityDto>(`${kind}/${encodeURIComponent(id)}`, request)
-      : this.post<FunctionDto | CapabilityDto>(kind, request);
+      ? this.api.put<FunctionDto | CapabilityDto>(`${kind}/${encodeURIComponent(id)}`, request)
+      : this.api.post<FunctionDto | CapabilityDto>(kind, request);
   }
 
   saveFunctionActions(
@@ -53,13 +55,13 @@ export class CapabilitiesService extends BaseApiService {
     version: string,
     activeActionIds: readonly string[],
   ): Observable<FunctionDto> {
-    return this.put<FunctionDto>(`functions/${encodeURIComponent(id)}/actions`, {
+    return this.api.put<FunctionDto>(`functions/${encodeURIComponent(id)}/actions`, {
       version,
       activeActionIds,
     });
   }
 
   deleteCapability(kind: CapabilityKind, id: string, version: string): Observable<void> {
-    return this.deleteResource<void>(`${kind}/${encodeURIComponent(id)}`, { version });
+    return this.api.delete<void>(`${kind}/${encodeURIComponent(id)}`, { version });
   }
 }

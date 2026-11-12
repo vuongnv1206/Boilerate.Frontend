@@ -1,4 +1,4 @@
-﻿import { Component, computed, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -8,9 +8,10 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { Observable, Subscription, finalize, map, of, tap } from 'rxjs';
-import { BaseEditorComponent } from '@core/base/base-editor.component';
-import { clearServerErrors } from '@core/base/form-errors.util';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription, distinctUntilChanged, finalize, map } from 'rxjs';
+import { BaseComponent } from '@core/base/base.component';
+import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
 import { LeaveConfirmation } from '@core/base/leave-confirmation';
 import { ApiError } from '@core/http/api-error';
 import { normalizeApiError } from '@core/http/normalize-api-error';
@@ -57,13 +58,19 @@ function uniqueCodes(control: AbstractControl): ValidationErrors | null {
   providers: [LeaveConfirmation],
   templateUrl: './product-type-io.component.html',
 })
-export class ProductTypeIo extends BaseEditorComponent<ProductTypeDto> {
+export class ProductTypeIo extends BaseComponent implements OnInit {
   // System variables
+  readonly ready = signal(false);
+  readonly saving = signal(false);
+  readonly saved = signal(false);
+  readonly summaryErrors = signal<readonly string[]>([]);
+  private loadRequest?: Subscription;
   private productSubscription?: Subscription;
-  private errorAliases: () => Readonly<Record<string, string>> = () => ({});
 
   // Business variables
+  readonly record = signal<ProductTypeDto | null>(null);
   readonly form = this.buildForm();
+  readonly canWrite = computed(() => this.can('ProductType', this.record() ? 'Update' : 'Create'));
   readonly limits = PRODUCT_TYPE_LIMITS;
   readonly fieldTypes = [...PRODUCT_FIELD_TYPE_OPTIONS];
   readonly fieldType = ProductFieldType;
@@ -80,9 +87,12 @@ export class ProductTypeIo extends BaseEditorComponent<ProductTypeDto> {
   readonly linkedProductCount = computed(() => this.linkedProductsPage()?.total ?? 0);
 
   constructor(
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
     private readonly productTypesService: ProductTypesService,
     private readonly productsService: ProductsService,
     private readonly listStore: ProductTypesWorkspace,
+    readonly confirmation: LeaveConfirmation,
   ) {
     super();
     this.destroyRef.onDestroy(() => this.productSubscription?.unsubscribe());
@@ -349,34 +359,6 @@ export class ProductTypeIo extends BaseEditorComponent<ProductTypeDto> {
     };
   }
 
-  private synchronizeProductTypeIdentity(type: ProductTypeDto): void {
-    for (const field of this.form.controls.fields.controls) {
-      const canonical = type.fields.find(
-        (item) =>
-          item.id === field.controls.id.value ||
-          item.code.toUpperCase() === field.controls.code.value.trim().toUpperCase(),
-      );
-      if (!canonical) continue;
-      field.patchValue(
-        {
-          id: canonical.id,
-          code: canonical.code,
-          dataType: canonical.dataType,
-          isRequired: canonical.isRequired,
-        },
-        { emitEvent: false },
-      );
-      for (const choice of field.controls.choices.controls) {
-        const saved = canonical.choices.find(
-          (item) =>
-            item.id === choice.controls.id.value ||
-            item.code.toUpperCase() === choice.controls.code.value.trim().toUpperCase(),
-        );
-        if (saved) choice.patchValue({ id: saved.id, code: saved.code }, { emitEvent: false });
-      }
-    }
-  }
-
   private editProductTypeRequest(original: ProductTypeDto): EditProductTypeRequest {
     const value = this.form.getRawValue();
     return {
@@ -487,53 +469,129 @@ export class ProductTypeIo extends BaseEditorComponent<ProductTypeDto> {
       );
   }
 
-  protected fetchRecord(id: string | null): Observable<ProductTypeDto | null> {
+  ngOnInit(): void {
+    // Editing again makes the previous result and server errors out of date.
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.saved.set(false);
+      this.summaryErrors.set([]);
+      clearServerErrors(this.form);
+    });
+    // `new` has no `:id`; opening another type reuses this screen and loads again.
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('id')),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((id) => this.loadDetail(id));
+  }
+
+  loadDetail(id: string | null): void {
+    this.loadRequest?.unsubscribe();
     this.productSubscription?.unsubscribe();
     this.linkedProductsPage.set(null);
     this.productLoading.set(false);
     this.productError.set('');
-    if (id === null) return of(null);
-    return this.productTypesService
-      .getById(id)
-      .pipe(tap((record) => this.loadLinkedProducts(record.id)));
-  }
-
-  protected hydrate(record: ProductTypeDto | null): void {
-    this.resetProductTypeForm(record ?? undefined);
-  }
-
-  protected persist(record: ProductTypeDto | null): Observable<ProductTypeDto> {
-    this.errorAliases = this.productTypeErrorAliases(!!record);
-    return record
-      ? this.productTypesService.update(record.id, this.editProductTypeRequest(record))
-      : this.productTypesService.create(this.createProductTypeRequest());
-  }
-
-  protected canWriteRecord(record: ProductTypeDto | null): boolean {
-    return this.can('ProductType', record ? 'Update' : 'Create');
-  }
-
-  protected override fieldAliases(): Readonly<Record<string, string>> {
-    return this.errorAliases();
-  }
-
-  protected override onDraftChange(): void {
+    this.errorMessage.set('');
     this.summaryErrors.set([]);
+    this.saved.set(false);
+    this.ready.set(false);
+    this.showProductType(null);
+    if (id === null) {
+      this.ready.set(true);
+      return;
+    }
+    this.loading.set(true);
+    this.loadRequest = this.productTypesService
+      .getById(id)
+      .pipe(
+        finalize(() => this.loading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (type) => {
+          this.showProductType(type);
+          this.ready.set(true);
+          this.loadLinkedProducts(type.id);
+        },
+        error: (error: unknown) => this.errorMessage.set(normalizeApiError(error).message),
+      });
+  }
+
+  async retry(): Promise<void> {
+    if (await this.confirmLeave()) this.loadDetail(this.route.snapshot.paramMap.get('id'));
+  }
+
+  saveChange(): void {
+    if (!this.ready() || !this.canWrite() || this.saving()) return;
     clearServerErrors(this.form);
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+
+    const current = this.record();
+    const request$ = current
+      ? this.productTypesService.update(current.id, this.editProductTypeRequest(current))
+      : this.productTypesService.create(this.createProductTypeRequest());
+    this.saving.set(true);
+    this.errorMessage.set('');
+    this.summaryErrors.set([]);
+    this.saved.set(false);
+    this.form.disable({ emitEvent: false });
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (type) => {
+        this.saving.set(false);
+        this.showProductType(type);
+        this.saved.set(true);
+        this.loadLinkedProducts(type.id);
+        this.listStore.upsert(type);
+        if (!current) {
+          void this.router.navigate(['/admin/collections/product-types', type.id], {
+            replaceUrl: true,
+            queryParamsHandling: 'preserve',
+          });
+        }
+      },
+      // The form keeps what was typed, also on 409: the user reloads when ready.
+      error: (error: unknown) => {
+        this.saving.set(false);
+        // Enable first: enabling re-runs validators and would drop the server errors.
+        this.form.enable({ emitEvent: false });
+        const apiError = normalizeApiError(error);
+        const unmapped = applyServerErrors(
+          this.form,
+          apiError.fieldErrors,
+          this.productTypeErrorAliases(!!current)(),
+        );
+        this.summaryErrors.set(unmapped.flatMap((entry) => entry.messages));
+        this.errorMessage.set(
+          apiError.status === 409
+            ? 'Dữ liệu đã thay đổi. Nội dung đang nhập được giữ lại; tải lại để đối chiếu trước khi lưu tiếp.'
+            : apiError.message,
+        );
+      },
+    });
   }
 
-  protected override saveErrorMessage(error: ApiError): string {
-    return error.status === 409
-      ? 'Dữ liệu đã thay đổi. Nội dung đang nhập được giữ lại; tải lại để đối chiếu trước khi lưu tiếp.'
-      : error.message;
+  /** Asked by `unsavedChangesGuard` before leaving, and before reloading or duplicating. */
+  confirmLeave(): boolean | Promise<boolean> {
+    return this.confirmation.request(this.form.dirty, this.saving());
   }
 
-  protected override afterSaved(saved: ProductTypeDto, wasNew: boolean): void {
-    // Edits typed during the save are kept; they only pick up the ids the server just assigned.
-    if (!this.saved()) this.synchronizeProductTypeIdentity(saved);
-    this.loadLinkedProducts(saved.id);
-    this.listStore.upsert(saved);
-    if (wasNew) this.openCreated(['/admin/collections/product-types', saved.id]);
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnload(event: BeforeUnloadEvent): void {
+    if (this.form.dirty || this.saving()) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  private showProductType(type: ProductTypeDto | null): void {
+    this.record.set(type);
+    this.resetProductTypeForm(type ?? undefined);
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+    if (this.canWrite()) this.form.enable({ emitEvent: false });
+    else this.form.disable({ emitEvent: false });
   }
 
   private loadLinkedProducts(id: string): void {

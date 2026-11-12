@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, map, switchMap } from 'rxjs';
-import { BaseApiService, PagedResult } from '@core/base';
+import { ApiService } from '@core/http/api.service';
+import { PagedResult, PaginationResponse, fromPaginationResponse } from '@core/http/pagination';
 import {
   AuditDto,
   ChangePasswordRequest,
@@ -12,37 +13,41 @@ import {
 } from '../models/personal.dto';
 
 @Injectable({ providedIn: 'root' })
-export class PersonalService extends BaseApiService {
+export class PersonalService {
+  constructor(private readonly api: ApiService) {}
+
   getProfile(): Observable<PersonalProfileDto> {
-    return this.get<PersonalProfileDto>('personal/profile');
+    return this.api.get<PersonalProfileDto>('personal/profile');
   }
 
   updateProfile(request: UpdatePersonalProfileRequest): Observable<PersonalProfileDto> {
-    return this.put<unknown>('personal/profile', request).pipe(switchMap(() => this.getProfile()));
+    return this.api
+      .put<unknown>('personal/profile', request)
+      .pipe(switchMap(() => this.getProfile()));
   }
 
   changePassword(request: ChangePasswordRequest): Observable<void> {
-    return this.put<unknown>('personal/change-password', request).pipe(map(() => undefined));
+    return this.api.put<unknown>('personal/change-password', request).pipe(map(() => undefined));
   }
 
   linkGoogle(request: ExternalLinkRequest): Observable<void> {
-    return this.post<void>('auth/google/link', request);
+    return this.api.post<void>('auth/google/link', request);
   }
 
   linkFacebook(request: ExternalLinkRequest): Observable<void> {
-    return this.post<void>('auth/facebook/link', request);
+    return this.api.post<void>('auth/facebook/link', request);
   }
 
   getSessions(): Observable<readonly UserSessionDto[]> {
-    return this.get<readonly UserSessionDto[]>('tokens/sessions');
+    return this.api.get<readonly UserSessionDto[]>('tokens/sessions');
   }
 
   revokeSession(sessionId: string): Observable<void> {
-    return this.deleteResource<void>(`tokens/sessions/${encodeURIComponent(sessionId)}`);
+    return this.api.delete<void>(`tokens/sessions/${encodeURIComponent(sessionId)}`);
   }
 
   revokeAllSessions(): Observable<void> {
-    return this.deleteResource<void>('tokens/sessions');
+    return this.api.delete<void>('tokens/sessions');
   }
 
   getAuditLogs(filter: PersonalAuditFilter = {}): Observable<PagedResult<AuditDto>> {
@@ -55,7 +60,9 @@ export class PersonalService extends BaseApiService {
       fromDate: filter.fromDate ?? undefined,
       toDate: filter.toDate ?? undefined,
     };
-    return this.postPageFrom<AuditDto>('personal/audit-logs', body);
+    return this.api
+      .post<PaginationResponse<AuditDto>>('personal/audit-logs', body)
+      .pipe(map(fromPaginationResponse));
   }
 
   exportAuditLogs(filter: PersonalAuditFilter = {}): Observable<void> {
@@ -65,6 +72,6 @@ export class PersonalService extends BaseApiService {
       startDate: filter.startDate ?? filter.fromDate ?? undefined,
       endDate: filter.endDate ?? filter.toDate ?? undefined,
     };
-    return this.downloadBlob('POST', 'personal/audit-logs/export', body, 'nhat-ky-ca-nhan.xlsx');
+    return this.api.download('POST', 'personal/audit-logs/export', body, 'nhat-ky-ca-nhan.xlsx');
   }
 }

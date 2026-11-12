@@ -46,7 +46,7 @@ export default tseslint.config(
         },
         {
           type: 'http-transport',
-          pattern: 'src/app/core/http/api-client.ts',
+          pattern: 'src/app/core/http/api.service.ts',
           mode: 'file',
         },
         { type: 'core', pattern: 'src/app/core/**/*.ts', mode: 'file' },
@@ -182,7 +182,7 @@ export default tseslint.config(
             {
               from: ['module-view', 'api-model', 'shared-ui', 'shared-utils'],
               disallow: [['@angular/common', { path: '/http{,/**}' }]],
-              message: 'Call the API service. HTTP belongs to ApiClient and BaseApiService.',
+              message: 'Call the API service. HTTP belongs to ApiService.',
             },
           ],
         },

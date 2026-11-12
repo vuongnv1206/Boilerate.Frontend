@@ -11,7 +11,7 @@ import {
   throwError,
 } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
-import { BaseApiService } from '@core/base';
+import { ApiService } from '@core/http/api.service';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { IdempotentActionTracker } from '@core/http/operation-id';
 import { STOREFRONT_CART_BADGE, StorefrontCartBadge } from '@core/navigation/storefront-cart.token';
@@ -30,7 +30,7 @@ import { ProductFulfillmentKind } from '../models/storefront.dto';
 type StorefrontCartBadgeReader = StorefrontCartBadge;
 
 @Injectable({ providedIn: 'root' })
-export class CartService extends BaseApiService implements StorefrontCartBadgeReader {
+export class CartService implements StorefrontCartBadgeReader {
   private readonly idempotency = new IdempotentActionTracker();
 
   private readSubscription?: Subscription;
@@ -103,10 +103,10 @@ export class CartService extends BaseApiService implements StorefrontCartBadgeRe
   );
 
   constructor(
+    private readonly api: ApiService,
     private readonly session: AuthSession,
     destroyRef: DestroyRef,
   ) {
-    super();
     destroyRef.onDestroy(() => this.readSubscription?.unsubscribe());
   }
 
@@ -126,7 +126,8 @@ export class CartService extends BaseApiService implements StorefrontCartBadgeRe
     this.errorState.set('');
 
     const resource = signedIn ? 'cart' : 'storefront/cart';
-    this.readSubscription = this.get<CartDto>(resource, undefined, { withCredentials: true })
+    this.readSubscription = this.api
+      .get<CartDto>(resource, undefined, { withCredentials: true })
       .pipe(
         tap((cart) => {
           this.cartState.set(cart);
@@ -241,7 +242,7 @@ export class CartService extends BaseApiService implements StorefrontCartBadgeRe
       this.checkoutErrorState.set('');
 
       const resource = this.session.signedIn() ? 'orders/checkout' : 'storefront/checkout';
-      return this.post<OrderDto>(resource, wireRequest, { withCredentials: true }).pipe(
+      return this.api.post<OrderDto>(resource, wireRequest, { withCredentials: true }).pipe(
         tap(() => {
           this.idempotency.clear('checkout');
           this.checkoutSubmittingState.set(false);
@@ -287,7 +288,8 @@ export class CartService extends BaseApiService implements StorefrontCartBadgeRe
     };
     const resource = this.session.signedIn() ? 'cart/discount' : 'storefront/cart/discount';
 
-    this.put<CartDto>(resource, payload, { withCredentials: true })
+    this.api
+      .put<CartDto>(resource, payload, { withCredentials: true })
       .pipe(
         tap((cart) => {
           this.cartState.set(cart);
@@ -340,7 +342,7 @@ export class CartService extends BaseApiService implements StorefrontCartBadgeRe
       this.saveErrorState.set('');
 
       const resource = this.session.signedIn() ? 'cart' : 'storefront/cart';
-      return this.put<CartDto>(resource, request, { withCredentials: true }).pipe(
+      return this.api.put<CartDto>(resource, request, { withCredentials: true }).pipe(
         tap((cart) => this.cartState.set(cart)),
         catchError((err: unknown) => {
           const error = normalizeApiError(err);

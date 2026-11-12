@@ -1,6 +1,6 @@
-﻿import { Component, effect, input, signal, untracked } from '@angular/core';
+import { Component, effect, input, signal, untracked } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { BaseComponent } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { ShipmentDto, ShipmentStatus } from '@api/shipping/models/shipment.dto';
 import { ShipmentsService } from '@api/shipping/services/shipments.service';

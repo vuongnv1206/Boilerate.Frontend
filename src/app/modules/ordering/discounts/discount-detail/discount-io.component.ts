@@ -1,4 +1,5 @@
-﻿import { Component } from '@angular/core';
+import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormControl,
@@ -7,11 +8,12 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { Observable, of } from 'rxjs';
-import { BaseEditorComponent } from '@core/base/base-editor.component';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription, distinctUntilChanged, finalize, map } from 'rxjs';
+import { BaseComponent } from '@core/base/base.component';
 import { LeaveConfirmation } from '@core/base/leave-confirmation';
-import { clearServerErrors } from '@core/base/form-errors.util';
-import { ApiError } from '@core/http/api-error';
+import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';
+import { normalizeApiError } from '@core/http/normalize-api-error';
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
@@ -137,16 +139,126 @@ function discountRequest(form: DiscountForm, record?: DiscountDto | null): SaveD
   providers: [LeaveConfirmation],
   templateUrl: './discount-io.component.html',
 })
-export class DiscountIo extends BaseEditorComponent<DiscountDto, DiscountForm> {
+export class DiscountIo extends BaseComponent implements OnInit {
   // System variables
-  protected override readonly lockFormWhileSaving = true;
+  readonly ready = signal(false);
+  readonly saving = signal(false);
+  readonly saved = signal(false);
+  readonly summaryErrors = signal<readonly string[]>([]);
+  private loadRequest?: Subscription;
 
   // Business variables
+  readonly record = signal<DiscountDto | null>(null);
   readonly form = createDiscountForm();
   readonly kinds = [...DISCOUNT_KIND_OPTIONS];
+  readonly canWrite = computed(() => this.can('Discount', this.record() ? 'Update' : 'Create'));
 
-  constructor(private readonly discountsService: DiscountsService) {
+  constructor(
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly discountsService: DiscountsService,
+    readonly confirmation: LeaveConfirmation,
+  ) {
     super();
+  }
+
+  ngOnInit(): void {
+    // Editing again makes the previous result and server errors out of date.
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.saved.set(false);
+      this.summaryErrors.set([]);
+      clearServerErrors(this.form);
+    });
+    // `new` has no `:id`; opening another discount reuses this screen and loads again.
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('id')),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((id) => this.loadDetail(id));
+  }
+
+  loadDetail(id: string | null): void {
+    this.loadRequest?.unsubscribe();
+    this.errorMessage.set('');
+    this.summaryErrors.set([]);
+    this.saved.set(false);
+    this.ready.set(false);
+    this.showDiscount(null);
+    if (id === null) {
+      this.ready.set(true);
+      return;
+    }
+    this.loading.set(true);
+    this.loadRequest = this.discountsService
+      .getById(id)
+      .pipe(
+        finalize(() => this.loading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (discount) => {
+          this.showDiscount(discount);
+          this.ready.set(true);
+        },
+        error: (error: unknown) => this.errorMessage.set(normalizeApiError(error).message),
+      });
+  }
+
+  async retry(): Promise<void> {
+    if (await this.confirmLeave()) this.loadDetail(this.route.snapshot.paramMap.get('id'));
+  }
+
+  saveChange(): void {
+    if (!this.ready() || !this.canWrite() || this.saving()) return;
+    clearServerErrors(this.form);
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+
+    const current = this.record();
+    const request = discountRequest(this.form, current);
+    this.saving.set(true);
+    this.errorMessage.set('');
+    this.summaryErrors.set([]);
+    this.saved.set(false);
+    this.form.disable({ emitEvent: false });
+    (current
+      ? this.discountsService.updateDiscount(current.id, current.version, request)
+      : this.discountsService.create(request)
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (discount) => {
+          this.saving.set(false);
+          this.showDiscount(discount);
+          this.saved.set(true);
+          if (!current) {
+            void this.router.navigate(['/admin/discounts', discount.id], {
+              replaceUrl: true,
+              queryParamsHandling: 'preserve',
+            });
+          }
+        },
+        // The form keeps what was typed, also on 409: the user checks and saves again.
+        error: (error: unknown) => {
+          this.saving.set(false);
+          // Enable first: enabling re-runs validators and would drop the server errors.
+          this.form.enable({ emitEvent: false });
+          const apiError = normalizeApiError(error);
+          const unmapped = applyServerErrors(
+            this.form,
+            apiError.fieldErrors,
+            DISCOUNT_FIELD_ALIASES,
+          );
+          this.summaryErrors.set(unmapped.flatMap((entry) => entry.messages));
+          this.errorMessage.set(
+            apiError.kind === 'conflict'
+              ? 'Mã đã thay đổi hoặc trùng. Bản nhập được giữ lại; hãy kiểm tra dữ liệu trước khi lưu lại.'
+              : apiError.message,
+          );
+        },
+      });
   }
 
   error(control: AbstractControl): string | null {
@@ -157,41 +269,23 @@ export class DiscountIo extends BaseEditorComponent<DiscountDto, DiscountForm> {
     return validationMessage(control) || 'Kiểm tra lại giá trị này.';
   }
 
-  protected fetchRecord(id: string | null): Observable<DiscountDto | null> {
-    return id === null ? of(null) : this.discountsService.getById(id);
+  /** Asked by `unsavedChangesGuard` before leaving, and before reloading the discount. */
+  confirmLeave(): boolean | Promise<boolean> {
+    return this.confirmation.request(this.form.dirty, this.saving());
   }
 
-  protected hydrate(record: DiscountDto | null): void {
-    this.form.reset(discountFormValue(record ?? undefined), { emitEvent: false });
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnload(event: BeforeUnloadEvent): void {
+    if (this.form.dirty || this.saving()) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 
-  protected persist(record: DiscountDto | null): Observable<DiscountDto> {
-    const value = discountRequest(this.form, record);
-    return record
-      ? this.discountsService.updateDiscount(record.id, record.version, value)
-      : this.discountsService.create(value);
-  }
-
-  protected canWriteRecord(record: DiscountDto | null): boolean {
-    return this.can('Discount', record ? 'Update' : 'Create');
-  }
-
-  protected override afterSaved(saved: DiscountDto, wasNew: boolean): void {
-    if (wasNew) this.openCreated(['/admin/discounts', saved.id]);
-  }
-
-  protected override fieldAliases(): Readonly<Record<string, string>> {
-    return DISCOUNT_FIELD_ALIASES;
-  }
-
-  protected override onDraftChange(): void {
-    this.summaryErrors.set([]);
-    clearServerErrors(this.form);
-  }
-
-  protected override saveErrorMessage(error: ApiError): string {
-    return error.kind === 'conflict'
-      ? 'Mã đã thay đổi hoặc trùng. Bản nhập được giữ lại; hãy kiểm tra dữ liệu trước khi lưu lại.'
-      : error.message;
+  private showDiscount(discount: DiscountDto | null): void {
+    this.record.set(discount);
+    this.form.reset(discountFormValue(discount ?? undefined), { emitEvent: false });
+    if (this.canWrite()) this.form.enable({ emitEvent: false });
+    else this.form.disable({ emitEvent: false });
   }
 }

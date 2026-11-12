@@ -1,7 +1,7 @@
-﻿import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription, finalize } from 'rxjs';
-import { BaseComponent } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
 import { ApiError } from '@core/http/api-error';
 import { createOperationId } from '@core/http/operation-id';
 import { SHARED_IMPORTS } from '@shared/shared-imports';

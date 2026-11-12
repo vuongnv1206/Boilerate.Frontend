@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component,
   HostListener,
   OnInit,
@@ -31,7 +31,7 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { BaseComponent } from '@core/base';
+import { BaseComponent } from '@core/base/base.component';
 import { ApiError } from '@core/http/api-error';
 import { createOperationId } from '@core/http/operation-id';
 import { applyServerErrors, clearServerErrors } from '@core/base/form-errors.util';

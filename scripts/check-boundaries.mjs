@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -89,18 +89,12 @@ const probes = [
     "import '@modules/inventory/product-inventory-panel/product-inventory-panel.component';",
     true,
   ],
-  ['screen rejects HTTP transport', screen, "import '@core/http/api-client';", false],
+  ['screen rejects HTTP transport', screen, "import '@core/http/api.service';", false],
   ['screen rejects raw HTTP', screen, "import '@angular/common/http';", false],
   [
     'service accepts transport',
     'src/app/api/catalog/services/probe.service.ts',
-    "import '@core/http/api-client';",
-    true,
-  ],
-  [
-    'service accepts base generics',
-    'src/app/api/catalog/services/probe.service.ts',
-    "import '@core/base';",
+    "import '@core/http/api.service';",
     true,
   ],
   [
