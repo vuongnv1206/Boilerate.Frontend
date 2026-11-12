@@ -13,7 +13,7 @@ export interface ApiRequestOptions {
   readonly withCredentials?: boolean;
 }
 
-export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 /** Typed HTTP transport. Domain services inherit BaseApiService / BaseCrudService on top of this. */
 @Injectable({ providedIn: 'root' })

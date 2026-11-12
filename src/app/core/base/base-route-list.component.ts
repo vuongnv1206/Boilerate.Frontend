@@ -16,7 +16,7 @@ import { BaseComponent } from './base.component';
 import { PageWire } from './paged.model';
 import { sameQueryParams } from './query-params.util';
 
-export interface RouteListPatchOptions {
+interface RouteListPatchOptions {
   readonly resetPage?: boolean;
   readonly replaceUrl?: boolean;
 }

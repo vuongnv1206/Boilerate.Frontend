@@ -5,7 +5,7 @@ import { AuthSession } from '../auth/auth-session';
 import { RuntimeConfig } from '../config/runtime-config';
 import { RUNTIME_CONFIG } from '../config/runtime-config.token';
 
-export interface RealtimeNotificationPush {
+interface RealtimeNotificationPush {
   readonly id: string;
   readonly title: string;
   readonly message: string;

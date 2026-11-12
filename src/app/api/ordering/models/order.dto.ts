@@ -102,7 +102,7 @@ export interface OrderHistoryEntry {
   readonly safeSummary: string;
 }
 
-export type OrderQueue = 'awaiting-payment' | 'awaiting-processing' | 'needs-review';
+type OrderQueue = 'awaiting-payment' | 'awaiting-processing' | 'needs-review';
 
 export interface OrderListQuery {
   readonly queue: OrderQueue | null;
@@ -125,7 +125,7 @@ export interface GuestPaymentSettings {
   readonly bankTransferEnabled: boolean;
 }
 
-export interface CheckoutLineRequest {
+interface CheckoutLineRequest {
   readonly variantId: string;
   readonly quantity: number;
 }
@@ -142,7 +142,7 @@ export interface CheckoutRequest {
   readonly items: readonly CheckoutLineRequest[];
 }
 
-export type OrderBadgeTone = 'success' | 'warning' | 'neutral' | 'muted';
+type OrderBadgeTone = 'success' | 'warning' | 'neutral' | 'muted';
 
 export const ORDER_QUEUE_LABELS: Readonly<Record<OrderQueue, string>> = {
   'awaiting-payment': 'Đơn chờ thanh toán',
@@ -206,25 +206,6 @@ export const EMPTY_ADMIN_ORDER_PAGE: OrderPage = {
   pageSize: 10,
 };
 
-export const EMPTY_CUSTOMER_ORDER_PAGE: OrderPage = {
-  items: [],
-  total: 0,
-  pageNumber: 1,
-  pageSize: 20,
-};
-
-export const DEFAULT_ORDER_LIST_QUERY: OrderListQuery = {
-  queue: null,
-  q: '',
-  status: null,
-  paymentStatus: null,
-  fulfillmentStatus: null,
-  createdFrom: '',
-  createdTo: '',
-  page: 1,
-  pageSize: 10,
-};
-
 export interface OrderPanelMutationEvent {
   readonly preserveActionState: boolean;
 }
@@ -244,23 +225,6 @@ export function orderStatusTone(status: OrderStatus): OrderBadgeTone {
 export function customerOrderStatusLabel(status: OrderStatus): string {
   if (status === OrderStatus.Expired) return 'Đã hết hạn';
   return ORDER_STATUS_LABELS[status] ?? 'Đang xử lý';
-}
-
-export function myOrdersFulfillmentLabel(status: OrderFulfillmentStatus): string {
-  switch (status) {
-    case OrderFulfillmentStatus.Pending:
-      return 'Chờ giao';
-    case OrderFulfillmentStatus.InProgress:
-      return 'Đang giao hàng';
-    case OrderFulfillmentStatus.Completed:
-      return 'Giao thành công';
-    case OrderFulfillmentStatus.NeedsReview:
-      return 'Cần kiểm tra';
-    case OrderFulfillmentStatus.Stopped:
-      return 'Đã dừng';
-    default:
-      return 'Chờ xử lý';
-  }
 }
 
 export function customerOrderDetailFulfillmentLabel(status: OrderFulfillmentStatus): string {

@@ -8,10 +8,10 @@ Giao diện quản trị (`/admin`, lấy cảm hứng từ Webflow CMS/Ecommerc
 
 ## Chạy ở môi trường Local
 
-Yêu cầu Node tương thích Angular 22 (`.node-version` chỉ định **24.19.0**). Script `run.ps1` tự động tìm runtime Node phù hợp trên máy cho tiến trình hiện tại mà không đổi cấu hình Node toàn cục:
+Yêu cầu Node tương thích Angular 22 (`.node-version` chỉ định **24.19.0**). Script `run.ps1` dùng `node` trên `PATH`; nếu bản đó không phù hợp, đặt biến `BOILERATE_NODE` trỏ tới một `node.exe` được hỗ trợ (hoặc `nvm use 24.19.0`). Script không đổi cấu hình Node toàn cục:
 
 ```powershell
-cd D:\MyCode\BoilerateWorkspace\Frontend
+cd D:\MyCode\BoilerateWorkspace\Boilerate.Frontend
 .\run.ps1 install
 .\run.ps1 start
 ```
@@ -34,7 +34,7 @@ Lệnh `start` / `build` tự động sinh `public/runtime-config.js` (bị igno
 ## Kiểm tra Chất lượng & Browser E2E Local
 
 ```powershell
-# Chạy trọn bộ kiểm tra nhanh: Prettier + ESLint + 43 Architecture Checks + Vitest Unit + Production Build
+# Chạy trọn bộ kiểm tra nhanh: Prettier + ESLint + kiểm tra ranh giới kiến trúc + Production Build
 .\run.ps1 check
 
 # Chạy các bước riêng lẻ khi cần:
@@ -51,14 +51,14 @@ Lệnh `start` / `build` tự động sinh `public/runtime-config.js` (bị igno
 Để chạy nghiệm thu toàn luồng kết nối Kestrel và SQL Server test cô lập (`boilerate_test_<guid>`):
 
 ```powershell
-pwsh ..\Boilerate\scripts\verify-admin.ps1 -FrontendRoot 'D:\MyCode\BoilerateWorkspace\Frontend'
+pwsh ..\Boilerate\scripts\verify-admin.ps1 -FrontendRoot 'D:\MyCode\BoilerateWorkspace\Boilerate.Frontend'
 ```
 
-Báo cáo và trace của từng lượt chạy lưu trong `artifacts/` (được Git ignore).
+Báo cáo và trace của từng lượt chạy lưu trong `artifacts/` (được Git ignore); xoá khi không còn cần.
 
 ## Tài liệu & Quy chuẩn liên quan
 
-- [../docs/README.md](../docs/README.md): Nguồn tài liệu chính thức duy nhất của toàn dự án (`catalog`, `storefront-checkout`, `orders-fulfillment`, `auth-system`, `contracts`).
+- [../docs/README.md](../docs/README.md): Nguồn tài liệu chính thức duy nhất của toàn dự án (`overview`, `contracts`, `auth-system`, `history`).
 - [PRODUCT.md](PRODUCT.md) & [DESIGN.md](DESIGN.md): Nguyên tắc trải nghiệm sản phẩm, bảng màu, semantic tokens, typography và motion.
-- [AGENTS.md](AGENTS.md) & [admin-ui-design](.agents/skills/admin-ui-design/SKILL.md): Hướng dẫn cho AI/lập trình viên khi sửa giao diện.
-- [../docs/history/changelog.md](../docs/history/changelog.md) & [../docs/history/verification-summary.md](../docs/history/verification-summary.md): Lịch sử các mốc tính năng và kết quả kiểm chứng local.
+- [AGENTS.md](AGENTS.md) & [admin-ui-design](.agents/skills/admin-ui-design/SKILL.md): Quy tắc và hướng dẫn khi sửa giao diện.
+- [../docs/history/changelog.md](../docs/history/changelog.md): Lịch sử các mốc tính năng.

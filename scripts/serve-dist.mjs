@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 
-const root = resolve(import.meta.dirname, '../dist/boilerate-admin/browser');
+const root = resolve(import.meta.dirname, '../dist/boilerate-frontend/browser');
 const types = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',

@@ -2,10 +2,10 @@ import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Inject, Injectable, computed, signal } from '@angular/core';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
-export type ResolvedTheme = 'light' | 'dark';
-export const THEME_STORAGE_KEY = 'boilerate.ui.theme';
+type ResolvedTheme = 'light' | 'dark';
+const THEME_STORAGE_KEY = 'boilerate.ui.theme';
 
-export function isThemeMode(value: unknown): value is ThemeMode {
+function isThemeMode(value: unknown): value is ThemeMode {
   return value === 'system' || value === 'light' || value === 'dark';
 }
 

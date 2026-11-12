@@ -214,7 +214,7 @@ for (const file of files(path.join(cwd, 'src/app'))) {
 }
 
 const angular = JSON.parse(fs.readFileSync(path.join(cwd, 'angular.json'), 'utf8'));
-const defaults = angular.projects['boilerate-admin'].schematics['@schematics/angular:component'];
+const defaults = angular.projects['boilerate-frontend'].schematics['@schematics/angular:component'];
 assert.equal(defaults.style, 'none');
 assert.equal(defaults.skipTests, true);
 assert.equal(defaults.type, 'component');

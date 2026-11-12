@@ -2,7 +2,7 @@
 
 This file records design-research provenance for the UI foundation, reviewed 2026-10-19. Runtime package licenses are supplied by their installed packages and lockfile; this list does not replace those licenses.
 
-Inter Variable is self-hosted through `@fontsource-variable/inter`. Storefront headings use Noto Serif Variable through `@fontsource-variable/noto-serif`, distributed under SIL Open Font License 1.1; the installed package includes its license and metadata. Instrument Sans was used for the earlier storefront design and remains recorded in its package metadata.
+Inter Variable is self-hosted through `@fontsource-variable/inter`. Storefront headings use Noto Serif Variable through `@fontsource-variable/noto-serif`, distributed under SIL Open Font License 1.1; the installed package includes its license and metadata.
 
 ## PrimeUI runtime license
 
@@ -18,4 +18,4 @@ Sources: [Intro to Webflow](https://help.webflow.com/hc/en-us/articles/339612601
 
 The warm paper, charcoal and terracotta palette direction was informed by the Claude design system study in [nuocftraik/get-design](https://github.com/nuocftraik/get-design) ([getdesign.md](https://getdesign.md/)). Product hierarchy, contrast and motion guidance consulted [pbakaus/impeccable](https://github.com/pbakaus/impeccable), and [motionsites.ai](https://motionsites.ai/) served as motion inspiration without copying code or assets.
 
-Full `impeccable` and `frontend-design` skill bundles are installed locally under `Frontend/.agents/skills/`, alongside the project-specific [admin-ui-design](.agents/skills/admin-ui-design/SKILL.md). Consolidated provenance, upstream commit hashes, SHA-256 checksums and redistribution boundaries are maintained in [../docs/references/design-and-skills.md](../docs/references/design-and-skills.md) and [../docs/references/skill-sources.json](../docs/references/skill-sources.json).
+Full `impeccable` and `frontend-design` skill bundles are installed locally under `Boilerate.Frontend/.agents/skills/`, alongside the project-specific [admin-ui-design](.agents/skills/admin-ui-design/SKILL.md). Consolidated provenance, upstream commit hashes, SHA-256 checksums and redistribution boundaries are maintained in [../docs/references/design-and-skills.md](../docs/references/design-and-skills.md) and [../docs/references/skill-sources.json](../docs/references/skill-sources.json).

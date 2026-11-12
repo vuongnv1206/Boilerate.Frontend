@@ -47,7 +47,7 @@ export interface InventoryFilter {
   readonly variantId?: string;
 }
 
-export interface DigitalStockInputDto {
+interface DigitalStockInputDto {
   readonly reference: string;
   readonly content: string;
 }
@@ -121,7 +121,7 @@ export interface InventoryProductContext {
 export type InventoryPanelMode = 'inventory' | 'digital' | null;
 export type InventoryStockLevelFilter = 'all' | 'low' | 'out';
 
-export interface InventorySelectOption<T = string> {
+interface InventorySelectOption<T = string> {
   readonly label: string;
   readonly value: T;
 }
@@ -129,7 +129,7 @@ export interface InventorySelectOption<T = string> {
 export const MAX_STOCK_QUANTITY = 2147483647;
 export const LOW_STOCK_THRESHOLD = 5;
 export const INVENTORY_PAGE_SIZE = 20;
-export const INVENTORY_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/u;
+const INVENTORY_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/u;
 
 export const DIGITAL_STOCK_STATE_LABELS: Readonly<Record<number, string>> = {
   1: 'Sẵn sàng',
@@ -171,8 +171,6 @@ export function createInventoryAdjustmentForm() {
   });
 }
 
-export type InventoryAdjustmentForm = ReturnType<typeof createInventoryAdjustmentForm>;
-
 export function createDigitalContentForm() {
   return new FormGroup({
     reference: new FormControl('', {
@@ -191,8 +189,6 @@ export function createDigitalContentForm() {
   });
 }
 
-export type DigitalContentForm = ReturnType<typeof createDigitalContentForm>;
-
 export function createWorkspaceDigitalImportForm() {
   return new FormGroup({
     productId: new FormControl('', {
@@ -210,9 +206,7 @@ export function createWorkspaceDigitalImportForm() {
   });
 }
 
-export type WorkspaceDigitalImportForm = ReturnType<typeof createWorkspaceDigitalImportForm>;
-
-export interface ParsedDigitalBatch {
+interface ParsedDigitalBatch {
   readonly items: readonly DigitalStockInputDto[];
   readonly error: string | null;
 }

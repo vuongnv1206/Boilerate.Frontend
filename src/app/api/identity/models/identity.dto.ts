@@ -1,5 +1,3 @@
-import { AbstractControl, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
-
 export interface CapabilityDto {
   readonly id: string;
   readonly code: string;
@@ -8,7 +6,7 @@ export interface CapabilityDto {
   readonly isActive: boolean;
 }
 
-export interface ActionDto extends CapabilityDto {
+interface ActionDto extends CapabilityDto {
   readonly selected: boolean;
 }
 
@@ -66,8 +64,6 @@ export interface CreateUserRequest {
   readonly confirmPassword: string;
   readonly phoneNumber: string | null;
 }
-
-export type SelfRegisterRequest = CreateUserRequest;
 
 export interface UpdateUserRequest {
   readonly version: string;
@@ -128,18 +124,9 @@ export interface ResetPasswordRequest {
   readonly token: string;
 }
 
-export interface ConfirmAccountParams {
-  readonly userId: string;
-  readonly code: string;
-}
-
-export interface OAuthLoginRequest {
-  readonly idToken: string;
-}
-
 export type ConfirmMode = 'email' | 'phone';
 
-export interface ConfirmModeOption {
+interface ConfirmModeOption {
   readonly label: string;
   readonly value: ConfirmMode;
 }
@@ -173,7 +160,7 @@ export interface RolePermissionGroupView extends FunctionGroupDto {
   readonly count: number;
 }
 
-export interface SystemListQuery {
+interface SystemListQuery {
   readonly q: string;
   readonly page: number;
 }
@@ -408,90 +395,3 @@ export const AUTH_FORM_STYLES = `
     }
   }
 `;
-
-const requiredTrimmed = (maxLength: number) => [
-  Validators.required,
-  Validators.pattern(/\S/u),
-  Validators.maxLength(maxLength),
-];
-
-const confirmPasswordMatch: ValidatorFn = (control: AbstractControl) => {
-  const password = control.get('password')?.value;
-  const confirmPassword = control.get('confirmPassword')?.value;
-  return password === confirmPassword ? null : { passwordMismatch: true };
-};
-
-export function createLoginForm() {
-  return new FormGroup({
-    email: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.email],
-    }),
-    password: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-  });
-}
-
-export function createRegisterForm() {
-  return new FormGroup(
-    {
-      firstName: new FormControl('', { nonNullable: true, validators: requiredTrimmed(75) }),
-      lastName: new FormControl('', { nonNullable: true, validators: requiredTrimmed(75) }),
-      email: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.email],
-      }),
-      userName: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.minLength(6)],
-      }),
-      phoneNumber: new FormControl('', { nonNullable: true }),
-      password: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.minLength(9)],
-      }),
-      confirmPassword: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
-    },
-    { validators: confirmPasswordMatch },
-  );
-}
-
-export function createConfirmEmailForm() {
-  return new FormGroup({
-    mode: new FormControl<ConfirmMode>('email', { nonNullable: true }),
-    userId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    code: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-  });
-}
-
-export function createForgotPasswordForm() {
-  return new FormGroup({
-    email: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.email],
-    }),
-  });
-}
-
-export function createResetPasswordForm() {
-  return new FormGroup(
-    {
-      email: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.email],
-      }),
-      token: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      password: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.minLength(9)],
-      }),
-      confirmPassword: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
-    },
-    { validators: confirmPasswordMatch },
-  );
-}

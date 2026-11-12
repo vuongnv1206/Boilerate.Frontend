@@ -5,7 +5,7 @@ export interface PreviewRecord {
   readonly status: string;
 }
 
-export interface GalleryOption {
+interface GalleryOption {
   readonly label: string;
   readonly value: string;
 }

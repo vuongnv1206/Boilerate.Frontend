@@ -15,7 +15,7 @@ export interface SetCartDiscountRequest {
   readonly code: string | null;
 }
 
-export interface CartLineDto {
+interface CartLineDto {
   readonly variantId: string;
   readonly quantity: number;
   readonly name: string;

@@ -38,8 +38,6 @@ export interface AfterSalesSummaryDto {
   readonly returns: readonly PhysicalReturnDto[];
 }
 
-export type AfterSalesSummary = AfterSalesSummaryDto;
-
 export interface RecordRefundRequest {
   readonly orderVersion: string;
   readonly operationId: string;

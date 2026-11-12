@@ -28,7 +28,7 @@ const integer: ValidatorFn = (control: AbstractControl): ValidationErrors | null
     ? null
     : { integer: true };
 
-export function createDiscountForm() {
+function createDiscountForm() {
   return new FormGroup(
     {
       code: new FormControl('', {
@@ -64,7 +64,7 @@ export function createDiscountForm() {
   );
 }
 
-export type DiscountForm = ReturnType<typeof createDiscountForm>;
+type DiscountForm = ReturnType<typeof createDiscountForm>;
 
 function discountRules(control: AbstractControl): ValidationErrors | null {
   const value = control.get('value')?.value as number | null;
@@ -79,7 +79,7 @@ function discountRules(control: AbstractControl): ValidationErrors | null {
 }
 
 /** Date-time fields are explicitly Vietnamese wall time, independent of the browser timezone. */
-export function vietnamDateTime(value: string | null): string {
+function vietnamDateTime(value: string | null): string {
   if (!value) return '';
   const date = new Date(value);
   return Number.isNaN(date.valueOf())
@@ -91,7 +91,7 @@ function utcDateTime(value: string): string | null {
   return value ? new Date(`${value}+07:00`).toISOString() : null;
 }
 
-export function discountFormValue(record?: DiscountDto): ReturnType<DiscountForm['getRawValue']> {
+function discountFormValue(record?: DiscountDto): ReturnType<DiscountForm['getRawValue']> {
   return {
     code: record?.code ?? '',
     name: record?.name ?? '',
@@ -105,10 +105,7 @@ export function discountFormValue(record?: DiscountDto): ReturnType<DiscountForm
   };
 }
 
-export function discountRequest(
-  form: DiscountForm,
-  record?: DiscountDto | null,
-): SaveDiscountRequest {
+function discountRequest(form: DiscountForm, record?: DiscountDto | null): SaveDiscountRequest {
   const value = form.getRawValue();
   const saved = record ? discountFormValue(record) : null;
   if (value.value === null || value.minimumSubtotal === null) {

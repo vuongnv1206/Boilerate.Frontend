@@ -75,7 +75,7 @@ export interface ProductMedia {
   readonly altText: string | null;
 }
 
-export interface ProductVariantSelection {
+interface ProductVariantSelection {
   readonly optionId: string;
   readonly optionValueId: string;
 }
@@ -102,7 +102,7 @@ export interface ProductVariant {
   readonly selections: readonly ProductVariantSelection[];
 }
 
-export interface ProductOptionValue {
+interface ProductOptionValue {
   readonly id: string;
   readonly code: string;
   readonly label: string;

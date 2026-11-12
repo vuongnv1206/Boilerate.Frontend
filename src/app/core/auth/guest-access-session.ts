@@ -3,7 +3,7 @@ import { Observable, Subscription, catchError, map, of, tap, throwError } from '
 import { ApiClient } from '../http/api-client';
 import { normalizeApiError } from '../http/normalize-api-error';
 
-export interface GuestVerificationResult {
+interface GuestVerificationResult {
   readonly email: string;
 }
 

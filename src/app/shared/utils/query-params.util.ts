@@ -11,37 +11,3 @@ export function readListQuery(values: Readonly<Record<string, unknown>>): ListQu
     page: Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1,
   };
 }
-
-export function readPositiveIntParam(
-  params: Readonly<Record<string, string | undefined>>,
-  key: string,
-  fallback: number,
-  max = 10_000,
-): number {
-  const raw = params[key];
-  if (!raw || !/^\d+$/u.test(raw)) return fallback;
-  const parsed = Number(raw);
-  return parsed >= 1 && parsed <= max ? parsed : fallback;
-}
-
-export function readTrimmedParam(
-  params: Readonly<Record<string, string | undefined>>,
-  key: string,
-  maxLength = 120,
-): string {
-  const raw = params[key];
-  if (typeof raw !== 'string') return '';
-  return raw.trim().slice(0, maxLength);
-}
-
-/** True when the URL already holds exactly the canonical query params (values compared as strings). */
-export function sameQueryParams(
-  left: Readonly<Record<string, unknown>>,
-  right: Readonly<Record<string, unknown>>,
-): boolean {
-  const keys = Object.keys(left);
-  return (
-    keys.length === Object.keys(right).length &&
-    keys.every((key) => String(left[key]) === String(right[key]))
-  );
-}

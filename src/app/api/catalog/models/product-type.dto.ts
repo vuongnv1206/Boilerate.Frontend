@@ -38,7 +38,7 @@ export interface ProductTypeDto {
   readonly lastModifiedOn?: string | null;
 }
 
-export interface ChoiceInput {
+interface ChoiceInput {
   readonly code: string;
   readonly label: string;
 }
@@ -53,14 +53,14 @@ export interface FieldDefinitionInput {
   readonly choices: readonly ChoiceInput[];
 }
 
-export interface FieldChoiceEdit {
+interface FieldChoiceEdit {
   readonly id: string;
   readonly label: string;
   readonly isActive: boolean;
   readonly sortOrder: number;
 }
 
-export interface FieldDefinitionEdit {
+interface FieldDefinitionEdit {
   readonly id: string;
   readonly label: string;
   readonly helpText: string | null;
@@ -86,7 +86,7 @@ export interface EditProductTypeRequest {
   readonly fields: readonly FieldDefinitionEdit[];
 }
 
-export interface ProductFieldTypeOption {
+interface ProductFieldTypeOption {
   readonly value: ProductFieldType;
   readonly label: string;
 }

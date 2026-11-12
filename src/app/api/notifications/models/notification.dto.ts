@@ -1,7 +1,4 @@
 import { PaginationParams } from '@core/base';
-import { NotificationBadgeState } from '@core/realtime/notification-badge.token';
-
-export type NotificationBadgeReader = NotificationBadgeState;
 
 export enum BasicNotificationLabelType {
   Info = 1,
@@ -26,17 +23,12 @@ export interface NotificationDto {
   readonly createdOn: string;
 }
 
-export interface UnreadCountDto {
-  readonly count?: number;
-  readonly unreadCount?: number;
-}
-
 export interface NotificationFilter extends PaginationParams {
   readonly pageNumber?: number;
   readonly isRead?: boolean | null;
 }
 
-export interface NotificationFilterOption {
+interface NotificationFilterOption {
   readonly label: string;
   readonly value: boolean | null;
 }
@@ -49,7 +41,7 @@ export const NOTIFICATION_FILTER_OPTIONS: readonly NotificationFilterOption[] = 
 
 export type NotificationBadgeTone = 'neutral' | 'success' | 'warning' | 'muted';
 
-export function normalizeNotificationType(
+function normalizeNotificationType(
   type: BasicNotificationLabelType | string,
 ): BasicNotificationLabelType {
   if (typeof type === 'number') {

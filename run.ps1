@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('install', 'start', 'build', 'test', 'lint', 'check', 'format:check', 'test:e2e', 'test:e2e:live', 'test:e2e:mobile', 'test:e2e:shop-mobile', 'test:e2e:all', 'test:e2e:update', 'preview')]
+    [ValidateSet('install', 'start', 'build', 'test', 'lint', 'check', 'format:check', 'test:e2e', 'test:e2e:live', 'test:e2e:shop-mobile', 'test:e2e:all', 'test:e2e:update', 'preview')]
     [string]$Task = 'start',
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$TaskArguments
@@ -8,8 +8,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $runtimeCandidates = @(
     $env:BOILERATE_NODE,
-    (Get-Command node -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source),
-    (Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe')
+    (Get-Command node -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source)
 ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
 
 $selectedNode = $null
@@ -23,7 +22,7 @@ foreach ($candidate in $runtimeCandidates) {
         break
     }
 }
-if (-not $selectedNode) { throw 'Angular 22 requires Node 22.22.3+, 24.15.0+ or 26+. Set BOILERATE_NODE to a supported node.exe.' }
+if (-not $selectedNode) { throw 'Angular 22 requires Node 22.22.3+, 24.15.0+ or 26+. Put a supported node on PATH or set BOILERATE_NODE to a supported node.exe.' }
 
 $env:Path = (Split-Path $selectedNode) + [IO.Path]::PathSeparator + $env:Path
 Push-Location $PSScriptRoot

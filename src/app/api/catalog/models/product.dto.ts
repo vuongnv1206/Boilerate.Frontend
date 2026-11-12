@@ -72,8 +72,6 @@ export interface ProductMediaDto {
   readonly altText: string | null;
 }
 
-export type ProductMediaItem = ProductMediaDto;
-
 export interface ProductVariant {
   readonly id: string;
   readonly sku: string;
@@ -286,7 +284,7 @@ export interface ChangeProductStatus {
 }
 
 export type ProductCategoryLookup = Pick<CategoryDto, 'id' | 'name' | 'isActive'>;
-export type ProductFieldChoice = Pick<ProductFieldChoiceDto, 'id' | 'label' | 'isActive'>;
+type ProductFieldChoice = Pick<ProductFieldChoiceDto, 'id' | 'label' | 'isActive'>;
 export type ProductFieldDefinition = Pick<
   ProductFieldDefinitionDto,
   'id' | 'code' | 'label' | 'helpText' | 'dataType' | 'isRequired' | 'isActive' | 'sortOrder'
@@ -300,14 +298,9 @@ export type ProductTypeLookup = Pick<
   readonly fields: readonly ProductFieldDefinition[];
 };
 
-export interface ProductSelectOption<T = string | null> {
+interface ProductSelectOption<T = string | null> {
   readonly label: string;
   readonly value: T;
-}
-
-export interface ProductChoiceSelectOption {
-  readonly label: string;
-  readonly value: string;
 }
 
 export interface ListQuery {
@@ -335,14 +328,8 @@ export const PRODUCT_LIMITS = {
   sku: 100,
 } as const;
 
-export const PRODUCT_SLUG_PATTERN = /^[a-z0-9-]+$/u;
-export const PRODUCT_SKU_PATTERN = /^[A-Za-z0-9._-]+$/u;
+const PRODUCT_SLUG_PATTERN = /^[a-z0-9-]+$/u;
 export const PRODUCT_PAGE_SIZES: number[] = [10, 20, 50];
-export const PRODUCT_PAGE_SIZE_OPTIONS: ProductSelectOption<number>[] = [
-  { label: '10 / trang', value: 10 },
-  { label: '20 / trang', value: 20 },
-  { label: '50 / trang', value: 50 },
-];
 export const PRODUCT_SEARCH_DELAY_MS = 250;
 export const PRODUCT_OPTION_LIMIT = 3;
 export const PRODUCT_VARIANT_LIMIT = 50;
@@ -400,7 +387,7 @@ export const PRODUCT_FIELD_ALIASES = {
   'variants[0].price': 'price',
 } as const;
 
-export function slugify(value: string): string {
+function slugify(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/gu, '')
@@ -496,10 +483,10 @@ export function listQueryParams(
 
 export type ProductFieldControlValue = string | number | boolean | null;
 
-export const catalogRequired: ValidatorFn = (control) =>
+const catalogRequired: ValidatorFn = (control) =>
   typeof control.value === 'string' && control.value.trim() ? null : { required: true };
 
-export const nullableVndPrice: ValidatorFn = (control) =>
+const nullableVndPrice: ValidatorFn = (control) =>
   control.value === null ||
   (typeof control.value === 'number' && Number.isSafeInteger(control.value) && control.value >= 0)
     ? null
@@ -575,8 +562,6 @@ export function createOptionForm(option?: ProductOption) {
 }
 
 export type CreateOptionForm = ReturnType<typeof createOptionForm>;
-export type CreateOptionValueForm = ReturnType<typeof createOptionValueForm>;
-
 export function createSkuRow(
   sku: string,
   options: Readonly<Record<string, string>>,
@@ -623,7 +608,7 @@ export function createProductMediaForm(media: ProductMediaDto) {
   });
 }
 
-export type ProductMediaForm = ReturnType<typeof createProductMediaForm>;
+type ProductMediaForm = ReturnType<typeof createProductMediaForm>;
 
 export function createProductForm() {
   const builder = new FormBuilder().nonNullable;

@@ -1,8 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 
-export type ToastTone = 'success' | 'error' | 'warning' | 'info';
+type ToastTone = 'success' | 'error' | 'warning' | 'info';
 
-export interface ToastItem {
+interface ToastItem {
   readonly id: number;
   readonly tone: ToastTone;
   readonly message: string;

@@ -4,7 +4,7 @@
   "newProjectRoot": "projects",
   "cli": { "analytics": false, "packageManager": "npm" },
   "projects": {
-    "boilerate-admin": {
+    "boilerate-frontend": {
       "projectType": "application",
       "root": "",
       "sourceRoot": "src",
@@ -27,7 +27,7 @@
             "inlineStyleLanguage": "scss",
             "assets": [{ "glob": "**/*", "input": "public" }],
             "styles": ["src/styles.scss"],
-            "outputPath": "dist/boilerate-admin"
+            "outputPath": "dist/boilerate-frontend"
           },
           "configurations": {
             "production": {
@@ -45,18 +45,10 @@
           "builder": "@angular/build:dev-server",
           "options": { "proxyConfig": "proxy.conf.json" },
           "configurations": {
-            "production": { "buildTarget": "boilerate-admin:build:production" },
-            "development": { "buildTarget": "boilerate-admin:build:development" }
+            "production": { "buildTarget": "boilerate-frontend:build:production" },
+            "development": { "buildTarget": "boilerate-frontend:build:development" }
           },
           "defaultConfiguration": "development"
-        },
-        "test": {
-          "builder": "@angular/build:unit-test",
-          "options": {
-            "tsConfig": "tsconfig.spec.json",
-            "runner": "vitest",
-            "runnerConfig": "vitest-base.config.mts"
-          }
         }
       }
     }

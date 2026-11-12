@@ -1,8 +1,8 @@
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 
-export type ServerValidationErrors = Readonly<Record<string, readonly string[]>>;
+type ServerValidationErrors = Readonly<Record<string, readonly string[]>>;
 
-export interface UnmappedServerError {
+interface UnmappedServerError {
   readonly field: string;
   readonly messages: readonly string[];
 }

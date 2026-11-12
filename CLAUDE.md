@@ -1,17 +1,18 @@
-# Quy tắc Frontend (`Frontend/`)
+# Quy tắc Frontend (`Boilerate.Frontend/`)
 
-Đây là repository **Frontend `Angular 22` + `PrimeNG 22`**. Chỉ triển khai giao diện UI/UX (Admin & Storefront), client state (`signals` + generic base classes/services) và tích hợp HTTP/SignalR API tại đây — **tuyệt đối không viết server API, database hay tạo tài liệu nghiệp vụ rời trong repo này**.
+Đây là repository **Frontend `Angular 22` + `PrimeNG 22`**. Chỉ triển khai giao diện (Admin và Storefront), client state (`signals` + base classes/services) và tích hợp HTTP/SignalR tại đây. **Không viết server API, database và không đặt tài liệu nghiệp vụ trong repo này.**
 
 ## Đọc trước khi sửa code
 
 1. Luật gốc của workspace: [../AGENTS.md](../AGENTS.md)
-2. Luật kỹ thuật Frontend & SCSS chi tiết: [../agents/frontend.md](../agents/frontend.md) và quy trình tài liệu: [../agents/workflow-and-docs.md](../agents/workflow-and-docs.md)
-3. Định hướng sản phẩm & Hệ thiết kế chuẩn (giữ tại root `Frontend/` cho context loader): [PRODUCT.md](PRODUCT.md) và [DESIGN.md](DESIGN.md)
-4. Nguồn tài liệu nghiệp vụ & API duy nhất: [../docs/README.md](../docs/README.md)
-5. Skills giao diện local: [.agents/skills/admin-ui-design/SKILL.md](.agents/skills/admin-ui-design/SKILL.md), `.agents/skills/impeccable/SKILL.md`, `.agents/skills/frontend-design/SKILL.md`
+2. Luật kỹ thuật Frontend: [../agents/frontend.md](../agents/frontend.md); quy trình và nơi ghi tài liệu: [../agents/workflow-and-docs.md](../agents/workflow-and-docs.md)
+3. Định hướng sản phẩm và hệ thiết kế (giữ ở gốc repo vì skill thiết kế đọc tại đây): [PRODUCT.md](PRODUCT.md) và [DESIGN.md](DESIGN.md)
+4. Tài liệu nghiệp vụ và API: [../docs/README.md](../docs/README.md)
+5. Skills giao diện: [.agents/skills/admin-ui-design/SKILL.md](.agents/skills/admin-ui-design/SKILL.md), `.agents/skills/impeccable/SKILL.md`, `.agents/skills/frontend-design/SKILL.md`
 
 ## Nguyên tắc bắt buộc
 
-- **Cấu trúc & Kiến trúc**: Tổ chức theo 14 Domain Packages khớp 1-1 với Backend: tách bạch giữa Tầng Presentation (`src/app/modules/<domain>/` - chỉ chứa Components & Routes) và Tầng Data/Contracts (`src/app/api/<domain>/` - chứa DTOs & Services); không dùng barrel files `index.ts` trong `modules/` và `api/` (import trực tiếp tới file đích để tối ưu tree-shaking và tránh circular dependency); component con/dialog/panel nằm trực tiếp bên trong component cha (Parent-Child Nesting); kế thừa Generic Base Layer (`src/app/core/base/`); **không dùng Store (`*.store.ts`)**; dùng gói import chung `SHARED_IMPORTS`; dùng `constructor(...)` tường minh; không có file `*.spec.ts`; cho phép `any` linh hoạt; tuân thủ các quy tắc ranh giới lớp (`npm run test:architecture`) và hệ semantic tokens chung (kiểm tra cả `Light` và `Dark`).
-- **Môi trường Local**: Dev server chạy tại `http://localhost:4200` chuyển tiếp `/api/**` và `/hubs/**` sang Backend SQL Server local tại `http://localhost:5000`; không dùng Docker hay cấu hình deployment tại giai đoạn này.
-- **Giữ sạch repo**: Mọi tài liệu cập nhật tại `../docs/`; không tạo lại `Frontend/docs/` hay `Frontend/deployment/`, không để lại script `.mjs`/`.py` dùng một lần trong `artifacts/`. `AGENTS.md` và `CLAUDE.md` phải giống nhau 100%.
+- **Cấu trúc**: 14 domain khớp 1-1 với Backend, tách tầng Presentation (`src/app/modules/<domain>/`, chỉ component và routes) với tầng Data (`src/app/api/<domain>/`, DTO và service). Không dùng barrel `index.ts` trong `modules/` và `api/`. Component con, dialog, panel nằm trong thư mục component cha. Kế thừa base layer ở `src/app/core/base/`. **Không dùng store (`*.store.ts`)**. Dùng `SHARED_IMPORTS` và `constructor(...)` tường minh. Repo không có `*.spec.ts`; cho phép `any`.
+- **Ranh giới và giao diện**: tuân thủ ranh giới lớp (`npm run test:architecture`) và hệ semantic tokens chung; kiểm cả Light và Dark.
+- **Môi trường local**: dev server `http://localhost:4200` chuyển `/api/**` và `/hubs/**` sang Backend tại `http://localhost:5000`. Không dùng Docker hay cấu hình deployment ở giai đoạn này.
+- **Giữ sạch repo**: tài liệu cập nhật tại `../docs/`; không tạo lại `Boilerate.Frontend/docs/` hay `deployment/`; không để script `.mjs`/`.py` dùng một lần trong `artifacts/`. Commit không gắn `Co-Authored-By` của công cụ AI. `AGENTS.md` và `CLAUDE.md` phải giống nhau 100%.

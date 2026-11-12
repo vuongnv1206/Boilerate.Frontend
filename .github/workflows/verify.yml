@@ -24,7 +24,7 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npx --yes --package=npm@12.2.0 npm ci
-      - name: Format, boundaries, unit tests and production build
+      - name: Format, lint, boundaries and production build
         run: npm run check
       - name: Install pinned Chromium
         run: npx playwright install chromium

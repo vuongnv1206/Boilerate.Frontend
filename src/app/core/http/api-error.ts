@@ -11,7 +11,7 @@ export type ApiErrorKind =
 
 export type ApiFieldErrors = Readonly<Record<string, readonly string[]>>;
 
-export interface ApiErrorDetails {
+interface ApiErrorDetails {
   readonly status: number;
   readonly kind: ApiErrorKind;
   readonly message: string;

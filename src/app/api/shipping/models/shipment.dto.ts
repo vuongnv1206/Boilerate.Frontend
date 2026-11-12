@@ -3,7 +3,7 @@ export enum ShipmentStatus {
   Delivered = 2,
 }
 
-export interface ShipmentLineDto {
+interface ShipmentLineDto {
   readonly orderItemId: string;
   readonly quantity: number;
 }
@@ -21,8 +21,6 @@ export interface ShipmentDto {
   readonly items: readonly ShipmentLineDto[];
 }
 
-export type ShipmentSummary = ShipmentDto;
-
 export interface DispatchShipmentRequest {
   readonly orderVersion: string;
   readonly operationId: string;
@@ -39,7 +37,7 @@ export interface DeliverShipmentRequest {
   readonly operationId: string;
 }
 
-export interface ShippableOrderItem {
+interface ShippableOrderItem {
   readonly id: string;
   readonly name: string;
   readonly sku: string;

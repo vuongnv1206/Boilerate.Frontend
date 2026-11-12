@@ -24,7 +24,7 @@ export interface OutboxFilter extends PaginationParams {
   readonly size?: number;
 }
 
-export interface OutboxStatusOption {
+interface OutboxStatusOption {
   readonly label: string;
   readonly value: OutboxMessageStatus | null;
 }

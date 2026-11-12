@@ -8,7 +8,7 @@ export async function startLivePreview({ backendUrl, port = 0 }) {
   if (backend.protocol !== 'http:' || backend.hostname !== '127.0.0.1') {
     throw new Error('The live preview only proxies its isolated loopback backend.');
   }
-  const root = resolve(import.meta.dirname, '../dist/boilerate-admin/browser');
+  const root = resolve(import.meta.dirname, '../dist/boilerate-frontend/browser');
   await stat(resolve(root, 'index.html'));
   const mime = {
     '.html': 'text/html; charset=utf-8',

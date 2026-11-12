@@ -3,10 +3,6 @@ export interface LoginRequest {
   readonly password: string;
 }
 
-export interface OAuthTokenRequest {
-  readonly idToken: string;
-}
-
 export interface TokenResponse {
   readonly userId: string;
   readonly token: string;
@@ -21,9 +17,4 @@ export interface ExternalTokenWire {
   readonly refreshTokenExpiryTime?: string;
   readonly sessionId: string;
   readonly accessTokenExpiresAt: string;
-}
-
-export interface AuthorizationContext {
-  readonly permissions: readonly string[];
-  readonly isCentralAdmin: boolean;
 }

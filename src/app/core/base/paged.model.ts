@@ -16,7 +16,7 @@ export interface PageWire<T> {
 }
 
 /** Outbox Backend OutboxMessagePageDto(Total, Page, Size, Items) */
-export interface OutboxPageWire<T> {
+interface OutboxPageWire<T> {
   readonly total: number;
   readonly page: number;
   readonly size: number;

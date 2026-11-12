@@ -6,7 +6,7 @@ import { RUNTIME_CONFIG } from '../config/runtime-config.token';
 import { isApiRequestUrl } from './api-url';
 import { normalizeApiError } from './normalize-api-error';
 
-export const SKIP_API_ERROR_NORMALIZATION = new HttpContextToken<boolean>(() => false);
+const SKIP_API_ERROR_NORMALIZATION = new HttpContextToken<boolean>(() => false);
 
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   const config = inject(RUNTIME_CONFIG);

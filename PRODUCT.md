@@ -2,7 +2,7 @@
 
 Ứng dụng thương mại một cửa hàng dành cho **chủ shop, nhân viên vận hành** (`/admin`) và **khách mua hàng** (`/shop`). Khu vực quản trị ưu tiên tra cứu nhanh, mật độ dữ liệu rõ ràng và chỉnh sửa bản ghi ngay trong cùng ngữ cảnh; cửa hàng công khai ưu tiên tôn vinh sản phẩm, hình ảnh và hành trình đặt mua mạch lạc.
 
-> Tiến độ chi tiết, tài liệu từng phân hệ và kết quả kiểm chứng hiện hành được quản lý tập trung tại [../docs/README.md](../docs/README.md), [../docs/overview/roadmap.md](../docs/overview/roadmap.md) và [../docs/history/verification-summary.md](../docs/history/verification-summary.md).
+> Tiến độ chi tiết, tài liệu từng phân hệ và kết quả kiểm chứng hiện hành được quản lý tập trung tại [../docs/README.md](../docs/README.md), [../docs/overview/roadmap.md](../docs/overview/roadmap.md) và [../docs/history/changelog.md](../docs/history/changelog.md).
 
 ## Nguyên tắc Trải nghiệm Sản phẩm
 

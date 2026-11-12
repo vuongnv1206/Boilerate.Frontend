@@ -48,22 +48,6 @@ export interface CategoryProductResult {
   readonly included: boolean;
 }
 
-export interface CategoryParentOption {
-  readonly id: string;
-  readonly label: string;
-}
-
-export interface CategoryProductIssue {
-  readonly id: string;
-  readonly name: string;
-  readonly message: string;
-}
-
-export interface PendingCategoryDuplicate {
-  readonly id: string;
-  readonly changes: readonly { readonly productId: string; readonly version: string }[];
-}
-
 export const CATEGORY_LIMITS = {
   name: 256,
   slug: 200,
@@ -74,7 +58,7 @@ export const CATEGORY_PAGE_SIZE = 20;
 export const CATEGORY_SEARCH_DELAY_MS = 180;
 export const CATEGORY_SLUG_PATTERN = /^[a-zA-Z0-9-]+$/u;
 
-export type CategoryForm = ReturnType<typeof createCategoryForm>;
+type CategoryForm = ReturnType<typeof createCategoryForm>;
 
 export function createCategoryForm() {
   return new FormGroup({

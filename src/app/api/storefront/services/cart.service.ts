@@ -27,7 +27,7 @@ import {
 import { CheckoutRequest, CheckoutWireRequest, OrderDto } from '../models/checkout.dto';
 import { ProductFulfillmentKind } from '../models/storefront.dto';
 
-export type StorefrontCartBadgeReader = StorefrontCartBadge;
+type StorefrontCartBadgeReader = StorefrontCartBadge;
 
 @Injectable({ providedIn: 'root' })
 export class CartService extends BaseApiService implements StorefrontCartBadgeReader {

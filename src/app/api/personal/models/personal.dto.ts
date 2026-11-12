@@ -1,8 +1,6 @@
-import { AbstractControl, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
-
 export type AccountTabKey = 'profile' | 'security' | 'sessions' | 'audit';
 
-export interface AccountTabItem {
+interface AccountTabItem {
   readonly key: AccountTabKey;
   readonly label: string;
   readonly icon: string;
@@ -78,50 +76,4 @@ export interface PersonalAuditFilter {
   readonly toDate?: string | null;
   readonly startDate?: string | null;
   readonly endDate?: string | null;
-}
-
-const requiredTrimmed = (maxLength: number) => [
-  Validators.required,
-  Validators.pattern(/\S/u),
-  Validators.maxLength(maxLength),
-];
-
-const matchingNewPasswords: ValidatorFn = (control: AbstractControl) => {
-  const next = control.get('newPassword')?.value;
-  const confirm = control.get('confirmNewPassword')?.value;
-  return next === confirm ? null : { passwordMismatch: true };
-};
-
-export function createPersonalProfileForm() {
-  return new FormGroup({
-    firstName: new FormControl('', { nonNullable: true, validators: requiredTrimmed(75) }),
-    lastName: new FormControl('', { nonNullable: true, validators: requiredTrimmed(75) }),
-    email: new FormControl({ value: '', disabled: true }, { nonNullable: true }),
-    phoneNumber: new FormControl('', { nonNullable: true }),
-    deleteCurrentImage: new FormControl(false, { nonNullable: true }),
-  });
-}
-
-export function createChangePasswordForm() {
-  return new FormGroup(
-    {
-      password: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      newPassword: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.minLength(9)],
-      }),
-      confirmNewPassword: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
-    },
-    { validators: matchingNewPasswords },
-  );
-}
-
-export function createExternalLinkForm() {
-  return new FormGroup({
-    googleIdToken: new FormControl('', { nonNullable: true }),
-    facebookIdToken: new FormControl('', { nonNullable: true }),
-  });
 }

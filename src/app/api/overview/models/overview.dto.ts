@@ -34,7 +34,7 @@ export interface OverviewWork {
   readonly groups: readonly OverviewWorkGroup[];
 }
 
-export interface OverviewFinanceDay {
+interface OverviewFinanceDay {
   readonly date: string;
   readonly received: string;
   readonly refunded: string;
@@ -105,12 +105,12 @@ export interface OverviewSection<T> {
 
 export type OverviewRangePreset = 'today' | '7' | '30' | 'custom';
 
-export interface OverviewSelectOption<T> {
+interface OverviewSelectOption<T> {
   readonly label: string;
   readonly value: T;
 }
 
-export interface OverviewChartBar {
+interface OverviewChartBar {
   readonly date: string;
   readonly receivedX: number;
   readonly receivedY: number;
@@ -125,7 +125,7 @@ export interface OverviewChartBar {
   readonly label: string;
 }
 
-export interface OverviewChart {
+interface OverviewChart {
   readonly zeroY: number;
   readonly netPoints: string;
   readonly bars: readonly OverviewChartBar[];
@@ -137,8 +137,7 @@ export interface OverviewAccessSnapshot {
   readonly stock: string;
 }
 
-export const OVERVIEW_TIME_ZONE = 'Asia/Ho_Chi_Minh';
-export const OVERVIEW_MAX_DAYS = 90;
+const OVERVIEW_MAX_DAYS = 90;
 export const OVERVIEW_MAX_THRESHOLD = 999;
 export const OVERVIEW_PAGE_SIZES = [10, 20, 50] as const;
 
@@ -171,7 +170,7 @@ export const OVERVIEW_WORK_DESCRIPTIONS: Readonly<Record<OverviewWorkKey, string
   'renewal-pending-verification': 'Cần xác minh kết quả thực tế, kể cả khi đơn đã đóng.',
 };
 
-export const OVERVIEW_ORDER_STATUS_LABELS: Readonly<Record<number, string>> = {
+const OVERVIEW_ORDER_STATUS_LABELS: Readonly<Record<number, string>> = {
   1: 'Chờ thanh toán',
   2: 'Chờ xử lý',
   3: 'Đã hủy',
@@ -180,7 +179,7 @@ export const OVERVIEW_ORDER_STATUS_LABELS: Readonly<Record<number, string>> = {
   6: 'Đã đóng',
 };
 
-export const OVERVIEW_RENEWAL_STATUS_LABELS: Readonly<Record<number, string>> = {
+const OVERVIEW_RENEWAL_STATUS_LABELS: Readonly<Record<number, string>> = {
   1: 'Chờ khách nhập tài khoản',
   2: 'Chờ nhận xử lý',
   3: 'Đang xử lý',
@@ -204,7 +203,7 @@ export function overviewToday(now: Date): string {
   return new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
-export function isOverviewDate(value: unknown): value is string {
+function isOverviewDate(value: unknown): value is string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/u.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00Z`);
   return (

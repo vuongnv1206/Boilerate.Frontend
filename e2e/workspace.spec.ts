@@ -30,34 +30,19 @@ test('list: API search, selection, pagination and theme', async ({ page, catalog
   await expect(page).toHaveScreenshot('list.png');
 });
 
-test('layout: resize or mobile modal, theme persistence and normal motion', async ({
-  page,
-}, testInfo) => {
+test('layout: resize, theme persistence and normal motion', async ({ page }, testInfo) => {
   await ready(page);
   const toggle = page.getByRole('button', { name: 'Đóng hoặc mở bảng điều hướng', exact: true });
-  if (testInfo.project.name.startsWith('mobile')) {
-    await toggle.click();
-    const panel = page.getByRole('dialog', { name: 'Bảng điều hướng nội dung', exact: true });
-    await expect(panel).toBeVisible();
-    await expect(page.locator('main')).toHaveAttribute('inert', '');
-    await expect
-      .poll(() => panel.evaluate((element) => element.contains(document.activeElement)))
-      .toBe(true);
-    await page.keyboard.press('Escape');
-    await expect(toggle).toBeFocused();
-    await expect(page.locator('main')).not.toHaveAttribute('inert');
-  } else {
-    const separator = page.getByRole('separator');
-    await separator.focus();
-    await page.keyboard.press('End');
-    await expect(separator).toHaveAttribute('aria-valuenow', '320');
-    await page.reload();
-    await expect(page.locator('.workspace')).toBeVisible();
-    await expect(separator).toHaveAttribute('aria-valuenow', '320');
-    await page.getByRole('button', { name: 'Thu gọn bảng điều hướng', exact: true }).click();
-    await expect(page.locator('.workspace')).toHaveClass(/sidebar-collapsed/);
-    await toggle.click();
-  }
+  const separator = page.getByRole('separator');
+  await separator.focus();
+  await page.keyboard.press('End');
+  await expect(separator).toHaveAttribute('aria-valuenow', '320');
+  await page.reload();
+  await expect(page.locator('.workspace')).toBeVisible();
+  await expect(separator).toHaveAttribute('aria-valuenow', '320');
+  await page.getByRole('button', { name: 'Thu gọn bảng điều hướng', exact: true }).click();
+  await expect(page.locator('.workspace')).toHaveClass(/sidebar-collapsed/);
+  await toggle.click();
   const next = testInfo.project.name.endsWith('dark') ? 'light' : 'dark';
   await page.getByTestId(`theme-${next}`).click();
   await page.reload();

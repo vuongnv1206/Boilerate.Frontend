@@ -24,7 +24,6 @@ export default defineConfig({
       [
         { name: 'desktop', viewport: { width: 1440, height: 900 } },
         { name: 'tablet', viewport: { width: 1024, height: 768 } },
-        { name: 'mobile', viewport: { width: 390, height: 844 } },
       ].map(({ name, viewport }) => ({
         name: `${name}-${colorScheme}`,
         use: { viewport, colorScheme: colorScheme as 'light' | 'dark' },

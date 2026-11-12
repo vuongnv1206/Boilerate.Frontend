@@ -7,7 +7,7 @@ import { ApiError } from '../http/api-error';
 import { normalizeApiError } from '../http/normalize-api-error';
 import { IdempotentActionTracker } from '../http/operation-id';
 
-export interface RunRequestOptions<T> {
+interface RunRequestOptions<T> {
   readonly busy?: WritableSignal<boolean>;
   readonly successMessage?: string;
   readonly toastOnError?: boolean;

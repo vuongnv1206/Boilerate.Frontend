@@ -27,7 +27,7 @@ export interface RenewalDto {
   readonly verifiedExpiresAtUtc: string | null;
 }
 
-export interface RenewalAttemptDto {
+interface RenewalAttemptDto {
   readonly id: string;
   readonly operationId: string;
   readonly startedBy: string;
@@ -115,9 +115,9 @@ export type RenewalCommand =
 
 export type RenewalCommandFailure = 'rejected' | 'uncertain' | null;
 
-export type RenewalStatusBadgeTone = 'success' | 'warning' | 'neutral' | 'muted';
+type RenewalStatusBadgeTone = 'success' | 'warning' | 'neutral' | 'muted';
 
-export interface RenewalOrderItemSnapshot {
+interface RenewalOrderItemSnapshot {
   readonly id: string;
   readonly name: string;
   readonly sku: string;
@@ -175,9 +175,10 @@ export const RENEWAL_OUTCOME_LABELS: Readonly<Record<RenewalOutcome, string>> = 
   [RenewalOutcome.NotApplied]: 'Chưa gia hạn',
 };
 
-export const RENEWAL_STATUS_OPTIONS = Object.entries(RENEWAL_STATUS_LABELS).map(
-  ([value, label]) => ({ value: Number(value) as RenewalStatus, label }),
-);
+const RENEWAL_STATUS_OPTIONS = Object.entries(RENEWAL_STATUS_LABELS).map(([value, label]) => ({
+  value: Number(value) as RenewalStatus,
+  label,
+}));
 
 export const RENEWAL_STATUS_FILTER_OPTIONS = [
   { value: '', label: 'Mọi trạng thái' },

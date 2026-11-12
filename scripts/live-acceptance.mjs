@@ -69,7 +69,7 @@ async function command(command_, arguments_, options) {
   }
 }
 async function frontendBuildEvidence() {
-  const directory = resolve(frontend, 'dist/boilerate-admin/browser');
+  const directory = resolve(frontend, 'dist/boilerate-frontend/browser');
   const entries = await readdir(directory, { withFileTypes: true });
   const names = entries
     .filter(
