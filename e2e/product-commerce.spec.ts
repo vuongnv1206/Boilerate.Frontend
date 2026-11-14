@@ -298,8 +298,8 @@ test('discarding an unsaved option axis keeps the saved variants in the editor d
 
   await addOption(page, 'Màu sắc', ['Đỏ', 'Xanh']);
   await page.locator('.wf-option-summary').filter({ hasText: 'Màu sắc' }).click();
-  await page.getByRole('button', { name: 'Xóa nhóm lựa chọn', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Xóa nhóm lựa chọn');
+  await page.getByRole('button', { name: 'Xóa nhóm phân loại', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Xóa nhóm phân loại');
   await page.getByRole('button', { name: 'Xóa nhóm', exact: true }).click();
   await expect(page.locator('.wf-option-summary')).toHaveCount(0);
   await expect(page.locator('.wf-single-variant')).toBeVisible();
@@ -336,13 +336,17 @@ test('confirms removal of generated variants when deleting an option value or gr
 
   await page.locator('.wf-option-summary').filter({ hasText: 'Màu sắc' }).click();
   const blueChip = page.locator('.wf-option-chip').filter({ hasText: 'Xanh' });
-  await blueChip.getByRole('button', { name: 'Tùy chọn Xanh', exact: true }).click();
+  await blueChip.getByRole('button', { name: 'Thao tác với Xanh', exact: true }).click();
   await blueChip.getByRole('button', { name: 'Xóa', exact: true }).click();
   await page.getByRole('button', { name: 'Xong', exact: true }).click();
+  // Dropping a value drops its variant, so the editor asks first and changes nothing until then.
+  await expect(page.getByRole('alert')).toContainText('sẽ xóa 1 biến thể');
+  await expect(page.locator('.wf-variant-row')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Xóa biến thể', exact: true }).click();
   await expect(page.locator('.wf-variant-row')).toHaveCount(1);
 
   await page.locator('.wf-option-summary').filter({ hasText: 'Màu sắc' }).click();
-  await page.getByRole('button', { name: 'Xóa nhóm lựa chọn', exact: true }).click();
+  await page.getByRole('button', { name: 'Xóa nhóm phân loại', exact: true }).click();
   await page.getByRole('button', { name: 'Xóa nhóm', exact: true }).click();
   await expect(page.locator('.wf-option-summary')).toHaveCount(0);
   await expect(page.locator('.wf-single-variant')).toBeVisible();

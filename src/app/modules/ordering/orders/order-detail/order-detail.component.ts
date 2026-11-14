@@ -33,9 +33,8 @@ import {
   OrderPaymentStatus,
   OrderStatus,
   PRODUCT_FULFILLMENT_OPTIONS,
-  orderListQueryParams,
-  readOrderListQuery,
 } from '@api/ordering/models/order.dto';
+import { orderListQueryParams, readOrderListQuery } from '@api/ordering/models/order.util';
 import { OrdersService } from '@api/ordering/services/orders.service';
 import { OrdersWorkspace } from '../orders-workspace.component';
 

@@ -221,6 +221,10 @@
                 aria-labelledby="product-fields-title"
               >
                 <h2 id="product-fields-title">Thuộc tính sản phẩm</h2>
+                <p class="wf-help">
+                  Thuộc tính mô tả sản phẩm và do Loại sản phẩm quy định. Thuộc tính không tạo biến
+                  thể; thứ khách phải chọn khi mua thì khai báo ở mục Phân loại.
+                </p>
                 @for (field of visibleFields(); track field.id) {
                   @if (form.controls.fields.controls[field.id]; as control) {
                     <div class="field">

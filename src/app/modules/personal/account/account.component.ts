@@ -70,8 +70,8 @@ export class AccountComponent extends BaseComponent implements OnInit {
   readonly conflict = signal(false);
   readonly summaryErrors = signal<readonly string[]>([]);
   readonly activeTab = signal<AccountTabKey>('profile');
-  readonly canViewAudit = computed(() => this.can('Users', 'View'));
-  readonly canExportAudit = computed(() => this.can('Users', 'Export'));
+  readonly canViewAudit = computed(() => this.can('User', 'View'));
+  readonly canExportAudit = computed(() => this.can('User', 'Export'));
   readonly visibleTabs = computed(() =>
     ACCOUNT_TABS.filter((tab) => !tab.requiresAuditView || this.canViewAudit()),
   );

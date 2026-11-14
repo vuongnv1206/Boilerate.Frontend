@@ -1,4 +1,4 @@
-﻿import { Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { Params } from '@angular/router';
 import { Observable } from 'rxjs';
 import { BaseRouteListComponent } from '@core/base/base-route-list.component';
@@ -10,10 +10,12 @@ import {
   OrderListQuery,
   OrderPage,
   OrderSummary,
+} from '@api/ordering/models/order.dto';
+import {
   orderListQueryParams,
   orderStatusTone,
   readOrderListQuery,
-} from '@api/ordering/models/order.dto';
+} from '@api/ordering/models/order.util';
 import { OrdersService } from '@api/ordering/services/orders.service';
 
 @Component({

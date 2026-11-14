@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component,
   OnInit,
   computed,
@@ -17,8 +17,8 @@ import {
   OverviewSection,
   OverviewStock,
   OverviewStockQueryInput,
-  getOverviewStockKindLabel,
 } from '@api/overview/models/overview.dto';
+import { getOverviewStockKindLabel } from '@api/overview/models/overview.util';
 
 @Component({
   selector: 'app-overview-stock-panel',

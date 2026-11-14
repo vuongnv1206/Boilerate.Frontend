@@ -22,9 +22,11 @@ import {
   InventoryVariantSummary,
   MAX_STOCK_QUANTITY,
   StockMovementDto,
+} from '@api/inventory/models/inventory.dto';
+import {
   createDigitalContentForm,
   createInventoryAdjustmentForm,
-} from '@api/inventory/models/inventory.dto';
+} from '@api/inventory/models/inventory.util';
 import { DigitalInventoryService } from '@api/inventory/services/digital-inventory.service';
 import { InventoryService } from '@api/inventory/services/inventory.service';
 

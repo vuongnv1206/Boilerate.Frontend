@@ -13,10 +13,12 @@ import {
   NotificationBadgeTone,
   NotificationDto,
   NotificationFilter,
+} from '@api/notifications/models/notification.dto';
+import {
   notificationTypeLabel,
   notificationTypeTone,
   resolveNotificationUrl,
-} from '@api/notifications/models/notification.dto';
+} from '@api/notifications/models/notification.util';
 import { NotificationsService } from '@api/notifications/services/notifications.service';
 
 @Component({

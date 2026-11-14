@@ -1,4 +1,4 @@
-﻿import { Component, DestroyRef, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -116,7 +116,7 @@ export class MyOrdersComponent implements OnInit {
       case OrderFulfillmentStatus.Completed:
         return 'Giao thành công';
       case OrderFulfillmentStatus.NeedsReview:
-        return 'Cần kiểm tra';
+        return 'Đang xử lý';
       case OrderFulfillmentStatus.Stopped:
         return 'Đã dừng';
       default:

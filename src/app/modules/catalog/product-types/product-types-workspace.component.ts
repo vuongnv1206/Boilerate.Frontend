@@ -6,7 +6,8 @@ import { BaseComponent } from '@core/base/base.component';
 import { ApiError } from '@core/http/api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { sameQueryParams } from '@core/base/query-params.util';
-import { ListQuery, listQueryParams, readListQuery } from '@api/catalog/models/product.dto';
+import { ListQuery } from '@api/catalog/models/product.dto';
+import { listQueryParams, readListQuery } from '@api/catalog/models/product.util';
 import {
   PRODUCT_TYPE_PAGE_SIZE,
   PRODUCT_TYPE_SEARCH_DELAY_MS,

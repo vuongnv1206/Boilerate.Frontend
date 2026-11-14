@@ -7,6 +7,7 @@ import {
   Injector,
   Optional,
   afterNextRender,
+  isDevMode,
   computed,
   signal,
   viewChild,
@@ -54,6 +55,7 @@ export class AdminShell {
   private helpOpenedFromMobile = false;
 
   // Business variables
+  readonly devMode = isDevMode();
   readonly themeModes = ADMIN_THEME_OPTIONS;
   readonly layout = ADMIN_LAYOUT;
   readonly isMobile = signal(this.mobileQuery.matches);

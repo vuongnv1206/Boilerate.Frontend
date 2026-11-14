@@ -144,11 +144,20 @@
                       <span class="cart-item-mark"><ui-icon name="box" [size]="18" /></span>
                       <span class="item-name">{{ item.name }}</span>
                       <span class="item-sku">SKU: {{ item.sku }}</span>
+                      @if (!item.isAvailable) {
+                        <span class="item-unavailable">Tạm thời không khả dụng</span>
+                      }
                       @if (item.isDigital) {
                         <span class="item-digital-tag">Sản phẩm số · thanh toán chuyển khoản</span>
                       }
                     </td>
-                    <td class="col-price">{{ item.unitPrice | number: '1.0-0' }} ₫</td>
+                    <td class="col-price">
+                      @if (item.unitPrice !== null) {
+                        {{ item.unitPrice | number: '1.0-0' }} ₫
+                      } @else {
+                        —
+                      }
+                    </td>
                     <td class="col-qty">
                       <div class="qty-control" [attr.aria-label]="'Số lượng ' + item.name">
                         <button
@@ -173,7 +182,11 @@
                       </div>
                     </td>
                     <td class="col-total">
-                      {{ item.unitPrice * item.quantity | number: '1.0-0' }} ₫
+                      @if (item.unitPrice !== null) {
+                        {{ item.unitPrice * item.quantity | number: '1.0-0' }} ₫
+                      } @else {
+                        —
+                      }
                     </td>
                     <td class="col-action">
                       <button

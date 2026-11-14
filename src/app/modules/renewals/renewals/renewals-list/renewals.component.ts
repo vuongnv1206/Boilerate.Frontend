@@ -6,8 +6,8 @@ import {
   RENEWAL_STATUS_FILTER_OPTIONS,
   RENEWAL_STATUS_LABELS,
   RenewalStatus,
-  renewalStatusTone,
 } from '@api/renewals/models/renewal.dto';
+import { renewalStatusTone } from '@api/renewals/models/renewal.util';
 import { RenewalsWorkspace } from '../renewals-workspace.component';
 
 @Component({

@@ -920,3 +920,85 @@ test('lost checkout response requires an explicit retry with the same operation 
   expect(requests[1]).toEqual(requests[0]);
   expect(requests[0]?.['operationId']).toMatch(/^[0-9a-f-]{36}$/);
 });
+
+test('an unknown shop URL shows a not-found page instead of the staff login', async ({ page }) => {
+  await installStorefront(page, 'physical', () => undefined);
+  await page.goto('/shop/khong-co-trang-nay');
+  await expect(page.getByText('Không tìm thấy trang', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/shop\/khong-co-trang-nay$/u);
+  await expect(page.getByRole('link', { name: 'Về cửa hàng', exact: true })).toHaveAttribute(
+    'href',
+    '/shop/products',
+  );
+});
+
+test('a guest names the account to renew on their own paid order', async ({ page }) => {
+  await page.route('**/api/storefront/cart', (route) =>
+    route.fulfill({ json: cartDto('physical', [], 1) }),
+  );
+  await page.route('**/api/storefront/access/me', (route) =>
+    route.fulfill({ json: { email: 'buyer@example.test' } }),
+  );
+  await page.route('**/api/storefront/settings', (route) =>
+    route.fulfill({ json: { bankTransferEnabled: false } }),
+  );
+  const order = {
+    id: 'renewal-order',
+    number: 'RENEW-1',
+    version: 'v1',
+    status: 2,
+    paymentStatus: 2,
+    fulfillmentStatus: 3,
+    paymentMethod: 2,
+    total: 100000,
+    subtotal: 100000,
+    discountAmount: 0,
+    shippingAmount: 0,
+    currency: 'VND',
+    createdOn: '2026-11-01T00:00:00Z',
+    recipientName: 'Nguyễn Văn Khách',
+    email: 'buyer@example.test',
+    phone: '0900000000',
+    items: [],
+    physicalDispatchStarted: false,
+  };
+  await page.route('**/api/storefront/orders/renewal-order', (route) =>
+    route.fulfill({ json: order }),
+  );
+  await page.route('**/api/storefront/orders/renewal-order/shipments', (route) =>
+    route.fulfill({ json: [] }),
+  );
+  await page.route('**/api/storefront/orders/renewal-order/digital-deliveries', (route) =>
+    route.fulfill({ json: [] }),
+  );
+  const renewal = {
+    id: 'renewal-1',
+    orderId: order.id,
+    orderItemId: 'item-1',
+    version: 'r1',
+    status: 1,
+    name: 'Gói gia hạn 30 ngày',
+    sku: 'RENEW-30',
+    optionDescription: '',
+    quantity: 1,
+    targetPreview: null as string | null,
+    completedAtUtc: null,
+    verifiedExpiresAtUtc: null,
+  };
+  let submitted: Record<string, unknown> | null = null;
+  await page.route('**/api/storefront/orders/renewal-order/renewals', (route) =>
+    route.fulfill({ json: [renewal] }),
+  );
+  await page.route('**/api/storefront/orders/renewal-order/renewals/renewal-1/target', (route) => {
+    submitted = route.request().postDataJSON() as Record<string, unknown>;
+    return route.fulfill({
+      json: { ...renewal, version: 'r2', status: 2, targetPreview: '***t-01' },
+    });
+  });
+
+  await page.goto('/shop/orders/renewal-order');
+  await page.getByLabel('Email hoặc ID tài khoản cần gia hạn').fill('guest-account-01');
+  await page.locator('#customer-renewal-target-renewal-1').press('Enter');
+  await expect(page.getByText('***t-01')).toBeVisible();
+  expect(submitted).toMatchObject({ version: 'r1', accountIdentifier: 'guest-account-01' });
+});

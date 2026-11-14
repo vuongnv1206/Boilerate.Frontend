@@ -28,10 +28,12 @@ import {
   RenewalOutcome,
   RenewalStatus,
   VerifyRenewalRequest,
+} from '@api/renewals/models/renewal.dto';
+import {
   readRenewalListQuery,
   renewalListQueryParams,
   renewalStatusTone,
-} from '@api/renewals/models/renewal.dto';
+} from '@api/renewals/models/renewal.util';
 import { RenewalsService } from '@api/renewals/services/renewals.service';
 import { RenewalsWorkspace } from '../renewals-workspace.component';
 

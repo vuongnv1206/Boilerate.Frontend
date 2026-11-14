@@ -12,10 +12,12 @@ import {
   OutboxFilter,
   OutboxMessageDto,
   OutboxMessageStatus,
+} from '@api/outbox/models/outbox.dto';
+import {
   normalizeOutboxStatus,
   outboxStatusLabel,
   outboxStatusTone,
-} from '@api/outbox/models/outbox.dto';
+} from '@api/outbox/models/outbox.util';
 import { OutboxService } from '@api/outbox/services/outbox.service';
 
 @Component({

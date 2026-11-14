@@ -104,14 +104,6 @@ export const SYSTEM_LINKS: readonly ProtectedNavigationLink[] = [
     centralAdmin: true,
   },
   {
-    key: 'function-groups',
-    label: 'Nhóm chức năng',
-    icon: 'folder',
-    path: '/admin/system/function-groups',
-    permission: { functionCode: 'Function', actionCode: 'View' },
-    centralAdmin: true,
-  },
-  {
     key: 'functions',
     label: 'Chức năng',
     icon: 'layers',

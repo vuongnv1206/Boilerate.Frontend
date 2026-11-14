@@ -44,9 +44,10 @@ export interface GuestCartItem {
   readonly productId: string;
   readonly name: string;
   readonly sku: string;
-  readonly unitPrice: number;
+  readonly unitPrice: number | null;
   readonly quantity: number;
   readonly isDigital: boolean;
+  readonly isAvailable: boolean;
 }
 
 export interface AddCartItemInput {

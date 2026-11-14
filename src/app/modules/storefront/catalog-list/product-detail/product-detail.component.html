@@ -119,10 +119,14 @@
                       type="button"
                       class="option-chip"
                       [class.selected]="selectedOptions()[opt.id] === val.id"
+                      [class.unavailable]="!isBuyable(opt.id, val.id)"
                       [attr.aria-pressed]="selectedOptions()[opt.id] === val.id"
                       (click)="onSelectOption(opt.id, val.id)"
                     >
                       {{ val.label }}
+                      @if (!isBuyable(opt.id, val.id)) {
+                        <span class="sr-only">(hết hàng)</span>
+                      }
                     </button>
                   }
                 </div>
@@ -206,6 +210,20 @@
           <div class="product-description">
             <h2>Mô tả sản phẩm</h2>
             <p>{{ product.description }}</p>
+          </div>
+        }
+
+        @if (attributes().length) {
+          <div class="product-description product-attributes">
+            <h2>Thuộc tính sản phẩm</h2>
+            <dl>
+              @for (attribute of attributes(); track attribute.label) {
+                <div>
+                  <dt>{{ attribute.label }}</dt>
+                  <dd>{{ attribute.text }}</dd>
+                </div>
+              }
+            </dl>
           </div>
         }
       </section>

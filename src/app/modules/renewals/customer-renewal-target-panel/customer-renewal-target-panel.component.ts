@@ -5,12 +5,8 @@ import { BaseComponent } from '@core/base/base.component';
 import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import { SecretReveal } from '@shared/ui/secret-reveal/secret-reveal.component';
-import {
-  RENEWAL_STATUS_LABELS,
-  RenewalDto,
-  RenewalStatus,
-  renewalStatusTone,
-} from '@api/renewals/models/renewal.dto';
+import { RENEWAL_STATUS_LABELS, RenewalDto, RenewalStatus } from '@api/renewals/models/renewal.dto';
+import { renewalStatusTone } from '@api/renewals/models/renewal.util';
 import { RenewalsService } from '@api/renewals/services/renewals.service';
 
 @Component({

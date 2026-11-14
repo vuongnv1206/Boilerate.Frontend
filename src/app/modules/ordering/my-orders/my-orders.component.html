@@ -116,7 +116,7 @@
                 [class.unpaid]="order.paymentStatus === 1"
               >
                 <ui-icon [name]="order.paymentStatus === 2 ? 'check' : 'clock'" [size]="13" />
-                {{ order.paymentStatus === 2 ? 'Đã thanh toán' : 'Chưa thanh toán' }}
+                {{ order.paymentStatus === 2 ? 'Đã thanh toán' : 'Chờ thanh toán' }}
               </span>
               <span class="fulfillment-badge">
                 {{ getFulfillmentStatusLabel(order.fulfillmentStatus) }}

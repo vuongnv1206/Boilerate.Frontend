@@ -1,4 +1,4 @@
-﻿import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,12 +15,14 @@ import {
   RoleDto,
   RolePermissionGroupView,
   RoleSectionTab,
+} from '@api/identity/models/identity.dto';
+import {
   actionKeys,
   groupActions,
   matchingFunctions,
   permissionKey,
   permissionPairs,
-} from '@api/identity/models/identity.dto';
+} from '@api/identity/models/identity.util';
 import { AuthorizationRefresh } from '@api/identity/services/authorization-refresh.service';
 import { CapabilitiesService } from '@api/identity/services/capabilities.service';
 import { RolesService } from '@api/identity/services/roles.service';

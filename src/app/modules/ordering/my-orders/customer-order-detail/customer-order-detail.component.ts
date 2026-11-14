@@ -1,4 +1,4 @@
-﻿import { Component, DestroyRef, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -15,9 +15,11 @@ import {
   OrderFulfillmentStatus,
   OrderPaymentStatus,
   OrderStatus,
+} from '@api/ordering/models/order.dto';
+import {
   customerOrderDetailFulfillmentLabel,
   customerOrderStatusLabel,
-} from '@api/ordering/models/order.dto';
+} from '@api/ordering/models/order.util';
 import { OrdersService } from '@api/ordering/services/orders.service';
 
 @Component({

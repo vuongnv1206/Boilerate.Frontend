@@ -2,6 +2,15 @@ import { Routes } from '@angular/router';
 import { permissionGuard } from '@core/auth/permission.guard';
 import { unsavedChangesGuard } from '@shared/guards/unsaved-changes.guard';
 
+/** Any URL no screen answers to, inside the shop or outside it. */
+export const NOT_FOUND_ROUTES: Routes = [
+  {
+    path: '**',
+    title: 'Không tìm thấy trang',
+    loadComponent: () => import('./not-found/not-found.component').then((m) => m.NotFoundComponent),
+  },
+];
+
 export const STOREFRONT_SHOP_ROUTES: Routes = [
   {
     path: '',
@@ -31,6 +40,7 @@ export const STOREFRONT_SHOP_ROUTES: Routes = [
         (m) => m.CheckoutPageComponent,
       ),
   },
+  ...NOT_FOUND_ROUTES,
 ];
 
 export const STOREFRONT_SETTINGS_ROUTES: Routes = [

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { AuthSession } from '@core/auth/auth-session';
 import { ApiService } from '@core/http/api.service';
 import {
   ClaimRenewalRequest,
@@ -20,7 +21,10 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class RenewalsService {
-  constructor(private readonly api: ApiService) {}
+  constructor(
+    private readonly api: ApiService,
+    private readonly session: AuthSession,
+  ) {}
 
   list(
     page: number,
@@ -97,7 +101,7 @@ export class RenewalsService {
 
   getCustomerOrderRenewals(orderId: string): Observable<readonly RenewalDto[]> {
     return this.api.get<readonly RenewalDto[]>(
-      `orders/${encodeURIComponent(orderId)}/renewals`,
+      `${this.buyerOrders()}/${encodeURIComponent(orderId)}/renewals`,
       undefined,
       { withCredentials: true },
     );
@@ -109,7 +113,7 @@ export class RenewalsService {
     body: SubmitRenewalTargetRequest,
   ): Observable<RenewalDto> {
     return this.api.put<RenewalDto>(
-      `orders/${encodeURIComponent(orderId)}/renewals/${encodeURIComponent(renewalId)}/target`,
+      `${this.buyerOrders()}/${encodeURIComponent(orderId)}/renewals/${encodeURIComponent(renewalId)}/target`,
       body,
       { withCredentials: true },
     );
@@ -117,9 +121,14 @@ export class RenewalsService {
 
   revealCustomerTarget(orderId: string, renewalId: string): Observable<RevealedRenewalTargetDto> {
     return this.api.get<RevealedRenewalTargetDto>(
-      `orders/${encodeURIComponent(orderId)}/renewals/${encodeURIComponent(renewalId)}/target`,
+      `${this.buyerOrders()}/${encodeURIComponent(orderId)}/renewals/${encodeURIComponent(renewalId)}/target`,
       undefined,
       { withCredentials: true },
     );
+  }
+
+  /** A signed-in customer and a guest with a verified email reach their orders on different paths. */
+  private buyerOrders(): string {
+    return this.session.signedIn() ? 'orders' : 'storefront/orders';
   }
 }

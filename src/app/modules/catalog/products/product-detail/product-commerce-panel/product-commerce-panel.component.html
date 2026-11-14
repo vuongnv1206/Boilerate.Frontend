@@ -38,10 +38,11 @@
     }
   }
   <section class="wf-options-section">
-    <h2 id="product-commerce-title">Lựa chọn</h2>
+    <h2 id="product-commerce-title">Phân loại</h2>
     <p class="wf-help">
-      Các lựa chọn giúp bán nhiều phiên bản của cùng sản phẩm, như màu sắc hoặc kích cỡ. Mỗi tổ hợp
-      tạo thành một biến thể trong bảng bên dưới.
+      Phân loại là thứ khách phải chọn khi mua, như màu sắc hoặc kích cỡ. Mỗi tổ hợp giá trị tạo
+      thành một biến thể có giá, SKU và tồn kho riêng trong bảng bên dưới. Thông tin chỉ để mô tả
+      thì nhập ở mục Thuộc tính sản phẩm.
     </p>
     <div class="wf-option-sets">
       @for (option of options(); track option; let index = $index) {
@@ -76,23 +77,44 @@
           [disabled]="options().length >= optionLimit || !canWrite() || catalogBusy()"
           (click)="addOption()"
         >
-          <ui-icon name="plus" [size]="13" />Thêm nhóm lựa chọn
+          <ui-icon name="plus" [size]="13" />Thêm nhóm phân loại
         </button>
         <span>
-          Còn {{ options().length < optionLimit ? optionLimit - options().length : 0 }} nhóm lựa
-          chọn
+          Còn {{ options().length < optionLimit ? optionLimit - options().length : 0 }} nhóm phân
+          loại
         </span>
       </div>
     </div>
   </section>
   @if (pendingOptionRemoval() !== null) {
     <div class="wf-inline-confirm" role="alert">
-      <p>Xóa nhóm lựa chọn và các tổ hợp liên quan? Thay đổi có hiệu lực khi lưu sản phẩm.</p>
+      <p>
+        Xóa nhóm phân loại này?
+        @if (removalImpact() > 0) {
+          {{ removalImpact() }} biến thể sẽ được gộp vào biến thể còn lại cùng tổ hợp; giá, SKU và
+          tồn kho của biến thể được giữ không đổi.
+        }
+        Thay đổi có hiệu lực khi lưu sản phẩm.
+      </p>
       <button pButton severity="secondary" outlined type="button" (click)="cancelRemoveOption()">
         Hủy
       </button>
       <button pButton severity="danger" outlined type="button" (click)="confirmRemoveOption()">
         Xóa nhóm
+      </button>
+    </div>
+  }
+  @if (pendingValueLoss() > 0) {
+    <div class="wf-inline-confirm" role="alert">
+      <p>
+        Bỏ giá trị này sẽ xóa {{ pendingValueLoss() }} biến thể đang dùng nó, kèm giá và tồn kho của
+        chúng. Thay đổi có hiệu lực khi lưu sản phẩm.
+      </p>
+      <button pButton severity="secondary" outlined type="button" (click)="pendingValueLoss.set(0)">
+        Hủy
+      </button>
+      <button pButton severity="danger" outlined type="button" (click)="finishOption(true)">
+        Xóa biến thể
       </button>
     </div>
   }
@@ -227,7 +249,7 @@
       <div class="wf-option-editor-toolbar">
         <strong>
           <ui-icon name="tag" [size]="13" />
-          {{ optionDraft.controls.name.value || 'Nhóm lựa chọn mới' }}
+          {{ optionDraft.controls.name.value || 'Nhóm phân loại mới' }}
         </strong>
         <div>
           <button
@@ -238,7 +260,7 @@
             iconOnly
             class="wf-icon-button"
             type="button"
-            aria-label="Xóa nhóm lựa chọn"
+            aria-label="Xóa nhóm phân loại"
             (click)="removeCurrentOption()"
           >
             <ui-icon name="trash" [size]="13" />
@@ -263,7 +285,7 @@
         </div>
         <div class="field">
           <label for="option-values">Giá trị</label>
-          <div class="wf-chip-input" role="group" aria-label="Các giá trị nhóm lựa chọn">
+          <div class="wf-chip-input" role="group" aria-label="Các giá trị nhóm phân loại">
             @for (value of optionDraft.controls.values.controls; track value; let index = $index) {
               <span class="wf-option-chip" (dblclick)="renameChip(index); chipInput.focus()">
                 <span>{{ value.controls.label.value }}</span>
@@ -276,7 +298,7 @@
                   size="small"
                   class="wf-chip-menu-button"
                   type="button"
-                  [attr.aria-label]="'Tùy chọn ' + value.controls.label.value"
+                  [attr.aria-label]="'Thao tác với ' + value.controls.label.value"
                   (click)="
                     $event.stopPropagation(); valueMenu.set(valueMenu() === index ? null : index)
                   "

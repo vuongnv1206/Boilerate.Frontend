@@ -18,21 +18,23 @@ import { InventoryBalanceDto, InventoryProductContext } from '@api/inventory/mod
 import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
-  CreateOptionForm,
-  CreateSkuForm,
   PRODUCT_OPTION_LIMIT,
   PRODUCT_VARIANT_LIMIT,
   ProductDto,
-  ProductForm,
   ProductFulfillmentKind,
   ProductMediaDto,
+} from '@api/catalog/models/product.dto';
+import {
+  CreateOptionForm,
+  CreateSkuForm,
+  ProductForm,
   VariantRowSnapshot,
   createOptionForm,
   createOptionValueForm,
   createProductMediaForm,
   createSkuRow,
   generatedCatalogCode,
-} from '@api/catalog/models/product.dto';
+} from '@api/catalog/models/product.util';
 import { MediaService } from '@api/catalog/services/media.service';
 import { ProductMedia } from '../product-media/product-media.component';
 
@@ -67,6 +69,8 @@ export class ProductCommercePanel extends BaseComponent implements OnInit {
   readonly expanded = signal<CreateSkuForm | null>(null);
   readonly editingOption = signal<number | null>(null);
   readonly pendingOptionRemoval = signal<number | null>(null);
+  /** Number of variants the edit in progress would drop; above 0 the user is asked to confirm. */
+  readonly pendingValueLoss = signal(0);
   readonly valueText = signal('');
   readonly valueMenu = signal<number | null>(null);
   readonly renamingValue = signal<number | null>(null);
@@ -192,13 +196,15 @@ export class ProductCommercePanel extends BaseComponent implements OnInit {
 
   cancelOption(): void {
     this.editingOption.set(null);
+    this.pendingValueLoss.set(0);
     this.valueText.set('');
     this.renamingValue.set(null);
     this.valueMenu.set(null);
     this.localError.set('');
   }
 
-  finishOption(): boolean {
+  /** `confirmed` is set by the user accepting that some variants will be dropped. */
+  finishOption(confirmed = false): boolean {
     const index = this.editingOption();
     if (index === null) return true;
     if (this.valueText().trim() && !this.addChip()) return false;
@@ -226,9 +232,19 @@ export class ProductCommercePanel extends BaseComponent implements OnInit {
             this.optionDraft.controls.name.value.trim().toLocaleLowerCase('vi'),
       )
     ) {
-      this.localError.set('Tên nhóm lựa chọn đã có.');
+      this.localError.set('Tên nhóm phân loại đã có.');
       return false;
     }
+    // Removing a value drops the variants that used it: ask before doing that.
+    if (index < this.options().length && !confirmed) {
+      const after = this.options().map((option, i) => (i === index ? this.optionDraft : option));
+      const dropped = this.variantsDropped(after);
+      if (dropped > 0) {
+        this.pendingValueLoss.set(dropped);
+        return false;
+      }
+    }
+    this.pendingValueLoss.set(0);
     this.optionDraft.controls.name.setValue(this.optionDraft.controls.name.value.trim());
     if (index === this.options().length) {
       this.optionDraft.controls.code.setValue(
@@ -340,11 +356,17 @@ export class ProductCommercePanel extends BaseComponent implements OnInit {
     this.form().controls.options.removeAt(index);
     this.pendingOptionRemoval.set(null);
     this.cancelOption();
-    this.regenerate(true);
+    this.regenerate();
   }
 
   cancelRemoveOption(): void {
     this.pendingOptionRemoval.set(null);
+  }
+
+  /** Variants that disappear when the group awaiting removal is removed (the rest are merged). */
+  removalImpact(): number {
+    const index = this.pendingOptionRemoval();
+    return index === null ? 0 : this.variantsDropped(this.options().filter((_, i) => i !== index));
   }
 
   optionSummary(index: number): string {
@@ -540,11 +562,26 @@ export class ProductCommercePanel extends BaseComponent implements OnInit {
     return clone;
   }
 
-  private regenerate(removingAxis = false): void {
-    const rows = [...this.form().controls.variants.controls];
-    const base = rows.find((row) => this.isDefault(row)) ?? rows[0];
-    const baseline = base?.getRawValue();
-    const options = this.options();
+  /** The variant key of a selection: the same values on the same groups, in any order. */
+  private selectionKey(selection: Readonly<Record<string, string>>): string {
+    return JSON.stringify(Object.entries(selection).sort(([a], [b]) => a.localeCompare(b)));
+  }
+
+  /** A variant seen through the given groups: removed groups are dropped, new ones get their first value. */
+  private project(
+    row: CreateSkuForm,
+    options: readonly CreateOptionForm[],
+  ): Record<string, string> {
+    const current = row.controls.options.value;
+    const selection: Record<string, string> = {};
+    for (const option of options) {
+      const code = option.controls.code.value;
+      selection[code] = current[code] ?? option.controls.values.at(0).controls.code.value;
+    }
+    return selection;
+  }
+
+  private combinations(options: readonly CreateOptionForm[]): Record<string, string>[] {
     let selections: Record<string, string>[] = [{}];
     for (const option of options) {
       selections = selections.flatMap((selection) =>
@@ -554,26 +591,41 @@ export class ProductCommercePanel extends BaseComponent implements OnInit {
         })),
       );
     }
-    const key = (selection: Readonly<Record<string, string>>) =>
-      JSON.stringify(Object.entries(selection).sort(([a], [b]) => a.localeCompare(b)));
-    if (!removingAxis) {
-      for (const row of rows) {
-        const selection = { ...row.controls.options.value };
-        for (const option of options) {
-          if (!(option.controls.code.value in selection)) {
-            selection[option.controls.code.value] =
-              option.controls.values.at(0).controls.code.value;
-          }
-        }
-        row.controls.options.setValue(selection, { emitEvent: false });
-      }
+    return selections;
+  }
+
+  /** How many existing variants would not survive if the groups became `options`. */
+  private variantsDropped(options: readonly CreateOptionForm[]): number {
+    const rows = this.form().controls.variants.controls;
+    const wanted = new Set(
+      this.combinations(options).map((selection) => this.selectionKey(selection)),
+    );
+    const kept = new Set(
+      rows
+        .map((row) => this.selectionKey(this.project(row, options)))
+        .filter((key) => wanted.has(key)),
+    );
+    return rows.length - kept.size;
+  }
+
+  /**
+   * Rebuilds the variant table from the groups. An existing variant keeps its price, SKU, images
+   * and stock whenever its combination still exists; variants that collapse into one combination
+   * (a group was removed) are merged into the first of them, the default variant first.
+   */
+  private regenerate(): void {
+    const options = this.options();
+    const rows = [...this.form().controls.variants.controls];
+    const base = rows.find((row) => this.isDefault(row)) ?? rows[0];
+    const baseline = base?.getRawValue();
+    const existing = new Map<string, CreateSkuForm>();
+    for (const row of base ? [base, ...rows.filter((other) => other !== base)] : rows) {
+      const key = this.selectionKey(this.project(row, options));
+      if (!existing.has(key)) existing.set(key, row);
     }
-    const generated = selections.map((selection, index) => {
-      const previous = removingAxis
-        ? !options.length
-          ? base
-          : undefined
-        : rows.find((row) => key(row.controls.options.value) === key(selection));
+
+    const generated = this.combinations(options).map((selection) => {
+      const previous = existing.get(this.selectionKey(selection));
       if (previous) {
         previous.controls.options.setValue(selection, { emitEvent: false });
         return previous;
@@ -589,7 +641,7 @@ export class ProductCommercePanel extends BaseComponent implements OnInit {
             imageMediaId: baseline.imageMediaId,
             images: baseline.images,
             trackInventory: baseline.trackInventory,
-            quantity: removingAxis && index === 0 ? baseline.quantity : 0,
+            quantity: 0,
             weight: baseline.weight,
             width: baseline.width,
             height: baseline.height,

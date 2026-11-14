@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
+import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Params } from '@angular/router';
 import { EMPTY, Observable, catchError, defer, finalize, forkJoin, of, tap } from 'rxjs';
@@ -14,9 +14,8 @@ import {
   ProductStatus,
   ProductSummary,
   ProductTypeLookup,
-  listQueryParams,
-  readProductListQuery,
 } from '@api/catalog/models/product.dto';
+import { listQueryParams, readProductListQuery } from '@api/catalog/models/product.util';
 import { CategoriesService } from '@api/catalog/services/categories.service';
 import { MediaService } from '@api/catalog/services/media.service';
 import { ProductTypesService } from '@api/catalog/services/product-types.service';

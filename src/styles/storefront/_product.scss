@@ -203,6 +203,13 @@
         color: var(--store-accent-ink);
         font-weight: 700;
       }
+
+      // No buyable variant behind this value with the current picks. Still clickable.
+      &.unavailable {
+        border-style: dashed;
+        color: var(--store-muted);
+        text-decoration: line-through;
+      }
     }
 
     .stock-status-box {
@@ -331,6 +338,28 @@
         font-size: 16px;
         line-height: 1.8;
         white-space: pre-line;
+      }
+    }
+
+    .product-attributes dl {
+      margin: 0;
+
+      div {
+        display: grid;
+        grid-template-columns: minmax(120px, 36%) 1fr;
+        gap: 12px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--store-line);
+        font-size: 15px;
+      }
+
+      dt {
+        color: var(--store-muted);
+      }
+
+      dd {
+        margin: 0;
+        color: var(--store-text);
       }
     }
   }

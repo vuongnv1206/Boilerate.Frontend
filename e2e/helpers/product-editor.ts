@@ -15,7 +15,7 @@ export async function addOption(
   name: string,
   values: readonly string[],
 ): Promise<void> {
-  await page.getByRole('button', { name: 'Thêm nhóm lựa chọn', exact: true }).click();
+  await page.getByRole('button', { name: 'Thêm nhóm phân loại', exact: true }).click();
   await page.locator('#option-name').fill(name);
   await setOptionValues(page, values);
   await page.getByRole('button', { name: 'Xong', exact: true }).click();

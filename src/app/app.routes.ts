@@ -131,5 +131,10 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: 'admin' },
+  { path: '', pathMatch: 'full', redirectTo: 'admin' },
+  {
+    path: '**',
+    loadChildren: () =>
+      import('./modules/storefront/storefront.routes').then((m) => m.NOT_FOUND_ROUTES),
+  },
 ];

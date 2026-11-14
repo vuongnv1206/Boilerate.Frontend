@@ -160,8 +160,8 @@
 
     <app-customer-shipments-panel [orderId]="order.id" />
 
+    <app-customer-renewal-target-panel [orderId]="order.id" [paid]="order.paymentStatus === 2" />
     @if (session.signedIn()) {
-      <app-customer-renewal-target-panel [orderId]="order.id" [paid]="order.paymentStatus === 2" />
       <app-customer-after-sales-panel [orderId]="order.id" [orderItems]="order.items" />
     }
 

@@ -23,13 +23,15 @@ import {
   OverviewStock,
   OverviewStockQueryInput,
   OverviewWork,
+} from '@api/overview/models/overview.dto';
+import {
   adminOverviewQueryParams,
   defaultAdminOverviewQuery,
   emptyOverviewSection,
   overviewToday,
   readAdminOverviewQuery,
   sameOverviewParams,
-} from '@api/overview/models/overview.dto';
+} from '@api/overview/models/overview.util';
 import { AdminOverviewService } from '@api/overview/services/admin-overview.service';
 import { OverviewFinancePanelComponent } from './overview-finance-panel/overview-finance-panel.component';
 import { OverviewStockPanelComponent } from './overview-stock-panel/overview-stock-panel.component';

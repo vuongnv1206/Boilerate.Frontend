@@ -1,4 +1,4 @@
-﻿import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, effect, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Subscription, catchError, of, tap } from 'rxjs';
@@ -21,6 +21,7 @@ import { DiscountCodeComponent } from '../discount-code/discount-code.component'
 export class CheckoutPageComponent implements OnInit {
   // System variables
   private settingsSubscription?: Subscription;
+  private orderPlaced = false;
 
   // Business variables
   readonly paymentSettings = signal<GuestPaymentSettings | null>(null);
@@ -80,6 +81,16 @@ export class CheckoutPageComponent implements OnInit {
     private readonly destroyRef: DestroyRef,
   ) {
     this.destroyRef.onDestroy(() => this.settingsSubscription?.unsubscribe());
+    // Nothing to check out: go back to the cart. Not after an order, which also empties the cart.
+    effect(() => {
+      const empty =
+        !this.cartService.loading() &&
+        !this.cartService.error() &&
+        this.cartService.cart().items.length === 0;
+      if (empty && !this.orderPlaced) {
+        void this.router.navigate(['/shop/cart'], { replaceUrl: true });
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -181,6 +192,7 @@ export class CheckoutPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (order) => {
+          this.orderPlaced = true;
           this.pendingCheckout.set(null);
           void this.router.navigate(['/shop/orders', order.id]);
         },

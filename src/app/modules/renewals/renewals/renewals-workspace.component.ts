@@ -13,10 +13,12 @@ import {
   RenewalListQuery,
   RenewalPage,
   RenewalStatus,
+} from '@api/renewals/models/renewal.dto';
+import {
   readRenewalListQuery,
   renewalListQueryParams,
   renewalStatusTone,
-} from '@api/renewals/models/renewal.dto';
+} from '@api/renewals/models/renewal.util';
 import { RenewalsService } from '@api/renewals/services/renewals.service';
 
 @Component({

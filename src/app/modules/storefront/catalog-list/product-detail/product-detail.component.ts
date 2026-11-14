@@ -1,4 +1,4 @@
-﻿import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, catchError, of, tap, timer } from 'rxjs';
@@ -8,11 +8,14 @@ import {
   ProductDto,
   ProductFulfillmentKind,
   ProductVariant,
+} from '@api/storefront/models/storefront.dto';
+import {
   getFulfillmentLabel,
   getStorefrontProductFallbackImage,
   isDigitalFulfillment,
+  productFieldText,
   resolveCatalogImageSource,
-} from '@api/storefront/models/storefront.dto';
+} from '@api/storefront/models/storefront.util';
 import { CartService } from '@api/storefront/services/cart.service';
 import { PublicCatalogService } from '@api/storefront/services/public-catalog.service';
 
@@ -54,6 +57,13 @@ export class ProductDetailComponent implements OnInit {
       this.quantity() <= 999
     );
   });
+
+  /** Attributes that have a value, ready to show. */
+  readonly attributes = computed(() =>
+    (this.productDetail()?.fields ?? [])
+      .map((field) => ({ label: field.label, text: productFieldText(field) }))
+      .filter((attribute) => attribute.text),
+  );
 
   constructor(
     private readonly catalogService: PublicCatalogService,
@@ -131,6 +141,19 @@ export class ProductDetailComponent implements OnInit {
     const resolved = match ?? null;
     this.selectedVariant.set(resolved);
     this.activeImageId.set(resolved?.imageMediaId ?? null);
+  }
+
+  /** Whether picking this value, with the other groups as they are, leads to something buyable. */
+  isBuyable(optionId: string, optionValueId: string): boolean {
+    const wanted: Record<string, string> = { ...this.selectedOptions(), [optionId]: optionValueId };
+    return (this.productDetail()?.variants ?? []).some(
+      (variant) =>
+        variant.isActive &&
+        variant.inStock &&
+        variant.price !== null &&
+        variant.price !== undefined &&
+        variant.selections.every((s) => wanted[s.optionId] === s.optionValueId),
+    );
   }
 
   onSelectMedia(mediaId: string): void {

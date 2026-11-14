@@ -72,9 +72,10 @@ export class CartService implements StorefrontCartBadgeReader {
       productId: '',
       name: item.name,
       sku: item.sku,
-      unitPrice: item.unitPrice ?? 0,
+      unitPrice: item.unitPrice,
       quantity: item.quantity,
       isDigital: item.fulfillmentKind !== ProductFulfillmentKind.Physical,
+      isAvailable: item.isAvailable,
     })),
   );
   readonly itemCount = computed(() =>

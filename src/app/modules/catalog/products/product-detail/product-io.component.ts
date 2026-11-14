@@ -39,9 +39,7 @@ import { validationMessage } from '@shared/forms/validation-message';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
   CatalogConfiguration,
-  CreateOptionForm,
   CreateProduct,
-  CreateSkuForm,
   PRODUCT_FIELD_ALIASES,
   PRODUCT_FULFILLMENT_OPTIONS,
   PRODUCT_LIMITS,
@@ -53,19 +51,23 @@ import {
   ProductFieldDefinition,
   ProductFieldInput,
   ProductFieldValue,
-  ProductForm,
   ProductFulfillmentKind,
   ProductOptionInput,
   ProductStatus,
   ProductTypeLookup,
   ProductVariantInput,
   SaveProductEditor,
+} from '@api/catalog/models/product.dto';
+import {
+  CreateOptionForm,
+  CreateSkuForm,
+  ProductForm,
   createOptionForm,
   createProductForm,
   createProductMediaForm,
   createSkuRow,
   productSlug,
-} from '@api/catalog/models/product.dto';
+} from '@api/catalog/models/product.util';
 import { ProductFieldType } from '@api/catalog/models/product-type.dto';
 import { CategoriesService } from '@api/catalog/services/categories.service';
 import { ProductTypesService } from '@api/catalog/services/product-types.service';

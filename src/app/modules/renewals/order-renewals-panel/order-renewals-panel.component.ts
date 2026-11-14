@@ -8,8 +8,8 @@ import {
   RENEWAL_STATUS_LABELS,
   RenewalDto,
   RenewalOrderSnapshot,
-  renewalStatusTone,
 } from '@api/renewals/models/renewal.dto';
+import { renewalStatusTone } from '@api/renewals/models/renewal.util';
 import { RenewalsService } from '@api/renewals/services/renewals.service';
 
 @Component({

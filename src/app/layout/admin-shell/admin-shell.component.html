@@ -183,10 +183,13 @@
         <a routerLink="/admin/account" routerLinkActive="selected"
           ><ui-icon name="user" [size]="16" /><span>Tài khoản cá nhân</span></a
         >
-        <a routerLink="/admin/controls" routerLinkActive="selected"
-          ><ui-icon name="grid" [size]="16" /><span>Bộ giao diện</span
-          ><span class="new-tag">UI</span></a
-        ><button (click)="openHelp()">
+        @if (devMode) {
+          <a routerLink="/admin/controls" routerLinkActive="selected"
+            ><ui-icon name="grid" [size]="16" /><span>Bộ giao diện</span
+            ><span class="new-tag">UI</span></a
+          >
+        }
+        <button (click)="openHelp()">
           <ui-icon name="help" [size]="16" /><span>Hướng dẫn bản mẫu</span
           ><ui-icon name="external-link" [size]="12" />
         </button>

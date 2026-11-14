@@ -11,7 +11,7 @@
         type="search"
         [value]="store.query()"
         #searchInput
-        (input)="search(searchInput.value)"
+        (input)="store.search(searchInput.value)"
         placeholder="Tên hoặc slug…"
     /></label>
     <button
@@ -27,7 +27,7 @@
       <ui-icon name="refresh" [size]="14" />
     </button>
     @if (store.canCreate()) {
-      <a pButton severity="primary" routerLink="new" [queryParams]="routeQuery()"
+      <a pButton severity="primary" routerLink="new" [queryParams]="store.routeQuery()"
         ><ui-icon name="plus" [size]="14" />Thêm danh mục</a
       >
     }
@@ -75,7 +75,7 @@
               <a
                 class="category-name-link"
                 [routerLink]="[item.id]"
-                [queryParams]="routeQuery()"
+                [queryParams]="store.routeQuery()"
                 [style.padding-left.px]="10 + store.depth(item.id) * 16"
                 >{{ item.name }}<small>/{{ item.slug }}</small></a
               >
@@ -127,7 +127,7 @@
         type="button"
         aria-label="Trang danh mục trước"
         [disabled]="store.page() <= 1 || store.loading()"
-        (click)="setPage(store.page() - 1)"
+        (click)="store.setPage(store.page() - 1)"
       >
         <ui-icon name="chevron-left" [size]="14" />
       </button>
@@ -141,7 +141,7 @@
         type="button"
         aria-label="Trang danh mục sau"
         [disabled]="store.page() >= store.totalPages() || store.loading()"
-        (click)="setPage(store.page() + 1)"
+        (click)="store.setPage(store.page() + 1)"
       >
         <ui-icon name="chevron-right" [size]="14" />
       </button>

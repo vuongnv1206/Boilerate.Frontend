@@ -24,7 +24,8 @@ import {
   CATEGORY_SEARCH_DELAY_MS,
   CategoryDto,
 } from '@api/catalog/models/category.dto';
-import { ListQuery, listQueryParams, readListQuery } from '@api/catalog/models/product.dto';
+import { ListQuery } from '@api/catalog/models/product.dto';
+import { listQueryParams, readListQuery } from '@api/catalog/models/product.util';
 import { CategoriesService } from '@api/catalog/services/categories.service';
 
 @Component({

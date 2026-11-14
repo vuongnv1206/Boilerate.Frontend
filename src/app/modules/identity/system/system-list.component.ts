@@ -24,9 +24,8 @@ import {
   SYSTEM_SECTIONS,
   SystemKind,
   SystemRow,
-  readSystemListQuery,
-  systemListQueryParams,
 } from '@api/identity/models/identity.dto';
+import { readSystemListQuery, systemListQueryParams } from '@api/identity/models/identity.util';
 import { CapabilitiesService } from '@api/identity/services/capabilities.service';
 import { RolesService } from '@api/identity/services/roles.service';
 import { UsersService } from '@api/identity/services/users.service';
@@ -78,9 +77,7 @@ export class SystemList implements OnInit {
     () =>
       this.kind() === 'users' &&
       this.session.isCentralAdmin() &&
-      (this.session.can('User', 'Export') ||
-        this.session.can('Users', 'Export') ||
-        this.session.can('User', 'View')),
+      (this.session.can('User', 'Export') || this.session.can('User', 'View')),
   );
   readonly rows = computed(() =>
     this.kind() === 'users'

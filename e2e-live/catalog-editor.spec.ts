@@ -141,7 +141,7 @@ test('live catalog editor: options, blank/duplicate SKU, prices, default, tracki
   await expect(page.locator('.wf-variant-row')).toHaveCount(4);
   await page.locator('.wf-option-summary').filter({ hasText: 'Màu sắc' }).click();
   const chip = page.locator('.wf-option-chip').filter({ hasText: 'Đỏ' });
-  await chip.getByRole('button', { name: 'Tùy chọn Đỏ', exact: true }).click();
+  await chip.getByRole('button', { name: 'Thao tác với Đỏ', exact: true }).click();
   await chip.getByRole('button', { name: 'Đổi tên', exact: true }).click();
   await page.locator('#option-values').fill('Đỏ mới');
   await page.locator('#option-values').press('Enter');
