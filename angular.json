@@ -27,6 +27,7 @@
             "inlineStyleLanguage": "scss",
             "assets": [{ "glob": "**/*", "input": "public" }],
             "styles": ["src/styles.scss"],
+            "allowedCommonJsDependencies": ["qrcode-generator"],
             "outputPath": "dist/boilerate-frontend"
           },
           "configurations": {
