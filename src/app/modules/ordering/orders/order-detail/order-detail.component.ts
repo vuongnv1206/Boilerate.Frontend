@@ -15,6 +15,7 @@ import { Subscription, catchError, finalize, of } from 'rxjs';
 import { BaseComponent } from '@core/base/base.component';
 import { LeaveConfirmation } from '@core/base/leave-confirmation';
 import { ApiError } from '@core/http/api-error';
+import { normalizeApiError } from '@core/http/normalize-api-error';
 import { OrderAfterSalesPanel } from '@modules/after-sales/order-after-sales-panel/order-after-sales-panel.component';
 import { OrderPaymentPanel } from '@modules/payments/order-payment-panel/order-payment-panel.component';
 import { OrderRenewalsPanel } from '@modules/renewals/order-renewals-panel/order-renewals-panel.component';
@@ -69,6 +70,7 @@ export class OrderDetail extends BaseComponent implements OnInit {
   readonly actionError = signal('');
   readonly cancelDialog = signal(false);
   readonly cancelBusy = signal(false);
+  readonly packingSlipBusy = signal(false);
   readonly paymentBusy = signal(false);
   readonly shippingBusy = signal(false);
   readonly afterSalesBusy = signal(false);
@@ -81,8 +83,27 @@ export class OrderDetail extends BaseComponent implements OnInit {
   readonly status = OrderStatus;
 
   readonly anyBusy = computed(
-    () => this.cancelBusy() || this.paymentBusy() || this.shippingBusy() || this.afterSalesBusy(),
+    () =>
+      this.cancelBusy() ||
+      this.packingSlipBusy() ||
+      this.paymentBusy() ||
+      this.shippingBusy() ||
+      this.afterSalesBusy(),
   );
+
+  downloadPackingSlip(): void {
+    const current = this.order();
+    if (!current || this.packingSlipBusy()) return;
+    this.packingSlipBusy.set(true);
+    this.actionError.set('');
+    this.ordersService.downloadPackingSlip(current.id, current.number).subscribe({
+      next: () => this.packingSlipBusy.set(false),
+      error: (err: unknown) => {
+        this.actionError.set(normalizeApiError(err).message);
+        this.packingSlipBusy.set(false);
+      },
+    });
+  }
   readonly canCancelOrder = computed(() => {
     const current = this.order();
     return (

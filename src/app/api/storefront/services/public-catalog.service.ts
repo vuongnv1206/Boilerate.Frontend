@@ -1,7 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '@core/http/api.service';
-import { CategoryDto, ProductDto, ProductPage, ProductSearch } from '../models/storefront.dto';
+import {
+  CategoryDto,
+  ProductDto,
+  ProductPage,
+  ProductSearch,
+  PublicProductTypeDto,
+} from '../models/storefront.dto';
 
 @Injectable({ providedIn: 'root' })
 export class PublicCatalogService {
@@ -17,5 +23,9 @@ export class PublicCatalogService {
 
   getCategories(): Observable<readonly CategoryDto[]> {
     return this.api.get<readonly CategoryDto[]>('catalog/categories');
+  }
+
+  getProductTypes(): Observable<readonly PublicProductTypeDto[]> {
+    return this.api.get<readonly PublicProductTypeDto[]>('catalog/product-types');
   }
 }

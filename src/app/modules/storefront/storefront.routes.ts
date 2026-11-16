@@ -19,11 +19,13 @@ export const STOREFRONT_SHOP_ROUTES: Routes = [
   },
   {
     path: 'products',
+    title: 'Cửa hàng — Boilerate',
     loadComponent: () =>
       import('./catalog-list/catalog-list.component').then((m) => m.CatalogListComponent),
   },
   {
     path: 'products/:slug',
+    title: 'Chi tiết sản phẩm — Boilerate',
     loadComponent: () =>
       import('./catalog-list/product-detail/product-detail.component').then(
         (m) => m.ProductDetailComponent,
@@ -31,10 +33,12 @@ export const STOREFRONT_SHOP_ROUTES: Routes = [
   },
   {
     path: 'cart',
+    title: 'Giỏ hàng — Boilerate',
     loadComponent: () => import('./cart-page/cart-page.component').then((m) => m.CartPageComponent),
   },
   {
     path: 'checkout',
+    title: 'Thanh toán — Boilerate',
     loadComponent: () =>
       import('./cart-page/checkout-page/checkout-page.component').then(
         (m) => m.CheckoutPageComponent,
@@ -46,6 +50,7 @@ export const STOREFRONT_SHOP_ROUTES: Routes = [
 export const STOREFRONT_SETTINGS_ROUTES: Routes = [
   {
     path: '',
+    title: 'Cài đặt cửa hàng — Quản trị',
     canActivate: [permissionGuard],
     canDeactivate: [unsavedChangesGuard],
     data: { permission: { functionCode: 'StorefrontSettings', actionCode: 'View' } },

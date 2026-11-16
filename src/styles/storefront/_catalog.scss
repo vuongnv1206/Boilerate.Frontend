@@ -309,9 +309,9 @@
       display: flex;
     }
 
-    .shop-featured-image > .product-image-empty:only-child,
-    .product-image-frame > .product-image-empty:only-child,
-    .gallery-main-image > .product-image-empty:only-child {
+    .shop-featured-image:not(:has(img)) > .product-image-empty,
+    .product-image-frame:not(:has(img)) > .product-image-empty,
+    .gallery-main-image:not(:has(img)) > .product-image-empty {
       display: flex;
     }
 

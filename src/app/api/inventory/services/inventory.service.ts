@@ -26,6 +26,10 @@ export class InventoryService {
         size: filter?.size ?? INVENTORY_PAGE_SIZE,
         productId: filter?.productId,
         variantId: filter?.variantId,
+        search: filter?.search,
+        stockFilter:
+          filter?.stockFilter && filter.stockFilter !== 'all' ? filter.stockFilter : undefined,
+        lowStockThreshold: filter?.lowStockThreshold,
       })
       .pipe(map(fromPage));
   }

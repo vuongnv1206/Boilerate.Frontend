@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { AuthSession } from '@core/auth/auth-session';
 import { ApiService } from '@core/http/api.service';
 import {
+  AdminCustomerPage,
   CheckoutRequest,
   GuestPaymentSettings,
   OrderDto,
@@ -19,7 +20,35 @@ export class OrdersService {
   ) {}
 
   list(query: OrderListQuery): Observable<OrderPage> {
-    return this.api.get<OrderPage>('admin/orders', {
+    return this.api.get<OrderPage>('admin/orders', this.buildListParams(query));
+  }
+
+  exportOrders(query: OrderListQuery): Observable<void> {
+    const { page: _p, size: _s, ...filters } = this.buildListParams(query);
+    void _p;
+    void _s;
+    return this.api.download('GET', 'admin/orders/export', filters, 'orders.xlsx');
+  }
+
+  downloadPackingSlip(id: string, orderNumber: string): Observable<void> {
+    return this.api.download(
+      'GET',
+      `admin/orders/${encodeURIComponent(id)}/packing-slip`,
+      undefined,
+      `packing-slip-${orderNumber}.pdf`,
+    );
+  }
+
+  getCustomers(search: string, page = 1, size = 20): Observable<AdminCustomerPage> {
+    return this.api.get<AdminCustomerPage>('admin/orders/customers', {
+      page,
+      size,
+      ...(search.trim() ? { search: search.trim() } : {}),
+    });
+  }
+
+  private buildListParams(query: OrderListQuery) {
+    return {
       page: query.page,
       size: query.pageSize,
       ...(query.queue ? { queue: query.queue } : {}),
@@ -29,7 +58,7 @@ export class OrdersService {
       ...(query.fulfillmentStatus === null ? {} : { fulfillmentStatus: query.fulfillmentStatus }),
       ...(query.createdFrom ? { createdFrom: query.createdFrom } : {}),
       ...(query.createdTo ? { createdTo: `${query.createdTo}T23:59:59.999Z` } : {}),
-    });
+    };
   }
 
   getById(id: string): Observable<OrderDto> {

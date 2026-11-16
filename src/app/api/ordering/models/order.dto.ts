@@ -125,6 +125,25 @@ export interface GuestPaymentSettings {
   readonly bankTransferEnabled: boolean;
 }
 
+export interface AdminCustomerSummaryDto {
+  readonly email: string;
+  readonly latestPhone: string | null;
+  readonly latestRecipientName: string;
+  readonly orderCount: number;
+  readonly paidOrderCount: number;
+  readonly totalSpent: number;
+  readonly currency: string;
+  readonly lastOrderAtUtc: string;
+  readonly linkedUserId: string | null;
+}
+
+export interface AdminCustomerPage {
+  readonly items: AdminCustomerSummaryDto[];
+  readonly total: number;
+  readonly pageNumber: number;
+  readonly pageSize: number;
+}
+
 interface CheckoutLineRequest {
   readonly variantId: string;
   readonly quantity: number;

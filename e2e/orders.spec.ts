@@ -216,3 +216,71 @@ test('orders rail: query, Back, tablet focus and canonical membership survive co
   expect(api.writes).toHaveLength(1);
   await expect(page).toHaveURL(`/admin/orders/${SECOND_ORDER_ID}${query}`);
 });
+
+test('admin orders supports Excel export, packing slip PDF and customer lookup', async ({
+  page,
+  context,
+  catalog,
+}) => {
+  catalog.setPermissions(['Permissions.Order.View']);
+  await installOrdersApi(context, true);
+
+  let exportedUrl = '';
+  await context.route('**/api/admin/orders/export*', (route) => {
+    exportedUrl = route.request().url();
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      body: Buffer.from('PK\x03\x04'),
+    });
+  });
+
+  let packingSlipUrl = '';
+  await context.route('**/api/admin/orders/*/packing-slip', (route) => {
+    packingSlipUrl = route.request().url();
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/pdf',
+      body: Buffer.from('%PDF-1.4'),
+    });
+  });
+
+  await context.route('**/api/admin/orders/customers*', (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          {
+            email: 'khach@example.test',
+            latestPhone: '0901234567',
+            latestRecipientName: 'Nguyễn Văn Khách',
+            orderCount: 3,
+            paidOrderCount: 2,
+            totalSpent: 450000,
+            currency: 'VND',
+            lastOrderAtUtc: '2026-11-14T10:00:00Z',
+            linkedUserId: null,
+          },
+        ],
+        total: 1,
+        pageNumber: 1,
+        pageSize: 20,
+      },
+    }),
+  );
+
+  await ready(page, '/admin/orders');
+  await page.getByRole('button', { name: 'Xuất Excel', exact: true }).click();
+  await expect.poll(() => exportedUrl).toContain('/api/admin/orders/export');
+
+  await page.getByRole('link', { name: 'Tra cứu khách hàng', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/orders\/customers$/);
+  await expect(page.getByText('khach@example.test')).toBeVisible();
+  await expect(page.getByText('Khách vãng lai')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Xem đơn', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/orders\?q=khach(?:@|%40)example\.test/);
+
+  await page.goto(`/admin/orders/${ORDER_ID}`);
+  await page.getByRole('button', { name: 'In phiếu giao hàng', exact: true }).click();
+  await expect.poll(() => packingSlipUrl).toContain(`/api/admin/orders/${ORDER_ID}/packing-slip`);
+});

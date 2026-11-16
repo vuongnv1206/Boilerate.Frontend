@@ -94,10 +94,27 @@
     >
       <ui-icon name="refresh" [size]="14" />
     </button>
+    <a pButton severity="secondary" outlined size="small" routerLink="/admin/orders/customers">
+      Tra cứu khách hàng
+    </a>
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      outlined
+      size="small"
+      [disabled]="exporting()"
+      (click)="exportExcel()"
+    >
+      {{ exporting() ? 'Đang xuất…' : 'Xuất Excel' }}
+    </button>
     <span class="toolbar-hint"
       >Đơn hàng giữ nguyên thông tin tại checkout; chỉ cập nhật qua thao tác nghiệp vụ.</span
     >
   </header>
+  @if (exportError()) {
+    <p class="form-error" role="alert">{{ exportError() }}</p>
+  }
   @if (workspace.query().queue; as queue) {
     <div class="collection-queue-filter" role="group" aria-label="Nhóm đơn hàng đang chọn">
       <span>{{ queueLabels[queue] }}</span>

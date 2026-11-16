@@ -89,28 +89,13 @@ export class InventoryWorkspace extends BaseComponent {
   );
   readonly canDigitalReveal = computed(() => this.can('DigitalInventory', 'Reveal'));
 
-  readonly filteredBalances = computed(() => {
-    const items = this.balancesPage()?.items ?? [];
-    const keyword = this.searchKeyword().trim().toLowerCase();
-    const filter = this.stockFilter();
-    return items.filter((row) => {
-      if (
-        keyword &&
-        !row.variantId.toLowerCase().includes(keyword) &&
-        !row.locationId.toLowerCase().includes(keyword) &&
-        !row.id.toLowerCase().includes(keyword)
-      ) {
-        return false;
-      }
-      if (filter === 'out') return row.available <= 0;
-      if (filter === 'low') return row.available > 0 && row.available <= LOW_STOCK_THRESHOLD;
-      return true;
-    });
-  });
+  readonly filteredBalances = computed(() => [...(this.balancesPage()?.items ?? [])]);
 
   readonly loadedVariantOptions = computed(() =>
     (this.balancesPage()?.items ?? []).map((item) => ({
-      label: `${item.variantId} (Bán được: ${item.available})`,
+      label: item.productName
+        ? `${item.productName}${item.sku ? ` (${item.sku})` : ''} — Bán được: ${item.available}`
+        : `${item.variantId} (Bán được: ${item.available})`,
       value: item.variantId,
     })),
   );
@@ -148,13 +133,14 @@ export class InventoryWorkspace extends BaseComponent {
   loadBalances(page = 1): void {
     if (!this.canPhysicalView()) return;
     const rawKeyword = this.searchKeyword().trim();
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
     this.balancesError.set('');
     this.run(
       this.inventoryService.getBalances({
         page,
         size: INVENTORY_PAGE_SIZE,
-        variantId: uuidPattern.test(rawKeyword) ? rawKeyword : undefined,
+        search: rawKeyword || undefined,
+        stockFilter: this.stockFilter(),
+        lowStockThreshold: LOW_STOCK_THRESHOLD,
       }),
       {
         busy: this.balancesLoading,
@@ -162,6 +148,11 @@ export class InventoryWorkspace extends BaseComponent {
         onError: (apiError) => this.balancesError.set(apiError.message),
       },
     );
+  }
+
+  onStockFilterChange(filter: InventoryStockLevelFilter): void {
+    this.stockFilter.set(filter);
+    this.loadBalances(1);
   }
 
   applyBalanceSearch(): void {

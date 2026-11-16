@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -20,6 +20,11 @@ import {
   customerOrderDetailFulfillmentLabel,
   customerOrderStatusLabel,
 } from '@api/ordering/models/order.util';
+import {
+  buildVietQrPayload,
+  encodeQrSvg,
+  resolveVietQrBankBin,
+} from '@api/ordering/models/vietqr.util';
 import { OrdersService } from '@api/ordering/services/orders.service';
 
 @Component({
@@ -48,6 +53,25 @@ export class CustomerOrderDetailComponent implements OnInit {
   readonly settingsLoading = signal(false);
   readonly settingsError = signal('');
   readonly cancelConfirmation = signal(false);
+  readonly copiedField = signal<'account' | 'memo' | null>(null);
+  readonly vietQr = computed(() => {
+    const order = this.currentOrder();
+    const bank = this.paymentSettings();
+    if (!order || !bank?.bankTransferEnabled || !bank.accountNumber || order.total <= 0) {
+      return null;
+    }
+    const bankBin = resolveVietQrBankBin(bank.bankName);
+    if (!bankBin) return null;
+    const payload = buildVietQrPayload({
+      bankBin,
+      accountNumber: bank.accountNumber,
+      amount: order.total,
+      description: `DH ${order.number}`,
+    });
+    const svg = encodeQrSvg(payload);
+    if (!svg) return null;
+    return { ...svg, bankBin };
+  });
 
   constructor(
     private readonly destroyRef: DestroyRef,
@@ -111,6 +135,17 @@ export class CustomerOrderDetailComponent implements OnInit {
           this.settingsLoading.set(false);
         },
       });
+  }
+
+  copyText(field: 'account' | 'memo', value: string | null | undefined): void {
+    const text = value?.trim();
+    if (!text) return;
+    void navigator.clipboard?.writeText(text).then(() => {
+      this.copiedField.set(field);
+      setTimeout(() => {
+        if (this.copiedField() === field) this.copiedField.set(null);
+      }, 2000);
+    });
   }
 
   canCancelOrder(order: OrderDto): boolean {

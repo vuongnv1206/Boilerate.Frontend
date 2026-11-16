@@ -5,6 +5,11 @@ export interface GuestPaymentSettings {
   readonly branch: string | null;
   readonly instructions: string | null;
   readonly bankTransferEnabled: boolean;
+  readonly shopName?: string | null;
+  readonly contactEmail?: string | null;
+  readonly contactPhone?: string | null;
+  readonly flatShippingAmount?: number | null;
+  readonly reservationMinutes?: number | null;
 }
 
 export interface StorefrontSettings extends GuestPaymentSettings {

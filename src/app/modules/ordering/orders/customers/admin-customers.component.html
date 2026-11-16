@@ -1,0 +1,131 @@
+<section class="collection-page order-list-page" aria-labelledby="customers-lookup-title">
+  <header class="catalog-list-toolbar order-list-toolbar">
+    <a class="order-back-link" routerLink="/admin/orders">
+      <ui-icon name="arrow-left" [size]="14" /> Quay lại đơn hàng
+    </a>
+    <h1 id="customers-lookup-title">
+      Tra cứu khách hàng <span>{{ page().total }}</span>
+    </h1>
+    <label class="search-field" for="customer-lookup-search">
+      <ui-icon name="search" [size]="14" />
+      <input
+        pInputText
+        id="customer-lookup-search"
+        type="search"
+        aria-label="Tìm khách hàng theo email, số điện thoại hoặc tên"
+        placeholder="Email, số điện thoại hoặc tên người nhận…"
+        [ngModel]="search()"
+        (ngModelChange)="onSearchChange($event)"
+      />
+    </label>
+    <button
+      pButton
+      severity="secondary"
+      text
+      rounded
+      iconOnly
+      type="button"
+      aria-label="Tải lại danh sách khách hàng"
+      title="Tải lại"
+      [disabled]="loading()"
+      (click)="load()"
+    >
+      <ui-icon name="refresh" [size]="14" />
+    </button>
+  </header>
+
+  @if (loading() && page().items.length === 0) {
+    <ui-content-state
+      kind="loading"
+      layout="page"
+      title="Đang tải khách hàng"
+      message="Đang tổng hợp lịch sử đơn hàng theo email."
+    />
+  } @else if (errorMessage()) {
+    <ui-content-state
+      kind="error"
+      layout="page"
+      title="Không thể tải danh sách khách hàng"
+      [message]="errorMessage()"
+    >
+      <button pButton type="button" severity="secondary" outlined (click)="load()">Thử lại</button>
+    </ui-content-state>
+  } @else if (page().items.length === 0) {
+    <ui-content-state
+      kind="empty"
+      layout="page"
+      title="Chưa có khách hàng phù hợp"
+      message="Thử từ khóa email, số điện thoại hoặc tên khác."
+    />
+  } @else {
+    <p-table [value]="page().items" [tableStyle]="{ 'min-width': '48rem' }">
+      <ng-template #header>
+        <tr>
+          <th>Email</th>
+          <th>Người nhận gần nhất</th>
+          <th>Số điện thoại</th>
+          <th>Số đơn (Đã TT)</th>
+          <th>Tổng chi tiêu</th>
+          <th>Đơn gần nhất</th>
+          <th>Tài khoản</th>
+          <th aria-label="Thao tác"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-customer>
+        <tr>
+          <td>{{ customer.email }}</td>
+          <td>{{ customer.latestRecipientName }}</td>
+          <td>{{ customer.latestPhone || '—' }}</td>
+          <td>{{ customer.orderCount }} ({{ customer.paidOrderCount }})</td>
+          <td>{{ customer.totalSpent | number: '1.0-0' }} {{ customer.currency }}</td>
+          <td>{{ customer.lastOrderAtUtc | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <ui-status-badge [tone]="customer.linkedUserId ? 'success' : 'muted'">
+              {{ customer.linkedUserId ? 'Đã liên kết' : 'Khách vãng lai' }}
+            </ui-status-badge>
+          </td>
+          <td>
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              outlined
+              size="small"
+              (click)="viewCustomerOrders(customer)"
+            >
+              Xem đơn
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    @if (page().total > page().pageSize) {
+      <div class="collection-pagination">
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          size="small"
+          [disabled]="page().pageNumber <= 1 || loading()"
+          (click)="load(page().pageNumber - 1)"
+        >
+          Trước
+        </button>
+        <span>Trang {{ page().pageNumber }}</span>
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          size="small"
+          [disabled]="page().pageNumber * page().pageSize >= page().total || loading()"
+          (click)="load(page().pageNumber + 1)"
+        >
+          Sau
+        </button>
+      </div>
+    }
+  }
+</section>

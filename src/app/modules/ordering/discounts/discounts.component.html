@@ -69,6 +69,8 @@
               <th scope="col">Giảm giá</th>
               <th scope="col">Đơn tối thiểu</th>
               <th scope="col">Lượt sử dụng</th>
+              <th scope="col">Hiệu lực</th>
+              <th scope="col">Hết hạn</th>
               <th scope="col">Trạng thái</th>
             </tr></ng-template
           >
@@ -91,6 +93,20 @@
               </td>
               <td>{{ item.minimumSubtotal | currency: 'VND' : 'symbol-narrow' : '1.0-0' }}</td>
               <td>{{ item.usedCount }} / {{ item.usageLimit ?? 'Không giới hạn' }}</td>
+              <td>
+                {{
+                  item.startsAtUtc
+                    ? (item.startsAtUtc | date: 'dd/MM/yyyy HH:mm' : '+0700')
+                    : 'Ngay lập tức'
+                }}
+              </td>
+              <td>
+                {{
+                  item.endsAtUtc
+                    ? (item.endsAtUtc | date: 'dd/MM/yyyy HH:mm' : '+0700')
+                    : 'Không giới hạn'
+                }}
+              </td>
               <td>
                 <ui-status-badge [tone]="item.isActive ? 'success' : 'muted'">{{
                   item.isActive ? 'Đang bật' : 'Đã tắt'

@@ -54,6 +54,34 @@ export interface ProductPage {
   readonly pageSize: number;
 }
 
+export interface PublicFieldChoiceDto {
+  readonly id: string;
+  readonly label: string;
+}
+
+export interface PublicFilterableFieldDto {
+  readonly id: string;
+  readonly label: string;
+  readonly dataType: ProductFieldType;
+  readonly choices: readonly PublicFieldChoiceDto[];
+}
+
+export interface PublicProductTypeDto {
+  readonly id: string;
+  readonly name: string;
+  readonly fields: readonly PublicFilterableFieldDto[];
+}
+
+export interface PublicFieldFilter {
+  readonly fieldId: string;
+  readonly operator: string;
+  readonly textValue?: string | null;
+  readonly numberValue?: number | null;
+  readonly numberTo?: number | null;
+  readonly booleanValue?: boolean | null;
+  readonly choiceIds?: readonly string[] | null;
+}
+
 export interface ProductSearch {
   readonly pageNumber: number;
   readonly pageSize: number;
@@ -65,6 +93,7 @@ export interface ProductSearch {
   readonly inStock?: boolean;
   readonly minimumPrice?: number;
   readonly maximumPrice?: number;
+  readonly fields?: readonly PublicFieldFilter[];
   readonly sortBy?: 'modified' | 'name' | 'price';
   readonly sortDirection?: 'asc' | 'desc';
 }
@@ -150,9 +179,18 @@ export interface ProductDto {
   readonly modifiedOn?: string;
 }
 
+export type CatalogSortOption =
+  'modified-desc' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc';
+
 export interface CatalogQueryChange {
   readonly search: string;
   readonly categoryId: string | null;
+  readonly productTypeId?: string | null;
+  readonly fields?: Readonly<Record<string, string>>;
+  readonly sort?: CatalogSortOption;
+  readonly inStock?: boolean;
+  readonly minPrice?: number | null;
+  readonly maxPrice?: number | null;
   readonly page: number;
   readonly delay: number;
 }

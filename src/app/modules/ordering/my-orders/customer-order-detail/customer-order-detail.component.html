@@ -53,6 +53,12 @@
           Vui lòng chuyển khoản theo thông tin bên dưới. Nhân viên sẽ đối soát và xác nhận tiền thủ
           công; nội dung số chỉ khả dụng sau khi đơn được đánh dấu đã thanh toán.
         </p>
+        @if (order.expiresAt) {
+          <p class="bank-hint" role="status">
+            Hạn giữ hàng và thanh toán trước:
+            <strong>{{ order.expiresAt | date: 'HH:mm dd/MM/yyyy' }}</strong>
+          </p>
+        }
 
         @if (settingsLoading()) {
           <p role="status">Đang tải thông tin chuyển khoản…</p>
@@ -77,7 +83,20 @@
             </div>
             <div class="bank-field">
               <span class="field-title">Số tài khoản:</span>
-              <span class="field-data highlight">{{ bankInfo.accountNumber || '—' }}</span>
+              <span class="field-data highlight">
+                {{ bankInfo.accountNumber || '—' }}
+                @if (bankInfo.accountNumber) {
+                  <button
+                    type="button"
+                    pButton
+                    text
+                    size="small"
+                    (click)="copyText('account', bankInfo.accountNumber)"
+                  >
+                    {{ copiedField() === 'account' ? 'Đã chép' : 'Sao chép' }}
+                  </button>
+                }
+              </span>
             </div>
             <div class="bank-field">
               <span class="field-title">Chủ tài khoản:</span>
@@ -95,7 +114,18 @@
             </div>
             <div class="bank-field full-width">
               <span class="field-title">Nội dung chuyển khoản (bắt buộc):</span>
-              <span class="field-data memo-highlight">DH {{ order.number }}</span>
+              <span class="field-data memo-highlight">
+                DH {{ order.number }}
+                <button
+                  type="button"
+                  pButton
+                  text
+                  size="small"
+                  (click)="copyText('memo', 'DH ' + order.number)"
+                >
+                  {{ copiedField() === 'memo' ? 'Đã chép' : 'Sao chép' }}
+                </button>
+              </span>
             </div>
             @if (bankInfo.instructions) {
               <div class="bank-field full-width">
@@ -104,6 +134,32 @@
               </div>
             }
           </div>
+          @if (vietQr(); as qr) {
+            <div class="vietqr-box" aria-label="Mã VietQR thanh toán đơn hàng">
+              <div class="vietqr-frame">
+                <svg
+                  class="vietqr-svg"
+                  [attr.viewBox]="'0 0 ' + qr.size + ' ' + qr.size"
+                  shape-rendering="crispEdges"
+                  role="img"
+                  [attr.aria-label]="'Mã VietQR cho đơn hàng ' + order.number"
+                >
+                  <rect x="0" y="0" [attr.width]="qr.size" [attr.height]="qr.size" fill="#ffffff" />
+                  <path [attr.d]="qr.path" fill="#0f172a" />
+                </svg>
+              </div>
+              <p class="vietqr-caption">
+                Quét mã VietQR bằng ứng dụng ngân hàng để tự điền số tiền và nội dung
+                <strong>DH {{ order.number }}</strong
+                >.
+              </p>
+            </div>
+          } @else {
+            <p class="bank-hint">
+              Chưa nhận diện được mã ngân hàng VietQR tự động; vui lòng nhập đúng số tài khoản và
+              nội dung chuyển khoản ở trên.
+            </p>
+          }
         } @else {
           <p role="status">Không tải được cấu hình chuyển khoản. Vui lòng liên hệ cửa hàng.</p>
         }

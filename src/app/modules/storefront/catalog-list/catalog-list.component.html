@@ -98,6 +98,98 @@
           </button>
         }
       </div>
+
+      <div class="catalog-sort-controls">
+        <div class="catalog-price-filter">
+          <label class="sr-only" for="catalog-min-price">Giá từ</label>
+          <p-inputnumber
+            inputId="catalog-min-price"
+            placeholder="Giá từ"
+            [min]="0"
+            [maxFractionDigits]="0"
+            [ngModel]="minPriceDraft()"
+            (ngModelChange)="minPriceDraft.set($event)"
+            (keydown.enter)="onPriceFilterApply()"
+          />
+          <label class="sr-only" for="catalog-max-price">Giá đến</label>
+          <p-inputnumber
+            inputId="catalog-max-price"
+            placeholder="Giá đến"
+            [min]="0"
+            [maxFractionDigits]="0"
+            [ngModel]="maxPriceDraft()"
+            (ngModelChange)="maxPriceDraft.set($event)"
+            (keydown.enter)="onPriceFilterApply()"
+          />
+          <button type="button" class="category-chip" (click)="onPriceFilterApply()">
+            Lọc giá
+          </button>
+        </div>
+        @if (productTypes().length) {
+          <label class="sr-only" for="catalog-type-select">Loại sản phẩm</label>
+          <p-select
+            inputId="catalog-type-select"
+            ariaLabel="Loại sản phẩm"
+            [options]="productTypeOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="selectedProductTypeId()"
+            (ngModelChange)="onProductTypeChange($event)"
+          />
+        }
+        <button
+          type="button"
+          class="category-chip"
+          [class.active]="inStockOnly()"
+          [attr.aria-pressed]="inStockOnly()"
+          (click)="onInStockToggle()"
+        >
+          Chỉ xem còn hàng
+        </button>
+        <label class="sr-only" for="catalog-sort-select">Sắp xếp sản phẩm</label>
+        <p-select
+          inputId="catalog-sort-select"
+          ariaLabel="Sắp xếp sản phẩm"
+          [options]="sortOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="sortOption()"
+          (ngModelChange)="onSortChange($event)"
+        />
+      </div>
+      @if (activeProductType(); as activeType) {
+        <div class="catalog-attribute-filters">
+          @for (field of activeType.fields; track field.id) {
+            @if (field.dataType === fieldType.Choice && field.choices.length) {
+              <label class="sr-only" [for]="'catalog-field-' + field.id">{{ field.label }}</label>
+              <p-select
+                [inputId]="'catalog-field-' + field.id"
+                [placeholder]="field.label"
+                [showClear]="true"
+                [options]="field.choices.slice()"
+                optionLabel="label"
+                optionValue="id"
+                [ngModel]="selectedFieldValues()[field.id] ?? null"
+                (ngModelChange)="onFieldFilterChange(field.id, $event)"
+              />
+            } @else if (field.dataType === fieldType.Boolean) {
+              <button
+                type="button"
+                class="category-chip"
+                [class.active]="selectedFieldValues()[field.id] === 'true'"
+                (click)="
+                  onFieldFilterChange(
+                    field.id,
+                    selectedFieldValues()[field.id] === 'true' ? null : 'true'
+                  )
+                "
+              >
+                {{ field.label }}
+              </button>
+            }
+          }
+        </div>
+      }
     </div>
 
     @if (loading()) {

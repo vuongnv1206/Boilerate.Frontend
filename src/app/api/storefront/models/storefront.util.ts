@@ -25,37 +25,12 @@ export function getFulfillmentLabel(kind: ProductFulfillmentKind): string {
   }
 }
 
-const PRODUCT_IMAGE_RULES: readonly { readonly pattern: RegExp; readonly image: string }[] = [
-  { pattern: /\b(lamp|den|lighting|arc)\b/u, image: '/images/lamp.svg' },
-  { pattern: /\b(bag|tote|tui)\b/u, image: '/images/bag.svg' },
-  { pattern: /\b(notebook|so-tay|book)\b/u, image: '/images/notebook.svg' },
-  { pattern: /\b(shoe|runner|giay|sneaker)\b/u, image: '/images/shoe.svg' },
-  { pattern: /\b(vase|gom|binh)\b/u, image: '/images/vase.svg' },
-  { pattern: /\b(chair|ghe|lounge)\b/u, image: '/images/chair.svg' },
-  { pattern: /\b(headphone|tai-nghe)\b/u, image: '/images/headphones.svg' },
-  { pattern: /\b(camera|may-anh)\b/u, image: '/images/camera.svg' },
-];
-
-export function getStorefrontProductFallbackImage(slug: string, name: string): string | null {
-  const searchable = normalizeProductText(`${slug} ${name}`);
-  return PRODUCT_IMAGE_RULES.find(({ pattern }) => pattern.test(searchable))?.image ?? null;
-}
-
 export function resolveCatalogImageSource(
   mediaId: string | null | undefined,
-  slug: string,
-  name: string,
+  _slug?: string,
+  _name?: string,
 ): string | null {
-  if (mediaId) return `/api/catalog/media/${mediaId}`;
-  return getStorefrontProductFallbackImage(slug, name);
-}
-
-function normalizeProductText(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/gu, '')
-    .toLocaleLowerCase('vi-VN')
-    .replace(/[^a-z0-9-]+/gu, ' ');
+  return mediaId ? `/api/catalog/media/${mediaId}` : null;
 }
 
 /** A product attribute as shoppers read it; empty when the attribute has no value. */

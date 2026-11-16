@@ -385,7 +385,7 @@ async function installCatalogPreview(page: Page) {
     if (route.request().url().endsWith('/broken-catalog-image')) {
       return route.fulfill({ status: 404, json: { status: 404 } });
     }
-    return route.fulfill({ path: 'public/images/lamp.svg', contentType: 'image/svg+xml' });
+    return route.fulfill({ path: 'e2e/fixtures/product-image.svg', contentType: 'image/svg+xml' });
   });
 
   let cartVersion = 1;
@@ -567,11 +567,11 @@ test('storefront catalog and detail keep image fallbacks and purchase states leg
     /catalog-camera$/,
   );
   await expect(
-    page.locator('[data-product-id="product-notebook"] .product-thumbnail'),
-  ).toHaveAttribute('src', '/images/notebook.svg');
+    page.locator('[data-product-id="product-notebook"] .product-image-empty'),
+  ).toBeVisible();
   await expect(
-    page.locator('[data-product-id="product-chair"] .product-thumbnail'),
-  ).toHaveAttribute('src', '/images/chair.svg');
+    page.locator('[data-product-id="product-chair"] .product-image-empty'),
+  ).toBeVisible();
   await expect(page.locator('img.product-thumbnail').nth(0)).toHaveJSProperty('complete', true);
   await page.evaluate(() => document.fonts.ready);
   await expect(page).toHaveScreenshot('storefront-catalog.png', { fullPage: true });
@@ -1001,4 +1001,127 @@ test('a guest names the account to renew on their own paid order', async ({ page
   await page.locator('#customer-renewal-target-renewal-1').press('Enter');
   await expect(page.getByText('***t-01')).toBeVisible();
   expect(submitted).toMatchObject({ version: 'r1', accountIdentifier: 'guest-account-01' });
+});
+
+test('storefront supports sorting, price range, stock and attribute filters', async ({ page }) => {
+  const requests: Record<string, unknown>[] = [];
+  await page.route('**/api/catalog/categories', (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/catalog/product-types', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          name: 'Thời trang',
+          fields: [
+            {
+              id: '22222222-2222-4222-8222-222222222222',
+              label: 'Chất liệu',
+              dataType: 5,
+              choices: [{ id: '33333333-3333-4333-8333-333333333333', label: 'Cotton' }],
+            },
+          ],
+        },
+      ],
+    }),
+  );
+  await page.route('**/api/catalog/products/search', (route) => {
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    requests.push(body);
+    return route.fulfill({
+      json: {
+        items: [
+          {
+            id: 'prod-1',
+            name: 'Áo Cotton',
+            slug: 'ao-cotton',
+            status: 2,
+            fromPrice: 150000,
+            inStock: true,
+            fulfillmentKind: 1,
+          },
+        ],
+        total: 1,
+        pageNumber: 1,
+        pageSize: 20,
+      },
+    });
+  });
+
+  await page.goto('/shop/products');
+  await page.getByRole('button', { name: 'Chỉ xem còn hàng' }).click();
+  await expect.poll(() => requests.at(-1)).toMatchObject({ inStock: true });
+
+  await page.locator('#catalog-min-price').fill('100000');
+  await page.locator('#catalog-max-price').fill('300000');
+  await page.getByRole('button', { name: 'Lọc giá' }).click();
+  await expect
+    .poll(() => requests.at(-1))
+    .toMatchObject({ minimumPrice: 100000, maximumPrice: 300000 });
+
+  await page.locator('#catalog-type-select').click();
+  await page.getByRole('option', { name: 'Thời trang' }).click();
+  await expect(page.locator('#catalog-field-22222222-2222-4222-8222-222222222222')).toBeVisible();
+  await page.locator('#catalog-field-22222222-2222-4222-8222-222222222222').click();
+  await page.getByRole('option', { name: 'Cotton' }).click();
+  await expect
+    .poll(() => requests.at(-1))
+    .toMatchObject({
+      productTypeId: '11111111-1111-4111-8111-111111111111',
+      fields: [
+        {
+          fieldId: '22222222-2222-4222-8222-222222222222',
+          operator: 'in',
+          choiceIds: ['33333333-3333-4333-8333-333333333333'],
+        },
+      ],
+    });
+});
+
+test('customer order detail renders static VietQR SVG for bank transfer orders', async ({
+  page,
+}) => {
+  await installStorefront(page, 'physical', () => undefined);
+  await page.route('**/api/storefront/settings', (route) =>
+    route.fulfill({
+      json: {
+        bankTransferEnabled: true,
+        bankName: 'Vietcombank',
+        accountNumber: '0123456789',
+        accountHolder: 'CONG TY BOILERATE',
+        branch: 'Chi nhánh Sài Gòn',
+        instructions: 'Chuyển đúng số tiền',
+      },
+    }),
+  );
+  await page.route('**/api/storefront/orders/vietqr-demo', (route) =>
+    route.fulfill({
+      json: {
+        id: 'vietqr-demo',
+        number: 'ORD-261114-ABCD1234',
+        version: 'v1',
+        status: 1,
+        paymentStatus: 1,
+        fulfillmentStatus: 1,
+        paymentMethod: 1,
+        total: 250000,
+        subtotal: 250000,
+        discountAmount: 0,
+        shippingAmount: 0,
+        currency: 'VND',
+        createdOn: '2026-11-14T10:00:00Z',
+        expiresAt: '2026-11-14T10:30:00Z',
+        recipientName: 'Nguyễn Văn QR',
+        email: 'qr@example.test',
+        phone: '0901234567',
+        items: [],
+        physicalDispatchStarted: false,
+      },
+    }),
+  );
+
+  await page.goto('/shop/orders/vietqr-demo');
+  const qrSvg = page.locator('.vietqr-svg');
+  await expect(qrSvg).toBeVisible();
+  await expect(qrSvg.locator('path')).toHaveAttribute('d', /^M\d+,\d+/);
+  await expect(page.locator('.vietqr-caption')).toContainText('DH ORD-261114-ABCD1234');
 });

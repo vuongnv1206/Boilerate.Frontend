@@ -48,7 +48,9 @@
 
       <div class="toolbar-row">
         <div class="field">
-          <label for="inventory-search-input" class="field-label">Tìm theo mã biến thể / kho</label>
+          <label for="inventory-search-input" class="field-label"
+            >Tìm theo sản phẩm, SKU hoặc mã</label
+          >
           <input
             pInputText
             id="inventory-search-input"
@@ -56,7 +58,7 @@
             [ngModel]="searchKeyword()"
             (ngModelChange)="searchKeyword.set($event)"
             (keydown.enter)="applyBalanceSearch()"
-            placeholder="Nhập UUID biến thể hoặc mã kho…"
+            placeholder="Nhập tên sản phẩm, SKU hoặc UUID…"
           />
         </div>
         <div class="field">
@@ -67,7 +69,7 @@
             optionLabel="label"
             optionValue="value"
             [ngModel]="stockFilter()"
-            (ngModelChange)="stockFilter.set($event)"
+            (ngModelChange)="onStockFilterChange($event)"
           />
         </div>
         <div class="toolbar-actions">
@@ -115,8 +117,8 @@
           >
             <ng-template #header>
               <tr>
-                <th>Biến thể (Variant ID)</th>
-                <th>Kho (Location ID)</th>
+                <th>Sản phẩm / SKU</th>
+                <th>Kho</th>
                 <th>Tồn thực tế</th>
                 <th>Đã giữ</th>
                 <th>Khả dụng</th>
@@ -127,10 +129,19 @@
             <ng-template #body let-row>
               <tr>
                 <td>
-                  <code>{{ row.variantId }}</code>
+                  @if (row.productName) {
+                    <strong>{{ row.productName }}</strong>
+                    @if (row.sku) {
+                      <div>
+                        <code>{{ row.sku }}</code>
+                      </div>
+                    }
+                  } @else {
+                    <code>{{ row.variantId }}</code>
+                  }
                 </td>
                 <td>
-                  <code>{{ row.locationId }}</code>
+                  <code>{{ row.locationCode || row.locationId }}</code>
                 </td>
                 <td>{{ row.onHand }}</td>
                 <td>{{ row.reserved }}</td>

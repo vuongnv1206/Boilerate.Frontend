@@ -1,5 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, catchError, of, tap, timer } from 'rxjs';
 import { normalizeApiError } from '@core/http/normalize-api-error';
@@ -11,7 +12,6 @@ import {
 } from '@api/storefront/models/storefront.dto';
 import {
   getFulfillmentLabel,
-  getStorefrontProductFallbackImage,
   isDigitalFulfillment,
   productFieldText,
   resolveCatalogImageSource,
@@ -70,6 +70,8 @@ export class ProductDetailComponent implements OnInit {
     readonly cartService: CartService,
     private readonly route: ActivatedRoute,
     private readonly destroyRef: DestroyRef,
+    private readonly titleService: Title,
+    private readonly metaService: Meta,
   ) {
     this.destroyRef.onDestroy(() => this.detailSubscription?.unsubscribe());
   }
@@ -99,6 +101,13 @@ export class ProductDetailComponent implements OnInit {
       .pipe(
         tap((product) => {
           this.productDetail.set(product);
+          this.titleService.setTitle(`${product.name} — Boilerate`);
+          if (product.description) {
+            this.metaService.updateTag({
+              name: 'description',
+              content: product.description.slice(0, 160),
+            });
+          }
           this.detailLoading.set(false);
           const defaultVariant =
             product.variants.find((v) => v.isDefault) ?? product.variants[0] ?? null;
@@ -140,7 +149,7 @@ export class ProductDetailComponent implements OnInit {
     );
     const resolved = match ?? null;
     this.selectedVariant.set(resolved);
-    this.activeImageId.set(resolved?.imageMediaId ?? null);
+    this.activeImageId.set(resolved?.imageMediaId ?? resolved?.images?.[0]?.mediaAssetId ?? null);
   }
 
   /** Whether picking this value, with the other groups as they are, leads to something buyable. */
@@ -177,18 +186,13 @@ export class ProductDetailComponent implements OnInit {
     const mediaId =
       this.activeImageId() ??
       this.selectedVariant()?.imageMediaId ??
+      this.selectedVariant()?.images?.[0]?.mediaAssetId ??
       product.media[0]?.mediaAssetId;
-    return resolveCatalogImageSource(mediaId, product.slug, product.name);
+    return resolveCatalogImageSource(mediaId);
   }
 
-  onProductImageError(event: Event, product: ProductDto): void {
+  onProductImageError(event: Event, _product: ProductDto): void {
     const image = event.target as HTMLImageElement;
-    const fallback = getStorefrontProductFallbackImage(product.slug, product.name);
-    if (fallback && !image.src.endsWith(fallback)) {
-      image.src = fallback;
-      return;
-    }
-
     image.hidden = true;
     image.parentElement?.classList.add('image-unavailable');
   }

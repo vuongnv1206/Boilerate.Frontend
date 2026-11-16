@@ -1,5 +1,6 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { BaseComponent } from '@core/base/base.component';
+import { normalizeApiError } from '@core/http/normalize-api-error';
 import { SHARED_IMPORTS } from '@shared/shared-imports';
 import {
   ORDER_FULFILLMENT_STATUS_LABELS,
@@ -16,6 +17,7 @@ import {
   OrderPaymentStatus,
   OrderStatus,
 } from '@api/ordering/models/order.dto';
+import { OrdersService } from '@api/ordering/services/orders.service';
 import { OrdersWorkspace } from '../orders-workspace.component';
 
 @Component({
@@ -26,6 +28,8 @@ import { OrdersWorkspace } from '../orders-workspace.component';
 })
 export class Orders extends BaseComponent {
   // Business variables
+  readonly exporting = signal(false);
+  readonly exportError = signal('');
   readonly queueLabels = ORDER_QUEUE_LABELS;
   readonly statusLabels = ORDER_STATUS_LABELS;
   readonly paymentStatusLabels = ORDER_PAYMENT_STATUS_LABELS;
@@ -41,8 +45,24 @@ export class Orders extends BaseComponent {
   readonly createdFromDate = computed(() => this.parseDate(this.workspace.query().createdFrom));
   readonly createdToDate = computed(() => this.parseDate(this.workspace.query().createdTo));
 
-  constructor(readonly workspace: OrdersWorkspace) {
+  constructor(
+    readonly workspace: OrdersWorkspace,
+    private readonly ordersService: OrdersService,
+  ) {
     super();
+  }
+
+  exportExcel(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.exportError.set('');
+    this.ordersService.exportOrders(this.workspace.query()).subscribe({
+      next: () => this.exporting.set(false),
+      error: (err: unknown) => {
+        this.exportError.set(normalizeApiError(err).message);
+        this.exporting.set(false);
+      },
+    });
   }
 
   routeQuery(): Record<string, string | number> {

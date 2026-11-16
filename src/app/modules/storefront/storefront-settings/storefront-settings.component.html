@@ -39,6 +39,81 @@
     }
     <div class="admin-record-body">
       <div class="editor-form settings-form" [formGroup]="form">
+        <section class="form-section" aria-labelledby="general-store-settings-title">
+          <h2 id="general-store-settings-title">Thông tin cửa hàng &amp; Đơn hàng</h2>
+          <p class="settings-header-copy">
+            Tên cửa hàng, liên hệ hiển thị cho khách, phí vận chuyển cố định cho đơn vật lý và thời
+            gian giữ hàng mặc định (để trống nếu dùng cấu hình máy chủ).
+          </p>
+          <div class="field-row">
+            <ui-form-field
+              forId="settings-shop-name"
+              label="Tên cửa hàng"
+              [error]="fieldError('shopName')"
+            >
+              <input
+                pInputText
+                id="settings-shop-name"
+                type="text"
+                maxlength="160"
+                formControlName="shopName"
+              />
+            </ui-form-field>
+            <ui-form-field
+              forId="settings-contact-email"
+              label="Email liên hệ"
+              [error]="fieldError('contactEmail')"
+            >
+              <input
+                pInputText
+                id="settings-contact-email"
+                type="email"
+                maxlength="256"
+                formControlName="contactEmail"
+              />
+            </ui-form-field>
+            <ui-form-field
+              forId="settings-contact-phone"
+              label="Số điện thoại liên hệ"
+              [error]="fieldError('contactPhone')"
+            >
+              <input
+                pInputText
+                id="settings-contact-phone"
+                type="tel"
+                maxlength="30"
+                formControlName="contactPhone"
+              />
+            </ui-form-field>
+            <ui-form-field
+              forId="settings-flat-shipping"
+              label="Phí giao hàng cố định (VND)"
+              [error]="fieldError('flatShippingAmount')"
+            >
+              <p-inputnumber
+                inputId="settings-flat-shipping"
+                formControlName="flatShippingAmount"
+                [min]="0"
+                [maxFractionDigits]="0"
+                [useGrouping]="true"
+              />
+            </ui-form-field>
+            <ui-form-field
+              forId="settings-reservation-minutes"
+              label="Thời gian giữ hàng (phút)"
+              [error]="fieldError('reservationMinutes')"
+            >
+              <p-inputnumber
+                inputId="settings-reservation-minutes"
+                formControlName="reservationMinutes"
+                [min]="1"
+                [max]="1440"
+                [maxFractionDigits]="0"
+                [useGrouping]="false"
+              />
+            </ui-form-field>
+          </div>
+        </section>
         <section class="form-section" aria-labelledby="bank-settings-title">
           <h2 id="bank-settings-title">Tài khoản ngân hàng</h2>
           <p class="settings-header-copy">

@@ -49,6 +49,16 @@
         (actionStarted)="clearActionError()"
         (busyChanged)="paymentBusy.set($event)"
       >
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          [disabled]="anyBusy()"
+          (click)="downloadPackingSlip()"
+        >
+          {{ packingSlipBusy() ? 'Đang tạo PDF…' : 'In phiếu giao hàng' }}
+        </button>
         @if (canCancelPermission()) {
           <button
             pButton

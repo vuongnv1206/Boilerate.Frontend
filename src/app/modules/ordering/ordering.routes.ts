@@ -16,6 +16,13 @@ export const ADMIN_ORDER_ROUTES: Routes = [
         loadComponent: () => import('./orders/orders-list/orders.component').then((m) => m.Orders),
       },
       {
+        path: 'customers',
+        canActivate: [permissionGuard],
+        data: { permission: { functionCode: 'Order', actionCode: 'View' } },
+        loadComponent: () =>
+          import('./orders/customers/admin-customers.component').then((m) => m.AdminCustomers),
+      },
+      {
         path: ':id',
         canDeactivate: [unsavedChangesGuard],
         canActivate: [permissionGuard],

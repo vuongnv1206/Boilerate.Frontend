@@ -28,6 +28,11 @@ export class StorefrontSettingsComponent extends BaseComponent implements OnInit
   readonly record = signal<StorefrontSettings | null>(null);
   readonly canEdit = computed(() => this.can('StorefrontSettings', 'Update'));
   readonly form = new FormGroup({
+    shopName: new FormControl('', { nonNullable: true }),
+    contactEmail: new FormControl('', { nonNullable: true }),
+    contactPhone: new FormControl('', { nonNullable: true }),
+    flatShippingAmount: new FormControl<number | null>(null),
+    reservationMinutes: new FormControl<number | null>(null),
     bankTransferEnabled: new FormControl(false, { nonNullable: true }),
     bankName: new FormControl('', { nonNullable: true }),
     accountNumber: new FormControl('', { nonNullable: true }),
@@ -82,6 +87,11 @@ export class StorefrontSettingsComponent extends BaseComponent implements OnInit
     this.settingsService
       .updateAdminSettings({
         version: record.version,
+        shopName: value.shopName || null,
+        contactEmail: value.contactEmail || null,
+        contactPhone: value.contactPhone || null,
+        flatShippingAmount: value.flatShippingAmount,
+        reservationMinutes: value.reservationMinutes,
         bankTransferEnabled: value.bankTransferEnabled,
         bankName: value.bankName || null,
         accountNumber: value.accountNumber || null,
@@ -138,6 +148,11 @@ export class StorefrontSettingsComponent extends BaseComponent implements OnInit
     this.record.set(settings);
     this.form.reset(
       {
+        shopName: settings.shopName ?? '',
+        contactEmail: settings.contactEmail ?? '',
+        contactPhone: settings.contactPhone ?? '',
+        flatShippingAmount: settings.flatShippingAmount ?? null,
+        reservationMinutes: settings.reservationMinutes ?? null,
         bankTransferEnabled: settings.bankTransferEnabled,
         bankName: settings.bankName ?? '',
         accountNumber: settings.accountNumber ?? '',

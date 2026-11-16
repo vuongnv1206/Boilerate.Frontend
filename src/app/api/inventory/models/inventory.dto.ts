@@ -13,6 +13,9 @@ export interface InventoryBalanceDto {
   readonly reserved: number;
   readonly available: number;
   readonly version: string;
+  readonly productName?: string | null;
+  readonly sku?: string | null;
+  readonly locationCode?: string | null;
 }
 
 export type InventoryBalance = InventoryBalanceDto;
@@ -43,6 +46,9 @@ export interface InventoryFilter {
   readonly size?: number;
   readonly productId?: string;
   readonly variantId?: string;
+  readonly search?: string;
+  readonly stockFilter?: InventoryStockLevelFilter;
+  readonly lowStockThreshold?: number;
 }
 
 export interface DigitalStockInputDto {
